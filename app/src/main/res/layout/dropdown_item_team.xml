@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:minHeight="?attr/listPreferredItemHeight"
+    android:paddingStart="?attr/listPreferredItemPaddingStart"
+    android:paddingEnd="?attr/listPreferredItemPaddingEnd">
+
+    <TextView
+        android:id="@+id/text_view_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textAppearance="?attr/textAppearanceListItem"/>
+
+    <ImageView
+        android:id="@+id/image_view_pokemon1"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_below="@+id/text_view_title"
+        android:layout_marginStart="8dp"
+        android:scaleType="fitCenter"/>
+
+    <ImageView
+        android:id="@+id/image_view_pokemon2"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_below="@id/text_view_title"
+        android:layout_toEndOf="@+id/image_view_pokemon1"
+        android:layout_marginStart="8dp"
+        android:scaleType="fitCenter"/>
+
+    <ImageView
+        android:id="@+id/image_view_pokemon3"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_below="@id/text_view_title"
+        android:layout_toEndOf="@+id/image_view_pokemon2"
+        android:layout_marginStart="8dp"
+        android:scaleType="fitCenter"/>
+
+    <ImageView
+        android:id="@+id/image_view_pokemon4"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_below="@id/text_view_title"
+        android:layout_toEndOf="@+id/image_view_pokemon3"
+        android:layout_marginStart="8dp"
+        android:scaleType="fitCenter"/>
+
+    <ImageView
+        android:id="@+id/image_view_pokemon5"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_below="@id/text_view_title"
+        android:layout_toEndOf="@+id/image_view_pokemon4"
+        android:layout_marginStart="8dp"
+        android:scaleType="fitCenter"/>
+
+    <ImageView
+        android:id="@+id/image_view_pokemon6"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_below="@id/text_view_title"
+        android:layout_toEndOf="@+id/image_view_pokemon5"
+        android:layout_marginStart="8dp"
+        android:scaleType="fitCenter"/>
+
+</RelativeLayout>

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:resources=".MainActivity">
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/client_bg"
+        android:scaleType="centerCrop"/>
+
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/bottom_navigation">
+
+        <com.majeur.psclient.widget.SwitchLayout
+            android:id="@+id/fragment_container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <fragment
+                android:id="@+id/fragment_home"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:name="com.majeur.psclient.HomeFragment"/>
+
+            <fragment
+                android:id="@+id/fragment_battle"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:name="com.majeur.psclient.BattleFragment"/>
+
+            <fragment
+                android:id="@+id/fragment_chat"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:name="com.majeur.psclient.ChatFragment"/>
+
+            <fragment
+                android:id="@+id/fragment_teams"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:name="com.majeur.psclient.TeamsFragment" />
+
+        </com.majeur.psclient.widget.SwitchLayout>
+
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottom_navigation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        app:menu="@menu/bottom_navigation_main"
+        app:itemIconTint="@drawable/nav_item_color_state"
+        app:itemTextColor="@drawable/nav_item_color_state"
+        app:backgroundTint="@color/primary"/>
+
+</RelativeLayout>

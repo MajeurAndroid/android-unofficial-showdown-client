@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:padding="12dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="32dp"
+        android:layout_marginStart="10dp"
+        android:textAppearance="@style/TextAppearance.MaterialComponents.Headline5"
+        android:text="Pick a user name"/>
+
+    <EditText
+        android:id="@+id/edit_text_username"
+        android:layout_width="240dp"
+        android:layout_height="wrap_content"
+        android:inputType="textVisiblePassword"
+        android:singleLine="true"
+        android:imeOptions="actionGo"
+        android:hint="Username"/>
+
+    <TextView android:id="@+id/text_view_message"
+        android:layout_width="240dp"
+        android:layout_height="wrap_content"
+        android:textColor="#c70000"/>
+
+    <EditText
+        android:id="@+id/edit_text_password"
+        android:layout_width="240dp"
+        android:layout_height="wrap_content"
+        android:minWidth="240dp"
+        android:singleLine="true"
+        android:imeOptions="actionGo"
+        android:enabled="false"
+        android:inputType="textPassword"
+        android:hint="Password"/>
+
+    <Button android:id="@+id/button_signin"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:layout_gravity="end"
+        style="@style/Widget.MaterialComponents.Button.TextButton.Dialog"
+        android:text="Sign In"/>
+
+</LinearLayout>

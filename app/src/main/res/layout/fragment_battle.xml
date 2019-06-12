@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/primary_translucent">
+
+    <com.majeur.psclient.widget.BattleActionWidget
+        android:id="@+id/battle_action_widget"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/player1_info_view"
+        android:elevation="4dp"
+        android:background="@android:color/white"/>
+
+    <ImageView
+        android:id="@+id/background_image_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:elevation="4dp"
+        android:layout_alignBottom="@id/player1_info_view"
+        android:src="@drawable/battle_bg_1"
+        android:scaleType="centerCrop"/>
+
+    <ImageView
+        android:id="@+id/overlay_image_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:elevation="4dp"
+        android:layout_alignBottom="@id/player1_info_view"
+        android:scaleType="centerCrop"/>
+
+    <com.majeur.psclient.widget.PlayerInfoView
+        android:id="@+id/player2_info_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:elevation="4dp"
+        android:paddingBottom="1dp"
+        android:paddingEnd="12dp"
+        android:background="@color/battle_overlay"
+        android:gravity="end"/>
+
+    <com.majeur.psclient.widget.BattleLayout
+        android:id="@+id/battle_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/player2_info_view"
+        android:elevation="4dp"/>
+
+    <com.majeur.psclient.widget.PlayerInfoView
+        android:id="@+id/player1_info_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/battle_layout"
+        android:elevation="4dp"
+        android:paddingBottom="1dp"
+        android:paddingStart="12dp"
+        android:background="@color/battle_overlay"/>
+
+    <TextView
+        android:id="@+id/battle_message_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/player1_info_view"
+        android:layout_margin="4dp"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:elevation="4dp"
+        android:background="@drawable/battle_message_bg"
+        android:textColor="@color/primary_light"
+        android:alpha="0"/>
+
+    <include layout="@layout/layout_extra_actions" />
+
+    <ScrollView
+        android:id="@+id/scroll_view_log"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/player1_info_view">
+
+        <TextView
+            android:id="@+id/text_view_log"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@android:color/black"
+            android:textSize="16sp"
+            android:paddingStart="12dp"/>
+
+    </ScrollView>
+
+
+</RelativeLayout>
