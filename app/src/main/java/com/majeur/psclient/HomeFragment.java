@@ -3,41 +3,37 @@ package com.majeur.psclient;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import com.google.android.material.snackbar.Snackbar;
-
-import androidx.appcompat.app.AlertDialog;
-import androidx.fragment.app.Fragment;
-
-import android.util.Log;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import com.google.android.material.snackbar.Snackbar;
 import com.majeur.psclient.io.DataLoader;
 import com.majeur.psclient.io.DexIconLoader;
 import com.majeur.psclient.model.AvailableBattleRoomsInfo;
 import com.majeur.psclient.model.BattleFormat;
 import com.majeur.psclient.model.RoomInfo;
 import com.majeur.psclient.model.Team;
-import com.majeur.psclient.service.GlobalMessageHandler;
+import com.majeur.psclient.service.GlobalMessageObserver;
 import com.majeur.psclient.service.ShowdownService;
 import com.majeur.psclient.widget.CategoryAdapter;
 
 import java.util.List;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
 
 import static com.majeur.psclient.model.Id.toId;
 
@@ -195,7 +191,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
         mBattleButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (mMessageHandler.isUserGuest())
+                if (mObserver.isUserGuest())
                     SignInDialog.newInstance().show(getFragmentManager(), "");
                 else {
                     MainActivity activity = (MainActivity) getActivity();
@@ -203,12 +199,12 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
                         Snackbar.make(getView(), "A battle is already running", Snackbar.LENGTH_SHORT).show();
                     } else {
                         mAutoJoinNextBattle = true;
-                        mMessageHandler.searchForBattle();
+                        mObserver.searchForBattle();
                         mBattleButton.setText("Searching...");
                         mBattleButton.setEnabled(false);
                     }
                 }
-//                mMessageHandler.fakeBattle();
+//                mObserver.fakeBattle();
 //                ((MainActivity) getActivity()).showBattleFragmentView();
             }
         });
@@ -234,7 +230,8 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
         }
     }
 
-    private final GlobalMessageHandler mMessageHandler = new GlobalMessageHandler() {
+    private final GlobalMessageObserver mObserver = new GlobalMessageObserver() {
+
         @Override
         protected void onUserChanged(String userName, boolean isGuest, String avatarId) {
             if (mCurrentDialog != null) {
@@ -242,7 +239,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
                 mCurrentDialog = null;
             }
             mCurrentUserName = userName;
-            if (!mMessageHandler.isUserGuest())
+            if (!mObserver.isUserGuest())
                 Snackbar.make(getView(), "Connected as " + userName, Snackbar.LENGTH_LONG).show();
         }
 
@@ -263,6 +260,9 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
             if (activity.getBattleFragment().battleRunning())
                 return;
 
+
+            if (true)
+                return;
             // If sie > 2 show warning unsupport popup
             if (battleRoomIds.length > 1) {
                 Snackbar.make(getView(),
@@ -275,7 +275,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
                 }).show();
             }
 
-            if (mAutoJoinNextBattle) {
+            /*if (mAutoJoinNextBattle) {
                 mAutoJoinNextBattle = false;
                 activity.getBattleFragment().startBattle(battleRoomIds[0], true);
                 activity.showBattleFragmentView();
@@ -300,7 +300,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
                             }
                         })
                         .show();
-            }
+            }*/
         }
 
         @Override
@@ -320,6 +320,37 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
         }
 
         @Override
+        protected void onRoomInit(String roomId, String type) {
+            MainActivity activity = (MainActivity) getActivity();
+            switch (type) {
+                case "battle":
+                    BattleFragment battleFragment = activity.getBattleFragment();
+                    if (battleFragment.getObservedRoomId() == null)
+                        battleFragment.setObservedRoomId(roomId);
+                    break;
+                case "chat":
+                    ChatFragment chatFragment = activity.getChatFragment();
+                    if (chatFragment.getObservedRoomId() == null)
+                        chatFragment.setObservedRoomId(roomId);
+                    break;
+            }
+        }
+
+        @Override
+        protected void onRoomDeinit(String roomId) {
+            MainActivity activity = (MainActivity) getActivity();
+
+            BattleFragment battleFragment = activity.getBattleFragment();
+            if (TextUtils.equals(battleFragment.getObservedRoomId(), roomId))
+                battleFragment.setObservedRoomId(null);
+
+            ChatFragment chatFragment = activity.getChatFragment();
+            if (TextUtils.equals(chatFragment.getObservedRoomId(), roomId))
+                chatFragment.setObservedRoomId(null);
+
+        }
+
+        @Override
         protected void onNetworkError() {
             if (mCurrentDialog != null)
                 mCurrentDialog.dismiss();
@@ -328,7 +359,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
                     .setAction("Try to reconnect", new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
-                            mMessageHandler.retryServerConnection();
+                            getService().reconnectToServer();
                         }
                     })
                     .show();
@@ -336,12 +367,12 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
     };
 
     @Override
-    public void onShowdownServiceBound(ShowdownService showdownService) {
-        showdownService.registerMessageHandler(mMessageHandler);
+    public void onShowdownServiceBound(ShowdownService service) {
+        service.registerMessageObserver(mObserver, true);
     }
 
     @Override
-    public void onShowdownServiceUnBound() {
-        mMessageHandler.release();
+    public void onShowdownServiceWillUnbound(ShowdownService service) {
+        service.unregisterMessageObserver(mObserver);
     }
 }

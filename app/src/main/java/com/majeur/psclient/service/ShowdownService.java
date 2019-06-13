@@ -6,7 +6,7 @@ import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
-import androidx.annotation.Nullable;
+import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 
@@ -18,7 +18,6 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -26,6 +25,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 
+import androidx.annotation.Nullable;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.HttpUrl;
@@ -40,7 +40,8 @@ import okhttp3.WebSocketListener;
 public class ShowdownService extends Service {
 
     private static final String TAG = ShowdownService.class.getSimpleName();
-    private static final int NORMAL_CLOSURE_STATUS = 1000;
+    private static final int WS_CLOSE_NORMAL = 1000;
+    private static final int WS_CLOSE_GOING_AWAY = 1001;
 
     private Binder mBinder;
 
@@ -49,7 +50,8 @@ public class ShowdownService extends Service {
     private Handler mUiHandler;
     private Queue<String> mMessageCache;
 
-    private List<ShowdownMessageHandler> mShowdownMessageHandlers;
+    private MessageObserver mGlobalMessageObserver;
+    private List<MessageObserver> mMessageObservers;
     private Map<String, Object> mHandlersSharedData;
     private String mChallengeString;
 
@@ -59,13 +61,10 @@ public class ShowdownService extends Service {
         mUiHandler = new Handler(Looper.getMainLooper());
         mBinder = new Binder();
         mMessageCache = new LinkedList<>();
-        mShowdownMessageHandlers = new LinkedList<>();
+        mMessageObservers = new LinkedList<>();
         mHandlersSharedData = new HashMap<>();
 
         mOkHttpClient = new OkHttpClient();
-
-        Request request = new Request.Builder().url("ws://sim.smogon.com:8000/showdown/websocket").build();
-        mWebSocket = mOkHttpClient.newWebSocket(request, mWebSocketListener);
     }
 
     @Override
@@ -81,14 +80,26 @@ public class ShowdownService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        mWebSocket.close(NORMAL_CLOSURE_STATUS, "User is leaving");
+        mWebSocket.close(WS_CLOSE_GOING_AWAY, null);
     }
 
-    /* package */ void retryShowdownServerConnection() {
+    public void connectToServer() {
         if (mWebSocket != null)
-            mWebSocket.close(NORMAL_CLOSURE_STATUS, "No internet");
+            return;
         Request request = new Request.Builder().url("ws://sim.smogon.com:8000/showdown/websocket").build();
         mWebSocket = mOkHttpClient.newWebSocket(request, mWebSocketListener);
+    }
+
+    public void reconnectToServer() {
+        disconnectFromServer();
+        connectToServer();
+    }
+
+    public void disconnectFromServer() {
+        if (mWebSocket != null) {
+            mWebSocket.close(WS_CLOSE_NORMAL, null);
+            mWebSocket = null;
+        }
     }
 
     public void sendTrnMessage(String userName, String assertion) {
@@ -112,71 +123,119 @@ public class ShowdownService extends Service {
     }
 
     private void sendMessage(String message) {
-        Log.d(TAG, "Sending message: " + message);
+        Log.w(TAG + "[SEND]", message);
         mWebSocket.send(message);
     }
 
-    public void registerMessageHandler(ShowdownMessageHandler messageHandler) {
-        mShowdownMessageHandlers.add(messageHandler);
-        Collections.sort(mShowdownMessageHandlers, ShowdownMessageHandler.COMPARATOR);
-        messageHandler.attachService(this);
+    public void registerMessageObserver(MessageObserver observer, boolean asGlobal) {
+        Log.w(TAG, "register " + asGlobal);
+        if (asGlobal) {
+            if (mGlobalMessageObserver != null)
+                unregisterMessageObserver(mGlobalMessageObserver);
+            mGlobalMessageObserver = observer;
+        } else {
+            mMessageObservers.add(observer);
+        }
+        observer.attachService(this);
     }
 
-    public void unregisterMessageHandler(ShowdownMessageHandler messageHandler) {
-        mShowdownMessageHandlers.remove(messageHandler);
-        messageHandler.detachService();
+    public void unregisterMessageObserver(MessageObserver observer) {
+        if (observer == mGlobalMessageObserver)
+            mGlobalMessageObserver = null;
+        else
+            mMessageObservers.remove(observer);
+        observer.detachService();
     }
 
-    private void dispatchMessages(String messages) {
-        for (ShowdownMessageHandler messageHandler : mShowdownMessageHandlers) {
-            if (messageHandler.shouldHandleMessages(messages)) {
-                messageHandler.postMessages(messages);
+    private void processServerData(String data) {
+        String roomId = null;
+        if (data.charAt(0) == '>') {
+            int lfIndex = data.indexOf('\n');
+            if (lfIndex == -1)
+                return;
+            roomId = data.substring(1, lfIndex);
+            data = data.substring(lfIndex + 1);
+        }
+        dispatchServerData(roomId, data);
+    }
+
+    private void dispatchServerData(String roomId, String data) {
+        String[] lines = data.split("\n");
+        for (String line : lines) {
+            if (TextUtils.isEmpty(line))
+                continue;
+
+            ServerMessage message = new ServerMessage(roomId, line);
+
+            if (roomId == null) {
+                if (mGlobalMessageObserver != null) {
+                    if (message.command.equals("init")) {
+                        message.roomId = "lobby";
+                        mGlobalMessageObserver.postMessage(message);
+                        dispatchMessage(message);
+                    } else if (message.command.equals("deinit")) {
+                        message.roomId = "lobby";
+                        dispatchMessage(message);
+                        mGlobalMessageObserver.postMessage(message);
+                    } else {
+                        boolean consumed = mGlobalMessageObserver.postMessage(message);
+                        if (!consumed) {
+                            message.roomId = "lobby";
+                            dispatchMessage(message);
+                        }
+                    }
+                }
+            } else {
+                if (message.command.equals("init")) {
+                    if (mGlobalMessageObserver != null)
+                        mGlobalMessageObserver.postMessage(message);
+                    dispatchMessage(message);
+                } else if (message.command.equals("deinit")) {
+                    dispatchMessage(message);
+                    if (mGlobalMessageObserver != null)
+                        mGlobalMessageObserver.postMessage(message);
+                } else {
+                    dispatchMessage(message);
+                }
             }
         }
     }
 
-    public void fakeBattle() {
-        S.run = true;
-        dispatchMessages(S.s);
-    }
-
-    private boolean canDispatchMessages() {
-        return !mShowdownMessageHandlers.isEmpty();
+    private void dispatchMessage(ServerMessage message) {
+        for (MessageObserver observer : mMessageObservers)
+            observer.postMessage(message);
     }
 
     private void dispatchNetworkError() {
-        for (ShowdownMessageHandler messageHandler : mShowdownMessageHandlers) {
-            messageHandler.onNetworkError();
-        }
+        if (mGlobalMessageObserver == null)
+            return;
+        mGlobalMessageObserver.postMessage(new ServerMessage(null, "err|network"));
+    }
+
+    public void fakeBattle() {
+        S.run = true;
+        processServerData(S.s);
     }
 
     private final WebSocketListener mWebSocketListener = new WebSocketListener() {
 
-        private boolean mPreviousMessagesDispatched;
-
         @Override
         public void onOpen(WebSocket webSocket, Response response) {
-            Log.d(TAG, "WebSocked Opened");
+            Log.w(TAG + "[OPEN]", "");
         }
 
         @Override
-        public void onMessage(WebSocket webSocket, final String text) {
-            Log.d(TAG, "Receiving message: " + text);
+        public void onMessage(WebSocket webSocket, final String data) {
+            Log.w(TAG + "[RECEIVE]", data);
             mUiHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    boolean canDispatchMessages = canDispatchMessages();
-
-                    if (canDispatchMessages) {
-                        if (!mPreviousMessagesDispatched)
-                            while (!mMessageCache.isEmpty())
-                                dispatchMessages(mMessageCache.remove());
-
-                        dispatchMessages(text);
-                        mPreviousMessagesDispatched = true;
+                    if (mGlobalMessageObserver == null && mMessageObservers.isEmpty()) {
+                        mMessageCache.add(data);
                     } else {
-                        mMessageCache.add(text);
-                        mPreviousMessagesDispatched = false;
+                        while (!mMessageCache.isEmpty())
+                            processServerData(mMessageCache.remove());
+                        processServerData(data);
                     }
                 }
             });
@@ -185,12 +244,12 @@ public class ShowdownService extends Service {
 
         @Override
         public void onClosing(WebSocket webSocket, int code, String reason) {
-            Log.d(TAG, "WebSocket closed (" + reason + ")");
+            Log.w(TAG + "[CLOSE]", reason);
         }
 
         @Override
         public void onFailure(WebSocket webSocket, Throwable t, Response response) {
-            Log.e(TAG, "WebSocket error: " + t.toString());
+            Log.w(TAG + "[ERR]", t.toString());
             if (t instanceof UnknownHostException || t instanceof SocketTimeoutException) {
                 mUiHandler.post(new Runnable() {
                     @Override

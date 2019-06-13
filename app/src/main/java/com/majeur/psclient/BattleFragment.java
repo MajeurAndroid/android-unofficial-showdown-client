@@ -9,12 +9,6 @@ import android.graphics.PorterDuff;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
-import androidx.fragment.app.Fragment;
-
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -37,29 +31,33 @@ import com.majeur.psclient.model.Colors;
 import com.majeur.psclient.model.Condition;
 import com.majeur.psclient.model.DexPokemon;
 import com.majeur.psclient.model.Move;
-import com.majeur.psclient.model.PokemonId;
 import com.majeur.psclient.model.Player;
+import com.majeur.psclient.model.PokemonId;
 import com.majeur.psclient.model.SidePokemon;
 import com.majeur.psclient.model.StatModifiers;
 import com.majeur.psclient.model.Stats;
-import com.majeur.psclient.service.BattleRoomMessageHandler;
+import com.majeur.psclient.service.BattleMessageObserver;
 import com.majeur.psclient.service.ShowdownService;
 import com.majeur.psclient.util.AudioBattleManager;
 import com.majeur.psclient.util.Utils;
 import com.majeur.psclient.widget.BattleActionWidget;
 import com.majeur.psclient.widget.BattleLayout;
+import com.majeur.psclient.widget.BattleTipPopup;
 import com.majeur.psclient.widget.PlayerInfoView;
 import com.majeur.psclient.widget.StatusView;
-import com.majeur.psclient.widget.BattleTipPopup;
 import com.majeur.psclient.widget.ToasterView;
 
 import java.util.List;
 import java.util.Objects;
 
-import static com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions.withCrossFade;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.fragment.app.Fragment;
+
+import static com.majeur.psclient.model.Id.toId;
 import static com.majeur.psclient.util.Utils.array;
 import static com.majeur.psclient.util.Utils.toStringSigned;
-import static com.majeur.psclient.model.Id.toId;
 
 public class BattleFragment extends Fragment implements MainActivity.Callbacks {
 
@@ -86,18 +84,25 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
     private boolean mTimerEnabled;
     private boolean mWasPlayingBattleMusicWhenPaused;
 
-    public void startBattle(String roomId, boolean autoJoin) {
-        mMessageHandler.startBattle(roomId, autoJoin);
+    private String mObservedRoomId;
+
+    public String getObservedRoomId() {
+        return mObservedRoomId;
+    }
+
+    public void setObservedRoomId(String observedRoomId) {
+        mObservedRoomId = observedRoomId;
+        mObserver.observeForRoomId(observedRoomId);
     }
 
     public boolean battleRunning() {
-        return mMessageHandler.battleRunning();
+        return mObserver.battleRunning();
     }
 
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
-        mMessageHandler.gotContext(context);
+        mObserver.gotContext(context);
         mSpritesLoader = new GlideHelper(context);
         mBattleTipPopup = new BattleTipPopup(context);
         mBattleTipPopup.setOnBindPopupViewListener(mOnBindPopupViewListener);
@@ -128,7 +133,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         mFoeInfoView.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View view) {
-                mMessageHandler.forfeit();
+                mObserver.forfeit();
                 return true;
             }
         });
@@ -184,13 +189,13 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
     }
 
     @Override
-    public void onShowdownServiceBound(ShowdownService showdownService) {
-        showdownService.registerMessageHandler(mMessageHandler);
+    public void onShowdownServiceBound(ShowdownService service) {
+        service.registerMessageObserver(mObserver, false);
     }
 
     @Override
-    public void onShowdownServiceUnBound() {
-        mMessageHandler.release();
+    public void onShowdownServiceWillUnbound(ShowdownService service) {
+        service.unregisterMessageObserver(mObserver);
     }
 
     private final View.OnClickListener mExtraClickListener = new View.OnClickListener() {
@@ -206,7 +211,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                             .setPositiveButton("Forfeit", new DialogInterface.OnClickListener() {
                                 @Override
                                 public void onClick(DialogInterface dialogInterface, int i) {
-                                    mMessageHandler.forfeit();
+                                    mObserver.forfeit();
                                 }
                             })
                             .setNegativeButton("Cancel", null)
@@ -218,7 +223,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                     break;
 
                 case R.id.button_timer:
-                    mMessageHandler.sendTimerCommand(!mTimerEnabled);
+                    mObserver.sendTimerCommand(!mTimerEnabled);
                     break;
             }
         }
@@ -362,7 +367,11 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         });
     }
 
-    private BattleRoomMessageHandler mMessageHandler = new BattleRoomMessageHandler() {
+    public BattleMessageObserver getObserver() {
+        return mObserver;
+    }
+
+    private BattleMessageObserver mObserver = new BattleMessageObserver() {
 
         @Override
         protected void onTimerEnabled(boolean enabled) {

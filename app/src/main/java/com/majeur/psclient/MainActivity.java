@@ -6,17 +6,17 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
-import androidx.annotation.NonNull;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.fragment.app.Fragment;
-
 import android.view.MenuItem;
 
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.majeur.psclient.io.DexIconLoader;
 import com.majeur.psclient.service.ShowdownService;
 import com.majeur.psclient.util.Utils;
 import com.majeur.psclient.widget.SwitchLayout;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -30,6 +30,7 @@ public class MainActivity extends AppCompatActivity {
             ShowdownService.Binder binder = (ShowdownService.Binder) iBinder;
             mShowdownService = binder.getService();
             notifyServiceBound();
+            mShowdownService.connectToServer();
         }
 
         @Override
@@ -106,10 +107,10 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void notifyServiceUnBound() {
+    private void notifyServiceWillUnbound() {
         for (Fragment fragment : getSupportFragmentManager().getFragments()) {
             if (fragment instanceof Callbacks)
-                ((Callbacks) fragment).onShowdownServiceUnBound();
+                ((Callbacks) fragment).onShowdownServiceWillUnbound(mShowdownService);
         }
     }
 
@@ -125,7 +126,7 @@ public class MainActivity extends AppCompatActivity {
         super.onStop();
         if (mCanUnbindService) {
             unbindService(mServiceConnection);
-            notifyServiceUnBound();
+            notifyServiceWillUnbound();
             mShowdownService = null;
             mCanUnbindService = false;
         }
@@ -144,8 +145,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public interface Callbacks {
-        public void onShowdownServiceBound(ShowdownService showdownService);
 
-        public void onShowdownServiceUnBound();
+        public void onShowdownServiceBound(ShowdownService service);
+
+        public void onShowdownServiceWillUnbound(ShowdownService service);
     }
 }

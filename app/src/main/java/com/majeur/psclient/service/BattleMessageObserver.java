@@ -10,10 +10,7 @@ import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
-import android.util.Log;
 
-import com.majeur.psclient.util.S;
-import com.majeur.psclient.util.Utils;
 import com.majeur.psclient.io.BattleTextBuilder;
 import com.majeur.psclient.model.BattleActionRequest;
 import com.majeur.psclient.model.BattlingPokemon;
@@ -21,11 +18,12 @@ import com.majeur.psclient.model.Condition;
 import com.majeur.psclient.model.Const;
 import com.majeur.psclient.model.Player;
 import com.majeur.psclient.model.PokemonId;
+import com.majeur.psclient.util.Utils;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public abstract class BattleRoomMessageHandler extends RoomMessageHandler {
+public abstract class BattleMessageObserver extends RoomMessageObserver {
 
     private BattleTextBuilder mBattleTextBuilder;
     private ActionQueue mActionQueue = new ActionQueue(Looper.getMainLooper());
@@ -40,13 +38,6 @@ public abstract class BattleRoomMessageHandler extends RoomMessageHandler {
     }
 
     @Override
-    public boolean shouldHandleMessages(String messages) {
-        if (S.run)
-            return true;
-        return mRoomId != null && messages.startsWith(">" + mRoomId);
-    }
-
-    @Override
     public void onRoomInit() {
         mP1Username = null;
         mP2Username = null;
@@ -57,23 +48,8 @@ public abstract class BattleRoomMessageHandler extends RoomMessageHandler {
 
     @Override
     public void onRoomDeInit() {
+        onPrintText("~ deinit ~");
 
-    }
-
-    public void startBattle(String roomId, boolean autoJoin) {
-        if (roomId.equals(mRoomId))
-            return;
-
-        if (mBattleRunning) {
-            Log.e(getClass().getSimpleName(), "Cannot start battle while another one is running, ignoring.");
-            return;
-        }
-
-        if (autoJoin) {
-            setAutoJoinedRoom(roomId);
-        } else {
-            joinRoom(roomId);
-        }
     }
 
     public Const getGameType() {
@@ -86,79 +62,79 @@ public abstract class BattleRoomMessageHandler extends RoomMessageHandler {
     }
 
     public void forfeit() {
-        getShowdownService().sendRoomCommand(mRoomId, "forfeit", null);
+        getService().sendRoomCommand(observedRoomId(), "forfeit", null);
     }
 
     public void sendSwitchDecision(int reqId, int who) {
-        getShowdownService().sendRoomCommand(mRoomId, "switch", who + "|" + reqId);
+        getService().sendRoomCommand(observedRoomId(), "switch", who + "|" + reqId);
     }
 
     public void sendChooseDecision(int reqId, int which) {
         //gen7randombattle-860621231|/choose move 1|3
-        getShowdownService().sendRoomCommand(mRoomId, "move", which + "|" + reqId);
+        getService().sendRoomCommand(observedRoomId(), "move", which + "|" + reqId);
     }
 
     public void sendTimerCommand(boolean on) {
-        getShowdownService().sendRoomCommand(mRoomId, "timer", on ? "on" : "off");
+        getService().sendRoomCommand(observedRoomId(), "timer", on ? "on" : "off");
     }
 
     private String myUsername() {
-        return getShowdownService().getSharedData("username");
+        return getService().getSharedData("username");
     }
 
     @Override
-    public void onHandleMessage(MessageIterator message) {
-        int index = message.getIndex();
-        super.onHandleMessage(message);
-        message.moveTo(index);
+    public boolean onMessage(ServerMessage message) {
+        super.onMessage(message);
+        message.args.reset();
 
-        String command = message.next();
-        if (command.charAt(0) == '-')
-            handleMinorActionCommand(command.substring(1), message);
+        if (message.command.charAt(0) == '-')
+            handleMinorActionCommand(message);
         else
-            handleRegularCommand(command, message);
+            handleRegularCommand(message);
+
+        return true;
     }
 
-    private void handleRegularCommand(String command, MessageIterator message) {
-        switch (command) {
+    private void handleRegularCommand(ServerMessage message) {
+        switch (message.command) {
             case "break":
                 onMarkBreak();
                 break;
             case "move":
-                handleMove(message);
+                handleMove(message.args);
                 break;
             case "switch":
-                handleSwitch(message);
+                handleSwitch(message.args);
                 break;
             case "drag":
-                handleDrag(message);
+                handleDrag(message.args);
                 break;
             case "turn":
-                handleTurn(message);
+                handleTurn(message.args);
                 break;
             case "player":
-                handlePlayer(message);
+                handlePlayer(message.args);
                 break;
             case "upkeep":
                 //
                 break;
             case "faint":
-                handleFaint(message);
+                handleFaint(message.args);
                 break;
             case "teamsize":
-                handleTeamSize(message);
+                handleTeamSize(message.args);
                 break;
             case "gametype":
-                handleGameType(message);
+                handleGameType(message.args);
                 break;
             case "tier":
-                onPrintText(Utils.boldText(message.next()));
+                onPrintText(Utils.boldText(message.args.next()));
                 break;
             case "rated":
                 onPrintText(Utils.tagText("Rated battle"));
                 break;
             case "rule":
-                onPrintText(Utils.italicText(message.next()));
+                onPrintText(Utils.italicText(message.args.next()));
                 break;
             case "clearpoke":
                 onPreviewStarted();
@@ -174,18 +150,18 @@ public abstract class BattleRoomMessageHandler extends RoomMessageHandler {
                 onBattleStarted();
                 break;
             case "request":
-                handleRequest(message);
+                handleRequest(message.args);
                 break;
             case "inactive":
-                handleInactive(message, true);
+                handleInactive(message.args, true);
                 break;
             case "inactiveoff":
-                handleInactive(message, false);
+                handleInactive(message.args, false);
                 break;
             case "win":
                 mBattleRunning = false;
                 onBattleEnded();
-                printMajorActionText(message.nextTillEnd() + " won the battle !");
+                printMajorActionText(message.args.nextTillEnd() + " won the battle !");
                 break;
             case "tie":
                 mBattleRunning = false;
@@ -201,16 +177,16 @@ public abstract class BattleRoomMessageHandler extends RoomMessageHandler {
 
     // |move|p2a: Pinsir|Close Combat|p1a: Latias|[miss]
     // |move|p2a: Dialga|Flash Cannon|p1: Shiftry|[notarget]
-    private void handleMove(MessageIterator message) {
-        String rawId = message.next();
+    private void handleMove(ServerMessage.Args args) {
+        String rawId = args.next();
         final PokemonId sourcePoke = PokemonId.fromRawId(getPlayer(rawId), rawId);
-        final String moveName = message.next();
-        rawId = message.next();
+        final String moveName = args.next();
+        rawId = args.next();
         final PokemonId targetPoke = rawId.length() > 0 ? PokemonId.fromRawId(getPlayer(rawId), rawId) : null;
 
         final boolean shouldAnim;
-        if (message.hasNext()) {
-            String next = message.next();
+        if (args.hasNext()) {
+            String next = args.next();
             shouldAnim = !(next.contains("still") || next.contains("notarget"));
         } else {
             shouldAnim = true;
@@ -231,11 +207,11 @@ public abstract class BattleRoomMessageHandler extends RoomMessageHandler {
         return Player.get(rawId, mP1Username, mP2Username, myUsername());
     }
 
-    private void handlePlayer(MessageIterator message) {
-        String playerId = message.next();
-        if (!message.hasNext())
+    private void handlePlayer(ServerMessage.Args args) {
+        String playerId = args.next();
+        if (!args.hasNext())
             return;
-        String username = message.next();
+        String username = args.next();
 
         if (playerId.contains("1"))
             mP1Username = username;
@@ -248,8 +224,8 @@ public abstract class BattleRoomMessageHandler extends RoomMessageHandler {
 
     }
 
-    private void handleFaint(MessageIterator message) {
-        String rawId = message.next();
+    private void handleFaint(ServerMessage.Args args) {
+        String rawId = args.next();
         final PokemonId pokemonId = PokemonId.fromRawId(getPlayer(rawId), rawId);
         mActionQueue.enqueueMajorAction(new Runnable() {
             @Override
@@ -260,15 +236,15 @@ public abstract class BattleRoomMessageHandler extends RoomMessageHandler {
         });
     }
 
-    private void handleTeamSize(MessageIterator message) {
-        String rawId = message.next();
-        int count = Integer.parseInt(message.next());
+    private void handleTeamSize(ServerMessage.Args args) {
+        String rawId = args.next();
+        int count = Integer.parseInt(args.next());
         Player player = getPlayer(rawId);
         onTeamSize(player, count);
     }
 
-    private void handleGameType(MessageIterator message) {
-        switch (message.next().charAt(0)) {
+    private void handleGameType(ServerMessage.Args args) {
+        switch (args.next().charAt(0)) {
             case 's':
                 mGameType = Const.SINGLE;
                 break;
@@ -281,8 +257,8 @@ public abstract class BattleRoomMessageHandler extends RoomMessageHandler {
         }
     }
 
-    private void handleSwitch(MessageIterator message) {
-        String msg = message.nextTillEnd();
+    private void handleSwitch(ServerMessage.Args args) {
+        String msg = args.nextTillEnd();
         Player player = getPlayer(msg);
         final BattlingPokemon pokemon = BattlingPokemon.fromSwitchMessage(player, msg);
 
@@ -301,8 +277,8 @@ public abstract class BattleRoomMessageHandler extends RoomMessageHandler {
         });
     }
 
-    private void handleDrag(MessageIterator message) {
-        String msg = message.nextTillEnd();
+    private void handleDrag(ServerMessage.Args args) {
+        String msg = args.nextTillEnd();
         Player player = getPlayer(msg);
         final BattlingPokemon pokemon = BattlingPokemon.fromSwitchMessage(player, msg);
 
@@ -321,8 +297,8 @@ public abstract class BattleRoomMessageHandler extends RoomMessageHandler {
         });
     }
 
-    private void handleTurn(MessageIterator message) {
-        final Spannable spannable = new SpannableString("\n — Turn " + message.next() + " — ");
+    private void handleTurn(ServerMessage.Args args) {
+        final Spannable spannable = new SpannableString("\n — Turn " + args.next() + " — ");
         spannable.setSpan(new StyleSpan(Typeface.BOLD), 1,
                 spannable.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         spannable.setSpan(new RelativeSizeSpan(1.2f), 1,
@@ -335,8 +311,8 @@ public abstract class BattleRoomMessageHandler extends RoomMessageHandler {
         });
     }
 
-    private void handleRequest(MessageIterator message) {
-        String rawJson = message.nextTillEnd();
+    private void handleRequest(ServerMessage.Args args) {
+        String rawJson = args.nextTillEnd();
         if (rawJson.length() <= 1)
             return;
         try {
@@ -353,9 +329,9 @@ public abstract class BattleRoomMessageHandler extends RoomMessageHandler {
         }
     }
 
-    private void handleInactive(MessageIterator message, boolean on) {
+    private void handleInactive(ServerMessage.Args args, boolean on) {
         onTimerEnabled(on);
-        final String text = message.next();
+        final String text = args.next();
         if (text.startsWith("Time left:"))
             return;
         mActionQueue.enqueueAction(new Runnable() {
@@ -366,48 +342,49 @@ public abstract class BattleRoomMessageHandler extends RoomMessageHandler {
         });
     }
 
-    private void handleMinorActionCommand(String command, final MessageIterator message) {
+    private void handleMinorActionCommand(final ServerMessage message) {
+        String command = message.command.substring(1);
         switch (command) {
             case "message":
                 mActionQueue.enqueueMinorAction(new Runnable() {
                     @Override
                     public void run() {
-                        onPrintText(message.nextTillEnd());
+                        onPrintText(message.args.nextTillEnd());
                     }
                 });
                 break;
             case "fail":
-                handleFail(message);
+                handleFail(message.args);
                 break;
             case "miss":
-                handleMiss(message);
+                handleMiss(message.args);
                 break;
             case "damage":
-                handleHealthChange(message, true);
+                handleHealthChange(message.args, true);
                 break;
             case "heal":
-                handleHealthChange(message, false);
+                handleHealthChange(message.args, false);
                 break;
             case "status":
-                handleStatus(message, false);
+                handleStatus(message.args, false);
                 break;
             case "curestatus":
-                handleStatus(message, true);
+                handleStatus(message.args, true);
                 break;
             case "cureteam":
 
                 break;
             case "boost":
-                handleStatChange(message, true);
+                handleStatChange(message.args, true);
                 break;
             case "unboost":
-                handleStatChange(message, false);
+                handleStatChange(message.args, false);
                 break;
             case "setboost":
-                handleSetBoost(message);
+                handleSetBoost(message.args);
                 break;
             case "weather":
-                handleWeather(message);
+                handleWeather(message.args);
                 break;
             case "fieldstart":
 
@@ -416,16 +393,16 @@ public abstract class BattleRoomMessageHandler extends RoomMessageHandler {
 
                 break;
             case "sidestart":
-                handleSide(message, true);
+                handleSide(message.args, true);
                 break;
             case "sideend":
-                handleSide(message, false);
+                handleSide(message.args, false);
                 break;
             case "crit":
             case "resisted":
             case "supereffective":
             case "immune":
-                handleMoveEffect(message, command);
+                handleMoveEffect(message.args, command);
                 break;
             case "item":
 
@@ -434,10 +411,10 @@ public abstract class BattleRoomMessageHandler extends RoomMessageHandler {
 
                 break;
             case "ability":
-                handleAbility(message, true);
+                handleAbility(message.args, true);
                 break;
             case "endability":
-                handleAbility(message, false);
+                handleAbility(message.args, false);
                 break;
             case "transform":
 
@@ -449,28 +426,28 @@ public abstract class BattleRoomMessageHandler extends RoomMessageHandler {
                 mActionQueue.enqueueMinorAction(new Runnable() {
                     @Override
                     public void run() {
-                        printMinorActionText("(" + message.next() + ")");
+                        printMinorActionText("(" + message.args.next() + ")");
                     }
                 });
                 break;
             case "center":
                 break;
             case "start":
-                handleVolatileStatusStart(message, true);
+                handleVolatileStatusStart(message.args, true);
                 break;
             case "end":
-                handleVolatileStatusStart(message, false);
+                handleVolatileStatusStart(message.args, false);
                 break;
 //                |-hitcount|p1a: Toxicroak|1 TODO
             //    |-prepare|p2a: Arceus|Shadow Force|p1a: Mandibuzz
         }
     }
 
-    private void handleAbility(final MessageIterator message, final boolean start) {
-        String rawId = message.next();
+    private void handleAbility(final ServerMessage.Args args, final boolean start) {
+        String rawId = args.next();
         final PokemonId pokemonId = PokemonId.fromRawId(getPlayer(rawId), rawId);
-        final String ability = message.hasNext() ? message.next() : null;
-        String extra = message.hasNext() ? message.next() : null;
+        final String ability = args.hasNext() ? args.next() : null;
+        String extra = args.hasNext() ? args.next() : null;
         Player player = null;
         if ("unnerve".equalsIgnoreCase(ability))
             player = getPlayer(extra);
@@ -489,12 +466,12 @@ public abstract class BattleRoomMessageHandler extends RoomMessageHandler {
         });
     }
 
-    private void handleVolatileStatusStart(MessageIterator message, final boolean start) {
-        String rawId = message.next();
+    private void handleVolatileStatusStart(ServerMessage.Args args, final boolean start) {
+        String rawId = args.next();
         final PokemonId id = PokemonId.fromRawId(getPlayer(rawId), rawId);
         if (!id.isInBattle) return;
-        final String effect = message.next();
-        String of = message.hasNext() ? message.next() : null;
+        final String effect = args.next();
+        String of = args.hasNext() ? args.next() : null;
 
         final Spanned text = mBattleTextBuilder.volatileStatus(id, effect, of, start);
 
@@ -512,10 +489,10 @@ public abstract class BattleRoomMessageHandler extends RoomMessageHandler {
         });
     }
 
-    private void handleFail(MessageIterator message) {
-        String rawId = message.next();
+    private void handleFail(ServerMessage.Args args) {
+        String rawId = args.next();
         final PokemonId pokemonId = PokemonId.fromRawId(getPlayer(rawId), rawId);
-        String action = message.hasNext() ? message.next() : null;
+        String action = args.hasNext() ? args.next() : null;
         final Spanned text = mBattleTextBuilder.fail(pokemonId, action);
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
@@ -526,12 +503,12 @@ public abstract class BattleRoomMessageHandler extends RoomMessageHandler {
         });
     }
 
-    private void handleMiss(MessageIterator message) {
-        String rawId = message.next();
+    private void handleMiss(ServerMessage.Args args) {
+        String rawId = args.next();
         final PokemonId pokemonId = PokemonId.fromRawId(getPlayer(rawId), rawId);
         final PokemonId targetPokeId;
-        if (message.hasNext()) {
-            rawId = message.hasNext() ? message.next() : null;
+        if (args.hasNext()) {
+            rawId = args.hasNext() ? args.next() : null;
             targetPokeId = PokemonId.fromRawId(getPlayer(rawId), rawId);
         } else {
             targetPokeId = null;
@@ -546,20 +523,20 @@ public abstract class BattleRoomMessageHandler extends RoomMessageHandler {
         });
     }
 
-    private void handleHealthChange(MessageIterator message, boolean damage) {
-        int index = message.getIndex();
+    private void handleHealthChange(ServerMessage.Args args, boolean damage) {
+        int index = args.getIndex();
         try {
-            String rawId = message.next();
+            String rawId = args.next();
             final PokemonId id = PokemonId.fromRawId(getPlayer(rawId), rawId);
-            String rawCondition = message.next();
+            String rawCondition = args.next();
             final Condition condition = new Condition(rawCondition);
 
             String mainKey = damage ? "damage" : "heal";
             String from = null;
             PokemonId of = null;
-            if (message.hasNext()) from = message.next();
-            if (message.hasNext()) {
-                rawId = message.next();
+            if (args.hasNext()) from = args.next();
+            if (args.hasNext()) {
+                rawId = args.next();
                 if (rawId.contains("[wisher]"))
                     of = PokemonId.mockNameOnly(rawId.substring("[wisher]".length() + 1));
                 else
@@ -578,16 +555,16 @@ public abstract class BattleRoomMessageHandler extends RoomMessageHandler {
             });
         } catch (Exception e) {
             e.printStackTrace();
-            message.moveTo(index);
-            printInactiveText(String.format("Could not handle message (%s)\n%s", e.toString(), message.nextTillEnd()));
+            args.moveTo(index);
+            printInactiveText(String.format("Could not handle message (%s)\n%s", e.toString(), args.nextTillEnd()));
         }
     }
 
-    private void handleStatus(MessageIterator message, final boolean healed) {
-        String rawId = message.next();
+    private void handleStatus(ServerMessage.Args args, final boolean healed) {
+        String rawId = args.next();
         final PokemonId id = PokemonId.fromRawId(getPlayer(rawId), rawId);
-        final String status = message.next();
-        final String action = message.hasNext() ? message.next() : null;
+        final String status = args.next();
+        final String action = args.hasNext() ? args.next() : null;
 
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
@@ -598,13 +575,13 @@ public abstract class BattleRoomMessageHandler extends RoomMessageHandler {
         });
     }
 
-    private void handleStatChange(MessageIterator message, final boolean boost) {
+    private void handleStatChange(ServerMessage.Args args, final boolean boost) {
         // POKEMON|STAT|AMOUNT
-        String rawId = message.next();
+        String rawId = args.next();
         final PokemonId id = PokemonId.fromRawId(getPlayer(rawId), rawId);
 
-        final String stat = message.next();
-        final int amount = (boost ? 1 : -1) * Integer.parseInt(message.next());
+        final String stat = args.next();
+        final int amount = (boost ? 1 : -1) * Integer.parseInt(args.next());
 
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
@@ -615,14 +592,14 @@ public abstract class BattleRoomMessageHandler extends RoomMessageHandler {
         });
     }
 
-    private void handleSetBoost(MessageIterator message) {
-        String rawId = message.next();
+    private void handleSetBoost(ServerMessage.Args args) {
+        String rawId = args.next();
         final PokemonId id = PokemonId.fromRawId(getPlayer(rawId), rawId);
 
-        final String stat = message.next();
-        final int amount = Integer.parseInt(message.next());
+        final String stat = args.next();
+        final int amount = Integer.parseInt(args.next());
 
-        final String from = message.hasNext() ? message.next() : null;
+        final String from = args.hasNext() ? args.next() : null;
 
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
@@ -633,9 +610,9 @@ public abstract class BattleRoomMessageHandler extends RoomMessageHandler {
         });
     }
 
-    private void handleWeather(MessageIterator message) {
-        final String weather = message.next();
-        final String action = message.hasNext() ? message.next() : null;
+    private void handleWeather(ServerMessage.Args args) {
+        final String weather = args.next();
+        final String action = args.hasNext() ? args.next() : null;
 
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
@@ -650,9 +627,9 @@ public abstract class BattleRoomMessageHandler extends RoomMessageHandler {
         });
     }
 
-    private void handleSide(MessageIterator message, final boolean start) {
-        final Player player = getPlayer(message.next());
-        final String side = message.next();
+    private void handleSide(ServerMessage.Args args, final boolean start) {
+        final Player player = getPlayer(args.next());
+        final String side = args.next();
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
@@ -663,8 +640,8 @@ public abstract class BattleRoomMessageHandler extends RoomMessageHandler {
         });
     }
 
-    private void handleMoveEffect(MessageIterator message, final String type) {
-        String rawId = message.next();
+    private void handleMoveEffect(ServerMessage.Args args, final String type) {
+        String rawId = args.next();
         final PokemonId pokemonId = PokemonId.fromRawId(getPlayer(rawId), rawId);
 
         mActionQueue.enqueueMinorAction(new Runnable() {

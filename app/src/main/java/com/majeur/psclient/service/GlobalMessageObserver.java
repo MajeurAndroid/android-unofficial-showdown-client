@@ -10,17 +10,19 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
-public abstract class GlobalMessageHandler extends ShowdownMessageHandler {
+public abstract class GlobalMessageObserver extends MessageObserver {
 
-    private static final String TAG = GlobalMessageHandler.class.getSimpleName();
+    private static final String TAG = GlobalMessageObserver.class.getSimpleName();
 
     private String mUserName;
+
+    public GlobalMessageObserver() {
+        setObserveAll(true);
+    }
 
     private String getUserId() {
         return mUserName.toLowerCase().replace("[^a-z0-9]", "");
@@ -30,51 +32,36 @@ public abstract class GlobalMessageHandler extends ShowdownMessageHandler {
         return getUserId().startsWith("guest");
     }
 
-    public void retryServerConnection() {
-        getShowdownService().retryShowdownServerConnection();
-    }
-
     public void searchForBattle() {
-        getShowdownService().sendGlobalCommand("utm", "null");
-        getShowdownService().sendGlobalCommand("search", "gen7randombattle");
+        getService().sendGlobalCommand("utm", "null");
+        getService().sendGlobalCommand("search", "gen7randombattle");
     }
 
     @Override
-    protected int getPriority() {
-        return 1;
-    }
-
-    @Override
-    public boolean shouldHandleMessages(String messages) {
-        return messages.charAt(0) != '>';
-    }
-
-    @Override
-    public void onHandleMessage(MessageIterator message) {
-        String command = message.next();
-        switch (command) {
+    public boolean onMessage(ServerMessage message) {
+        switch (message.command) {
             case "challstr":
-                processChallengeString(message);
-                break;
+                processChallengeString(message.args);
+                return true;
             case "updateuser":
-                processUpdateUser(message);
-                break;
+                processUpdateUser(message.args);
+                return true;
             case "queryresponse":
-                processQueryResponse(message);
-                break;
+                processQueryResponse(message.args);
+                return true;
             case "formats":
-                processAvailableFormats(message);
-                break;
+                processAvailableFormats(message.args);
+                return true;
             case "popup":
-                onShowPopup(message.next());
-                break;
+                onShowPopup(message.args.next());
+                return true;
             case "updatesearch":
-                processUpdateSearch(message);
+                processUpdateSearch(message.args);
 
                 //final String searchStatus = messageDetail.substring(messageDetail.indexOf('|') + 1);
                 //BroadcastSender.get(this).sendBroadcastFromMyApplication(
                 //        BroadcastSender.EXTRA_UPDATE_SEARCH, searchStatus);
-                break;
+                return true;
 
             case "pm":
             case "usercount":
@@ -82,29 +69,41 @@ public abstract class GlobalMessageHandler extends ShowdownMessageHandler {
                 //final String challengesStatus = messageDetail.substring(messageDetail.indexOf('|') + 1);
                 //BroadcastSender.get(this).sendBroadcastFromMyApplication(
                 //        BroadcastSender.EXTRA_UPDATE_CHALLENGE, challengesStatus);
-                break;
+                return true;
+            case "error":
+                if (message.args.next().equals("network"))
+                    onNetworkError();
+                return true;
+            case "init":
+                onRoomInit(message.roomId, message.args.next());
+                return false; // Must not consume init/deinit commands !
+            case "deinit":
+                onRoomDeinit(message.roomId);
+                return false; // Must not consume init/deinit commands !
+            default:
+                return false;
         }
     }
 
-    private void processChallengeString(MessageIterator message) {
-        getShowdownService().setChallengeString(message.nextTillEnd());
-        getShowdownService().tryCookieSignIn();
+    private void processChallengeString(ServerMessage.Args args) {
+        getService().setChallengeString(args.nextTillEnd());
+        getService().tryCookieSignIn();
     }
 
-    private void processUpdateUser(MessageIterator message) {
-        String username = message.next();
-        boolean isGuest = "0".equals(message.next());
-        String avatar = message.next();
+    private void processUpdateUser(ServerMessage.Args args) {
+        String username = args.next();
+        boolean isGuest = "0".equals(args.next());
+        String avatar = args.next();
         avatar = ("000" + avatar).substring(avatar.length());
 
         mUserName = username;
-        getShowdownService().putSharedData("username", username);
+        getService().putSharedData("username", username);
         onUserChanged(username, isGuest, avatar);
     }
 
-    private void processQueryResponse(MessageIterator message) {
-        String query = message.next();
-        String queryContent = message.next();
+    private void processQueryResponse(ServerMessage.Args args) {
+        String query = args.next();
+        String queryContent = args.next();
         switch (query) {
             case "rooms":
                 processRoomsQueryResponse(queryContent);
@@ -132,8 +131,8 @@ public abstract class GlobalMessageHandler extends ShowdownMessageHandler {
 
         try {
             JSONObject jsonObject = new JSONObject(queryContent);
-            getShowdownService().putSharedData("userCount", jsonObject.getInt("userCount"));
-            getShowdownService().putSharedData("battleCount", jsonObject.getInt("battleCount"));
+            getService().putSharedData("userCount", jsonObject.getInt("userCount"));
+            getService().putSharedData("battleCount", jsonObject.getInt("battleCount"));
 
             JSONArray jsonArray = jsonObject.getJSONArray("official");
             int N = jsonArray.length();
@@ -188,8 +187,8 @@ public abstract class GlobalMessageHandler extends ShowdownMessageHandler {
         }
     }
 
-    private void processAvailableFormats(MessageIterator message) {
-        String rawText = message.nextTillEnd();
+    private void processAvailableFormats(ServerMessage.Args args) {
+        String rawText = args.nextTillEnd();
         List<BattleFormat.Category> battleFormatCategories = new LinkedList<>();
         BattleFormat.Category currentCategory = null;
         int separator;
@@ -216,14 +215,14 @@ public abstract class GlobalMessageHandler extends ShowdownMessageHandler {
             rawText = rawText.substring(separator + 1);
         }
 
-        getShowdownService().putSharedData("formats", battleFormatCategories);
+        getService().putSharedData("formats", battleFormatCategories);
 
         onBattleFormatsChanged(battleFormatCategories);
     }
 
-    private void processUpdateSearch(MessageIterator message) {
+    private void processUpdateSearch(ServerMessage.Args args) {
         try {
-            JSONObject jsonObject = new JSONObject(message.nextTillEnd());
+            JSONObject jsonObject = new JSONObject(args.nextTillEnd());
             JSONArray searchingArray = jsonObject.getJSONArray("searching");
             JSONObject games = jsonObject.optJSONObject("games");
             if (games == null || games.length() == 0) return;
@@ -256,7 +255,13 @@ public abstract class GlobalMessageHandler extends ShowdownMessageHandler {
 
     protected abstract void onAvailableBattleRoomsChanged(AvailableBattleRoomsInfo availableRoomsInfo);
 
+    protected abstract void onRoomInit(String roomId, String type);
+
+    protected abstract void onRoomDeinit(String roomId);
+
+    protected abstract void onNetworkError();
+
     public void fakeBattle() {
-        getShowdownService().fakeBattle();
+        getService().fakeBattle();
     }
 }

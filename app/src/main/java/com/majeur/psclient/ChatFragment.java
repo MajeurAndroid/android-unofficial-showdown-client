@@ -2,11 +2,8 @@ package com.majeur.psclient;
 
 import android.content.Context;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
-
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -20,14 +17,19 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 
 import com.majeur.psclient.model.RoomInfo;
-import com.majeur.psclient.service.RoomMessageHandler;
+import com.majeur.psclient.service.RoomMessageObserver;
 import com.majeur.psclient.service.ShowdownService;
 
 import java.util.List;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+
 public class ChatFragment extends Fragment implements MainActivity.Callbacks {
 
     private InputMethodManager mInputMethodManager;
+    private ShowdownService mShowdownService;
 
     private TextView mChatTextView;
     private ScrollView mChatScrollView;
@@ -36,6 +38,17 @@ public class ChatFragment extends Fragment implements MainActivity.Callbacks {
     private ImageButton mTitleButton;
     private EditText mMessageView;
     private ImageButton mSendMessageView;
+
+    private String mObservedRoomId;
+
+    public String getObservedRoomId() {
+        return mObservedRoomId;
+    }
+
+    public void setObservedRoomId(String observedRoomId) {
+        mObservedRoomId = observedRoomId;
+        mObserver.observeForRoomId(observedRoomId);
+    }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -64,10 +77,13 @@ public class ChatFragment extends Fragment implements MainActivity.Callbacks {
         mTitleButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (mRoomMessageHandler.roomJoined())
-                    mRoomMessageHandler.leaveRoom();
+                if (mShowdownService == null) return;
+
+                Log.e("", mObserver.roomJoined() + " " + mShowdownService);
+                if (mObserver.roomJoined())
+                    mShowdownService.sendRoomCommand(mObservedRoomId, "leave", null);
                 else
-                    mRoomMessageHandler.requestAvailableRoomsInfo();
+                    mShowdownService.sendGlobalCommand("cmd", "rooms");
             }
         });
 
@@ -90,37 +106,35 @@ public class ChatFragment extends Fragment implements MainActivity.Callbacks {
         });
 
         // Set the UI to the "no room joined" state
-        mRoomMessageHandler.onRoomDeInit();
+        mObserver.onRoomDeInit();
     }
 
     private void sendMessageIfAny() {
         String message = mMessageView.getText().toString();
         if (message.length() == 0 || TextUtils.isEmpty(message))
             return;
-        mRoomMessageHandler.sendChatMessage(message);
+        mObserver.sendChatMessage(message);
         mMessageView.getText().clear();
         mInputMethodManager.hideSoftInputFromWindow(mMessageView.getWindowToken(), 0);
     }
 
     @Override
-    public void onShowdownServiceBound(ShowdownService showdownService) {
-        showdownService.registerMessageHandler(mRoomMessageHandler);
+    public void onShowdownServiceBound(ShowdownService service) {
+        mShowdownService = service;
+        service.registerMessageObserver(mObserver, false);
     }
 
     @Override
-    public void onShowdownServiceUnBound() {
-        mRoomMessageHandler.release();
+    public void onShowdownServiceWillUnbound(ShowdownService service) {
+        mShowdownService = null;
+        service.unregisterMessageObserver(mObserver);
     }
 
     void onAvailableRoomsChanged(RoomInfo[] officialRooms, RoomInfo[] chatRooms) {
         JoinRoomDialog.newInstance(officialRooms, chatRooms).show(getFragmentManager(), "");
     }
 
-    public void joinRoom(String roomId) {
-        mRoomMessageHandler.joinRoom(roomId);
-    }
-
-    private RoomMessageHandler mRoomMessageHandler = new RoomMessageHandler() {
+    private RoomMessageObserver mObserver = new RoomMessageObserver() {
 
         @Override
         public void onRoomInit() {

@@ -10,7 +10,6 @@ import android.text.SpannedString;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
-import android.util.Log;
 
 import com.majeur.psclient.util.TextTagSpan;
 import com.majeur.psclient.util.Utils;
@@ -20,16 +19,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public abstract class RoomMessageHandler extends ShowdownMessageHandler {
+public abstract class RoomMessageObserver extends MessageObserver {
 
-    private static final String TAG = RoomMessageHandler.class.getSimpleName();
+    private static final String TAG = RoomMessageObserver.class.getSimpleName();
 
-    protected String mRoomId;
     private List<String> mCurrentUsers;
     private Map<String, Integer> mUsernameColorCache;
     private boolean mRoomJoined;
 
-    public RoomMessageHandler() {
+    public RoomMessageObserver() {
         mCurrentUsers = new ArrayList<>();
         mUsernameColorCache = new HashMap<>();
     }
@@ -38,87 +36,34 @@ public abstract class RoomMessageHandler extends ShowdownMessageHandler {
         return mRoomJoined;
     }
 
-    public void joinRoom(String roomId) {
-        if (roomId == null) return;
-        if (mRoomJoined) {
-            Log.e(TAG, "Trying to join a new room without leaving current joined, ignoring request");
-            return;
-        }
-
-        mRoomId = roomId;
-        getShowdownService().sendGlobalCommand("join", roomId);
-    }
-
-    protected void setAutoJoinedRoom(String roomId) {
-        leaveRoomNow();
-        mRoomId = roomId;
-    }
-
-    public void leaveRoom() {
-        getShowdownService().sendGlobalCommand("leave", mRoomId);
-    }
-
-    protected void leaveRoomNow() {
-        if (mRoomId == null) return;
-        leaveRoom();
-        mRoomJoined = false;
-        onRoomDeInit();
-        mRoomId = null;
-    }
-
-    public void requestAvailableRoomsInfo() {
-        getShowdownService().sendGlobalCommand("cmd", "rooms");
-    }
-
     public void sendChatMessage(String message) {
-        getShowdownService().sendRoomMessage(mRoomId, message);
+        getService().sendRoomMessage(observedRoomId(), message);
     }
 
     @Override
-    public boolean shouldHandleMessages(String messages) {
-        return mRoomId != null && ((mRoomId.equals("lobby") && messages.charAt(0) != '>') || messages.startsWith(">" + mRoomId));
-    }
-
-    @Override
-    protected void onHandleHeader(String header) {
-        // Room id header, pass
-    }
-
-    @Override
-    public void onHandleMessage(MessageIterator message) {
-        processCommand(message);
-    }
-
-    public abstract void onPrintText(CharSequence text);
-
-    public void onPrintText(String text) {
-        onPrintText(new SpannedString(text));
-    }
-
-    private void processCommand(MessageIterator message) {
-        String command = message.next().toLowerCase();
-        switch (command) {
+    public boolean onMessage(ServerMessage message) {
+        switch (message.command) {
             case "init":
                 mUsernameColorCache.clear();
                 mRoomJoined = true;
                 onRoomInit();
                 break;
             case "title":
-                onRoomTitleChanged(message.next());
+                onRoomTitleChanged(message.args.next());
                 break;
             case "users":
-                initializeUserList(message);
+                initializeUserList(message.args);
                 break;
             case "j":
             case "join":
-                String username = message.next();
+                String username = message.args.next();
                 mCurrentUsers.add(username);
                 onUpdateUsers(mCurrentUsers);
                 printUserRelatedMessage(username + " joined");
                 break;
             case "l":
             case "leave":
-                username = message.next();
+                username = message.args.next();
                 mCurrentUsers.remove(username);
                 onUpdateUsers(mCurrentUsers);
                 printUserRelatedMessage(username + " leaved");
@@ -134,15 +79,15 @@ public abstract class RoomMessageHandler extends ShowdownMessageHandler {
                 break;
             case "n":
             case "name":
-                handleNameChange(message);
+                handleNameChange(message.args);
                 break;
             case "c":
             case "chat":
-                handleChatMessage(message);
+                handleChatMessage(message.args);
                 break;
             case "c:":
-                message.next(); // Skipping time stamp
-                handleChatMessage(message);
+                message.args.next(); // Skipping time stamp
+                handleChatMessage(message.args);
                 break;
             case ":":
                 // Time stamp, we aren't using it yet
@@ -152,26 +97,26 @@ public abstract class RoomMessageHandler extends ShowdownMessageHandler {
                 onPrintText("A battle started between XXX and YYY");
                 break;
             case "error":
-                printErrorMessage(message.next());
+                printErrorMessage(message.args.next());
                 break;
             case "raw":
-                String s = message.next();
-                if (s.contains("http")) break; // skipping complex Html formatted messages
+                String s = message.args.nextTillEnd();
+                if (s.contains("href")) break; // skipping complex Html formatted messages
                 onPrintText(Html.fromHtml(s));
                 break;
             case "deinit":
                 mRoomJoined = false;
                 onRoomDeInit();
-                mRoomId = null;
                 break;
             case "noinit":
                 //TODO
                 break;
         }
+        return true;
     }
 
-    private void initializeUserList(MessageIterator message) {
-        String rawUsers = message.next();
+    private void initializeUserList(ServerMessage.Args args) {
+        String rawUsers = args.next();
         int separator = rawUsers.indexOf(',');
         int count = Integer.parseInt(rawUsers.substring(0, separator));
         mCurrentUsers = new ArrayList<>(count);
@@ -185,15 +130,15 @@ public abstract class RoomMessageHandler extends ShowdownMessageHandler {
         onUpdateUsers(mCurrentUsers);
     }
 
-    private void handleNameChange(MessageIterator message) {
-        String user = message.next();
-        String oldName = message.next();
+    private void handleNameChange(ServerMessage.Args args) {
+        String user = args.next();
+        String oldName = args.next();
         printUserRelatedMessage("User " + oldName + " changed its name and is now " + user);
     }
 
-    private void handleChatMessage(MessageIterator message) {
-        String user = message.next().substring(1);
-        String userMessage = message.nextTillEnd();
+    private void handleChatMessage(ServerMessage.Args args) {
+        String user = args.next().substring(1);
+        String userMessage = args.nextTillEnd();
 
         Spannable spannable = new SpannableString(user + ": " + userMessage);
         int textColor = obtainUsernameColor(user);
@@ -230,6 +175,12 @@ public abstract class RoomMessageHandler extends ShowdownMessageHandler {
     }
 
     public abstract void onRoomInit();
+
+    public abstract void onPrintText(CharSequence text);
+
+    public void onPrintText(String text) {
+        onPrintText(new SpannedString(text));
+    }
 
     public abstract void onRoomTitleChanged(String title);
 

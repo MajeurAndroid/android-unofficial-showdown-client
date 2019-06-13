@@ -9,7 +9,6 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.BaseExpandableListAdapter;
 import android.widget.ExpandableListView;
 import android.widget.ImageView;
@@ -21,7 +20,7 @@ import com.majeur.psclient.io.DexIconLoader;
 import com.majeur.psclient.model.BattleFormat;
 import com.majeur.psclient.model.Team;
 import com.majeur.psclient.service.ShowdownService;
-import com.majeur.psclient.service.TeamsMessageHandler;
+import com.majeur.psclient.service.TeamsMessageObserver;
 import com.majeur.psclient.util.Callback;
 import com.majeur.psclient.util.UserTeamsStore;
 
@@ -36,7 +35,7 @@ import static com.majeur.psclient.model.Id.toId;
 
 public class TeamsFragment extends Fragment implements MainActivity.Callbacks {
 
-    private TeamsMessageHandler mMessageHandler = new TeamsMessageHandler();
+    private TeamsMessageObserver mObserver = new TeamsMessageObserver();
     private UserTeamsStore mUserTeamsStore;
     private DexIconLoader mDexIconLoader;
 
@@ -52,13 +51,13 @@ public class TeamsFragment extends Fragment implements MainActivity.Callbacks {
     }
 
     @Override
-    public void onShowdownServiceBound(ShowdownService showdownService) {
-        showdownService.registerMessageHandler(mMessageHandler);
+    public void onShowdownServiceBound(ShowdownService service) {
+        service.registerMessageObserver(mObserver, false);
     }
 
     @Override
-    public void onShowdownServiceUnBound() {
-        mMessageHandler.release();
+    public void onShowdownServiceWillUnbound(ShowdownService service) {
+        service.unregisterMessageObserver(mObserver);
     }
 
     @Override
@@ -102,7 +101,7 @@ public class TeamsFragment extends Fragment implements MainActivity.Callbacks {
         view.findViewById(R.id.button_new_team).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                List<BattleFormat.Category> battleFormatCategories = mMessageHandler.getBattleFormatCategories();
+                List<BattleFormat.Category> battleFormatCategories = mObserver.getBattleFormatCategories();
                 ImportTeamDialog.newInstance(TeamsFragment.this, battleFormatCategories)
                         .show(getFragmentManager(), "");
             }

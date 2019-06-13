@@ -2,13 +2,11 @@ package com.majeur.psclient;
 
 import android.graphics.Typeface;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.DialogFragment;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,6 +19,10 @@ import android.widget.TextView;
 import com.majeur.psclient.model.RoomInfo;
 
 import java.util.Arrays;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.DialogFragment;
 
 import static com.majeur.psclient.model.Id.toId;
 
@@ -69,7 +71,8 @@ public class JoinRoomDialog extends DialogFragment {
                 RoomInfo roomInfo = (RoomInfo) mListAdapter.getItem(i);
                 String roomId = toId(roomInfo.name);
                 MainActivity activity = (MainActivity) getActivity();
-                activity.getChatFragment().joinRoom(roomId);
+                activity.getShowdownService().sendGlobalCommand("join", roomId);
+                Log.e("rerere", "fffsd");
                 dismiss();
             }
         });
