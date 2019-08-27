@@ -56,7 +56,8 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:gravity="center"
-        android:textColor="#000000"
-        android:text="No team imported yet"/>
+        android:textColor="@android:color/black"
+        android:textSize="16sp"
+        android:text="Tap the add button to create\nor import a team"/>
 
 </LinearLayout>

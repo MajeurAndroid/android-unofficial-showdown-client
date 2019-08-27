@@ -1,15 +1,18 @@
 package com.majeur.psclient.model;
 
 import android.text.TextUtils;
-import android.util.Log;
 
+import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
 
 import static com.majeur.psclient.model.Id.toId;
+import static com.majeur.psclient.model.Id.toIdSafe;
 import static com.majeur.psclient.util.Utils.parseWithDefault;
 
-public class Team {
+public class Team implements Serializable {
+
+    private static int sUniqueIdInc = 1;
 
     public static class Group {
 
@@ -23,25 +26,35 @@ public class Team {
     }
 
     public static Team dummyTeam(String label) {
-        List<Poke> pokemons = new LinkedList<>();
-        for (int i = 0; i < 6; i++) pokemons.add(Poke.dummyPokemon());
+        List<Pokemon> pokemons = new LinkedList<>();
+        for (int i = 0; i < 6; i++) pokemons.add(Pokemon.dummyPokemon());
         return new Team(label, pokemons, null);
     }
 
+    public final int uniqueId;
     public final String label;
     public final String format;
-    public final List<Poke> pokemons;
+    public final List<Pokemon> pokemons;
 
-    public Team(String label, List<Poke> pokemons, String format) {
+    public Team(int uniqueId, String label, List<Pokemon> pokemons, String format) {
+        this.uniqueId = uniqueId;
         this.label = label;
         this.pokemons = pokemons;
         this.format = format;
     }
 
+    public Team(String label, List<Pokemon> pokemons, String format) {
+        this(sUniqueIdInc++, label, pokemons, format);
+    }
+
+    public boolean isEmpty() {
+        return pokemons.isEmpty();
+    }
+
     public String pack() {
         StringBuilder buf = new StringBuilder();
 
-        for (Poke set : pokemons) {
+        for (Pokemon set : pokemons) {
             if (buf.length() > 0) buf.append("]");
 
             // name
@@ -53,18 +66,10 @@ public class Team {
             buf.append("|").append(blank ? "" : set.species);
 
             // item
-            buf.append("|").append(toId(set.item));
+            buf.append("|").append(toIdSafe(set.item));
 
             // ability
-                if (set.abilitySlot == null || set.abilitySlot.equals("0")) {
-                    buf.append("|");
-                } else if (set.abilitySlot.equals("1")) {
-                    buf.append("|1");
-                } else if (set.abilitySlot.equals("H")) {
-                    buf.append("|H");
-                } else {
-                    buf.append("|").append(id);
-                }
+            buf.append("|").append(toIdSafe(set.ability));
 
             // moves
             buf.append("|").append(TextUtils.join(",", set.moves));
@@ -151,56 +156,57 @@ public class Team {
     }
 
     public static Team unpack(final String label, String buf) {
-        if (buf == null) return null;
+        if (buf == null || TextUtils.isEmpty(buf))
+            return new Team(label, new LinkedList<Pokemon>(), null);
 
         if (buf.charAt(0) == '[' && buf.charAt(buf.length() - 1) == ']') {
             // TODO buf = this.packTeam(JSON.parse(buf));
         }
 
-        List<Poke> team = new LinkedList<>();
+        List<Pokemon> team = new LinkedList<>();
         int i = 0, j = 0;
 
         // limit to 24
         for (int count = 0; count < 24; count++) {
-            Poke poke = new Poke();
-            team.add(poke);
+            Pokemon pokemon = new Pokemon();
+            team.add(pokemon);
 
             // name
             j = buf.indexOf('|', i);
             if (j < 0) return null;
-            poke.name = buf.substring(i, j);
+            pokemon.name = buf.substring(i, j);
             i = j + 1;
 
             // species
             j = buf.indexOf('|', i);
             if (j < 0) return null;
-            poke.species = buf.substring(i, j);
-            if (poke.species.equals(""))
-                poke.species = poke.name;
+            pokemon.species = buf.substring(i, j);
+            if (pokemon.species.equals(""))
+                pokemon.species = pokemon.name;
             i = j + 1;
 
             // item
             j = buf.indexOf('|', i);
             if (j < 0) return null;
-            poke.item = buf.substring(i, j);
+            pokemon.item = buf.substring(i, j);
             i = j + 1;
 
             // ability
             j = buf.indexOf('|', i);
             if (j < 0) return null;
-            poke.ability = buf.substring(i, j);
+            pokemon.ability = buf.substring(i, j);
             i = j + 1;
 
             // moves
             j = buf.indexOf('|', i);
             if (j < 0) return null;
-            poke.moves = buf.substring(i, j).split(",", 24);//.filter(x => x);
+            pokemon.moves = buf.substring(i, j).split(",", 24);//.filter(x => x);
             i = j + 1;
 
             // nature
             j = buf.indexOf('|', i);
             if (j < 0) return null;
-            poke.nature = buf.substring(i, j);
+            pokemon.nature = buf.substring(i, j);
             i = j + 1;
 
             // evs
@@ -208,19 +214,19 @@ public class Team {
             if (j < 0) return null;
             if (j != i) {
                 String[] evs = buf.substring(i, j).split(",", 6);
-                poke.evs.hp = parseWithDefault(evs[0], 0);
-                poke.evs.atk = parseWithDefault(evs[1], 0);
-                poke.evs.def = parseWithDefault(evs[2], 0);
-                poke.evs.spa = parseWithDefault(evs[3], 0);
-                poke.evs.spd = parseWithDefault(evs[4], 0);
-                poke.evs.spe = parseWithDefault(evs[5], 0);
+                pokemon.evs.hp = parseWithDefault(evs[0], 0);
+                pokemon.evs.atk = parseWithDefault(evs[1], 0);
+                pokemon.evs.def = parseWithDefault(evs[2], 0);
+                pokemon.evs.spa = parseWithDefault(evs[3], 0);
+                pokemon.evs.spd = parseWithDefault(evs[4], 0);
+                pokemon.evs.spe = parseWithDefault(evs[5], 0);
             }
             i = j + 1;
 
             // gender
             j = buf.indexOf('|', i);
             if (j < 0) return null;
-            if (i != j) poke.gender = buf.substring(i, j);
+            if (i != j) pokemon.gender = buf.substring(i, j);
             i = j + 1;
 
             // ivs
@@ -228,25 +234,25 @@ public class Team {
             if (j < 0) return null;
             if (j != i) {
                 String[] ivs = buf.substring(i, j).split(",", 6);
-                poke.ivs.hp  = parseWithDefault(ivs[0], 31);
-                poke.ivs.atk = parseWithDefault(ivs[1], 31);
-                poke.ivs.def = parseWithDefault(ivs[2], 31);
-                poke.ivs.spa = parseWithDefault(ivs[3], 31);
-                poke.ivs.spd = parseWithDefault(ivs[4], 31);
-                poke.ivs.spe = parseWithDefault(ivs[5], 31);
+                pokemon.ivs.hp = parseWithDefault(ivs[0], 31);
+                pokemon.ivs.atk = parseWithDefault(ivs[1], 31);
+                pokemon.ivs.def = parseWithDefault(ivs[2], 31);
+                pokemon.ivs.spa = parseWithDefault(ivs[3], 31);
+                pokemon.ivs.spd = parseWithDefault(ivs[4], 31);
+                pokemon.ivs.spe = parseWithDefault(ivs[5], 31);
             }
             i = j + 1;
 
             // shiny
             j = buf.indexOf('|', i);
             if (j < 0) return null;
-            if (i != j) poke.shiny = true;
+            if (i != j) pokemon.shiny = true;
             i = j + 1;
 
             // level
             j = buf.indexOf('|', i);
             if (j < 0) return null;
-            if (i != j) poke.level = Integer.parseInt(buf.substring(i, j));
+            if (i != j) pokemon.level = Integer.parseInt(buf.substring(i, j));
             i = j + 1;
 
             // happiness
@@ -258,7 +264,7 @@ public class Team {
                 if (i != j) misc = buf.substring(i, j).split(",", 3);
             }
             if (misc != null) {
-                poke.happiness = parseWithDefault(misc[0], 255);
+                pokemon.happiness = parseWithDefault(misc[0], 255);
 //                poke.hpType = misc[1];
 //                poke.pokeball = misc[2];TODO
             }

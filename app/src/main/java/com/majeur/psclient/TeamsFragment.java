@@ -1,12 +1,16 @@
 package com.majeur.psclient;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.view.ContextMenu;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseExpandableListAdapter;
@@ -15,12 +19,12 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.majeur.psclient.io.DataLoader;
 import com.majeur.psclient.io.DexIconLoader;
 import com.majeur.psclient.model.BattleFormat;
 import com.majeur.psclient.model.Team;
 import com.majeur.psclient.service.ShowdownService;
-import com.majeur.psclient.service.TeamsMessageObserver;
 import com.majeur.psclient.util.Callback;
 import com.majeur.psclient.util.UserTeamsStore;
 
@@ -35,7 +39,7 @@ import static com.majeur.psclient.model.Id.toId;
 
 public class TeamsFragment extends Fragment implements MainActivity.Callbacks {
 
-    private TeamsMessageObserver mObserver = new TeamsMessageObserver();
+    private ShowdownService mService;
     private UserTeamsStore mUserTeamsStore;
     private DexIconLoader mDexIconLoader;
 
@@ -51,13 +55,13 @@ public class TeamsFragment extends Fragment implements MainActivity.Callbacks {
     }
 
     @Override
-    public void onShowdownServiceBound(ShowdownService service) {
-        service.registerMessageObserver(mObserver, false);
+    public void onServiceBound(ShowdownService service) {
+        mService = service;
     }
 
     @Override
-    public void onShowdownServiceWillUnbound(ShowdownService service) {
-        service.unregisterMessageObserver(mObserver);
+    public void onServiceWillUnbound(ShowdownService service) {
+        mService = null;
     }
 
     @Override
@@ -92,20 +96,66 @@ public class TeamsFragment extends Fragment implements MainActivity.Callbacks {
         mExpandableListView.setEmptyView(view.findViewById(R.id.empty_hint_view));
         mExpandableListView.setOnChildClickListener(new ExpandableListView.OnChildClickListener() {
             @Override
-            public boolean onChildClick(ExpandableListView expandableListView, View view, int i, int i1, long l) {
-                startActivity(new Intent(getContext(), TeamEditActivity.class));
+            public boolean onChildClick(ExpandableListView expandableListView, View view, int i, int j, long id) {
+                Team team = ((TeamListAdapter) expandableListView.getExpandableListAdapter()).getChild(i, j);
+                Intent intent = new Intent(getContext(), TeamEditActivity.class);
+                intent.putExtra(TeamEditActivity.INTENT_EXTRA_TEAM, team);
+                startActivityForResult(intent, TeamEditActivity.INTENT_REQUEST_CODE);
                 return true;
+            }
+        });
+        mExpandableListView.setOnCreateContextMenuListener(new View.OnCreateContextMenuListener() {
+            @Override
+            public void onCreateContextMenu(ContextMenu contextMenu, View view, ContextMenu.ContextMenuInfo contextMenuInfo) {
+                ExpandableListView.ExpandableListContextMenuInfo info =
+                        (ExpandableListView.ExpandableListContextMenuInfo) contextMenuInfo;
+                int type = ExpandableListView.getPackedPositionType(info.packedPosition);
+                if (type == ExpandableListView.PACKED_POSITION_TYPE_CHILD)
+                    contextMenu.add(0, 0, 0, "Delete");
             }
         });
 
         view.findViewById(R.id.button_new_team).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                List<BattleFormat.Category> battleFormatCategories = mObserver.getBattleFormatCategories();
+                HomeFragment fragment = ((MainActivity) getContext()).getHomeFragment();
+                List<BattleFormat.Category> battleFormatCategories = fragment.getBattleFormats();
                 ImportTeamDialog.newInstance(TeamsFragment.this, battleFormatCategories)
                         .show(getFragmentManager(), "");
             }
         });
+    }
+
+    @Override
+    public boolean onContextItemSelected(@NonNull MenuItem item) {
+        ExpandableListView.ExpandableListContextMenuInfo info =
+                (ExpandableListView.ExpandableListContextMenuInfo) item.getMenuInfo();
+        int groupPos = ExpandableListView.getPackedPositionGroup(info.packedPosition);
+        int childPos = ExpandableListView.getPackedPositionChild(info.packedPosition);
+
+        final Team team = mTeamListAdapter.getChild(groupPos, childPos);
+        new MaterialAlertDialogBuilder(getContext())
+                .setTitle("Are you sure you want to delete this team ?")
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        removeTeam(team);
+                        persistUserTeams();
+                    }
+                })
+                .setNegativeButton("No", null)
+                .show();
+        return true;
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        if (requestCode == TeamEditActivity.INTENT_REQUEST_CODE
+                && resultCode == Activity.RESULT_OK && data != null) {
+            Team team = (Team) data.getSerializableExtra(TeamEditActivity.INTENT_EXTRA_TEAM);
+            addTeam(team);
+            persistUserTeams();
+        }
     }
 
     private void persistUserTeams() {
@@ -113,7 +163,7 @@ public class TeamsFragment extends Fragment implements MainActivity.Callbacks {
             @Override
             public void callback(Boolean success) {
                 if (!success)
-                    Toast.makeText(getContext(), "Persist teams failed", 0).show();
+                    Toast.makeText(getContext(), "Persist teams failed", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -131,9 +181,16 @@ public class TeamsFragment extends Fragment implements MainActivity.Callbacks {
             group = new Team.Group(team.format == null ? "Other" : team.format);
             mTeamGroups.add(group);
         }
-
-        group.teams.add(team);
+        int matchingTeamIndex = -1;
+        for (int i = 0; i < group.teams.size(); i++)
+            if (group.teams.get(i).uniqueId == team.uniqueId) matchingTeamIndex = i;
+        if (matchingTeamIndex != -1)
+            group.teams.set(matchingTeamIndex, team);
+        else
+            group.teams.add(team);
         mTeamListAdapter.notifyDataSetChanged();
+        MainActivity activity = (MainActivity) getContext();
+        activity.getHomeFragment().updateTeamSpinner();
     }
 
     private Team.Group getMatchingGroup(Team team) {
@@ -145,6 +202,18 @@ public class TeamsFragment extends Fragment implements MainActivity.Callbacks {
                 return group;
         }
         return null;
+    }
+
+    private boolean removeTeam(Team team) {
+        Team.Group group = getMatchingGroup(team);
+        if (group == null) return false;
+        group.teams.remove(team);
+        if (group.teams.isEmpty())
+            mTeamGroups.remove(group);
+        mTeamListAdapter.notifyDataSetChanged();
+        MainActivity activity = (MainActivity) getContext();
+        activity.getHomeFragment().updateTeamSpinner();
+        return true;
     }
 
     public List<Team.Group> getTeamGroups() {
@@ -213,6 +282,13 @@ public class TeamsFragment extends Fragment implements MainActivity.Callbacks {
 
             Team team = getChild(i, j);
             viewHolder.labelView.setText(team.label);
+
+            if (team.pokemons.isEmpty()) {
+                for (int k = 0; k < viewHolder.pokemonViews.length; k++)
+                    viewHolder.pokemonViews[k].setImageDrawable(null);
+                return view;
+            }
+
             String[] queries = new String[team.pokemons.size()];
             for (int k = 0; k < queries.length; k++)
                 queries[k] = toId(team.pokemons.get(k).species);

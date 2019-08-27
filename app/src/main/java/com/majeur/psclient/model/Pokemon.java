@@ -1,20 +1,20 @@
 package com.majeur.psclient.model;
 
+import java.io.Serializable;
 import java.util.Arrays;
 
-public class Poke {
+public class Pokemon implements Serializable {
 
-    public static Poke dummyPokemon() {
-        Poke poke = new Poke();
-        poke.species = "missingno";
-        return poke;
+    public static Pokemon dummyPokemon() {
+        Pokemon pokemon = new Pokemon();
+        pokemon.species = "missingno";
+        return pokemon;
     }
 
     public String name;
     public String species;
     public String item;
     public String ability;
-    public String abilitySlot; // TODO
     public String[] moves;
     public String nature;
     public Stats evs;
@@ -26,7 +26,7 @@ public class Poke {
     public String hpType;
     public String pokeball;
 
-    public Poke() {
+    public Pokemon() {
         ivs = new Stats(31);
         evs = new Stats(0);
         level = 100;
@@ -51,35 +51,5 @@ public class Poke {
                 ", hpType='" + hpType + '\'' +
                 ", pokeball='" + pokeball + '\'' +
                 '}';
-    }
-
-    public static class Stats {
-        public int hp;
-        public int atk;
-        public int def;
-        public int spa;
-        public int spd;
-        public int spe;
-
-        public Stats(int defaultValue) {
-            this.hp = defaultValue;
-            this.atk = defaultValue;
-            this.def = defaultValue;
-            this.spa = defaultValue;
-            this.spd = defaultValue;
-            this.spe = defaultValue;
-        }
-
-        @Override
-        public String toString() {
-            return "Stats{" +
-                    "hp=" + hp +
-                    ", atk=" + atk +
-                    ", def=" + def +
-                    ", spa=" + spa +
-                    ", spd=" + spd +
-                    ", spe=" + spe +
-                    '}';
-        }
     }
 }

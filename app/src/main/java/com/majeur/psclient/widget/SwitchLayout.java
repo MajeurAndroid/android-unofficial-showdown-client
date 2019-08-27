@@ -48,4 +48,8 @@ public class SwitchLayout extends FrameLayout {
                 })
                 .start();
     }
+
+    public int getPosition() {
+        return getScrollX() / getWidth();
+    }
 }

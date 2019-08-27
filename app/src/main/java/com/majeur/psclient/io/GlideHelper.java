@@ -14,10 +14,12 @@ import com.bumptech.glide.RequestManager;
 import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.request.target.ViewTarget;
 import com.majeur.psclient.R;
-import com.majeur.psclient.util.Utils;
 import com.majeur.psclient.model.BattlingPokemon;
+import com.majeur.psclient.model.Player;
+import com.majeur.psclient.util.Utils;
 
 import static com.majeur.psclient.model.Id.toId;
+import static com.majeur.psclient.model.Player.FOE;
 
 public class GlideHelper {
 
@@ -72,6 +74,12 @@ public class GlideHelper {
         });
     }
 
+    public void loadPreviewSprite(Player player, String species, ImageView imageView) {
+        RequestBuilder<Drawable> request = mRequestManager.load(spriteUri(species, player == FOE, false));
+        request.apply(new RequestOptions().error(R.drawable.missingno));
+        request.into(imageView);
+    }
+
     public void loadTypeSprite(String type, ImageView imageView) {
         RequestBuilder<Drawable> request = mRequestManager.load(typeSpriteUri(type));
         request.into(imageView);
@@ -79,6 +87,12 @@ public class GlideHelper {
 
     public void loadCategorySprite(String category, ImageView imageView) {
         RequestBuilder<Drawable> request = mRequestManager.load(categorySpriteUri(category));
+        request.into(imageView);
+    }
+
+    public void loadDexSprite(String species, boolean shiny, ImageView imageView) {
+        RequestBuilder<Drawable> request = mRequestManager.load(dexSpriteUri(species, shiny));
+        request.apply(new RequestOptions().error(R.drawable.placeholder_pokeball));
         request.into(imageView);
     }
 
@@ -96,10 +110,11 @@ public class GlideHelper {
                 .toString();
     }
 
-    private String dexSpriteUri(String species) {
+    private String dexSpriteUri(String species, boolean shiny) {
         return baseUri()
-                .append("xydex/")
-                .append(species.replace("%", "").replace("-", "").replace(" ", ""))
+                .append("xydex")
+                .append(shiny ? "-shiny/" : "/")
+                .append(species.toLowerCase().replace("%", "").replace("-", "").replace(" ", ""))
                 .append(".png")
                 .toString();
     }

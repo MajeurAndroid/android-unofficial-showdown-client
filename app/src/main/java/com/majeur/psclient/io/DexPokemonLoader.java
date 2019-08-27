@@ -112,6 +112,9 @@ public class DexPokemonLoader extends DataLoader<String, DexPokemon> {
                     case "color":
                         pokemon.color = mJsonReader.nextString();
                         break;
+                    case "gender":
+                        pokemon.gender = mJsonReader.nextString();
+                        break;
                     //case "evos":
 //                            [
 //                    "ivysaur"

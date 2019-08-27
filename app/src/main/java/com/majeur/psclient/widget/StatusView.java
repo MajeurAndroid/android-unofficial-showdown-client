@@ -11,10 +11,10 @@ import android.util.Property;
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
 
-import com.majeur.psclient.util.Utils;
 import com.majeur.psclient.model.BattlingPokemon;
 import com.majeur.psclient.model.Colors;
 import com.majeur.psclient.model.StatModifiers;
+import com.majeur.psclient.util.Utils;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -47,8 +47,8 @@ public class StatusView extends View {
     private Canvas mMockCanvas;
     private Point mMeasurePoint;
 
-    private String mLabel = "Nostenfer l.100";
-    private float mHealth = 0.75f;
+    private String mLabel = "";
+    private float mHealth = 0f;
     private String mStatus;
     private Set<String> mVolatileStatus;
     private ObjectAnimator mHealthAnimator;

@@ -47,72 +47,73 @@ public abstract class RoomMessageObserver extends MessageObserver {
                 mUsernameColorCache.clear();
                 mRoomJoined = true;
                 onRoomInit();
-                break;
+                return true;
             case "title":
                 onRoomTitleChanged(message.args.next());
-                break;
+                return true;
             case "users":
                 initializeUserList(message.args);
-                break;
+                return true;
             case "j":
             case "join":
                 String username = message.args.next();
                 mCurrentUsers.add(username);
                 onUpdateUsers(mCurrentUsers);
                 printUserRelatedMessage(username + " joined");
-                break;
+                return true;
             case "l":
             case "leave":
                 username = message.args.next();
                 mCurrentUsers.remove(username);
                 onUpdateUsers(mCurrentUsers);
                 printUserRelatedMessage(username + " leaved");
-                break;
+                return true;
             case "html":
                 // onPrintText("~html messages aren't supported yet~");
-                break;
+                return true;
             case "uhtml":
                 // onPrintText("~uhtml messages aren't supported yet~");
-                break;
+                return true;
             case "uhtmlchange":
                 // TODO
-                break;
+                return true;
             case "n":
             case "name":
                 handleNameChange(message.args);
-                break;
+                return true;
             case "c":
             case "chat":
                 handleChatMessage(message.args);
-                break;
+                return true;
             case "c:":
                 message.args.next(); // Skipping time stamp
                 handleChatMessage(message.args);
-                break;
+                return true;
             case ":":
                 // Time stamp, we aren't using it yet
-                break;
+                return true;
             case "b":
             case "battle":
                 onPrintText("A battle started between XXX and YYY");
-                break;
+                return true;
             case "error":
                 printErrorMessage(message.args.next());
-                break;
+                return true;
             case "raw":
                 String s = message.args.nextTillEnd();
-                if (s.contains("href")) break; // skipping complex Html formatted messages
+                if (s.contains("href")) return true; // skipping complex Html formatted messages
                 onPrintText(Html.fromHtml(s));
-                break;
+                return true;
             case "deinit":
                 mRoomJoined = false;
                 onRoomDeInit();
-                break;
+                return true;
             case "noinit":
                 //TODO
-                break;
+                return true;
+            default:
+                return false;
         }
-        return true;
     }
 
     private void initializeUserList(ServerMessage.Args args) {

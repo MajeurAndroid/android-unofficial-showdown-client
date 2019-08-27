@@ -3,9 +3,9 @@ package com.majeur.psclient;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.InputType;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -87,6 +87,15 @@ public class ImportTeamDialog extends DialogFragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        view.findViewById(R.id.teambuilder_button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(getContext(), TeamEditActivity.class);
+                getFragmentManager().findFragmentById(R.id.fragment_teams)
+                        .startActivityForResult(intent, TeamEditActivity.INTENT_REQUEST_CODE);
+                dismiss();
+            }
+        });
         mSwitchLayout = view.findViewById(R.id.switch_layout);
         mProgressBar = view.findViewById(R.id.progress_bar);
         mEditText = view.findViewById(R.id.edit_text_import);
@@ -240,7 +249,7 @@ public class ImportTeamDialog extends DialogFragment {
     }
 
     private void makePastebinRequest(final String pasteKey, final Callback<String> callback) {
-        ShowdownService showdownService = ((MainActivity) getActivity()).getShowdownService();
+        ShowdownService showdownService = ((MainActivity) getActivity()).getService();
         if (showdownService == null) {
             //TODO
             return;

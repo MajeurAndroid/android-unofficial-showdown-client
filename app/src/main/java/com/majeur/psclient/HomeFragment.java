@@ -4,7 +4,6 @@ import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -39,6 +38,7 @@ import static com.majeur.psclient.model.Id.toId;
 
 public class HomeFragment extends Fragment implements MainActivity.Callbacks {
 
+    private ShowdownService mService;
     private DexIconLoader mDexIconLoader;
 
     private Dialog mCurrentDialog;
@@ -47,11 +47,10 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
     private Spinner mFormatsSpinner;
     private Spinner mTeamsSpinner;
     private BattleFormat mCurrentBattleFormat;
+    private List<BattleFormat.Category> mBattleFormats;
 
 
     private String mCurrentUserName;
-
-    private boolean mAutoJoinNextBattle;
 
     @Override
     public void onAttach(@NonNull Context context) {
@@ -62,11 +61,12 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mCurrentDialog = ProgressDialog.show(getContext(),
-                "Just a moment",
-                "Connecting to Pokémon Showdown server...",
-                true,
-                false);
+        if (mCurrentUserName == null)
+            mCurrentDialog = ProgressDialog.show(getContext(),
+                    "Just a moment",
+                    "Connecting to Pokémon Showdown server...",
+                    true,
+                    false);
     }
 
     @Nullable
@@ -103,7 +103,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
                 BattleFormat format = (BattleFormat) getItem(position);
                 textView.setText("\t");
                 textView.append(format.getLabel());
-                textView.setTextColor(format.isTeamNeeded() ? Color.RED : Color.GREEN);
+                //textView.setTextColor(format.isTeamNeeded() ? Color.RED : Color.GREEN);
 
                 return textView;
             }
@@ -121,7 +121,6 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
 
             }
         });
-
 
         mTeamsSpinner = view.findViewById(R.id.spinner_teams);
         mTeamsSpinner.setAdapter(new CategoryAdapter(getContext()) {
@@ -165,8 +164,14 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
 
                 Team team = (Team) getItem(position);
                 viewHolder.labelView.setText(team.label);
-                String[] queries = new String[team.pokemons.size()];
 
+                if (team.pokemons.isEmpty()) {
+                    for (int k = 0; k < viewHolder.pokemonViews.length; k++)
+                        viewHolder.pokemonViews[k].setImageDrawable(null);
+                    return convertView;
+                }
+
+                String[] queries = new String[team.pokemons.size()];
                 for (int k = 0; k < queries.length; k++) {
                     queries[k] = toId(team.pokemons.get(k).species);
                 }
@@ -198,10 +203,11 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
                     if (activity.getBattleFragment().battleRunning()) {
                         Snackbar.make(getView(), "A battle is already running", Snackbar.LENGTH_SHORT).show();
                     } else {
-                        mAutoJoinNextBattle = true;
-                        mObserver.searchForBattle();
-                        mBattleButton.setText("Searching...");
-                        mBattleButton.setEnabled(false);
+                        boolean searchRequested = searchForBattle();
+                        if (searchRequested) {
+                            mBattleButton.setText("Searching...");
+                            mBattleButton.setEnabled(false);
+                        }
                     }
                 }
 //                mObserver.fakeBattle();
@@ -212,10 +218,14 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
 
     private void setCurrentBattleFormat(BattleFormat battleFormat) {
         mCurrentBattleFormat = battleFormat;
+        updateTeamSpinner();
+    }
 
+    public void updateTeamSpinner() {
+        if (mCurrentBattleFormat == null) return;
         CategoryAdapter adapter = (CategoryAdapter) mTeamsSpinner.getAdapter();
         adapter.clearItems();
-        if (battleFormat.isTeamNeeded()) {
+        if (mCurrentBattleFormat.isTeamNeeded()) {
             List<Team.Group> teamGroups = ((MainActivity) getActivity()).getTeamsFragment().getTeamGroups();
             for (Team.Group group : teamGroups) {
                 adapter.addItem(group);
@@ -228,6 +238,27 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
             mTeamsSpinner.setSelection(0);
             mTeamsSpinner.setEnabled(false);
         }
+    }
+
+    public List<BattleFormat.Category> getBattleFormats() {
+        return mBattleFormats;
+    }
+
+    private boolean searchForBattle() {
+        if (mService == null) return false;
+
+        if (mCurrentBattleFormat.isTeamNeeded()) {
+            Team team = (Team) mTeamsSpinner.getSelectedItem();
+            if (team.isEmpty()) {
+                Snackbar.make(getView(), "Your team is empty !", Snackbar.LENGTH_SHORT).show();
+                return false;
+            }
+            mService.sendGlobalCommand("utm", team.pack());
+        } else {
+            mService.sendGlobalCommand("utm", "null");
+        }
+        mService.sendGlobalCommand("search", toId(mCurrentBattleFormat.getLabel()));
+        return true;
     }
 
     private final GlobalMessageObserver mObserver = new GlobalMessageObserver() {
@@ -244,7 +275,8 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
         }
 
         @Override
-        protected void onBattleFormatsChanged(final List<BattleFormat.Category> battleFormats) {
+        protected void onBattleFormatsChanged(List<BattleFormat.Category> battleFormats) {
+            mBattleFormats = battleFormats;
             CategoryAdapter adapter = (CategoryAdapter) mFormatsSpinner.getAdapter();
             adapter.clearItems();
             for (BattleFormat.Category category : battleFormats) {
@@ -256,56 +288,28 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
 
         @Override
         protected void onBattlesFound(final String[] battleRoomIds, String[] battleRoomNames) {
-            final MainActivity activity = (MainActivity) getActivity();
-            if (activity.getBattleFragment().battleRunning())
-                return;
-
-
-            if (true)
-                return;
-            // If sie > 2 show warning unsupport popup
-            if (battleRoomIds.length > 1) {
-                Snackbar.make(getView(),
-                        "This client supports only one battle at a time",
-                        Snackbar.LENGTH_INDEFINITE).setAction("Got it", new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        // Auto dismiss
-                    }
-                }).show();
-            }
-
-            /*if (mAutoJoinNextBattle) {
-                mAutoJoinNextBattle = false;
-                activity.getBattleFragment().startBattle(battleRoomIds[0], true);
-                activity.showBattleFragmentView();
-                mBattleButton.setText("Battle !");
-                mBattleButton.setEnabled(true);
-            } else {
-                new AlertDialog.Builder(getContext())
-                        .setTitle("You are currently in a battle")
-                        .setMessage("Do you want to join the following battle: " + battleRoomNames[0] + " ?")
-                        .setPositiveButton("Join", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialogInterface, int i) {
-                                activity.getBattleFragment().startBattle(battleRoomIds[0], false);
-                                activity.showBattleFragmentView();
-                                dialogInterface.dismiss();
-                            }
-                        })
-                        .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialogInterface, int i) {
-                                dialogInterface.dismiss();
-                            }
-                        })
-                        .show();
-            }*/
+            mBattleButton.setText("Battle !");
+            mBattleButton.setEnabled(true);
         }
 
         @Override
         protected void onShowPopup(String message) {
-            Snackbar.make(getView(), message, Snackbar.LENGTH_LONG).show();
+            Snackbar snackbar = Snackbar.make(getView(), message, Snackbar.LENGTH_INDEFINITE);
+            View view = snackbar.getView();
+            TextView textView = view.findViewById(com.google.android.material.R.id.snackbar_text);
+            textView.setMaxLines(5);
+            snackbar.setAction("Ok", new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    // Auto dismiss
+                }
+            });
+            snackbar.show();
+
+            if (!mBattleButton.isEnabled()) { // Possible team reject when searching for battle
+                mBattleButton.setText("Battle !");
+                mBattleButton.setEnabled(true);
+            }
         }
 
         @Override
@@ -325,8 +329,19 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
             switch (type) {
                 case "battle":
                     BattleFragment battleFragment = activity.getBattleFragment();
-                    if (battleFragment.getObservedRoomId() == null)
+                    if (battleFragment.getObservedRoomId() == null || !battleFragment.battleRunning()) {
                         battleFragment.setObservedRoomId(roomId);
+                        ((MainActivity) getActivity()).showBattleFragmentView();
+                    } else {
+                        Snackbar.make(getView(),
+                                "Battle " + roomId + " ignored. This client supports only one room at a time",
+                                Snackbar.LENGTH_INDEFINITE).setAction("Got it", new View.OnClickListener() {
+                            @Override
+                            public void onClick(View view) {
+                                // Auto dismiss
+                            }
+                        }).show();
+                    }
                     break;
                 case "chat":
                     ChatFragment chatFragment = activity.getChatFragment();
@@ -347,7 +362,6 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
             ChatFragment chatFragment = activity.getChatFragment();
             if (TextUtils.equals(chatFragment.getObservedRoomId(), roomId))
                 chatFragment.setObservedRoomId(null);
-
         }
 
         @Override
@@ -367,12 +381,14 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
     };
 
     @Override
-    public void onShowdownServiceBound(ShowdownService service) {
+    public void onServiceBound(ShowdownService service) {
+        mService = service;
         service.registerMessageObserver(mObserver, true);
     }
 
     @Override
-    public void onShowdownServiceWillUnbound(ShowdownService service) {
+    public void onServiceWillUnbound(ShowdownService service) {
+        mService = null;
         service.unregisterMessageObserver(mObserver);
     }
 }

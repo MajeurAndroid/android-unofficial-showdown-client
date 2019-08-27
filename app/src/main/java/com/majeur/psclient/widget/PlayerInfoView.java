@@ -3,10 +3,6 @@ package com.majeur.psclient.widget;
 import android.content.Context;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
-
-import androidx.collection.ArraySet;
-import androidx.appcompat.widget.AppCompatTextView;
-
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.style.ImageSpan;
@@ -14,12 +10,14 @@ import android.text.style.StyleSpan;
 import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.Gravity;
-import android.widget.Toast;
 
 import com.majeur.psclient.R;
 import com.majeur.psclient.model.BattlingPokemon;
 
 import java.util.Set;
+
+import androidx.appcompat.widget.AppCompatTextView;
+import androidx.collection.ArraySet;
 
 import static com.majeur.psclient.model.Id.toId;
 
@@ -114,7 +112,6 @@ public class PlayerInfoView extends AppCompatTextView {
     }
 
     public void appendPokemon(BattlingPokemon pokemon, Drawable dexIcon) {
-        Toast.makeText(getContext(), pokemon.name, 0).show();
         if (!mPokemonIds.add(toId(pokemon.species)))
             return;
 

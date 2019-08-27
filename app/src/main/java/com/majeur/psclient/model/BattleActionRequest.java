@@ -13,6 +13,7 @@ public class BattleActionRequest {
 
     private int mReqId;
 
+    private boolean mTeamPreview;
     private boolean mShouldWait;
     private boolean[] mForceSwitch;
     private boolean[] mTrapped;
@@ -23,6 +24,7 @@ public class BattleActionRequest {
 
     public BattleActionRequest(JSONObject jsonObject) throws JSONException {
         mShouldWait = jsonObject.optBoolean("wait", false);
+        mTeamPreview = jsonObject.optBoolean("teamPreview", false);
         mReqId = jsonObject.getInt("rqid");
 
         JSONArray waitJsonArray = jsonObject.optJSONArray("forceSwitch");
@@ -85,6 +87,10 @@ public class BattleActionRequest {
 
     public int getId() {
         return mReqId;
+    }
+
+    public boolean teamPreview() {
+        return mTeamPreview;
     }
 
     public boolean shouldWait() {

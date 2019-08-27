@@ -6,6 +6,10 @@ public class PokemonId {
         return new PokemonId(player, rawId);
     }
 
+    public static PokemonId fromPosition(Player player, int position) {
+        return new PokemonId(player, position);
+    }
+
     public static PokemonId mockNameOnly(String name) {
         return new PokemonId(name);
     }
@@ -30,5 +34,24 @@ public class PokemonId {
         position = -1;
         foe = false;
         isInBattle = false;
+    }
+
+    PokemonId(Player player, int position) {
+        this.player = player;
+        this.name = null;
+        this.position = position;
+        foe = player == Player.FOE;
+        isInBattle = false;
+    }
+
+    @Override
+    public String toString() {
+        return "PokemonId{" +
+                "player=" + player +
+                ", position=" + position +
+                ", name='" + name + '\'' +
+                ", foe=" + foe +
+                ", isInBattle=" + isInBattle +
+                '}';
     }
 }

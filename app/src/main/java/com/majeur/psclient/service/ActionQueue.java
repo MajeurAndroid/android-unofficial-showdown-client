@@ -9,9 +9,15 @@ import java.util.Queue;
 
 public class ActionQueue {
 
+    public static final Runnable EMPTY_ACTION = new Runnable() {
+        @Override
+        public void run() {
+        }
+    };
+
     private static class Entry {
 
-        public Entry(Runnable action, long delay) {
+        Entry(Runnable action, long delay) {
             this.action = action;
             this.delay = delay;
         }
@@ -41,32 +47,32 @@ public class ActionQueue {
         mQueue.clear();
     }
 
-    public void setLastAction(Runnable r) {
-            mLastAction = r;
+    public void setLastAction(Runnable action) {
+        mLastAction = action;
     }
 
-    public void enqueueTurnAction(Runnable r) {
-        enqueueAction(r);
+    public void enqueueTurnAction(Runnable action) {
+        enqueueAction(action);
         if (mTurnActionInQueue)
-            loopTo(r);
+            loopTo(action);
 
         mTurnActionInQueue = true;
     }
 
-    public void enqueueAction(Runnable r) {
-        enqueue(r, 0);
+    public void enqueueAction(Runnable action) {
+        enqueue(action, 0);
     }
 
-    public void enqueueMajorAction(Runnable r) {
-        enqueue(r, 1500);
+    public void enqueueMajorAction(Runnable action) {
+        enqueue(action, 1500);
     }
 
-    public void enqueueMinorAction(Runnable r) {
-        enqueue(r, 750);
+    public void enqueueMinorAction(Runnable action) {
+        enqueue(action, 750);
     }
 
-    private void enqueue(Runnable r, long delay) {
-        mQueue.add(new Entry(r, delay));
+    private void enqueue(Runnable action, long delay) {
+        mQueue.add(new Entry(action, delay));
 
         if (!mIsLooping)
             startLoop();
@@ -82,9 +88,9 @@ public class ActionQueue {
         mHandler.removeCallbacks(mLoopRunnable);
     }
 
-    private void loopTo(Runnable r) {
+    private void loopTo(Runnable action) {
         stopLoop();
-        while (mQueue.element().action != r)
+        while (mQueue.element().action != action)
             mQueue.poll().action.run();
         startLoop();
     }

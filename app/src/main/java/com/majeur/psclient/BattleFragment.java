@@ -71,6 +71,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
     private View mExtraActionsContainer;
     private ImageButton mTimerButton;
 
+    private ShowdownService mService;
     private GlideHelper mSpritesLoader;
     private BattleTipPopup mBattleTipPopup;
     private DexPokemonLoader mDexPokemonLoader;
@@ -130,13 +131,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         mBattleMessageView = view.findViewById(R.id.battle_message_view);
         mExtraActionsContainer = view.findViewById(R.id.extra_action_container);
         mExtraActionsContainer.animate().setInterpolator(new OvershootInterpolator(1.4f)).setDuration(500);
-        mFoeInfoView.setOnLongClickListener(new View.OnLongClickListener() {
-            @Override
-            public boolean onLongClick(View view) {
-                mObserver.forfeit();
-                return true;
-            }
-        });
+
         final ImageView imageView = view.findViewById(R.id.overlay_image_view);
         imageView.setAlpha(0.65f);
 
@@ -189,12 +184,14 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
     }
 
     @Override
-    public void onShowdownServiceBound(ShowdownService service) {
+    public void onServiceBound(ShowdownService service) {
+        mService = service;
         service.registerMessageObserver(mObserver, false);
     }
 
     @Override
-    public void onShowdownServiceWillUnbound(ShowdownService service) {
+    public void onServiceWillUnbound(ShowdownService service) {
+        mService = null;
         service.unregisterMessageObserver(mObserver);
     }
 
@@ -211,7 +208,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                             .setPositiveButton("Forfeit", new DialogInterface.OnClickListener() {
                                 @Override
                                 public void onClick(DialogInterface dialogInterface, int i) {
-                                    mObserver.forfeit();
+                                    forfeit();
                                 }
                             })
                             .setNegativeButton("Cancel", null)
@@ -223,7 +220,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                     break;
 
                 case R.id.button_timer:
-                    mObserver.sendTimerCommand(!mTimerEnabled);
+                    sendTimerCommand(!mTimerEnabled);
                     break;
             }
         }
@@ -345,8 +342,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
     }
 
     private void bindSidePokemonPopup(SidePokemon pokemon, final TextView titleView,
-                                      final TextView descView, final ImageView placeHolderTop,
-                                      final ImageView placeHolderBottom) {
+                                      final TextView descView, final ImageView placeHolderTop, final ImageView placeHolderBottom) {
         titleView.setText(pokemon.name);
         descView.setText("Moves:");
         for (String move : pokemon.moves) {
@@ -367,8 +363,28 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         });
     }
 
-    public BattleMessageObserver getObserver() {
-        return mObserver;
+    public void forfeit() {
+        mService.sendRoomCommand(mObservedRoomId, "forfeit");
+    }
+
+    public void sendTeamDecision(int reqId, int first, int teamSize) {
+        String teamOrder = "";
+        for (int i = 1; i <= teamSize; i++) teamOrder += i;
+        teamOrder = teamOrder.substring(first - 1) + teamOrder.substring(0, first - 1);
+        mService.sendRoomCommand(mObservedRoomId, "team", teamOrder, reqId);
+    }
+
+    public void sendSwitchDecision(int reqId, int who) {
+        mService.sendRoomCommand(mObservedRoomId, "switch", who, reqId);
+    }
+
+    public void sendChooseDecision(int reqId, int which) {
+        //gen7randombattle-860621231|/choose move 1|3
+        mService.sendRoomCommand(mObservedRoomId, "move", which, reqId);
+    }
+
+    public void sendTimerCommand(boolean on) {
+        mService.sendRoomCommand(mObservedRoomId, "timer", on ? "on" : "off");
     }
 
     private BattleMessageObserver mObserver = new BattleMessageObserver() {
@@ -418,9 +434,22 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         }
 
         @Override
+        protected void onAddPreviewPokemon(final PokemonId id, final String species, boolean hasItem) {
+            // Make sure BattleLayout has finished its layout
+            mBattleLayout.post(new Runnable() {
+                @Override
+                public void run() {
+                    ImageView imageView = mBattleLayout.getPokemonView(id);
+                    mSpritesLoader.loadPreviewSprite(id.player, species, imageView);
+                }
+            });
+        }
+
+        @Override
         protected void onTeamSize(Player player, int size) {
             PlayerInfoView infoView = player == Player.TRAINER ? mPlayerInfoView : mFoeInfoView;
             infoView.setTeamSize(size);
+            mBattleLayout.setPreviewTeamSize(player, size);
         }
 
         @Override
@@ -538,19 +567,23 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
             List<Move> moves = hideMoves ? null : request.getMoves();
             List<SidePokemon> team = hideSwitch ? null : request.getSide();
 
-            mActionWidget.promptChoice(mBattleTipPopup, moves, team, new BattleActionWidget.OnChoiceListener() {
+            mActionWidget.promptChoice(mBattleTipPopup, moves, team, request.teamPreview(),
+                    new BattleActionWidget.OnChoiceListener() {
                 @Override
                 public void onMoveChose(int which) {
-                    sendChooseDecision(mLastActionRequest.getId(), which);
+                    sendChooseDecision(request.getId(), which);
                 }
 
                 @Override
                 public void onSwitchChose(int who) {
-                    sendSwitchDecision(mLastActionRequest.getId(), who);
+                    if (request.teamPreview())
+                        sendTeamDecision(request.getId(), who, request.getSide().size());
+                    else
+                        sendSwitchDecision(request.getId(), who);
                 }
             });
 
-            if (!hideMoves) {
+            if (!hideMoves && moves != null && moves.size() > 0) {
                 String[] keys = new String[moves.size()];
                 for (int i = 0; i < keys.length; i++) keys[i] = toId(moves.get(i).id);
                 mMoveDetailsLoader.load(keys, new DataLoader.Callback<Move.ExtraInfo>() {
@@ -563,7 +596,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
 
             if (!hideSwitch) {
                 String[] species = new String[team.size()];
-                for (int i = 0; i < species.length; i++) species[i] = toId(team.get(i).name);
+                for (int i = 0; i < species.length; i++) species[i] = toId(team.get(i).species);
                 mDexIconLoader.load(species, new DataLoader.Callback<Bitmap>() {
                     @Override
                     public void onLoaded(Bitmap[] results) {

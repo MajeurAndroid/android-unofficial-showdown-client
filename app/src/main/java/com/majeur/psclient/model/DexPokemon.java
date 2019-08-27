@@ -19,6 +19,7 @@ public class DexPokemon {
     public String tier;
     public String firstType;
     public String secondType;
+    public String gender = "MF";
 
     public DexPokemon(){
 

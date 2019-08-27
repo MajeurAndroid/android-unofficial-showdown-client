@@ -24,9 +24,9 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 
 import com.majeur.psclient.R;
-import com.majeur.psclient.util.Utils;
 import com.majeur.psclient.model.Move;
 import com.majeur.psclient.model.SidePokemon;
+import com.majeur.psclient.util.Utils;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -246,7 +246,7 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
         }
     }
 
-    public void promptChoice(BattleTipPopup battleTipPopup, List<Move> moves, List<SidePokemon> team, OnChoiceListener listener) {
+    public void promptChoice(BattleTipPopup battleTipPopup, List<Move> moves, List<SidePokemon> team, boolean chooseLead, OnChoiceListener listener) {
         for (int i = 0; i < 4; i++) {
             Button button = mMoveButtons.get(i);
             if (moves != null && i < moves.size()) {
@@ -269,7 +269,8 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
                 SidePokemon sidePokemon = team.get(i);
                 button.setVisibility(VISIBLE);
                 button.setPokemonName(sidePokemon.name);
-                button.setEnabled(i != 0 && sidePokemon.condition.health != 0f);
+                boolean enabled = chooseLead || (i != 0 && sidePokemon.condition.health != 0f);
+                button.setEnabled(enabled);
                 button.setTag(R.id.battle_data_tag, sidePokemon);
                 battleTipPopup.addTippedView(button);
             } else {

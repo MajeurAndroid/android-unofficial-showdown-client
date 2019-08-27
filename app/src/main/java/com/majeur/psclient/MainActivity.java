@@ -2,6 +2,7 @@ package com.majeur.psclient;
 
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
@@ -9,6 +10,7 @@ import android.os.IBinder;
 import android.view.MenuItem;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.majeur.psclient.io.DexIconLoader;
 import com.majeur.psclient.service.ShowdownService;
 import com.majeur.psclient.util.Utils;
@@ -21,16 +23,18 @@ import androidx.fragment.app.Fragment;
 public class MainActivity extends AppCompatActivity {
 
     private Intent mShowdownServiceIntent;
-    private ShowdownService mShowdownService;
+    private ShowdownService mService;
     boolean mCanUnbindService = false;
+
+    private BottomNavigationView mNavigationView;
 
     private ServiceConnection mServiceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
             ShowdownService.Binder binder = (ShowdownService.Binder) iBinder;
-            mShowdownService = binder.getService();
+            mService = binder.getService();
             notifyServiceBound();
-            mShowdownService.connectToServer();
+            mService.connectToServer();
         }
 
         @Override
@@ -49,8 +53,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         final SwitchLayout switchLayout = findViewById(R.id.fragment_container);
-        BottomNavigationView navigationView = findViewById(R.id.bottom_navigation);
-        navigationView.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
+        mNavigationView = findViewById(R.id.bottom_navigation);
+        mNavigationView.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
                 switch (menuItem.getItemId()) {
@@ -76,12 +80,30 @@ public class MainActivity extends AppCompatActivity {
         startService(mShowdownServiceIntent);
     }
 
+    @Override
+    public void onBackPressed() {
+        if (mNavigationView.getSelectedItemId() != R.id.action_home)
+            mNavigationView.setSelectedItemId(R.id.action_home);
+        else
+            new MaterialAlertDialogBuilder(this)
+                    .setTitle("Are you sure you want to quit ?")
+                    .setMessage("Connection to Showdown server will be closed.")
+                    .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            finish();
+                        }
+                    })
+                    .setNegativeButton("No", null)
+                    .show();
+    }
+
     public DexIconLoader getDexIconLoader() {
         return mDexIconLoader;
     }
 
-    public ShowdownService getShowdownService() {
-        return mCanUnbindService ? mShowdownService : null;
+    public ShowdownService getService() {
+        return mCanUnbindService ? mService : null;
     }
 
     public HomeFragment getHomeFragment() {
@@ -103,14 +125,14 @@ public class MainActivity extends AppCompatActivity {
     private void notifyServiceBound() {
         for (Fragment fragment : getSupportFragmentManager().getFragments()) {
             if (fragment instanceof Callbacks)
-                ((Callbacks) fragment).onShowdownServiceBound(mShowdownService);
+                ((Callbacks) fragment).onServiceBound(mService);
         }
     }
 
     private void notifyServiceWillUnbound() {
         for (Fragment fragment : getSupportFragmentManager().getFragments()) {
             if (fragment instanceof Callbacks)
-                ((Callbacks) fragment).onShowdownServiceWillUnbound(mShowdownService);
+                ((Callbacks) fragment).onServiceWillUnbound(mService);
         }
     }
 
@@ -125,9 +147,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
         if (mCanUnbindService) {
-            unbindService(mServiceConnection);
             notifyServiceWillUnbound();
-            mShowdownService = null;
+            unbindService(mServiceConnection);
+            mService = null;
             mCanUnbindService = false;
         }
     }
@@ -146,8 +168,8 @@ public class MainActivity extends AppCompatActivity {
 
     public interface Callbacks {
 
-        public void onShowdownServiceBound(ShowdownService service);
+        public void onServiceBound(ShowdownService service);
 
-        public void onShowdownServiceWillUnbound(ShowdownService service);
+        public void onServiceWillUnbound(ShowdownService service);
     }
 }

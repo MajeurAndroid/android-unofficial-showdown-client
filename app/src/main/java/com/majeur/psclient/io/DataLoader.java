@@ -2,7 +2,6 @@ package com.majeur.psclient.io;
 
 import android.annotation.SuppressLint;
 import android.os.AsyncTask;
-import android.util.Log;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,6 +24,8 @@ public abstract class DataLoader<Q, R> {
     @SuppressLint("StaticFieldLeak")
     @SuppressWarnings("Unchecked")
     public void load(final Q[] queries, final Callback<R> callback) {
+        if (queries == null || queries.length == 0)
+            throw new InvalidQueryException("Null or empty queries array");
         onInterceptQuery(queries);
 
         final R[] resultArray = onCreateResultArray(queries.length);
@@ -66,6 +67,8 @@ public abstract class DataLoader<Q, R> {
     @SuppressLint("StaticFieldLeak")
     @SuppressWarnings("Unchecked")
     public R[] load(final Q[] queries) {
+        if (queries == null || queries.length == 0)
+            throw new InvalidQueryException("Null or empty queries array");
         onInterceptQuery(queries);
 
         final R[] resultArray = onCreateResultArray(queries.length);
@@ -107,4 +110,12 @@ public abstract class DataLoader<Q, R> {
     protected abstract R[] onCreateResultArray(int length);
 
     protected abstract LoadInterface<Q, R> onCreateLoadInterface();
+
+    protected static class InvalidQueryException extends RuntimeException {
+
+        protected InvalidQueryException(String msg) {
+            super(msg);
+        }
+
+    }
 }

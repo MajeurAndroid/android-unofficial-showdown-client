@@ -1,0 +1,471 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/scrollView">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:background="@color/primary_translucent">
+
+            <LinearLayout
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content"
+                android:layout_marginStart="14dp"
+                android:layout_marginEnd="8dp"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:id="@+id/spriteImageView"
+                    android:layout_width="116dp"
+                    android:layout_height="116dp"
+                    app:srcCompat="@drawable/placeholder_pokeball"/>
+
+                <ImageView
+                    android:id="@+id/type1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="14dp"/>
+
+                <ImageView
+                    android:id="@+id/type2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="14dp"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginBottom="2dp"/>
+
+            </LinearLayout>
+
+            <GridLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="14dp"
+                android:columnCount="4">
+
+                <AutoCompleteTextView
+                    android:id="@+id/speciesTextView"
+                    android:layout_columnSpan="4"
+                    android:layout_width="match_parent"
+                    android:inputType="textNoSuggestions"
+                    android:maxLines="1"
+                    android:maxLength="32"
+                    android:hint="Search for species"/>
+
+                <EditText
+                    android:id="@+id/nameEditText"
+                    android:layout_width="match_parent"
+                    android:layout_columnSpan="4"
+                    android:inputType="textNoSuggestions"
+                    android:maxLines="1"
+                    android:maxLength="32"/>
+
+                <TextView
+                    android:layout_gravity="end"
+                    android:text="Level:"/>
+
+                <EditText
+                    android:id="@+id/levelEditText"
+                    android:inputType="number"
+                    android:maxLength="3"
+                    android:text="100"/>
+
+                <TextView
+                    android:layout_gravity="end"
+                    android:text="Shiny:"/>
+
+                <CheckBox
+                    android:id="@+id/shinyCheckBox"/>
+
+                <TextView
+                    android:layout_gravity="end"
+                    android:text="Gender:"/>
+
+                <TextView
+                    android:id="@+id/genderTextView"
+                    android:padding="6dp"
+                    android:fontFamily="sans-serif-condensed"
+                    android:textStyle="bold"/>
+
+                <TextView
+                    android:layout_gravity="end"
+                    android:text="Happiness:"/>
+
+                <EditText
+                    android:id="@+id/happinessEditText"
+                    android:inputType="number"
+                    android:maxLength="3"
+                    android:text="255"/>
+
+            </GridLayout>
+
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginBottom="8dp"
+            android:background="?android:attr/listDivider"/>
+
+        <GridLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="12dp"
+            android:columnCount="2"
+            android:background="@color/primary_translucent">
+
+            <TextView
+                android:layout_columnWeight="1"
+                android:text="Ability:"/>
+
+            <TextView
+                android:layout_columnWeight="1"
+                android:text="Item:"/>
+
+            <AutoCompleteTextView
+                android:id="@+id/abilityTextView"
+                android:layout_columnWeight="1"
+                android:layout_marginEnd="6dp"
+                android:inputType="textNoSuggestions"
+                android:maxLines="1"
+                android:maxLength="16"/>
+
+            <AutoCompleteTextView
+                android:id="@+id/itemTextView"
+                android:layout_columnWeight="1"
+                android:layout_marginStart="6dp"
+                android:inputType="textNoSuggestions"
+                android:maxLines="1"
+                android:maxLength="16"
+                android:hint="None"/>
+
+        </GridLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginBottom="8dp"
+            android:background="?android:attr/listDivider"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp"
+            android:background="@color/primary_translucent">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Moves:"/>
+
+            <AutoCompleteTextView
+                android:id="@+id/move1TextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textNoSuggestions"
+                android:maxLines="1"
+                android:maxLength="32"
+                android:textStyle="italic"
+                android:hint="none"/>
+
+            <AutoCompleteTextView
+                android:id="@+id/move2TextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textNoSuggestions"
+                android:maxLines="1"
+                android:maxLength="32"
+                android:textStyle="italic"
+                android:hint="none"/>
+
+            <AutoCompleteTextView
+                android:id="@+id/move3TextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textNoSuggestions"
+                android:maxLines="1"
+                android:maxLength="32"
+                android:textStyle="italic"
+                android:hint="none"/>
+
+            <AutoCompleteTextView
+                android:id="@+id/move4TextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textNoSuggestions"
+                android:maxLines="1"
+                android:maxLength="32"
+                android:textStyle="italic"
+                android:hint="none"/>
+
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginBottom="8dp"
+            android:background="?android:attr/listDivider"/>
+
+        <GridLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="12dp"
+            android:columnCount="5"
+            android:background="@color/primary_translucent">
+
+            <TextView
+                android:layout_columnWeight="1"
+                android:textStyle="bold"
+                android:text="Stat"/>
+
+            <TextView
+                android:layout_columnWeight="1"
+                android:textStyle="bold"
+                android:text="Base"/>
+
+            <TextView
+                android:layout_columnWeight="1"
+                android:textStyle="bold"
+                android:text="EVs"/>
+
+            <TextView
+                android:layout_columnWeight="1"
+                android:textStyle="bold"
+                android:text="IVs"/>
+
+            <TextView
+                android:layout_columnWeight="1"
+                android:textStyle="bold"
+                android:text="Total"/>
+
+            <TextView
+                android:layout_columnWeight="1"
+                android:text="HP"/>
+
+            <TextView
+                android:layout_columnWeight="1"
+                android:id="@+id/hpBaseTextView"/>
+
+            <EditText
+                android:layout_columnWeight="1"
+                android:id="@+id/hpEvsTextView"
+                android:inputType="number"
+                android:maxLength="3"
+                android:text="0"/>
+
+            <EditText
+                android:layout_columnWeight="1"
+                android:id="@+id/hpIvsTextView"
+                android:inputType="number"
+                android:maxLength="2"
+                android:text="31"/>
+
+            <TextView
+                android:layout_columnWeight="1"
+                android:id="@+id/hpTotalTextView"/>
+
+            <TextView
+                android:layout_columnWeight="1"
+                android:text="Attack"/>
+
+            <TextView
+                android:layout_columnWeight="1"
+                android:id="@+id/atkBaseTextView"/>
+
+            <EditText
+                android:layout_columnWeight="1"
+                android:id="@+id/atkEvsTextView"
+                android:inputType="number"
+                android:maxLength="3"
+                android:text="0"/>
+
+            <EditText
+                android:layout_columnWeight="1"
+                android:id="@+id/atkIvsTextView"
+                android:inputType="number"
+                android:maxLength="2"
+                android:text="31"/>
+
+            <TextView
+                android:layout_columnWeight="1"
+                android:id="@+id/atkTotalTextView"/>
+
+            <TextView
+                android:layout_columnWeight="1"
+                android:text="Defense"/>
+
+            <TextView
+                android:layout_columnWeight="1"
+                android:id="@+id/defBaseTextView"/>
+
+            <EditText
+                android:layout_columnWeight="1"
+                android:id="@+id/defEvsTextView"
+                android:inputType="number"
+                android:maxLength="3"
+                android:text="0"/>
+
+            <EditText
+                android:layout_columnWeight="1"
+                android:id="@+id/defIvsTextView"
+                android:inputType="number"
+                android:maxLength="2"
+                android:text="31"/>
+
+            <TextView
+                android:layout_columnWeight="1"
+                android:id="@+id/defTotalTextView"/>
+
+            <TextView
+                android:layout_columnWeight="1"
+                android:text="Sp. Atk."/>
+
+            <TextView
+                android:layout_columnWeight="1"
+                android:id="@+id/spaBaseTextView"/>
+
+            <EditText
+                android:layout_columnWeight="1"
+                android:id="@+id/spaEvsTextView"
+                android:inputType="number"
+                android:maxLength="3"
+                android:text="0"/>
+
+            <EditText
+                android:layout_columnWeight="1"
+                android:id="@+id/spaIvsTextView"
+                android:inputType="number"
+                android:maxLength="2"
+                android:text="31"/>
+
+            <TextView
+                android:layout_columnWeight="1"
+                android:id="@+id/spaTotalTextView"/>
+
+            <TextView
+                android:layout_columnWeight="1"
+                android:text="Sp. Def."/>
+
+            <TextView
+                android:layout_columnWeight="1"
+                android:id="@+id/spdBaseTextView"/>
+
+            <EditText
+                android:layout_columnWeight="1"
+                android:id="@+id/spdEvsTextView"
+                android:inputType="number"
+                android:maxLength="3"
+                android:text="0"/>
+
+            <EditText
+                android:layout_columnWeight="1"
+                android:id="@+id/spdIvsTextView"
+                android:inputType="number"
+                android:maxLength="2"
+                android:text="31"/>
+
+            <TextView
+                android:layout_columnWeight="1"
+                android:id="@+id/spdTotalTextView"/>
+
+            <TextView
+                android:layout_columnWeight="1"
+                android:text="Speed"/>
+
+            <TextView
+                android:layout_columnWeight="1"
+                android:id="@+id/speBaseTextView"/>
+
+            <EditText
+                android:layout_columnWeight="1"
+                android:id="@+id/speEvsTextView"
+                android:inputType="number"
+                android:maxLength="3"
+                android:text="0"/>
+
+            <EditText
+                android:layout_columnWeight="1"
+                android:id="@+id/speIvsTextView"
+                android:inputType="number"
+                android:maxLength="2"
+                android:text="31"/>
+
+            <TextView
+                android:layout_columnWeight="1"
+                android:id="@+id/speTotalTextView"/>
+
+        </GridLayout>
+
+        <TextView
+            android:id="@+id/evsCounterTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="12dp"
+            android:background="@color/primary_translucent"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:background="@color/primary_translucent">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="12dp"
+                android:gravity="end"
+                android:text="Nature:"/>
+
+            <Spinner
+                android:id="@+id/natureSpinner"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginBottom="8dp"
+            android:background="?android:attr/listDivider"/>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingEnd="12dp"
+            android:background="@color/primary_translucent">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/clearPokemon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:text="Clear"
+                app:icon="@drawable/ic_clear"
+                style="@style/Widget.MaterialComponents.Button.TextButton.Icon"/>
+
+        </FrameLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginBottom="8dp"
+            android:background="?android:attr/listDivider"/>
+
+    </LinearLayout>
+
+</ScrollView>

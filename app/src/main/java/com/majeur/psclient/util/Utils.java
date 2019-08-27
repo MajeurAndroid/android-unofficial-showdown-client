@@ -1,11 +1,8 @@
 package com.majeur.psclient.util;
 
 import android.content.res.Resources;
-import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Typeface;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
@@ -18,11 +15,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 
 import java.io.InputStream;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Scanner;
@@ -99,6 +94,15 @@ public class Utils {
         return arrayList;
     }
 
+    public static <T> void addNullSafe(Collection<T> collection, T t) {
+        if (t != null) collection.add(t);
+    }
+
+    public static <T> T getOobSafe(List<T> list, int index) {
+        if (index >= 0 && index < list.size()) return list.get(index);
+        return null;
+    }
+
     public static Spannable boldText(String s) {
         SpannableString spannableString = new SpannableString(s);
         spannableString.setSpan(new StyleSpan(Typeface.BOLD), 0, s.length(), Spannable.SPAN_INCLUSIVE_EXCLUSIVE);
@@ -136,6 +140,14 @@ public class Utils {
         return spannableString;
     }
 
+    public static Integer parseInt(String s) {
+        try {
+            return Integer.parseInt(s);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
     @SafeVarargs
     public static <T> T[] array(T... ts) {
         return ts;
@@ -147,7 +159,17 @@ public class Utils {
         return true;
     }
 
+    public static int sum(int[] array) {
+        int sum = 0;
+        for (int value : array) sum += value;
+        return sum;
+    }
+
     public static String toStringSigned(int number) {
         return number < 0 ? "-" : "+" + number;
+    }
+
+    public static String str(int number) {
+        return Integer.toString(number);
     }
 }

@@ -4,11 +4,10 @@ import android.os.AsyncTask;
 import android.util.Log;
 
 import com.majeur.psclient.model.DexPokemon;
-import com.majeur.psclient.model.Poke;
+import com.majeur.psclient.model.Pokemon;
 import com.majeur.psclient.model.Team;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -109,11 +108,11 @@ public class ShowdownTeamParser {
             return null;
         }
 
-        List<Poke> pokemons = new LinkedList<>();
+        List<Pokemon> pokemons = new LinkedList<>();
         for (String pokemonString : teamStrings) {
-            Poke parsedPoke = parsePokemon(pokemonString.trim(), dexPokemonFactory);
-            if (parsedPoke != null)
-                pokemons.add(parsedPoke);
+            Pokemon parsedPokemon = parsePokemon(pokemonString.trim(), dexPokemonFactory);
+            if (parsedPokemon != null)
+                pokemons.add(parsedPokemon);
         }
 
         if (label != null && label.contains("[") && label.contains("]")) {
@@ -123,7 +122,7 @@ public class ShowdownTeamParser {
         return new Team(label, pokemons, format);
     }
 
-    private Poke parsePokemon(String importString, DexPokemonFactory dexPokemonFactory) {
+    private Pokemon parsePokemon(String importString, DexPokemonFactory dexPokemonFactory) {
         String[] pokemonStrings = importString.trim().split("\n");
         if (pokemonStrings.length == 0) {
             return null;
@@ -132,7 +131,7 @@ public class ShowdownTeamParser {
         Log.e("PSP curr", Arrays.toString(pokemonStrings));
         String pokemonMainData = pokemonStrings[0]; // split 0 is Name @ Item or Name or nickname (Name) or  nickname (Name) @ Item
         String pokemonName = "", pokemonNickname = null, pokemonItem = null, pokemonGender = null;
-        Poke p = null;
+        Pokemon p = null;
         boolean isGender = false; // no nickname, but gender
         if (pokemonMainData.contains("@")) {
             String[] nameItem = pokemonMainData.split("@");
@@ -174,7 +173,7 @@ public class ShowdownTeamParser {
             pokemonName = pokemonMainData;
         }
 
-        p = new Poke();
+        p = new Pokemon();
         p.species = toId(pokemonName);
 
         if (pokemonNickname != null) {
@@ -288,14 +287,12 @@ public class ShowdownTeamParser {
                     String ability = dexPokemon.abilities.get(j);
                     if (ability.equals(abilityName)) {
                         p.ability = abilityName;
-                        p.abilitySlot = Integer.toString(j);
                         break;
                     }
                 }
 
                 if (abilityName.equals(dexPokemon.hiddenAbility)) {
                     p.ability = abilityName;
-                    p.abilitySlot = "H";
                 }
             } else if (currentString.startsWith("Level:")) {
                 String level = currentString.substring(currentString.indexOf(":") + 1).trim();

@@ -106,16 +106,17 @@ public class ShowdownService extends Service {
         sendGlobalCommand("trn", userName + ",0," + assertion);
     }
 
-    public void logout() {
-        sendGlobalCommand("logout", null);
-    }
-
-    public void sendGlobalCommand(String command, String args) {
+    public void sendGlobalCommand(String command, Object... args) {
         sendRoomCommand(null, command, args);
     }
 
-    public void sendRoomCommand(@Nullable String roomId, String command, @Nullable String args) {
-        sendRoomMessage(Objects.toString(roomId, ""), "/" + command + " " + Objects.toString(args, ""));
+    public void sendRoomCommand(@Nullable String roomId, String command, Object... args) {
+        StringBuilder argsBuilder = new StringBuilder();
+        if (args.length > 0) argsBuilder.append(args[0]);
+        for (int i = 1; i < args.length; i++)
+            argsBuilder.append('|').append(args[i]);
+
+        sendRoomMessage(roomId, "/" + command + " " + argsBuilder.toString());
     }
 
     public void sendRoomMessage(@Nullable String roomId, String message) {
@@ -167,36 +168,27 @@ public class ShowdownService extends Service {
 
             ServerMessage message = new ServerMessage(roomId, line);
 
+            Log.e(message.command, message.args.toString());
             if (roomId == null) {
-                if (mGlobalMessageObserver != null) {
-                    if (message.command.equals("init")) {
-                        message.roomId = "lobby";
-                        mGlobalMessageObserver.postMessage(message);
-                        dispatchMessage(message);
-                    } else if (message.command.equals("deinit")) {
-                        message.roomId = "lobby";
-                        dispatchMessage(message);
-                        mGlobalMessageObserver.postMessage(message);
-                    } else {
-                        boolean consumed = mGlobalMessageObserver.postMessage(message);
-                        if (!consumed) {
-                            message.roomId = "lobby";
-                            dispatchMessage(message);
-                        }
-                    }
+                if (!message.command.equals("init") && !message.command.equals("deinit")) {
+                    boolean consumed = mGlobalMessageObserver != null && mGlobalMessageObserver.postMessage(message);
+                    if (consumed) continue;
                 }
-            } else {
-                if (message.command.equals("init")) {
-                    if (mGlobalMessageObserver != null)
-                        mGlobalMessageObserver.postMessage(message);
+                message.roomId = "lobby";
+            }
+
+            switch (message.command) {
+                case "init":
+                    if (mGlobalMessageObserver != null) mGlobalMessageObserver.postMessage(message);
                     dispatchMessage(message);
-                } else if (message.command.equals("deinit")) {
+                    break;
+                case "deinit":
                     dispatchMessage(message);
-                    if (mGlobalMessageObserver != null)
-                        mGlobalMessageObserver.postMessage(message);
-                } else {
+                    if (mGlobalMessageObserver != null) mGlobalMessageObserver.postMessage(message);
+                    break;
+                default:
                     dispatchMessage(message);
-                }
+                    break;
             }
         }
     }

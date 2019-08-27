@@ -3,14 +3,16 @@ package com.majeur.psclient.model;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class Stats {
+import java.io.Serializable;
 
-    public final int hp;
-    public final int atk;
-    public final int def;
-    public final int spa;
-    public final int spd;
-    public final int spe;
+public class Stats implements Serializable {
+
+    public int hp;
+    public int atk;
+    public int def;
+    public int spa;
+    public int spd;
+    public int spe;
 
     public Stats(JSONObject jsonObject) throws JSONException {
         hp = jsonObject.optInt("hp", 0);
@@ -28,6 +30,62 @@ public class Stats {
         this.spa = spa;
         this.spd = spd;
         this.spe = spe;
+    }
+
+    public Stats(int defaultValue) {
+        this.hp = defaultValue;
+        this.atk = defaultValue;
+        this.def = defaultValue;
+        this.spa = defaultValue;
+        this.spd = defaultValue;
+        this.spe = defaultValue;
+    }
+
+    public void set(int index, int value) {
+        switch (index) {
+            case 0:
+                hp = value;
+                break;
+            case 1:
+                atk = value;
+                break;
+            case 2:
+                def = value;
+                break;
+            case 3:
+                spa = value;
+                break;
+            case 4:
+                spd = value;
+                break;
+            case 5:
+                spe = value;
+                break;
+        }
+    }
+
+    public int get(int index) {
+        return toArray()[index];
+    }
+
+    public int[] toArray() {
+        return new int[]{hp, atk, def, spa, spd, spe};
+    }
+
+    @Override
+    public String toString() {
+        return "Stats{" +
+                "hp=" + hp +
+                ", atk=" + atk +
+                ", def=" + def +
+                ", spa=" + spa +
+                ", spd=" + spd +
+                ", spe=" + spe +
+                '}';
+    }
+
+    public int sum() {
+        return hp + atk + def + spa + spd + spe;
     }
 
     public static final int[] calculateSpeedRange(int level, int baseSpe, String tier, int gen) {
@@ -54,5 +112,14 @@ public class Stats {
 
     private static int tr(float value) {
         return (int) value;
+    }
+
+
+    public static int calculateStat(int base, int iv, int ev, int niv, float nat) {
+        return (int) ((((2 * base + iv + ev / 4) * niv) / 100 + 5) * nat);
+    }
+
+    public static int calculateHp(int base, int iv, int ev, int niv) {
+        return ((2 * base + iv + ev / 4) * niv) / 100 + niv + 10;
     }
 }

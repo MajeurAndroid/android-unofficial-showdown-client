@@ -1,9 +1,6 @@
 package com.majeur.psclient;
 
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.DialogFragment;
 import android.text.InputFilter;
 import android.text.Spanned;
 import android.view.KeyEvent;
@@ -16,6 +13,10 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import com.majeur.psclient.service.ShowdownService;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.DialogFragment;
 
 public class SignInDialog extends DialogFragment implements View.OnClickListener, ShowdownService.AttemptSignInCallback {
 
@@ -62,7 +63,7 @@ public class SignInDialog extends DialogFragment implements View.OnClickListener
             mPasswordEditText.setEnabled(false);
             mSignInButton.setText("Loading...");
             mSignInButton.setEnabled(false);
-            ((MainActivity) getActivity()).getShowdownService()
+            ((MainActivity) getActivity()).getService()
                     .attemptSignIn(mUsernameEditText.getText().toString(),
                             mPasswordEditText.getText().toString(), SignInDialog.this);
 
@@ -73,7 +74,7 @@ public class SignInDialog extends DialogFragment implements View.OnClickListener
             mUsernameEditText.setEnabled(false);
             mSignInButton.setText("Loading...");
             mSignInButton.setEnabled(false);
-            ((MainActivity) getActivity()).getShowdownService()
+            ((MainActivity) getActivity()).getService()
                     .attemptSignIn(mUsernameEditText.getText().toString(), SignInDialog.this);
         }
     }

@@ -5,12 +5,11 @@ import android.text.TextUtils;
 public abstract class MessageObserver {
 
     private ShowdownService mService;
-    private String mRoomId;
+    private String mObservedRoomId;
     private boolean mObserveAll;
 
-
     public void observeForRoomId(String roomId) {
-        mRoomId = roomId;
+        mObservedRoomId = roomId;
     }
 
     public void setObserveAll(boolean observeAll) {
@@ -18,7 +17,7 @@ public abstract class MessageObserver {
     }
 
     protected String observedRoomId() {
-        return mRoomId;
+        return mObservedRoomId;
     }
 
     protected ShowdownService getService() {
@@ -34,7 +33,7 @@ public abstract class MessageObserver {
     }
 
     /* package */ boolean postMessage(ServerMessage message) {
-        if (mObserveAll || TextUtils.equals(mRoomId, message.roomId))
+        if (mObserveAll || TextUtils.equals(mObservedRoomId, message.roomId))
             return onMessage(message);
         return false;
     }

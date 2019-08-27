@@ -23,6 +23,8 @@ import com.majeur.psclient.util.Utils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import static com.majeur.psclient.model.Id.toId;
+
 public abstract class BattleMessageObserver extends RoomMessageObserver {
 
     private BattleTextBuilder mBattleTextBuilder;
@@ -32,6 +34,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
     private String mP2Username;
     private Const mGameType;
     private boolean mBattleRunning;
+    private int[] mPreviewPokemonIndexes;
 
     public void gotContext(Context context) {
         mBattleTextBuilder = new BattleTextBuilder(context);
@@ -44,6 +47,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         mGameType = null;
         mActionQueue.clear();
         mBattleRunning = true;
+        mPreviewPokemonIndexes = new int[2];
     }
 
     @Override
@@ -61,30 +65,14 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         return mBattleRunning;
     }
 
-    public void forfeit() {
-        getService().sendRoomCommand(observedRoomId(), "forfeit", null);
-    }
-
-    public void sendSwitchDecision(int reqId, int who) {
-        getService().sendRoomCommand(observedRoomId(), "switch", who + "|" + reqId);
-    }
-
-    public void sendChooseDecision(int reqId, int which) {
-        //gen7randombattle-860621231|/choose move 1|3
-        getService().sendRoomCommand(observedRoomId(), "move", which + "|" + reqId);
-    }
-
-    public void sendTimerCommand(boolean on) {
-        getService().sendRoomCommand(observedRoomId(), "timer", on ? "on" : "off");
-    }
-
     private String myUsername() {
         return getService().getSharedData("username");
     }
 
     @Override
     public boolean onMessage(ServerMessage message) {
-        super.onMessage(message);
+        if (super.onMessage(message))
+            return true;
         message.args.reset();
 
         if (message.command.charAt(0) == '-')
@@ -137,13 +125,15 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
                 onPrintText(Utils.italicText(message.args.next()));
                 break;
             case "clearpoke":
+                mPreviewPokemonIndexes[0] = mPreviewPokemonIndexes[1] = 0;
                 onPreviewStarted();
                 break;
             case "poke":
-
+                handlePreviewPokemon(message.args);
                 break;
             case "teampreview":
-
+                // Used to trigger action looping in case nothing has been posted before
+                mActionQueue.enqueueAction(ActionQueue.EMPTY_ACTION);
                 break;
             case "start":
                 onPrintText("\n" + mBattleTextBuilder.startBattle(mP1Username, mP2Username));
@@ -238,8 +228,8 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
 
     private void handleTeamSize(ServerMessage.Args args) {
         String rawId = args.next();
-        int count = Integer.parseInt(args.next());
         Player player = getPlayer(rawId);
+        int count = Integer.parseInt(args.next());
         onTeamSize(player, count);
     }
 
@@ -327,6 +317,18 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         } catch (JSONException e) {
             e.printStackTrace();
         }
+    }
+
+    // p1|Zoroark, M|item
+    // p2|Crobat, M|
+    // p1|Shedinja|item
+    private void handlePreviewPokemon(ServerMessage.Args args) {
+        String rawId = args.next();
+        Player player = getPlayer(rawId);
+        int curIndex = mPreviewPokemonIndexes[player == Player.FOE ? 1 : 0]++;
+        String species = toId(args.next().split(",")[0]);
+        boolean hasItem = args.hasNext();
+        onAddPreviewPokemon(PokemonId.fromPosition(player, curIndex), species, hasItem);
     }
 
     private void handleInactive(ServerMessage.Args args, boolean on) {
@@ -687,6 +689,8 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
     protected abstract void onTimerEnabled(boolean enabled);
 
     protected abstract void onPreviewStarted();
+
+    protected abstract void onAddPreviewPokemon(PokemonId id, String species, boolean hasItem);
 
     protected abstract void onSwitch(BattlingPokemon newPokemon);
 

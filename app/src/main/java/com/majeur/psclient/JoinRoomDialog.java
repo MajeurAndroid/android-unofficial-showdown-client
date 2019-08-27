@@ -71,7 +71,7 @@ public class JoinRoomDialog extends DialogFragment {
                 RoomInfo roomInfo = (RoomInfo) mListAdapter.getItem(i);
                 String roomId = toId(roomInfo.name);
                 MainActivity activity = (MainActivity) getActivity();
-                activity.getShowdownService().sendGlobalCommand("join", roomId);
+                activity.getService().sendGlobalCommand("join", roomId);
                 Log.e("rerere", "fffsd");
                 dismiss();
             }

@@ -1,5 +1,6 @@
 package com.majeur.psclient.service;
 
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.majeur.psclient.model.AvailableBattleRoomsInfo;
@@ -32,11 +33,6 @@ public abstract class GlobalMessageObserver extends MessageObserver {
         return getUserId().startsWith("guest");
     }
 
-    public void searchForBattle() {
-        getService().sendGlobalCommand("utm", "null");
-        getService().sendGlobalCommand("search", "gen7randombattle");
-    }
-
     @Override
     public boolean onMessage(ServerMessage message) {
         switch (message.command) {
@@ -46,6 +42,10 @@ public abstract class GlobalMessageObserver extends MessageObserver {
             case "updateuser":
                 processUpdateUser(message.args);
                 return true;
+            case "nametaken":
+                message.args.next(); // Skipping name
+                onShowPopup(message.args.next());
+                return true;
             case "queryresponse":
                 processQueryResponse(message.args);
                 return true;
@@ -53,7 +53,7 @@ public abstract class GlobalMessageObserver extends MessageObserver {
                 processAvailableFormats(message.args);
                 return true;
             case "popup":
-                onShowPopup(message.args.next());
+                handlePopup(message.args);
                 return true;
             case "updatesearch":
                 processUpdateSearch(message.args);
@@ -91,7 +91,7 @@ public abstract class GlobalMessageObserver extends MessageObserver {
     }
 
     private void processUpdateUser(ServerMessage.Args args) {
-        String username = args.next();
+        String username = args.next().trim();
         boolean isGuest = "0".equals(args.next());
         String avatar = args.next();
         avatar = ("000" + avatar).substring(avatar.length());
@@ -216,8 +216,17 @@ public abstract class GlobalMessageObserver extends MessageObserver {
         }
 
         getService().putSharedData("formats", battleFormatCategories);
-
         onBattleFormatsChanged(battleFormatCategories);
+    }
+
+    private void handlePopup(ServerMessage.Args args) {
+        StringBuilder text = new StringBuilder(args.next());
+        while (args.hasNext()) {
+            String next = args.next();
+            if (!TextUtils.isEmpty(next))
+                text.append("\n").append(next);
+        }
+        onShowPopup(text.toString());
     }
 
     private void processUpdateSearch(ServerMessage.Args args) {

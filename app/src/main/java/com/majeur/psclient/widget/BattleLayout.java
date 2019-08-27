@@ -3,7 +3,6 @@ package com.majeur.psclient.widget;
 import android.content.Context;
 import android.graphics.Point;
 import android.graphics.PointF;
-
 import android.util.AttributeSet;
 import android.util.SparseArray;
 import android.view.Gravity;
@@ -11,10 +10,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
-import com.majeur.psclient.util.Utils;
-import com.majeur.psclient.R;
-import com.majeur.psclient.model.PokemonId;
 import com.majeur.psclient.model.Player;
+import com.majeur.psclient.model.PokemonId;
+import com.majeur.psclient.util.Utils;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -47,7 +45,7 @@ public class BattleLayout extends ViewGroup {
     private int mCurrentMode = MODE_BATTLE_SINGLE;
     private int mStatusBarOffset;
 
-    private int mP1TeamSize = 4, mP2TeamSize = 4;
+    private int mP1PreviewTeamSize = 6, mP2PreviewTeamSize = 6;
 
     private List<ImageView> mImageViewCache;
     private SparseArray<ImageView> mP1ImageViews;
@@ -83,6 +81,10 @@ public class BattleLayout extends ViewGroup {
         requestLayout();
     }
 
+    public void setPreviewTeamSize(Player player, int teamSize) {
+        if (player == Player.TRAINER) mP1PreviewTeamSize = teamSize;
+        if (player == Player.FOE) mP2PreviewTeamSize = teamSize;
+    }
 
     public ToasterView getToasterView(PokemonId id) {
         if (id.position < 0)
@@ -173,8 +175,10 @@ public class BattleLayout extends ViewGroup {
     }
 
     private void layoutPreviewMode(int width, int height) {
-        int p1Count = mP1TeamSize;
+        int p1Count = mP1PreviewTeamSize;
         fillNeededViews(mP1ImageViews, p1Count, width, height);
+        fillNeededStatusViews(mP1StatusViews, 0, width, height);
+        fillNeededToasterViews(mP1ToasterViews, 0, width, height);
         Point startPoint = new Point((int) (REL_TEAMPREV_P1_LINE[0].x * width),
                 (int) (REL_TEAMPREV_P1_LINE[0].y * height));
         Point endPoint = new Point((int) (REL_TEAMPREV_P1_LINE[1].x * width),
@@ -185,8 +189,10 @@ public class BattleLayout extends ViewGroup {
             layoutChild(mP1ImageViews.get(i), startPoint.x + i*xStep,
                     startPoint.y + i*yStep, Gravity.CENTER, false);
 
-        int p2Count = mP2TeamSize;
+        int p2Count = mP2PreviewTeamSize;
         fillNeededViews(mP2ImageViews, p2Count, width, height);
+        fillNeededStatusViews(mP2StatusViews, 0, width, height);
+        fillNeededToasterViews(mP2ToasterViews, 0, width, height);
         startPoint = new Point((int) (REL_TEAMPREV_P2_LINE[0].x * width),
                 (int) (REL_TEAMPREV_P2_LINE[0].y * height));
         endPoint = new Point((int) (REL_TEAMPREV_P2_LINE[1].x * width),
@@ -237,8 +243,7 @@ public class BattleLayout extends ViewGroup {
         if (mImageViewCache.size() > 0)
             return mImageViewCache.get(0);
         ImageView imageView = new ImageView(getContext());
-        imageView.setScaleType(ImageView.ScaleType.FIT_XY);
-        imageView.setImageResource(R.drawable.crobat);
+        imageView.setScaleType(ImageView.ScaleType.FIT_XY); 
         LayoutParams layoutParams = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         imageView.setLayoutParams(layoutParams);
         return imageView;
@@ -278,6 +283,7 @@ public class BattleLayout extends ViewGroup {
         if (current < needed) {
             for (int i = current; i < needed; i++) {
                 ImageView child = obtainImageView();
+                child.setImageDrawable(null);
                 pXImageViews.append(i, child);
                 addViewInLayout(child, -1, child.getLayoutParams());
                 measureChildInLayout(child, width, height);
