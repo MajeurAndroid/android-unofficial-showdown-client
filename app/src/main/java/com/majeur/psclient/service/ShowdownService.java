@@ -16,8 +16,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.net.SocketTimeoutException;
-import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,6 +40,7 @@ public class ShowdownService extends Service {
     private static final String TAG = ShowdownService.class.getSimpleName();
     private static final int WS_CLOSE_NORMAL = 1000;
     private static final int WS_CLOSE_GOING_AWAY = 1001;
+    private static final String SHOWDOWN_SOCKET_URL = "wss://sim2.psim.us/showdown/websocket";
 
     private Binder mBinder;
 
@@ -86,7 +85,7 @@ public class ShowdownService extends Service {
     public void connectToServer() {
         if (mWebSocket != null)
             return;
-        Request request = new Request.Builder().url("ws://sim.smogon.com:8000/showdown/websocket").build();
+        Request request = new Request.Builder().url(SHOWDOWN_SOCKET_URL).build();
         mWebSocket = mOkHttpClient.newWebSocket(request, mWebSocketListener);
     }
 
@@ -242,14 +241,14 @@ public class ShowdownService extends Service {
         @Override
         public void onFailure(WebSocket webSocket, Throwable t, Response response) {
             Log.w(TAG + "[ERR]", t.toString());
-            if (t instanceof UnknownHostException || t instanceof SocketTimeoutException) {
-                mUiHandler.post(new Runnable() {
+            //if (t instanceof UnknownHostException || t instanceof SocketTimeoutException)
+            mUiHandler.post(new Runnable() {
                     @Override
                     public void run() {
                         dispatchNetworkError();
                     }
                 });
-            }
+
         }
     };
 

@@ -378,9 +378,13 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         mService.sendRoomCommand(mObservedRoomId, "switch", who, reqId);
     }
 
-    public void sendChooseDecision(int reqId, int which) {
-        //gen7randombattle-860621231|/choose move 1|3
-        mService.sendRoomCommand(mObservedRoomId, "move", which, reqId);
+    public void sendMoveDecision(int reqId, int which, boolean mega, boolean zmove) {
+        if (mega)
+            mService.sendRoomCommand(mObservedRoomId, "move", which + " mega", reqId);
+        else if (zmove)
+            mService.sendRoomCommand(mObservedRoomId, "move", which + " zmove", reqId);
+        else
+            mService.sendRoomCommand(mObservedRoomId, "move", which, reqId);
     }
 
     public void sendTimerCommand(boolean on) {
@@ -567,11 +571,11 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
             List<Move> moves = hideMoves ? null : request.getMoves();
             List<SidePokemon> team = hideSwitch ? null : request.getSide();
 
-            mActionWidget.promptChoice(mBattleTipPopup, moves, team, request.teamPreview(),
+            mActionWidget.promptChoice(mBattleTipPopup, moves, request.canMegaEvo(), team, request.teamPreview(),
                     new BattleActionWidget.OnChoiceListener() {
                 @Override
-                public void onMoveChose(int which) {
-                    sendChooseDecision(request.getId(), which);
+                public void onMoveChose(int which, boolean mega, boolean zmove) {
+                    sendMoveDecision(request.getId(), which, mega, zmove);
                 }
 
                 @Override

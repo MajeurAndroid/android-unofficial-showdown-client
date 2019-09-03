@@ -4,6 +4,7 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -21,6 +22,8 @@ import android.view.ViewAnimationUtils;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.FrameLayout;
 
 import com.majeur.psclient.R;
@@ -57,6 +60,7 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
     private Paint mPaint;
     private ObjectAnimator mContentAlphaAnimator;
     private List<Button> mMoveButtons;
+    private CheckBox mMovesCheckBox;
     private List<SwitchButton> mSwitchButtons;
 
     private OnChoiceListener mOnChoiceListener;
@@ -109,6 +113,16 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
             mSwitchButtons.add(switchButton);
             switchButton.setOnClickListener(this);
         }
+        mMovesCheckBox = new CheckBox(context);
+        ColorStateList colorStateList = new ColorStateList(
+                new int[][] {
+                        new int[] { -android.R.attr.state_checked },
+                        new int[] {  android.R.attr.state_checked }
+                },
+                new int[] {Color.GRAY, Color.DKGRAY}
+        );
+        mMovesCheckBox.setButtonTintList(colorStateList);
+        addView(mMovesCheckBox, new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
     }
 
     public void setOnRevealListener(OnRevealListener onRevealListener) {
@@ -172,6 +186,11 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
             }
         }
 
+        int childWidthSpec = MeasureSpec.makeMeasureSpec(availableWidth, MeasureSpec.AT_MOST);
+        mMovesCheckBox.measure(childWidthSpec, heightMeasureSpec);
+        if (mMovesCheckBox.getVisibility() == VISIBLE)
+            measuredHeight += mMovesCheckBox.getMeasuredHeight();
+
         setMeasuredDimension(measuredWidth, measuredHeight);
     }
 
@@ -195,6 +214,15 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
         }
 
         yOffset += childHeight;
+
+        if (mMovesCheckBox.getVisibility() != GONE) {
+            int checkBoxWidth = mMovesCheckBox.getMeasuredWidth();
+            int checkBoxHeight = mMovesCheckBox.getMeasuredHeight();
+            mMovesCheckBox.layout(width / 2 - checkBoxWidth / 2, yOffset,
+                    width / 2 + checkBoxWidth / 2, yOffset + checkBoxHeight);
+            yOffset += checkBoxHeight;
+        }
+
         N = mSwitchButtons.size();
 
         childWidth = width / (N / 2);
@@ -220,11 +248,11 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-
         if (mMoveButtons.size() > 0) {
+            int offset = mMovesCheckBox.getVisibility() != GONE ? mMovesCheckBox.getHeight() : 0;
             View child = mMoveButtons.get(0);
             if (child.getVisibility() != GONE)
-                canvas.drawLine(0, child.getHeight(), getWidth(), child.getHeight(), mPaint);
+                canvas.drawLine(0, offset + child.getHeight(), getWidth(), offset + child.getHeight(), mPaint);
         }
     }
 
@@ -246,7 +274,9 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
         }
     }
 
-    public void promptChoice(BattleTipPopup battleTipPopup, List<Move> moves, List<SidePokemon> team, boolean chooseLead, OnChoiceListener listener) {
+    public void promptChoice(BattleTipPopup battleTipPopup, List<Move> moves, boolean canMega,
+                 List<SidePokemon> team, boolean chooseLead, OnChoiceListener listener) {
+        boolean canZMove = false;
         for (int i = 0; i < 4; i++) {
             Button button = mMoveButtons.get(i);
             if (moves != null && i < moves.size()) {
@@ -257,10 +287,32 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
                 button.setVisibility(VISIBLE);
                 button.setTag(R.id.battle_data_tag, move);
                 battleTipPopup.addTippedView(button);
+                if (move.canZMove()) canZMove = true;
             } else {
                 button.setText(null);
                 button.setVisibility(GONE);
             }
+        }
+
+        if (canMega) {
+            mMovesCheckBox.setVisibility(VISIBLE);
+            mMovesCheckBox.setText("Mega Evolution");
+            mMovesCheckBox.setChecked(false);
+            mMovesCheckBox.setOnCheckedChangeListener(null);
+        } else if (canZMove) {
+            mMovesCheckBox.setVisibility(VISIBLE);
+            mMovesCheckBox.setText("Z-Move");
+            mMovesCheckBox.setChecked(false);
+            mMovesCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
+                    toggleZMoves(checked);
+                }
+            });
+        } else {
+            mMovesCheckBox.setVisibility(GONE);
+            mMovesCheckBox.setText(null);
+            mMovesCheckBox.setOnCheckedChangeListener(null);
         }
 
         for (int i = 0; i < 6; i++) {
@@ -284,13 +336,34 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
         revealIn();
     }
 
+    private void toggleZMoves(boolean toggle) {
+        for (int i = 0; i < 4; i++) {
+            Button button = mMoveButtons.get(i);
+            if (button.getVisibility() == GONE) continue;
+            Move move = (Move) button.getTag(R.id.battle_data_tag);
+            if (toggle) {
+                if (move.canZMove()) {
+                    button.setText(move.zName);
+                } else {
+                    button.setText("—");
+                    setMoveButtonEnabled(button, false);
+                }
+            } else {
+                button.setText(sp(move));
+                setMoveButtonEnabled(button, true);
+            }
+           // battleTipPopup.addTippedView(button);
+
+        }
+    }
+
     private void setMoveButtonEnabled(Button button, boolean enabled) {
         if (enabled) {
             button.setEnabled(true);
-            button.setAlpha(1f);
+            button.setTextColor(Color.WHITE);
         } else {
             button.setEnabled(false);
-            button.setAlpha(0.65f);
+            button.setTextColor(Color.GRAY);
         }
     }
 
@@ -309,8 +382,12 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
 
         Object data = view.getTag(R.id.battle_data_tag);
         if (data instanceof Move) {
-            int which = ((Move) data).index + 1;
-            mOnChoiceListener.onMoveChose(which);
+            Move move = (Move) data;
+            int which = move.index + 1;
+            boolean mega = mMovesCheckBox.getVisibility() == VISIBLE && mMovesCheckBox.isChecked();
+            boolean zmove = mega && move.canZMove();
+            if (zmove) mega = false;
+            mOnChoiceListener.onMoveChose(which, mega, zmove);
         } else if (data instanceof SidePokemon) {
             int who = ((SidePokemon) data).index + 1;
             mOnChoiceListener.onSwitchChose(who);
@@ -411,7 +488,7 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
     }
 
     public interface OnChoiceListener {
-        public void onMoveChose(int which);
+        public void onMoveChose(int which, boolean mega, boolean zmove);
 
         public void onSwitchChose(int who);
     }

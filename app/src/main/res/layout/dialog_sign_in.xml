@@ -23,7 +23,8 @@
         android:imeOptions="actionGo"
         android:hint="Username"/>
 
-    <TextView android:id="@+id/text_view_message"
+    <TextView
+        android:id="@+id/text_view_message"
         android:layout_width="240dp"
         android:layout_height="wrap_content"
         android:textColor="#c70000"/>
@@ -39,7 +40,8 @@
         android:inputType="textPassword"
         android:hint="Password"/>
 
-    <Button android:id="@+id/button_signin"
+    <Button
+        android:id="@+id/button_signin"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"

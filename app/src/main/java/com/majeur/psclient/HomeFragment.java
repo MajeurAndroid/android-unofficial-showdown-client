@@ -90,22 +90,8 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
             }
 
             @Override
-            protected View getItemView(int position, View convertView, ViewGroup parent) {
-                TextView textView;
-                if (convertView == null) {
-                    convertView = getLayoutInflater().inflate(android.R.layout.simple_list_item_1, parent, false);
-                    textView = (TextView) convertView;
-                    textView.setSingleLine();
-                } else {
-                    textView = (TextView) convertView;
-                }
-
-                BattleFormat format = (BattleFormat) getItem(position);
-                textView.setText("\t");
-                textView.append(format.getLabel());
-                //textView.setTextColor(format.isTeamNeeded() ? Color.RED : Color.GREEN);
-
-                return textView;
+            protected String getItemLabel(int position) {
+                return ((BattleFormat) getItem(position)).getLabel();
             }
         });
         mFormatsSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {

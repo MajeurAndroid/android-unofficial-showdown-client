@@ -243,7 +243,7 @@ public class BattleLayout extends ViewGroup {
         if (mImageViewCache.size() > 0)
             return mImageViewCache.get(0);
         ImageView imageView = new ImageView(getContext());
-        imageView.setScaleType(ImageView.ScaleType.FIT_XY); 
+        imageView.setScaleType(ImageView.ScaleType.FIT_XY);
         LayoutParams layoutParams = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         imageView.setLayoutParams(layoutParams);
         return imageView;

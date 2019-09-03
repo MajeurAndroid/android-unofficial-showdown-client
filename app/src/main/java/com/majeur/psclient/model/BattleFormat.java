@@ -2,10 +2,13 @@ package com.majeur.psclient.model;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 
+import static com.majeur.psclient.model.Id.toId;
+
 public class BattleFormat implements Serializable {
+
+    public static final BattleFormat FORMAT_OTHER = new BattleFormat("[Other]", -1);
 
     private static final int MASK_TEAM = 0x1;
     private static final int MASK_SEARCH_SHOW_BIT = 0x2;
@@ -30,6 +33,10 @@ public class BattleFormat implements Serializable {
 
     public boolean isTeamNeeded() {
         return (mFormatInt & MASK_TEAM) == 0;
+    }
+
+    public String id() {
+        return toId(mLabel);
     }
 
     public static class Category implements Serializable {

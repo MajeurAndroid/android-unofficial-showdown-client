@@ -43,40 +43,40 @@
         android:layout_width="240dp"
         android:layout_height="wrap_content">
 
-            <RadioGroup
-                android:id="@+id/radio_group"
-                android:layout_width="match_parent"
+        <RadioGroup
+            android:id="@+id/radio_group"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
+                android:text="I personally recommand you yo copy paste your team from showdown to pastebin, and the entering the pastebin paste key here."/>
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
-                    android:text="I personally recommand you yo copy paste your team from showdown to pastebin, and the entering the pastebin paste key here."/>
+            <RadioButton
+                android:id="@+id/radio_import_pastebin"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
+                android:text="From Pastebin"/>
 
-                <RadioButton
-                    android:id="@+id/radio_import_pastebin"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
-                    android:text="From Pastebin"/>
+            <RadioButton
+                android:id="@+id/radio_import_clipboard"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
+                android:text="From clipboard"/>
 
-                <RadioButton
-                    android:id="@+id/radio_import_clipboard"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
-                    android:text="From clipboard"/>
+            <RadioButton
+                android:id="@+id/radio_import_manually"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
+                android:text="Type manually"/>
 
-                <RadioButton
-                    android:id="@+id/radio_import_manually"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
-                    android:text="Type manually"/>
-
-            </RadioGroup>
+        </RadioGroup>
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -89,7 +89,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="8dp"
                 android:indeterminate="true"
-                android:visibility="visible" />
+                android:visibility="visible"/>
 
             <EditText
                 android:id="@+id/edit_text_import"
@@ -101,12 +101,13 @@
 
     </com.majeur.psclient.widget.SwitchLayout>
 
-    <Button android:id="@+id/button_"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:layout_gravity="center_horizontal"
-            android:text="Import"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+    <Button
+        android:id="@+id/button_"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:layout_gravity="center_horizontal"
+        android:text="Import"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
 
 </LinearLayout>

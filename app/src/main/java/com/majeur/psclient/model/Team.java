@@ -32,8 +32,8 @@ public class Team implements Serializable {
     }
 
     public final int uniqueId;
-    public final String label;
-    public final String format;
+    public String label;
+    public String format;
     public final List<Pokemon> pokemons;
 
     public Team(int uniqueId, String label, List<Pokemon> pokemons, String format) {
@@ -155,9 +155,9 @@ public class Team implements Serializable {
         return buf.toString();
     }
 
-    public static Team unpack(final String label, String buf) {
+    public static Team unpack(final String label, String format, String buf) {
         if (buf == null || TextUtils.isEmpty(buf))
-            return new Team(label, new LinkedList<Pokemon>(), null);
+            return new Team(label, new LinkedList<Pokemon>(), format);
 
         if (buf.charAt(0) == '[' && buf.charAt(buf.length() - 1) == ']') {
             // TODO buf = this.packTeam(JSON.parse(buf));
@@ -272,7 +272,7 @@ public class Team implements Serializable {
             i = j + 1;
         }
 
-        return new Team(label, team, null);
+        return new Team(label, team, format);
     }
 
     @Override

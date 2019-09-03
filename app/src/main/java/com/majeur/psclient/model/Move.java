@@ -1,9 +1,9 @@
 package com.majeur.psclient.model;
 
-import android.util.Log;
-
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import androidx.annotation.Nullable;
 
 import static com.majeur.psclient.model.Id.toId;
 
@@ -16,10 +16,11 @@ public class Move {
     public final int ppMax;
     public final String target;
     public final boolean disabled;
+    public final String zName;
     public ExtraInfo extraInfo;
 
 
-    public Move(int index, JSONObject jsonObject) throws JSONException {
+    public Move(int index, JSONObject jsonObject, @Nullable JSONObject zJsonObject) throws JSONException {
         this.index = index;
         name = jsonObject.getString("move").replace("Hidden Power", "HP");
         id = jsonObject.getString("id");
@@ -27,6 +28,26 @@ public class Move {
         ppMax = jsonObject.optInt("maxpp", -1);
         target = jsonObject.optString("target", null);
         disabled = jsonObject.optBoolean("disabled", false);
+        zName = zJsonObject != null ? zJsonObject.optString("move", null) : null;
+    }
+
+    public boolean canZMove() {
+        return zName != null;
+    }
+
+    @Override
+    public String toString() {
+        return "Move{" +
+                "name='" + name + '\'' +
+                ", id='" + id + '\'' +
+                ", index=" + index +
+                ", pp=" + pp +
+                ", ppMax=" + ppMax +
+                ", target='" + target + '\'' +
+                ", disabled=" + disabled +
+                ", zName='" + zName + '\'' +
+                ", extraInfo=" + extraInfo +
+                '}';
     }
 
     public static class ExtraInfo {

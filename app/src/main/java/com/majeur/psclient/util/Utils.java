@@ -64,7 +64,11 @@ public class Utils {
     }
 
     public static String firstCharUpperCase(String string) {
-        return string.substring(0, 1).toUpperCase() + string.substring(1);
+        char firstChar = string.charAt(0);
+        if (Character.isAlphabetic(firstChar) || string.length() < 3)
+            return string.substring(0, 1).toUpperCase() + string.substring(1);
+        else
+            return firstChar + string.substring(1, 2).toUpperCase() + string.substring(2);
     }
 
     public static String convertStreamToString(InputStream is) {

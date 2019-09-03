@@ -97,6 +97,9 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
             case "drag":
                 handleDrag(message.args);
                 break;
+            case "detailschange":
+                handleDetailsChanged(message.args);
+                break;
             case "turn":
                 handleTurn(message.args);
                 break;
@@ -285,6 +288,13 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
                 printMajorActionText(text2);
             }
         });
+    }
+
+    // |-formechange|POKEMON|SPECIES|HP STATUS
+    // |detailschange|POKEMON|DETAILS|HP STATUS
+    // |detailschange|p1a: Aerodactyl|Aerodactyl-Mega, M
+    private void handleDetailsChanged(ServerMessage.Args args) {
+
     }
 
     private void handleTurn(ServerMessage.Args args) {
@@ -619,6 +629,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
+                // TODO print ability activation when [from] ability: xxx
                 Spanned text = mBattleTextBuilder.weather(weather, action);
                 if (text != null)
                     printMinorActionText(text);

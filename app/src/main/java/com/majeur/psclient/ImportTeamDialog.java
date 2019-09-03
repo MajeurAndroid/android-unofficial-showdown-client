@@ -27,6 +27,7 @@ import com.majeur.psclient.util.Utils;
 import com.majeur.psclient.widget.SwitchLayout;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.List;
 
 import androidx.annotation.NonNull;
@@ -91,6 +92,8 @@ public class ImportTeamDialog extends DialogFragment {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(getContext(), TeamEditActivity.class);
+                List<BattleFormat.Category> battleFormats = ((MainActivity) getActivity()).getHomeFragment().getBattleFormats();
+                intent.putExtra(TeamEditActivity.INTENT_EXTRA_FORMATS, (Serializable) battleFormats);
                 getFragmentManager().findFragmentById(R.id.fragment_teams)
                         .startActivityForResult(intent, TeamEditActivity.INTENT_REQUEST_CODE);
                 dismiss();

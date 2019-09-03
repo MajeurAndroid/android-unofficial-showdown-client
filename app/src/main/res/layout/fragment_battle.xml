@@ -72,7 +72,7 @@
         android:textColor="@color/primary_light"
         android:alpha="0"/>
 
-    <include layout="@layout/layout_extra_actions" />
+    <include layout="@layout/layout_extra_actions"/>
 
     <ScrollView
         android:id="@+id/scroll_view_log"

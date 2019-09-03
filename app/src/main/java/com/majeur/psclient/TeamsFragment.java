@@ -8,12 +8,14 @@ import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseExpandableListAdapter;
+import android.widget.EditText;
 import android.widget.ExpandableListView;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -28,7 +30,10 @@ import com.majeur.psclient.service.ShowdownService;
 import com.majeur.psclient.util.Callback;
 import com.majeur.psclient.util.UserTeamsStore;
 
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import androidx.annotation.NonNull;
@@ -44,6 +49,7 @@ public class TeamsFragment extends Fragment implements MainActivity.Callbacks {
     private DexIconLoader mDexIconLoader;
 
     private List<Team.Group> mTeamGroups;
+    private BattleFormat mFallbackFormat = BattleFormat.FORMAT_OTHER;
 
     private ExpandableListView mExpandableListView;
     private TeamListAdapter mTeamListAdapter;
@@ -84,7 +90,8 @@ public class TeamsFragment extends Fragment implements MainActivity.Callbacks {
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+                     @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_teams, container, false);
     }
 
@@ -99,6 +106,9 @@ public class TeamsFragment extends Fragment implements MainActivity.Callbacks {
             public boolean onChildClick(ExpandableListView expandableListView, View view, int i, int j, long id) {
                 Team team = ((TeamListAdapter) expandableListView.getExpandableListAdapter()).getChild(i, j);
                 Intent intent = new Intent(getContext(), TeamEditActivity.class);
+                List<BattleFormat.Category> battleFormats = ((MainActivity) getActivity())
+                        .getHomeFragment().getBattleFormats();
+                intent.putExtra(TeamEditActivity.INTENT_EXTRA_FORMATS, (Serializable) battleFormats);
                 intent.putExtra(TeamEditActivity.INTENT_EXTRA_TEAM, team);
                 startActivityForResult(intent, TeamEditActivity.INTENT_REQUEST_CODE);
                 return true;
@@ -111,7 +121,7 @@ public class TeamsFragment extends Fragment implements MainActivity.Callbacks {
                         (ExpandableListView.ExpandableListContextMenuInfo) contextMenuInfo;
                 int type = ExpandableListView.getPackedPositionType(info.packedPosition);
                 if (type == ExpandableListView.PACKED_POSITION_TYPE_CHILD)
-                    contextMenu.add(0, 0, 0, "Delete");
+                getActivity().getMenuInflater().inflate(R.menu.context_menu_team, contextMenu);
             }
         });
 
@@ -128,24 +138,56 @@ public class TeamsFragment extends Fragment implements MainActivity.Callbacks {
 
     @Override
     public boolean onContextItemSelected(@NonNull MenuItem item) {
+        if (!(item.getMenuInfo() instanceof ExpandableListView.ExpandableListContextMenuInfo))
+            return false;
+
         ExpandableListView.ExpandableListContextMenuInfo info =
                 (ExpandableListView.ExpandableListContextMenuInfo) item.getMenuInfo();
         int groupPos = ExpandableListView.getPackedPositionGroup(info.packedPosition);
         int childPos = ExpandableListView.getPackedPositionChild(info.packedPosition);
-
         final Team team = mTeamListAdapter.getChild(groupPos, childPos);
-        new MaterialAlertDialogBuilder(getContext())
-                .setTitle("Are you sure you want to delete this team ?")
-                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        removeTeam(team);
-                        persistUserTeams();
-                    }
-                })
-                .setNegativeButton("No", null)
-                .show();
-        return true;
+
+        switch (item.getItemId()) {
+            case R.id.action_rename:
+                View dialogView = getLayoutInflater().inflate(R.layout.dialog_team_name, null);
+                final EditText editText = dialogView.findViewById(R.id.edit_text_team_name);
+                editText.setText(team.label);
+                new MaterialAlertDialogBuilder(getContext())
+                        .setTitle("Rename team")
+                        .setPositiveButton("Done", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                String input = editText.getText().toString();
+                                String regex = "[{}:\",|\\[\\]]";
+                                if (input.matches(".*" + regex + ".*")) input = input.replaceAll(regex, "");
+                                if (TextUtils.isEmpty(input)) input = "Unnamed team";
+                                team.label = input;
+                                notifyGroupChanged();
+                                persistUserTeams();
+                            }
+                        })
+                        .setNegativeButton("Cancel", null)
+                        .setView(dialogView)
+                        .show();
+                editText.requestFocus();
+                return true;
+            case R.id.action_delete:
+                new MaterialAlertDialogBuilder(getContext())
+                        .setTitle("Are you sure you want to delete this team ?")
+                        .setMessage("This action can't be undone.")
+                        .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                removeTeam(team);
+                                persistUserTeams();
+                            }
+                        })
+                        .setNegativeButton("No", null)
+                        .show();
+                return true;
+            default:
+                return false;
+        }
     }
 
     @Override
@@ -163,7 +205,7 @@ public class TeamsFragment extends Fragment implements MainActivity.Callbacks {
             @Override
             public void callback(Boolean success) {
                 if (!success)
-                    Toast.makeText(getContext(), "Persist teams failed", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), "Failed to save teams.", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -171,49 +213,75 @@ public class TeamsFragment extends Fragment implements MainActivity.Callbacks {
     public void onTeamsImported(List<Team> teams) {
         for (Team team : teams)
             addTeam(team);
-
         persistUserTeams();
     }
 
-    private void addTeam(Team team) {
-        Team.Group group = getMatchingGroup(team);
-        if (group == null) {
-            group = new Team.Group(team.format == null ? "Other" : team.format);
-            mTeamGroups.add(group);
+    private void addTeam(Team newTeam) {
+        if (newTeam.format == null) newTeam.format = toId(mFallbackFormat.getLabel());
+
+        // If true, team was present and has been updated with newTeam data and we're done
+        // If false, team do not exist or need to be placed into another group
+        boolean teamUpdated = updateTeamInternal(newTeam);
+
+        if (!teamUpdated) { // Team need to be added to according group
+            boolean teamAdded = false;
+            for (Team.Group group : mTeamGroups) {
+                if (group.format.equals(newTeam.format)) {
+                    group.teams.add(newTeam);
+                    teamAdded = true;
+                }
+            }
+            if (!teamAdded) { // No group matching new team was found
+                Team.Group group = new Team.Group(newTeam.format);
+                group.teams.add(newTeam);
+                mTeamGroups.add(group);
+            }
         }
-        int matchingTeamIndex = -1;
-        for (int i = 0; i < group.teams.size(); i++)
-            if (group.teams.get(i).uniqueId == team.uniqueId) matchingTeamIndex = i;
-        if (matchingTeamIndex != -1)
-            group.teams.set(matchingTeamIndex, team);
-        else
-            group.teams.add(team);
-        mTeamListAdapter.notifyDataSetChanged();
-        MainActivity activity = (MainActivity) getContext();
-        activity.getHomeFragment().updateTeamSpinner();
+        notifyGroupChanged();
     }
 
-    private Team.Group getMatchingGroup(Team team) {
-        if (mTeamGroups.size() == 0) return null;
+    private boolean updateTeamInternal(Team newTeam) {
         for (Team.Group group : mTeamGroups) {
-            if (team.format == null && group.format.equals("Other"))
-                return group;
-            if (group.format.equals(team.format))
-                return group;
+            for (int i = 0; i < group.teams.size(); i++) {
+                Team team = group.teams.get(i);
+                if (team.uniqueId == newTeam.uniqueId) {
+                    if (newTeam.format.equals(group.format)) {
+                        group.teams.set(i, newTeam);
+                        return true;
+                    } else {
+                        group.teams.remove(i);
+                        if (group.teams.isEmpty())
+                            mTeamGroups.remove(group);
+                        return false;
+                    }
+                }
+            }
         }
-        return null;
+        return false;
     }
 
-    private boolean removeTeam(Team team) {
-        Team.Group group = getMatchingGroup(team);
-        if (group == null) return false;
-        group.teams.remove(team);
-        if (group.teams.isEmpty())
-            mTeamGroups.remove(group);
+    private void removeTeam(Team team) {
+        for (Team.Group group : mTeamGroups) {
+            if (group.format.equals(team.format)) {
+                group.teams.remove(team);
+                if (group.teams.isEmpty())
+                    mTeamGroups.remove(group);
+                break;
+            }
+        }
+        notifyGroupChanged();
+    }
+
+    private void notifyGroupChanged() {
+        Collections.sort(mTeamGroups, new Comparator<Team.Group>() {
+            @Override
+            public int compare(Team.Group group1, Team.Group group2) {
+                return group1.format.compareTo(group2.format);
+            }
+        });
         mTeamListAdapter.notifyDataSetChanged();
         MainActivity activity = (MainActivity) getContext();
         activity.getHomeFragment().updateTeamSpinner();
-        return true;
     }
 
     public List<Team.Group> getTeamGroups() {

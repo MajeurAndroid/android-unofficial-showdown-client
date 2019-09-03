@@ -9,10 +9,10 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.majeur.psclient.R;
-import com.majeur.psclient.util.Utils;
 import com.majeur.psclient.model.Condition;
 import com.majeur.psclient.model.Player;
 import com.majeur.psclient.model.PokemonId;
+import com.majeur.psclient.util.Utils;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -20,13 +20,16 @@ import org.json.JSONObject;
 import java.io.InputStream;
 import java.util.concurrent.ExecutionException;
 
-import static com.majeur.psclient.util.Utils.array;
 import static com.majeur.psclient.model.Id.toId;
+import static com.majeur.psclient.util.Utils.array;
+import static com.majeur.psclient.util.Utils.italicText;
 import static java.lang.String.format;
 
 
 @SuppressWarnings("DefaultLocale")
 public final class BattleTextBuilder {
+
+    private static final String TAG = BattleTextBuilder.class.getSimpleName();
 
     private JSONObject mJSONObject;
     private JsonReadTask mJsonReadTask;
@@ -74,13 +77,18 @@ public final class BattleTextBuilder {
     }
 
     private Spanned line(String s) {
-        int trimIndex = 0;
-        while (s.charAt(trimIndex) == ' ') trimIndex++;
-        s = s.substring(trimIndex);
-        return Html.fromHtml(Utils.firstCharUpperCase(s));
+        if (s == null) {
+            Log.w(TAG, "Cannot build battle text");
+            return italicText("Oops, cannot build battle text for this action");
+        }
+        return Html.fromHtml(Utils.firstCharUpperCase(s.trim()));
     }
 
     private Spanned linef(String s, Object... os) {
+        if (s == null) {
+            Log.w(TAG, "Cannot build battle text for this action");
+            return italicText("Oops, cannot build battle text for this action");
+        }
         return line(format(s, os));
     }
 
@@ -366,25 +374,24 @@ public final class BattleTextBuilder {
 //    upkeep: "  (The sunlight is strong!)",
     //|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Gigalith
 //    |-weather|Hail|[from] ability: Snow Warning|[of] p2a: Vanilluxe
-//    |-weather|DesolateLand|[from] ability: Desolate Land|[of] p1a: Groudon TODO fix Npe
+//    |-weather|DesolateLand|[from] ability: Desolate Land|[of] p1a: Groudon
 
     private String mLastWeather;
 
     public Spanned weather(String weather, String action) {
         if (weather.equals("none")) {
-            if (mLastWeather == null)
-                return null;
-
+            if (mLastWeather == null) return null;
             String lastWeather = toId(mLastWeather);
             mLastWeather = null;
             return line(resolve(lastWeather, "end"));
         }
         mLastWeather = weather;
 
-        if (action == null)
-            return line(resolve(toId(weather), "start"));
-
-        return line(resolve(toId(weather), "upkeep"));
+        if (action.contains("upkeep")) {
+            String upkeepText = resolve(toId(weather), "upkeep");
+            return upkeepText == null ? null : line(upkeepText);
+        }
+        return line(resolve(toId(weather), "start"));
     }
 
     // |-sidestart|p1: Neee7|move: Stealth Rock

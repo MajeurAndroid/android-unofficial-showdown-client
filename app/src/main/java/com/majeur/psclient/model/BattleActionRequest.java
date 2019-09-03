@@ -17,6 +17,7 @@ public class BattleActionRequest {
     private boolean mShouldWait;
     private boolean[] mForceSwitch;
     private boolean[] mTrapped;
+    private boolean[] mCanMegaEvo;
 
     private List<Move> mFirstPokemonMoves = null;
     private List<Move> mSecondPokemonMoves = null;
@@ -43,17 +44,24 @@ public class BattleActionRequest {
                 JSONObject movesContainer = activeJsonArray.getJSONObject(i);
 
                 boolean trapped = movesContainer.optBoolean("trapped", false);
-
                 if (trapped) {
-                    if (mTrapped == null)
-                        mTrapped = new boolean[N];
+                    if (mTrapped == null) mTrapped = new boolean[N];
                     mTrapped[i] = true;
                 }
 
+                boolean canMegaEvo = movesContainer.optBoolean("canMegaEvo", false);
+                if (canMegaEvo) {
+                    if (mCanMegaEvo == null) mCanMegaEvo = new boolean[N];
+                    mCanMegaEvo[i] = true;
+                }
+
                 JSONArray movesJsonArray = movesContainer.getJSONArray("moves");
+                JSONArray zMovesJsonArray = movesContainer.optJSONArray("canZMove");
                 List<Move> moveList = new LinkedList<>();
+
                 for (int j = 0; j < movesJsonArray.length(); j++)
-                    moveList.add(new Move(j, movesJsonArray.getJSONObject(j)));
+                    moveList.add(new Move(j, movesJsonArray.getJSONObject(j),
+                            zMovesJsonArray != null ? zMovesJsonArray.optJSONObject(j) : null));
 
                 if (i == 0)
                     mFirstPokemonMoves = moveList;
@@ -105,6 +113,10 @@ public class BattleActionRequest {
         return trapped(0);
     }
 
+    public boolean canMegaEvo() {
+        return canMegaEvo(0);
+    }
+
     public boolean forceSwitch(int which) {
         if (mForceSwitch == null)
             return false;
@@ -123,6 +135,16 @@ public class BattleActionRequest {
             return mTrapped[0];
         else
             return mTrapped[1];
+    }
+
+    public boolean canMegaEvo(int which) {
+        if (mCanMegaEvo == null)
+            return false;
+
+        if (which == 0)
+            return mCanMegaEvo[0];
+        else
+            return mCanMegaEvo[1];
     }
 
     @Override

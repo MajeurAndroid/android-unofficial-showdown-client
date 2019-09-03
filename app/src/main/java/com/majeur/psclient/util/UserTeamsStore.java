@@ -2,7 +2,6 @@ package com.majeur.psclient.util;
 
 import android.content.Context;
 import android.os.AsyncTask;
-import android.util.Log;
 
 import com.majeur.psclient.model.Team;
 
@@ -33,10 +32,8 @@ public class UserTeamsStore {
 
     public UserTeamsStore(Context context) {
         mJsonFile = new File(context.getFilesDir(), FILE_NAME);
-//        mJsonFile.delete();
         try {
             FileInputStream fis = new FileInputStream(mJsonFile);
-            Log.e("Store", Utils.convertStreamToString(fis));
             fis.close();
         } catch (IOException e) {
             e.printStackTrace();
@@ -78,7 +75,7 @@ public class UserTeamsStore {
                 JSONObject teamJsonObject = teamsJsonArray.getJSONObject(j);
                 String label = teamJsonObject.getString(JSON_KEY_TEAM_LABEL);
                 String data = teamJsonObject.getString(JSON_KEY_TEAM_DATA);
-                teamGroup.teams.add(Team.unpack(label, data));
+                teamGroup.teams.add(Team.unpack(label, format, data));
             }
             teamGroups.add(teamGroup);
         }

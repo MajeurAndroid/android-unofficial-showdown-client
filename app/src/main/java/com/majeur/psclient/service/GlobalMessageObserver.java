@@ -189,7 +189,7 @@ public abstract class GlobalMessageObserver extends MessageObserver {
 
     private void processAvailableFormats(ServerMessage.Args args) {
         String rawText = args.nextTillEnd();
-        List<BattleFormat.Category> battleFormatCategories = new LinkedList<>();
+        List<BattleFormat.Category> battleFormatCategories = new LinkedList<>(); // /!\ needs to impl Serializable
         BattleFormat.Category currentCategory = null;
         int separator;
         while (true) {

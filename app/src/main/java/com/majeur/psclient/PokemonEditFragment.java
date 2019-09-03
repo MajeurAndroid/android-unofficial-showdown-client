@@ -122,7 +122,7 @@ public class PokemonEditFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_team_pokemon, container, false);
+        return inflater.inflate(R.layout.fragment_edit_pokemon, container, false);
     }
 
     @Override
@@ -200,11 +200,10 @@ public class PokemonEditFragment extends Fragment {
         });
 
         mNameTextView.addTextChangedListener(new SimpleTextWatcher() {
-
             @Override
             public void afterTextChanged(Editable editable) {
                 String input = editable.toString();
-                String regex = "[,|\\[\\]]"; // escape |,] characters
+                String regex = "[,|\\[\\]]"; // escape |,[] characters
                 if (input.matches(".*" + regex + ".*")) {
                     editable.clear();
                     editable.append(input.replaceAll(regex, ""));

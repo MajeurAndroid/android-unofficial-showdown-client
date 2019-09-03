@@ -112,5 +112,22 @@ public abstract class CategoryAdapter extends BaseAdapter {
 
     protected abstract String getCategoryLabel(int position);
 
-    protected abstract View getItemView(int position, View convertView, ViewGroup parent);
+    protected View getItemView(int position, View convertView, ViewGroup parent) {
+        TextView textView;
+        if (convertView == null) {
+            convertView = mLayoutInflater.inflate(android.R.layout.simple_list_item_1, parent, false);
+            textView = (TextView) convertView;
+            textView.setSingleLine();
+        } else {
+            textView = (TextView) convertView;
+        }
+        textView.setText("\t");
+        textView.append(getItemLabel(position));
+        return textView;
+    }
+
+    protected String getItemLabel(int position) {
+        return null;
+    }
+
 }
