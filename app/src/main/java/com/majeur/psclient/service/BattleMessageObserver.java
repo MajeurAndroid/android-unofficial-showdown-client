@@ -290,11 +290,19 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         });
     }
 
-    // |-formechange|POKEMON|SPECIES|HP STATUS
     // |detailschange|POKEMON|DETAILS|HP STATUS
     // |detailschange|p1a: Aerodactyl|Aerodactyl-Mega, M
     private void handleDetailsChanged(ServerMessage.Args args) {
+        String msg = args.nextTillEnd();
+        Player player = getPlayer(msg);
+        final BattlingPokemon pokemon = BattlingPokemon.fromSwitchMessage(player, msg);
 
+        mActionQueue.enqueueAction(new Runnable() {
+            @Override
+            public void run() {
+                onDetailsChanged(pokemon);
+            }
+        });
     }
 
     private void handleTurn(ServerMessage.Args args) {
@@ -432,7 +440,10 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
 
                 break;
             case "mega":
-
+                handleMega(message.args);
+                break;
+            case "formechange":
+                handleFormeChange(message.args);
                 break;
             case "hint":
                 mActionQueue.enqueueMinorAction(new Runnable() {
@@ -474,6 +485,27 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
 
                 if (start)
                     onDisplayBattleToast(pokemonId, ability, Color.GREEN);
+            }
+        });
+    }
+
+    // |-mega|POKEMON|MEGASTONE
+    // |-mega|p1a: Aerodactyl|Aerodactyl|Aerodactylite
+    private void handleMega(ServerMessage.Args args) {
+        String rawId = args.next();
+        final PokemonId pokemonId = PokemonId.fromRawId(getPlayer(rawId), rawId);
+        final String username = pokemonId.player.username(mP1Username, mP2Username, myUsername());
+        String item = args.hasNext() ? args.next() : null;
+        if (item != null) {
+            if (item.equalsIgnoreCase(pokemonId.name))
+                if (args.hasNext()) item = args.next();
+        }
+
+        final String finalItem = item;
+        mActionQueue.enqueueMinorAction(new Runnable() {
+            @Override
+            public void run() {
+                printMinorActionText(mBattleTextBuilder.mega(pokemonId, finalItem, username));
             }
         });
     }
@@ -667,6 +699,20 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         });
     }
 
+    // |-formechange|POKEMON|SPECIES|HP STATUS
+    private void handleFormeChange(ServerMessage.Args args) {
+        String rawId = args.next();
+        final PokemonId pokemonId = PokemonId.fromRawId(getPlayer(rawId), rawId);
+        String species = args.next();
+
+        mActionQueue.enqueueMinorAction(new Runnable() {
+            @Override
+            public void run() {
+                //TODO
+            }
+        });
+    }
+
     private void printMajorActionText(CharSequence text) {
         onPrintText(text);
         onPrintBattleMessage(text);
@@ -704,6 +750,8 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
     protected abstract void onAddPreviewPokemon(PokemonId id, String species, boolean hasItem);
 
     protected abstract void onSwitch(BattlingPokemon newPokemon);
+
+    protected abstract void onDetailsChanged(BattlingPokemon newPokemon);
 
     protected abstract void onMove(PokemonId sourceId, PokemonId targetId, String moveName, boolean shouldAnim);
 

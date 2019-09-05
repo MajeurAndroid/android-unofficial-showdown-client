@@ -54,9 +54,40 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="end"
+        android:layout_gravity="bottom|end"
         android:layout_margin="2dp"
         android:text="Art by Jessica Valencia"
         android:textSize="10sp"/>
+
+    <LinearLayout
+        android:id="@+id/username_container"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:layout_marginTop="16dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/battle_extra_actions_bg"
+        android:elevation="4dp">
+
+        <TextView
+            android:id="@+id/username_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@android:color/black"
+            android:textStyle="bold"
+            android:paddingStart="8dp"
+            android:paddingEnd="4dp"
+            android:text="cardut"/>
+
+        <ImageButton
+            android:id="@+id/logout_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="4dp"
+            android:background="?selectableItemBackground"
+            android:src="@drawable/ic_logout"/>
+
+    </LinearLayout>
 
 </FrameLayout>

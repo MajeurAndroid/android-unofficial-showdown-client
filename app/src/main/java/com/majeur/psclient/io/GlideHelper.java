@@ -18,7 +18,6 @@ import com.majeur.psclient.model.BattlingPokemon;
 import com.majeur.psclient.model.Player;
 import com.majeur.psclient.util.Utils;
 
-import static com.majeur.psclient.model.Id.toId;
 import static com.majeur.psclient.model.Player.FOE;
 
 public class GlideHelper {
@@ -96,6 +95,11 @@ public class GlideHelper {
         request.into(imageView);
     }
 
+    public void loadAvatar(String avatar, ImageView imageView) {
+        RequestBuilder<Drawable> request = mRequestManager.load(avatarSpriteUri(avatar));
+        request.into(imageView);
+    }
+
     private StringBuilder baseUri() {
         return new StringBuilder()
                 .append("https://play.pokemonshowdown.com/sprites/");
@@ -105,7 +109,7 @@ public class GlideHelper {
         return baseUri()
                 .append(foe ? "xyani" : "xyani-back")
                 .append(shiny ? "-shiny/" : "/")
-                .append(toId(species))
+                .append(species.toLowerCase())
                 .append(".gif")
                 .toString();
     }
@@ -131,6 +135,14 @@ public class GlideHelper {
         return baseUri()
                 .append("categories/")
                 .append(Utils.firstCharUpperCase(category))
+                .append(".png")
+                .toString();
+    }
+
+    private String avatarSpriteUri(String avatar) {
+        return baseUri()
+                .append("trainers/")
+                .append(avatar)
                 .append(".png")
                 .toString();
     }

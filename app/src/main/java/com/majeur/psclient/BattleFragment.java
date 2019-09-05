@@ -104,7 +104,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         mObserver.gotContext(context);
-        mSpritesLoader = new GlideHelper(context);
+        mSpritesLoader = ((MainActivity) context).getGlideHelper();
         mBattleTipPopup = new BattleTipPopup(context);
         mBattleTipPopup.setOnBindPopupViewListener(mOnBindPopupViewListener);
         mDexPokemonLoader = new DexPokemonLoader(context);
@@ -516,6 +516,28 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
             });
 
 //            mAudioManager.playPokemonCry(pokemon);
+        }
+
+        @Override
+        protected void onDetailsChanged(final BattlingPokemon pokemon) {
+            ImageView imageView = mBattleLayout.getPokemonView(pokemon.id);
+            imageView.setTag(R.id.battle_data_tag, pokemon);
+            mBattleTipPopup.addTippedView(imageView);
+            mSpritesLoader.loadSprite(pokemon, imageView, mBattleLayout.getWidth());
+
+            if (!pokemon.foe)
+                mPlayerPokemons[pokemon.position] = pokemon;
+            else
+                mFoePokemons[pokemon.position] = pokemon;
+
+            mDexIconLoader.load(array(toId(pokemon.species)), new DataLoader.Callback<Bitmap>() {
+                @Override
+                public void onLoaded(Bitmap[] results) {
+                    Drawable icon = new BitmapDrawable(results[0]);
+                    PlayerInfoView infoView = !pokemon.foe ? mPlayerInfoView : mFoeInfoView;
+                    infoView.appendPokemon(pokemon, icon);
+                }
+            });
         }
 
         @Override

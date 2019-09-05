@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import androidx.annotation.Nullable;
 import okhttp3.Call;
@@ -40,6 +41,7 @@ public class ShowdownService extends Service {
     private static final String TAG = ShowdownService.class.getSimpleName();
     private static final int WS_CLOSE_NORMAL = 1000;
     private static final int WS_CLOSE_GOING_AWAY = 1001;
+    private static final int WS_CLOSE_NETWORK_ERROR = 4001;
     private static final String SHOWDOWN_SOCKET_URL = "wss://sim2.psim.us/showdown/websocket";
 
     private Binder mBinder;
@@ -48,6 +50,8 @@ public class ShowdownService extends Service {
     private WebSocket mWebSocket;
     private Handler mUiHandler;
     private Queue<String> mMessageCache;
+
+    private AtomicBoolean mConnected;
 
     private MessageObserver mGlobalMessageObserver;
     private List<MessageObserver> mMessageObservers;
@@ -60,6 +64,7 @@ public class ShowdownService extends Service {
         mUiHandler = new Handler(Looper.getMainLooper());
         mBinder = new Binder();
         mMessageCache = new LinkedList<>();
+        mConnected = new AtomicBoolean(false);
         mMessageObservers = new LinkedList<>();
         mHandlersSharedData = new HashMap<>();
 
@@ -82,6 +87,10 @@ public class ShowdownService extends Service {
         mWebSocket.close(WS_CLOSE_GOING_AWAY, null);
     }
 
+    public boolean isConnected() {
+        return mConnected.get();
+    }
+
     public void connectToServer() {
         if (mWebSocket != null)
             return;
@@ -95,10 +104,8 @@ public class ShowdownService extends Service {
     }
 
     public void disconnectFromServer() {
-        if (mWebSocket != null) {
+        if (mWebSocket != null)
             mWebSocket.close(WS_CLOSE_NORMAL, null);
-            mWebSocket = null;
-        }
     }
 
     public void sendTrnMessage(String userName, String assertion) {
@@ -197,12 +204,6 @@ public class ShowdownService extends Service {
             observer.postMessage(message);
     }
 
-    private void dispatchNetworkError() {
-        if (mGlobalMessageObserver == null)
-            return;
-        mGlobalMessageObserver.postMessage(new ServerMessage(null, "err|network"));
-    }
-
     public void fakeBattle() {
         S.run = true;
         processServerData(S.s);
@@ -212,6 +213,7 @@ public class ShowdownService extends Service {
 
         @Override
         public void onOpen(WebSocket webSocket, Response response) {
+            mConnected.set(true);
             Log.w(TAG + "[OPEN]", "");
         }
 
@@ -235,20 +237,30 @@ public class ShowdownService extends Service {
 
         @Override
         public void onClosing(WebSocket webSocket, int code, String reason) {
-            Log.w(TAG + "[CLOSE]", reason);
+            Log.w(TAG + "[CLOSING]", reason);
         }
 
         @Override
         public void onFailure(WebSocket webSocket, Throwable t, Response response) {
             Log.w(TAG + "[ERR]", t.toString());
-            //if (t instanceof UnknownHostException || t instanceof SocketTimeoutException)
+            mConnected.set(false);
+            mWebSocket = null;
+
             mUiHandler.post(new Runnable() {
                     @Override
                     public void run() {
-                        dispatchNetworkError();
+                        if (mGlobalMessageObserver != null)
+                            mGlobalMessageObserver.postMessage(new ServerMessage(null, "|error|network"));
                     }
                 });
 
+        }
+
+        @Override
+        public void onClosed(WebSocket webSocket, int code, String reason) {
+            Log.w(TAG + "[CLOSED]", reason);
+            mConnected.set(false);
+            mWebSocket = null;
         }
     };
 
@@ -423,6 +435,11 @@ public class ShowdownService extends Service {
         if (encodedCookie == null)
             return null;
         return new String(Base64.decode(encodedCookie, Base64.DEFAULT));
+    }
+
+    public void forgetUserLoginInfos() {
+        SharedPreferences sharedPreferences = getSharedPreferences("user", MODE_PRIVATE);
+        sharedPreferences.edit().clear().apply();
     }
 
     /* package */ void putSharedData(String key, Object data) {

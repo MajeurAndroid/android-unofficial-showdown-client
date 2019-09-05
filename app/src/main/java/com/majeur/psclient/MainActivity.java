@@ -12,6 +12,7 @@ import android.view.MenuItem;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.majeur.psclient.io.DexIconLoader;
+import com.majeur.psclient.io.GlideHelper;
 import com.majeur.psclient.service.ShowdownService;
 import com.majeur.psclient.util.Utils;
 import com.majeur.psclient.widget.SwitchLayout;
@@ -34,7 +35,6 @@ public class MainActivity extends AppCompatActivity {
             ShowdownService.Binder binder = (ShowdownService.Binder) iBinder;
             mService = binder.getService();
             notifyServiceBound();
-            mService.connectToServer();
         }
 
         @Override
@@ -44,12 +44,14 @@ public class MainActivity extends AppCompatActivity {
     };
 
     private DexIconLoader mDexIconLoader;
+    private GlideHelper mGlideHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Utils.setStaticScreenDensity(getResources());
         mDexIconLoader = new DexIconLoader(this);
+        mGlideHelper = new GlideHelper(this);
         setContentView(R.layout.activity_main);
 
         final SwitchLayout switchLayout = findViewById(R.id.fragment_container);
@@ -57,6 +59,7 @@ public class MainActivity extends AppCompatActivity {
         mNavigationView.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
+                if (menuItem.getItemId() == mNavigationView.getSelectedItemId()) return false;
                 switch (menuItem.getItemId()) {
                     case R.id.action_home:
                         switchLayout.smoothSwitchTo(0);
@@ -100,6 +103,10 @@ public class MainActivity extends AppCompatActivity {
 
     public DexIconLoader getDexIconLoader() {
         return mDexIconLoader;
+    }
+
+    public GlideHelper getGlideHelper() {
+        return mGlideHelper;
     }
 
     public ShowdownService getService() {

@@ -179,7 +179,7 @@ public abstract class GlobalMessageObserver extends MessageObserver {
             if (userId != null && getUserId().equals(userId)) {
                 String avatarId = jsonObject.getString("avatar");
                 avatarId = ("000" + avatarId).substring(avatarId.length());
-                onUserChanged(mUserName, userId.contains("guest"), avatarId);
+                onUserChanged(mUserName, userId.toLowerCase().startsWith("guest"), avatarId);
             }
 
         } catch (JSONException e) {

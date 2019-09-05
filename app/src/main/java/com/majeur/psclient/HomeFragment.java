@@ -1,7 +1,6 @@
 package com.majeur.psclient;
 
 import android.app.Dialog;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
@@ -13,6 +12,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -43,12 +43,13 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
 
     private Dialog mCurrentDialog;
     private Button mBattleButton;
+    private TextView mUsernameView;
+    private View mUsernameContainer;
 
     private Spinner mFormatsSpinner;
     private Spinner mTeamsSpinner;
     private BattleFormat mCurrentBattleFormat;
     private List<BattleFormat.Category> mBattleFormats;
-
 
     private String mCurrentUserName;
 
@@ -56,17 +57,6 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         mDexIconLoader = ((MainActivity) context).getDexIconLoader();
-    }
-
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        if (mCurrentUserName == null)
-            mCurrentDialog = ProgressDialog.show(getContext(),
-                    "Just a moment",
-                    "Connecting to Pokémon Showdown server...",
-                    true,
-                    false);
     }
 
     @Nullable
@@ -77,6 +67,17 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        mUsernameView = view.findViewById(R.id.username_text);
+        mUsernameContainer = view.findViewById(R.id.username_container);
+        mUsernameContainer.setAlpha(0f);
+        ImageButton logoutButton = view.findViewById(R.id.logout_button);
+        logoutButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mService.sendGlobalCommand("logout");
+                mService.forgetUserLoginInfos();
+            }
+        });
         mFormatsSpinner = view.findViewById(R.id.spinner_formats);
         mFormatsSpinner.setAdapter(new CategoryAdapter(getContext()) {
             @Override
@@ -182,6 +183,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
         mBattleButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if (!mService.isConnected()) return;
                 if (mObserver.isUserGuest())
                     SignInDialog.newInstance().show(getFragmentManager(), "");
                 else {
@@ -256,8 +258,15 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
                 mCurrentDialog = null;
             }
             mCurrentUserName = userName;
-            if (!mObserver.isUserGuest())
+            if (isGuest) {
+                Snackbar.make(getView(), "Connected as guest !", Snackbar.LENGTH_LONG).show();
+                mUsernameContainer.animate().alpha(0f).translationX(mUsernameContainer.getWidth()).start();
+            } else {
                 Snackbar.make(getView(), "Connected as " + userName, Snackbar.LENGTH_LONG).show();
+                mUsernameView.setText(userName);
+                mUsernameContainer.setTranslationX(mUsernameContainer.getWidth());
+                mUsernameContainer.animate().alpha(1f).translationX(0).start();
+            }
         }
 
         @Override
@@ -359,6 +368,8 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
                     .setAction("Try to reconnect", new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
+                            Snackbar.make(getView(), "Reconnecting to Showdown server...",
+                                    Snackbar.LENGTH_INDEFINITE).show();
                             getService().reconnectToServer();
                         }
                     })
@@ -370,6 +381,12 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
     public void onServiceBound(ShowdownService service) {
         mService = service;
         service.registerMessageObserver(mObserver, true);
+
+        if (!mService.isConnected()) {
+            Snackbar.make(getView(), "Connecting to Showdown server...",
+                    Snackbar.LENGTH_INDEFINITE).show();
+            service.connectToServer();
+        }
     }
 
     @Override

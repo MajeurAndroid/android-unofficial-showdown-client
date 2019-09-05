@@ -66,7 +66,7 @@ public final class BattleTextBuilder {
     }
 
     private String resolve(String objectKey, String key) {
-        Log.d(getClass().getSimpleName(), "Resolving: " + objectKey + ":{" + key + "}");
+        //Log.d(getClass().getSimpleName(), "Resolving: " + objectKey + ":{" + key + "}");
         JSONObject object = object(objectKey);
         if (object == null) return null;
         String rawMsg = object.optString(key);
@@ -403,6 +403,13 @@ public final class BattleTextBuilder {
             side = side.substring(side.indexOf(':') + 1);
         String rawText = resolve(toId(side), key);
         return linef(rawText, teamName);
+    }
+
+    public Spanned mega(PokemonId pokemonId, String item, String username) {
+        String pokemonName = pokemon(pokemonId);
+        if (item == null)
+            return linef(global().optString("megaNoItem"), pokemonName, username);
+        return linef(global().optString("mega"), pokemonName, item);
     }
 
     //

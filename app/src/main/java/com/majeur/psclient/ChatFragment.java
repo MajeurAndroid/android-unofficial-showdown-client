@@ -3,7 +3,6 @@ package com.majeur.psclient;
 import android.content.Context;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -77,9 +76,8 @@ public class ChatFragment extends Fragment implements MainActivity.Callbacks {
         mTitleButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (mShowdownService == null) return;
+                if (!mShowdownService.isConnected()) return;
 
-                Log.e("", mObserver.roomJoined() + " " + mShowdownService);
                 if (mObserver.roomJoined())
                     mShowdownService.sendRoomCommand(mObservedRoomId, "leave");
                 else
