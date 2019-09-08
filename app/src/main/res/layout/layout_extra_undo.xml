@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/extra_undo_container"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_alignParentEnd="true"
+    android:layout_below="@id/battle_layout"
+    android:layout_marginTop="86dp"
+    android:paddingStart="10dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:elevation="4dp"
+    android:background="@drawable/battle_extra_actions_bg">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@android:color/black"
+        android:textStyle="bold"
+        android:text="Undo" />
+
+    <ImageButton
+        android:id="@+id/button_undo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp"
+        android:background="?selectableItemBackground"
+        android:src="@drawable/ic_undo"
+        android:tint="@color/primary"/>
+
+
+</LinearLayout>

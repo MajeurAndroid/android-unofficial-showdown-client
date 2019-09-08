@@ -143,7 +143,7 @@ public class StatusView extends View {
 
     public void updateModifier(StatModifiers statModifiers) {
         for (String statKey : StatModifiers.STAT_KEYS)
-            mStatsModifiers.put(statKey, statModifiers.value(statKey));
+            mStatsModifiers.put(statKey, statModifiers.modifier(statKey));
         requestLayout();
         invalidate();
     }

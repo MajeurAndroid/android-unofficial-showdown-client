@@ -4,8 +4,8 @@ import android.os.AsyncTask;
 import android.util.Log;
 
 import com.majeur.psclient.model.DexPokemon;
-import com.majeur.psclient.model.Pokemon;
 import com.majeur.psclient.model.Team;
+import com.majeur.psclient.model.TeamPokemon;
 
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -108,9 +108,9 @@ public class ShowdownTeamParser {
             return null;
         }
 
-        List<Pokemon> pokemons = new LinkedList<>();
+        List<TeamPokemon> pokemons = new LinkedList<>();
         for (String pokemonString : teamStrings) {
-            Pokemon parsedPokemon = parsePokemon(pokemonString.trim(), dexPokemonFactory);
+            TeamPokemon parsedPokemon = parsePokemon(pokemonString.trim(), dexPokemonFactory);
             if (parsedPokemon != null)
                 pokemons.add(parsedPokemon);
         }
@@ -122,7 +122,7 @@ public class ShowdownTeamParser {
         return new Team(label, pokemons, format);
     }
 
-    private Pokemon parsePokemon(String importString, DexPokemonFactory dexPokemonFactory) {
+    private TeamPokemon parsePokemon(String importString, DexPokemonFactory dexPokemonFactory) {
         String[] pokemonStrings = importString.trim().split("\n");
         if (pokemonStrings.length == 0) {
             return null;
@@ -131,7 +131,7 @@ public class ShowdownTeamParser {
         Log.e("PSP curr", Arrays.toString(pokemonStrings));
         String pokemonMainData = pokemonStrings[0]; // split 0 is Name @ Item or Name or nickname (Name) or  nickname (Name) @ Item
         String pokemonName = "", pokemonNickname = null, pokemonItem = null, pokemonGender = null;
-        Pokemon p = null;
+        TeamPokemon p = null;
         boolean isGender = false; // no nickname, but gender
         if (pokemonMainData.contains("@")) {
             String[] nameItem = pokemonMainData.split("@");
@@ -173,8 +173,7 @@ public class ShowdownTeamParser {
             pokemonName = pokemonMainData;
         }
 
-        p = new Pokemon();
-        p.species = toId(pokemonName);
+        p = new TeamPokemon(pokemonName);
 
         if (pokemonNickname != null) {
             p.name = pokemonNickname.trim();

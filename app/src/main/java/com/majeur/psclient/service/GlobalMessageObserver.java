@@ -20,9 +20,11 @@ public abstract class GlobalMessageObserver extends MessageObserver {
     private static final String TAG = GlobalMessageObserver.class.getSimpleName();
 
     private String mUserName;
+    private boolean mIsUserGuest;
 
     public GlobalMessageObserver() {
         setObserveAll(true);
+        mIsUserGuest = true;
     }
 
     private String getUserId() {
@@ -30,7 +32,7 @@ public abstract class GlobalMessageObserver extends MessageObserver {
     }
 
     public boolean isUserGuest() {
-        return getUserId().startsWith("guest");
+        return mIsUserGuest;
     }
 
     @Override
@@ -92,11 +94,14 @@ public abstract class GlobalMessageObserver extends MessageObserver {
 
     private void processUpdateUser(ServerMessage.Args args) {
         String username = args.next().trim();
+        if (username.charAt(0) == '!' || username.charAt(0) == '@')
+            username = username.substring(1);
         boolean isGuest = "0".equals(args.next());
         String avatar = args.next();
         avatar = ("000" + avatar).substring(avatar.length());
 
         mUserName = username;
+        mIsUserGuest = isGuest;
         getService().putSharedData("username", username);
         onUserChanged(username, isGuest, avatar);
     }
@@ -173,13 +178,14 @@ public abstract class GlobalMessageObserver extends MessageObserver {
     }
 
     private void processUserDetailsQueryResponse(String queryContent) {
+        // Unused for now
         try {
             JSONObject jsonObject = new JSONObject(queryContent);
             String userId = jsonObject.optString("userid");
             if (userId != null && getUserId().equals(userId)) {
                 String avatarId = jsonObject.getString("avatar");
                 avatarId = ("000" + avatarId).substring(avatarId.length());
-                onUserChanged(mUserName, userId.toLowerCase().startsWith("guest"), avatarId);
+
             }
 
         } catch (JSONException e) {

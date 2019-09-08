@@ -12,8 +12,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+
+import androidx.core.util.Pair;
 
 public class DexPokemonLoader extends DataLoader<String, DexPokemon> {
 
@@ -80,51 +83,64 @@ public class DexPokemonLoader extends DataLoader<String, DexPokemon> {
         }
 
         private DexPokemon parsePokemon() throws IOException {
-            DexPokemon pokemon = new DexPokemon();
+            String species = null;
+            int num = 0;
+            String firstType = null;
+            String secondType = null;
+            Stats baseStats = null;
+            List<String> abilities = Collections.emptyList();
+            String hiddenAbility = null;
+            float height = 0f;
+            float weight = 0f;
+            String color = null;
+            String gender = null;
+            String tier = null;
+
             mJsonReader.beginObject();
             while (mJsonReader.hasNext()) {
                 String name = mJsonReader.nextName();
                 switch (name) {
                     case "num":
-                        pokemon.num = mJsonReader.nextInt();
+                        num = mJsonReader.nextInt();
                         break;
                     case "species":
-                        pokemon.species = mJsonReader.nextString();
+                        species = mJsonReader.nextString();
                         break;
                     case "types":
-                        parseTypes(pokemon);
+                        String[] types = parseTypes();
+                        firstType = types[0];
+                        secondType = types[1];
                         break;
-//                    case "genderRatio":
-//                        // TODO
-//                        break;
+                    case "genderRatio":
+                          // TODO
+                        mJsonReader.skipValue();
+                        break;
                     case "baseStats":
-                        pokemon.baseStats = parseStats();
+                        baseStats = parseStats();
                         break;
                     case "abilities":
-                        parseAbilities(pokemon);
+                        Pair<String, List<String>> p = parseAbilities();
+                        hiddenAbility = p.first;
+                        abilities = p.second;
                         break;
                     case "heightm":
-                        pokemon.heightm = (float) mJsonReader.nextDouble();
+                        height = (float) mJsonReader.nextDouble();
                         break;
                     case "weightkg":
-                        pokemon.weightkg = (float) mJsonReader.nextDouble();
+                        weight = (float) mJsonReader.nextDouble();
                         break;
                     case "color":
-                        pokemon.color = mJsonReader.nextString();
+                        color = mJsonReader.nextString();
                         break;
                     case "gender":
-                        pokemon.gender = mJsonReader.nextString();
+                        gender = mJsonReader.nextString();
                         break;
-                    //case "evos":
-//                            [
-//                    "ivysaur"
-//  ],
-//                    "eggGroups": [
-//                    "Monster",
-//                            "Grass"
-//  ],
+                    case "evos":
+                        // TODO
+                        mJsonReader.skipValue();
+                        break;
                     case "LC":
-                        pokemon.tier = mJsonReader.nextString();
+                        tier = mJsonReader.nextString();
                         break;
                     default:
                         mJsonReader.skipValue();
@@ -132,30 +148,36 @@ public class DexPokemonLoader extends DataLoader<String, DexPokemon> {
                 }
             }
             mJsonReader.endObject();
-            return pokemon;
+
+            return new DexPokemon(species, num, firstType, secondType, baseStats, abilities,
+                    hiddenAbility, height, weight, color, gender, tier);
         }
 
-        private void parseTypes(DexPokemon pokemon) throws IOException {
+        private String[] parseTypes() throws IOException {
+            String[] types = new String[2];
             mJsonReader.beginArray();
             while (mJsonReader.hasNext()) {
-                if (pokemon.firstType == null)
-                    pokemon.firstType = mJsonReader.nextString();
+                if (types[0] == null)
+                    types[0] = mJsonReader.nextString();
                 else
-                    pokemon.secondType = mJsonReader.nextString();
+                    types[1] = mJsonReader.nextString();
             }
             mJsonReader.endArray();
+            return types;
         }
 
-        private void parseAbilities(DexPokemon pokemon) throws IOException {
-            pokemon.abilities = new LinkedList<>();
+        private Pair<String, List<String>> parseAbilities() throws IOException {
+            String hiddenAbility = null;
+            List<String> abilities = new LinkedList<>();
             mJsonReader.beginObject();
             while (mJsonReader.hasNext()) {
                 if (mJsonReader.nextName().equals("H"))
-                    pokemon.hiddenAbility = mJsonReader.nextString();
+                    hiddenAbility = mJsonReader.nextString();
                 else
-                    pokemon.abilities.add(mJsonReader.nextString());
+                    abilities.add(mJsonReader.nextString());
             }
             mJsonReader.endObject();
+            return new Pair<>(hiddenAbility, abilities);
         }
 
         private Stats parseStats() throws IOException {

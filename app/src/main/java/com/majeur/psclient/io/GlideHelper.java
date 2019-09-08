@@ -14,6 +14,7 @@ import com.bumptech.glide.RequestManager;
 import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.request.target.ViewTarget;
 import com.majeur.psclient.R;
+import com.majeur.psclient.model.BasePokemon;
 import com.majeur.psclient.model.BattlingPokemon;
 import com.majeur.psclient.model.Player;
 import com.majeur.psclient.util.Utils;
@@ -36,7 +37,7 @@ public class GlideHelper {
 
     @SuppressWarnings("CheckResult")
     public void loadSprite(final BattlingPokemon pokemon, final ImageView imageView, final int fieldWidth) {
-        RequestBuilder<Drawable> request = mRequestManager.load(spriteUri(pokemon.species, pokemon.foe, pokemon.shiny));
+        RequestBuilder<Drawable> request = mRequestManager.load(spriteUri(pokemon.spriteId, pokemon.foe, pokemon.shiny));
         request.apply(new RequestOptions().error(R.drawable.missingno));
         request.into(new AnimatedImageViewTarget(imageView) {
             @Override
@@ -73,8 +74,8 @@ public class GlideHelper {
         });
     }
 
-    public void loadPreviewSprite(Player player, String species, ImageView imageView) {
-        RequestBuilder<Drawable> request = mRequestManager.load(spriteUri(species, player == FOE, false));
+    public void loadPreviewSprite(Player player, BasePokemon pokemon, ImageView imageView) {
+        RequestBuilder<Drawable> request = mRequestManager.load(spriteUri(pokemon.spriteId, player == FOE, false));
         request.apply(new RequestOptions().error(R.drawable.missingno));
         request.into(imageView);
     }
@@ -89,8 +90,8 @@ public class GlideHelper {
         request.into(imageView);
     }
 
-    public void loadDexSprite(String species, boolean shiny, ImageView imageView) {
-        RequestBuilder<Drawable> request = mRequestManager.load(dexSpriteUri(species, shiny));
+    public void loadDexSprite(BasePokemon pokemon, boolean shiny, ImageView imageView) {
+        RequestBuilder<Drawable> request = mRequestManager.load(dexSpriteUri(pokemon.spriteId, shiny));
         request.apply(new RequestOptions().error(R.drawable.placeholder_pokeball));
         request.into(imageView);
     }
@@ -105,20 +106,20 @@ public class GlideHelper {
                 .append("https://play.pokemonshowdown.com/sprites/");
     }
 
-    private String spriteUri(String species, boolean foe, boolean shiny) {
+    private String spriteUri(String spriteId, boolean foe, boolean shiny) {
         return baseUri()
                 .append(foe ? "xyani" : "xyani-back")
                 .append(shiny ? "-shiny/" : "/")
-                .append(species.toLowerCase())
+                .append(spriteId)
                 .append(".gif")
                 .toString();
     }
 
-    private String dexSpriteUri(String species, boolean shiny) {
+    private String dexSpriteUri(String spriteId, boolean shiny) {
         return baseUri()
                 .append("xydex")
                 .append(shiny ? "-shiny/" : "/")
-                .append(species.toLowerCase().replace("%", "").replace("-", "").replace(" ", ""))
+                .append(spriteId)
                 .append(".png")
                 .toString();
     }

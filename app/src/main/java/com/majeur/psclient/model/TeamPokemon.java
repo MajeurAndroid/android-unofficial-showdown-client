@@ -1,18 +1,14 @@
 package com.majeur.psclient.model;
 
-import java.io.Serializable;
 import java.util.Arrays;
 
-public class Pokemon implements Serializable {
+public class TeamPokemon extends BasePokemon {
 
-    public static Pokemon dummyPokemon() {
-        Pokemon pokemon = new Pokemon();
-        pokemon.species = "missingno";
-        return pokemon;
+    public static TeamPokemon dummyPokemon() {
+        return new TeamPokemon("MissingNo");
     }
 
     public String name;
-    public String species;
     public String item;
     public String ability;
     public String[] moves;
@@ -26,7 +22,8 @@ public class Pokemon implements Serializable {
     public String hpType;
     public String pokeball;
 
-    public Pokemon() {
+    public TeamPokemon(String species) {
+        super(species);
         ivs = new Stats(31);
         evs = new Stats(0);
         level = 100;

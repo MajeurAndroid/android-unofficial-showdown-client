@@ -9,11 +9,11 @@ import android.graphics.PorterDuff;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.animation.Animation;
 import android.view.animation.OvershootInterpolator;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -25,6 +25,7 @@ import com.majeur.psclient.io.DexIconLoader;
 import com.majeur.psclient.io.DexPokemonLoader;
 import com.majeur.psclient.io.GlideHelper;
 import com.majeur.psclient.io.MoveDetailsLoader;
+import com.majeur.psclient.model.BasePokemon;
 import com.majeur.psclient.model.BattleActionRequest;
 import com.majeur.psclient.model.BattlingPokemon;
 import com.majeur.psclient.model.Colors;
@@ -39,6 +40,9 @@ import com.majeur.psclient.model.Stats;
 import com.majeur.psclient.service.BattleMessageObserver;
 import com.majeur.psclient.service.ShowdownService;
 import com.majeur.psclient.util.AudioBattleManager;
+import com.majeur.psclient.util.BackForthTranslateAnimation;
+import com.majeur.psclient.util.CircularTranslateAnimation;
+import com.majeur.psclient.util.ShakeTranslateAnimation;
 import com.majeur.psclient.util.Utils;
 import com.majeur.psclient.widget.BattleActionWidget;
 import com.majeur.psclient.widget.BattleLayout;
@@ -57,6 +61,10 @@ import androidx.fragment.app.Fragment;
 
 import static com.majeur.psclient.model.Id.toId;
 import static com.majeur.psclient.util.Utils.array;
+import static com.majeur.psclient.util.Utils.boldText;
+import static com.majeur.psclient.util.Utils.italicText;
+import static com.majeur.psclient.util.Utils.smallText;
+import static com.majeur.psclient.util.Utils.tagText;
 import static com.majeur.psclient.util.Utils.toStringSigned;
 
 public class BattleFragment extends Fragment implements MainActivity.Callbacks {
@@ -64,12 +72,14 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
     private TextView mLogTextView;
     private ScrollView mLogScrollView;
     private BattleLayout mBattleLayout;
-    private PlayerInfoView mPlayerInfoView;
+    private PlayerInfoView mTrainerInfoView;
     private PlayerInfoView mFoeInfoView;
     private BattleActionWidget mActionWidget;
     private TextView mBattleMessageView;
     private View mExtraActionsContainer;
     private ImageButton mTimerButton;
+    private View mExtraUndoContainer;
+    private ImageButton mUndoButton;
 
     private ShowdownService mService;
     private GlideHelper mSpritesLoader;
@@ -125,17 +135,18 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         mLogTextView = view.findViewById(R.id.text_view_log);
         mLogScrollView = view.findViewById(R.id.scroll_view_log);
         mBattleLayout = view.findViewById(R.id.battle_layout);
-        mPlayerInfoView = view.findViewById(R.id.player1_info_view);
+        mTrainerInfoView = view.findViewById(R.id.player1_info_view);
         mFoeInfoView = view.findViewById(R.id.player2_info_view);
         mActionWidget = view.findViewById(R.id.battle_action_widget);
         mBattleMessageView = view.findViewById(R.id.battle_message_view);
         mExtraActionsContainer = view.findViewById(R.id.extra_action_container);
+        mExtraUndoContainer = view.findViewById(R.id.extra_undo_container);
         mExtraActionsContainer.animate().setInterpolator(new OvershootInterpolator(1.4f)).setDuration(500);
 
         final ImageView imageView = view.findViewById(R.id.overlay_image_view);
         imageView.setAlpha(0.65f);
 
-        mPlayerInfoView.setOnClickListener(new View.OnClickListener() {
+        mTrainerInfoView.setOnClickListener(new View.OnClickListener() {
 
             boolean b = false;
             @Override
@@ -153,8 +164,20 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
             public void onReveal(boolean in) {
                 mExtraActionsContainer.animate()
                         .setStartDelay(in ? 0 : 350)
-                        .translationY(in ? 2*mLogScrollView.getHeight() / 3 : 0)
+                        .translationY(in ? 3 * mLogScrollView.getHeight() / 5 : 0)
                         .start();
+
+                if (in) {
+                    mExtraUndoContainer.setTranslationX(mExtraActionsContainer.getWidth());
+                    mExtraUndoContainer.setAlpha(0);
+                } else {
+                    mUndoButton.setEnabled(true);
+                    mExtraUndoContainer.animate()
+                            .setStartDelay(350)
+                            .translationX(0)
+                            .alpha(1f)
+                            .start();
+                }
             }
         });
 
@@ -162,6 +185,16 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         mTimerButton.setOnClickListener(mExtraClickListener);
         view.findViewById(R.id.button_forfeit).setOnClickListener(mExtraClickListener);
         view.findViewById(R.id.button_send).setOnClickListener(mExtraClickListener);
+        mUndoButton = view.findViewById(R.id.button_undo);
+        mUndoButton.setOnClickListener(mExtraClickListener);
+
+        mExtraUndoContainer.post(new Runnable() {
+            @Override
+            public void run() {
+                mExtraUndoContainer.setTranslationX(mExtraActionsContainer.getWidth());
+                mExtraUndoContainer.setAlpha(0);
+            }
+        });
     }
 
     @Override
@@ -176,7 +209,6 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
     @Override
     public void onResume() {
         super.onResume();
-        Log.e("onResume", "fklfkld" + mWasPlayingBattleMusicWhenPaused);
         if (mWasPlayingBattleMusicWhenPaused) {
             mAudioManager.playBattleMusic();
             mWasPlayingBattleMusicWhenPaused = false;
@@ -201,8 +233,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
             int id = view.getId();
             switch (id) {
                 case R.id.button_forfeit:
-                    if (!battleRunning())
-                        return;
+                    if (!battleRunning()) break;
                     new AlertDialog.Builder(getContext())
                             .setMessage("Do you really want to forfeit this battle ?")
                             .setPositiveButton("Forfeit", new DialogInterface.OnClickListener() {
@@ -214,13 +245,17 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                             .setNegativeButton("Cancel", null)
                             .show();
                     break;
-
                 case R.id.button_send:
 
                     break;
-
                 case R.id.button_timer:
+                    if (!battleRunning()) break;
                     sendTimerCommand(!mTimerEnabled);
+                    break;
+                case R.id.button_undo:
+                    mUndoButton.setEnabled(false);
+                    sendUndoCommand();
+                    mObserver.reAskForRequest();
                     break;
             }
         }
@@ -245,36 +280,36 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                                              final ImageView placeHolderBottom) {
         titleView.setText(pokemon.name + " " + Objects.toString(pokemon.gender, "") + " l." + pokemon.level);
 
-        descView.setText(Utils.smallText("HP: "));
+        descView.setText(smallText("HP: "));
         String healthText = String.format("%.1f%% ", pokemon.condition.health * 100);
-        descView.append(Utils.boldText(healthText, Colors.healthColor(pokemon.condition.health)));
+        descView.append(boldText(healthText, Colors.healthColor(pokemon.condition.health)));
 
         if (!pokemon.foe)
-            descView.append(Utils.smallText("(" + pokemon.condition.hp + "/" + pokemon.condition.maxHp + ")"));
+            descView.append(smallText("(" + pokemon.condition.hp + "/" + pokemon.condition.maxHp + ")"));
 
         if (pokemon.condition.status != null)
-            descView.append(Utils.smallText(Utils.tagText(pokemon.condition.status.toUpperCase(),
+            descView.append(smallText(tagText(pokemon.condition.status.toUpperCase(),
                     Colors.statusColor(pokemon.condition.status))));
 
         descView.append("\n");
 
         if (!pokemon.foe) {
             SidePokemon sidePokemon = mLastActionRequest.getSide().get(0);
-            descView.append(Utils.smallText("Atk:"));
-            descView.append(sidePokemon.stats.atk + " ");
-            descView.append(Utils.smallText("Def:"));
-            descView.append(sidePokemon.stats.def + " ");
-            descView.append(Utils.smallText("Spa:"));
-            descView.append(sidePokemon.stats.spa + " ");
-            descView.append(Utils.smallText("Spd:"));
-            descView.append(sidePokemon.stats.spd + " ");
-            descView.append(Utils.smallText("Spe:"));
-            descView.append(sidePokemon.stats.spe + "");
+            descView.append(smallText("Atk:"));
+            descView.append(pokemon.statModifiers.calcReadableStat("atk", sidePokemon.stats.atk));
+            descView.append(smallText(" Def:"));
+            descView.append(pokemon.statModifiers.calcReadableStat("def", sidePokemon.stats.def));
+            descView.append(smallText(" Spa:"));
+            descView.append(pokemon.statModifiers.calcReadableStat("spa", sidePokemon.stats.spa));
+            descView.append(smallText(" Spd:"));
+            descView.append(pokemon.statModifiers.calcReadableStat("spd", sidePokemon.stats.spd));
+            descView.append(smallText(" Spe:"));
+            descView.append(pokemon.statModifiers.calcReadableStat("spe", sidePokemon.stats.spe));
             descView.append("\n");
-            descView.append(Utils.smallText("Ability: "));
+            descView.append(smallText("Ability: "));
             descView.append(sidePokemon.ability);
             descView.append("\n");
-            descView.append(Utils.smallText("Item: "));
+            descView.append(smallText("Item: "));
             descView.append(sidePokemon.item);
         }
 
@@ -284,6 +319,10 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
             @Override
             public void onLoaded(DexPokemon[] results) {
                 DexPokemon dexPokemon = results[0];
+                if (dexPokemon == null) {
+                    descView.append("No dex entry for " + pokemon.species);
+                    return;
+                }
                 mSpritesLoader.loadTypeSprite(dexPokemon.firstType, placeHolderTop);
                 if (dexPokemon.secondType != null)
                     mSpritesLoader.loadTypeSprite(dexPokemon.secondType, placeHolderBottom);
@@ -291,20 +330,20 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                 if (!pokemon.foe) return;
 
                 if (dexPokemon.abilities.size() > 1) {
-                    descView.append(Utils.smallText("Possible abilities: "));
+                    descView.append(smallText("Possible abilities: "));
                     for (String ability : dexPokemon.abilities)
                         descView.append(ability + ", ");
                     descView.append("\n");
                 } else if (dexPokemon.abilities.size() > 0) {
-                    descView.append(Utils.smallText("Ability: "));
+                    descView.append(smallText("Ability: "));
                     descView.append(dexPokemon.abilities.get(0));
                     descView.append("\n");
                 }
 
                 int[] speedRange = Stats.calculateSpeedRange(pokemon.level, dexPokemon.baseStats.spe, "Random Battle", 7);
-                descView.append(Utils.smallText("Speed: "));
+                descView.append(smallText("Speed: "));
                 descView.append(speedRange[0] + " to " + speedRange[1]);
-                descView.append(Utils.smallText(" (before items/abilities/modifiers)"));
+                descView.append(smallText(" (before items/abilities/modifiers)"));
             }
         });
     }
@@ -320,7 +359,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
             return;
 
         if (move.extraInfo.priority != 0) {
-            descView.append(Utils.boldText("Priority: " + toStringSigned(move.extraInfo.priority)));
+            descView.append(boldText("Priority: " + toStringSigned(move.extraInfo.priority)));
             descView.append("\n");
         }
 
@@ -332,7 +371,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
 
         if (move.extraInfo.desc != null) {
             descView.append("\n");
-            descView.append(Utils.italicText(move.extraInfo.desc));
+            descView.append(italicText(move.extraInfo.desc));
         }
 
         placeHolderTop.setImageDrawable(null);
@@ -344,7 +383,21 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
     private void bindSidePokemonPopup(SidePokemon pokemon, final TextView titleView,
                                       final TextView descView, final ImageView placeHolderTop, final ImageView placeHolderBottom) {
         titleView.setText(pokemon.name);
-        descView.setText("Moves:");
+
+        descView.setText(smallText("HP: "));
+        String healthText = String.format("%.1f%% ", pokemon.condition.health * 100);
+        descView.append(boldText(healthText, Colors.healthColor(pokemon.condition.health)));
+
+        descView.append(smallText("(" + pokemon.condition.hp + "/" + pokemon.condition.maxHp + ")"));
+
+        if (pokemon.condition.status != null)
+            descView.append(smallText(tagText(pokemon.condition.status.toUpperCase(),
+                    Colors.statusColor(pokemon.condition.status))));
+
+        descView.append("\n");
+
+
+        descView.append("Moves:");
         for (String move : pokemon.moves) {
             descView.append("\n\t");
             descView.append(move);
@@ -391,6 +444,10 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         mService.sendRoomCommand(mObservedRoomId, "timer", on ? "on" : "off");
     }
 
+    public void sendUndoCommand() {
+        mService.sendRoomCommand(mObservedRoomId, "undo");
+    }
+
     private BattleMessageObserver mObserver = new BattleMessageObserver() {
 
         @Override
@@ -402,12 +459,13 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
 
         @Override
         protected void onPlayerInit(String playerUsername, String foeUsername) {
-            mPlayerInfoView.setUsername(playerUsername);
+            mTrainerInfoView.setUsername(playerUsername);
             mFoeInfoView.setUsername(foeUsername);
         }
 
         @Override
         protected void onBattleStarted() {
+            ((MainActivity) getContext()).setKeepScreenOn(true);
             switch (getGameType()) {
                 case SINGLE:
                     mBattleLayout.setMode(BattleLayout.MODE_BATTLE_SINGLE);
@@ -423,12 +481,12 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                     mBattleLayout.setMode(BattleLayout.MODE_BATTLE_TRIPLE);
                     break;
             }
-
             mAudioManager.playBattleMusic();
         }
 
         @Override
         protected void onBattleEnded() {
+            ((MainActivity) getContext()).setKeepScreenOn(false);
             mAudioManager.stopBattleMusic();
         }
 
@@ -438,20 +496,29 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         }
 
         @Override
-        protected void onAddPreviewPokemon(final PokemonId id, final String species, boolean hasItem) {
-            // Make sure BattleLayout has finished its layout
+        protected void onAddPreviewPokemon(final PokemonId id, final BasePokemon pokemon, boolean hasItem) {
+            // Make sure BattleLayout has finished changing its layout
             mBattleLayout.post(new Runnable() {
                 @Override
                 public void run() {
                     ImageView imageView = mBattleLayout.getPokemonView(id);
-                    mSpritesLoader.loadPreviewSprite(id.player, species, imageView);
+                    mSpritesLoader.loadPreviewSprite(id.player, pokemon, imageView);
+                }
+            });
+
+            mDexIconLoader.load(array(toId(pokemon.species)), new DataLoader.Callback<Bitmap>() {
+                @Override
+                public void onLoaded(Bitmap[] results) {
+                    Drawable icon = new BitmapDrawable(results[0]);
+                    PlayerInfoView infoView = !id.foe ? mTrainerInfoView : mFoeInfoView;
+                    infoView.appendPokemon(pokemon, icon);
                 }
             });
         }
 
         @Override
         protected void onTeamSize(Player player, int size) {
-            PlayerInfoView infoView = player == Player.TRAINER ? mPlayerInfoView : mFoeInfoView;
+            PlayerInfoView infoView = player == Player.TRAINER ? mTrainerInfoView : mFoeInfoView;
             infoView.setTeamSize(size);
             mBattleLayout.setPreviewTeamSize(player, size);
         }
@@ -472,18 +539,62 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                     })
                     .start();
 
+            View statusView = mBattleLayout.getStatusView(id);
+            statusView.animate().alpha(0f).start();
+
 //            mAudioManager.playPokemonCry(id.foe ? mFoePokemons[id.position] : mPlayerPokemons[id.position]);
         }
 
         @Override
-        protected void onMove(PokemonId sourceId, @Nullable PokemonId targetId, String moveName, boolean shouldAnim) {
-            View pokemonView = mBattleLayout.getPokemonView(sourceId);
+        protected void onMove(final PokemonId sourceId, final PokemonId targetId, String moveName, boolean shouldAnim) {
+            if (!shouldAnim) return;
+            mMoveDetailsLoader.load(array(toId(moveName)), new DataLoader.Callback<Move.ExtraInfo>() {
+                @Override
+                public void onLoaded(Move.ExtraInfo[] results) {
+                    int color = results[0].color;
+                    String category = toId(results[0].category);
+                    boolean selfAttack = sourceId.equals(targetId) || targetId == null;
+                    View sourceView = mBattleLayout.getPokemonView(sourceId);
+                    View targetView = !selfAttack ? mBattleLayout.getPokemonView(targetId) : null;
+                    Animation sourceAnimation;
+                    Animation targetAnimation;
+                    int circleRadius = Utils.dpToPx(10);
+                    int shakeAmplitude = Utils.dpToPx(8);
+                    if (selfAttack) {
+                        sourceAnimation = new CircularTranslateAnimation(circleRadius, 1.5f);
+                        sourceAnimation.setDuration(1000);
+                        sourceView.startAnimation(sourceAnimation);
+                        return;
+                    }
+                    switch (category) {
+                        case "status":
+                            sourceAnimation = new CircularTranslateAnimation(circleRadius, 1.5f);
+                            sourceAnimation.setDuration(1000);
+                            sourceView.startAnimation(sourceAnimation);
+                            targetAnimation = new ShakeTranslateAnimation(shakeAmplitude, 4f);
+                            targetAnimation.setDuration(1000);
+                            targetAnimation.setStartOffset(500);
+                            targetView.startAnimation(targetAnimation);
+                            break;
+                        case "physical":
+                        case "special":
+                            sourceAnimation = new BackForthTranslateAnimation(
+                                    sourceView.getX() + sourceView.getWidth() / 2f,
+                                    sourceView.getY() + sourceView.getHeight() / 2f,
+                                    targetView.getX() + targetView.getWidth() / 2f,
+                                    targetView.getY() + targetView.getHeight() / 2f);
+                            sourceAnimation.setDuration(750);
+                            sourceAnimation.setStartOffset(250);
+                            sourceView.startAnimation(sourceAnimation);
 
-            pokemonView.animate()
-                    .setDuration(1000)
-                    .setInterpolator(new OvershootInterpolator())
-                    .rotationBy(360f)
-                    .start();
+                            targetAnimation = new ShakeTranslateAnimation(shakeAmplitude, 4f);
+                            targetAnimation.setDuration(750);
+                            targetAnimation.setStartOffset(500);
+                            targetView.startAnimation(targetAnimation);
+                            break;
+                    }
+                }
+            });
         }
 
         @SuppressLint("ClickableViewAccessibility")
@@ -494,7 +605,9 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                 // No battle index provided, pass
                 return;
 
-            mBattleLayout.getStatusView(pokemon.id).setPokemon(pokemon);
+            StatusView statusView = mBattleLayout.getStatusView(pokemon.id);
+            statusView.setPokemon(pokemon);
+            statusView.animate().alpha(1f).start();
 
             ImageView imageView = mBattleLayout.getPokemonView(pokemon.id);
             imageView.setTag(R.id.battle_data_tag, pokemon);
@@ -510,8 +623,8 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                 @Override
                 public void onLoaded(Bitmap[] results) {
                     Drawable icon = new BitmapDrawable(results[0]);
-                    PlayerInfoView infoView = !pokemon.foe ? mPlayerInfoView : mFoeInfoView;
-                    infoView.appendPokemon(pokemon, icon);
+                    PlayerInfoView infoView = !pokemon.foe ? mTrainerInfoView : mFoeInfoView;
+                    infoView.updatePokemon(pokemon, icon);
                 }
             });
 
@@ -521,21 +634,26 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         @Override
         protected void onDetailsChanged(final BattlingPokemon pokemon) {
             ImageView imageView = mBattleLayout.getPokemonView(pokemon.id);
-            imageView.setTag(R.id.battle_data_tag, pokemon);
-            mBattleTipPopup.addTippedView(imageView);
             mSpritesLoader.loadSprite(pokemon, imageView, mBattleLayout.getWidth());
 
-            if (!pokemon.foe)
-                mPlayerPokemons[pokemon.position] = pokemon;
-            else
-                mFoePokemons[pokemon.position] = pokemon;
+            if (!pokemon.foe) {
+                mPlayerPokemons[pokemon.position].species = pokemon.species;
+                mPlayerPokemons[pokemon.position].baseSpecies = pokemon.baseSpecies;
+                mPlayerPokemons[pokemon.position].forme = pokemon.forme;
+                mPlayerPokemons[pokemon.position].spriteId = pokemon.spriteId;
+            } else {
+                mFoePokemons[pokemon.position].species = pokemon.species;
+                mFoePokemons[pokemon.position].baseSpecies = pokemon.baseSpecies;
+                mFoePokemons[pokemon.position].forme = pokemon.forme;
+                mFoePokemons[pokemon.position].spriteId = pokemon.spriteId;
+            }
 
             mDexIconLoader.load(array(toId(pokemon.species)), new DataLoader.Callback<Bitmap>() {
                 @Override
                 public void onLoaded(Bitmap[] results) {
                     Drawable icon = new BitmapDrawable(results[0]);
-                    PlayerInfoView infoView = !pokemon.foe ? mPlayerInfoView : mFoeInfoView;
-                    infoView.appendPokemon(pokemon, icon);
+                    PlayerInfoView infoView = !pokemon.foe ? mTrainerInfoView : mFoeInfoView;
+                    infoView.updatePokemon(pokemon, icon);
                 }
             });
         }
@@ -584,7 +702,6 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         @Override
         protected void onRequestAsked(final BattleActionRequest request) {
             mLastActionRequest = request;
-            Log.e("onreq", request.toString());
             if (request.shouldWait())
                 return;
 
@@ -664,6 +781,12 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         protected void onMarkBreak() {
             super.onMarkBreak();
             mActionWidget.dismiss();
+            mUndoButton.setEnabled(false);
+            mExtraUndoContainer.animate()
+                    .setStartDelay(0)
+                    .translationX(mExtraActionsContainer.getWidth())
+                    .alpha(0f)
+                    .start();
         }
 
         @Override

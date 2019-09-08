@@ -85,9 +85,20 @@ public class Utils {
 
     public static boolean contains(String string, String... ss) {
         for (String s : ss)
-            if (string.contains(s))
-                return true;
+            if (string.contains(s)) return true;
         return false;
+    }
+
+    public static String substring(String string, int startIndex) {
+        if (startIndex < 0) startIndex = string.length() + startIndex;
+        if (startIndex < 0 || startIndex >= string.length()) return null;
+        return string.substring(startIndex);
+    }
+
+    public static String substring(String string, int startIndex, int endIndex) {
+        if (startIndex < 0) startIndex = string.length() + startIndex;
+        if (endIndex < 0) endIndex = string.length() + endIndex;
+        return string.substring(startIndex, endIndex);
     }
 
     public static <T> ArrayList<T> toArrayList(Collection<T> collection) {

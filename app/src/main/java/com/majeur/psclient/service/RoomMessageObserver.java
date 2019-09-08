@@ -66,13 +66,13 @@ public abstract class RoomMessageObserver extends MessageObserver {
                 username = message.args.next();
                 mCurrentUsers.remove(username);
                 onUpdateUsers(mCurrentUsers);
-                printUserRelatedMessage(username + " leaved");
+                printUserRelatedMessage(username + " left");
                 return true;
             case "html":
                 // onPrintText("~html messages aren't supported yet~");
                 return true;
             case "uhtml":
-                // onPrintText("~uhtml messages aren't supported yet~");
+                // onPrintText("~html messages aren't supported yet~");
                 return true;
             case "uhtmlchange":
                 // TODO

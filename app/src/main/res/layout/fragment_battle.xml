@@ -72,6 +72,8 @@
         android:textColor="@color/primary_light"
         android:alpha="0"/>
 
+    <include layout="@layout/layout_extra_undo"/>
+
     <include layout="@layout/layout_extra_actions"/>
 
     <ScrollView

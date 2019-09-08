@@ -1,6 +1,7 @@
 package com.majeur.psclient.model;
 
-import android.util.Log;
+import static com.majeur.psclient.util.Utils.boldText;
+import static com.majeur.psclient.util.Utils.str;
 
 public class StatModifiers {
 
@@ -78,7 +79,7 @@ public class StatModifiers {
         }
     }
 
-    public float value(String stat) {
+    public float modifier(String stat) {
         switch (stat) {
             case "atk":
                 return LEVELS[atk + 6];
@@ -93,5 +94,12 @@ public class StatModifiers {
             default:
                 return LEVELS_ALT[eva + 6];
         }
+    }
+
+    public CharSequence calcReadableStat(String stat, int baseStat) {
+        float m = modifier(stat);
+        if (m == 1f) return str(baseStat);
+        int afterModifier = (int) (baseStat * m);
+        return boldText(str(afterModifier));
     }
 }

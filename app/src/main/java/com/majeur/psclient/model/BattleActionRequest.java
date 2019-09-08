@@ -75,7 +75,7 @@ public class BattleActionRequest {
         int N = pokemonArray.length();
         side = new ArrayList<>(N);
         for (int i = 0; i < N; i++)
-            side.add(new SidePokemon(i, pokemonArray.getJSONObject(i)));
+            side.add(SidePokemon.fromJson(pokemonArray.getJSONObject(i), i));
     }
 
     public List<Move> getMoves() {

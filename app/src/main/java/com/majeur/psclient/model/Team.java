@@ -26,24 +26,24 @@ public class Team implements Serializable {
     }
 
     public static Team dummyTeam(String label) {
-        List<Pokemon> pokemons = new LinkedList<>();
-        for (int i = 0; i < 6; i++) pokemons.add(Pokemon.dummyPokemon());
+        List<TeamPokemon> pokemons = new LinkedList<>();
+        for (int i = 0; i < 6; i++) pokemons.add(TeamPokemon.dummyPokemon());
         return new Team(label, pokemons, null);
     }
 
     public final int uniqueId;
     public String label;
     public String format;
-    public final List<Pokemon> pokemons;
+    public final List<TeamPokemon> pokemons;
 
-    public Team(int uniqueId, String label, List<Pokemon> pokemons, String format) {
+    public Team(int uniqueId, String label, List<TeamPokemon> pokemons, String format) {
         this.uniqueId = uniqueId;
         this.label = label;
         this.pokemons = pokemons;
         this.format = format;
     }
 
-    public Team(String label, List<Pokemon> pokemons, String format) {
+    public Team(String label, List<TeamPokemon> pokemons, String format) {
         this(sUniqueIdInc++, label, pokemons, format);
     }
 
@@ -54,7 +54,7 @@ public class Team implements Serializable {
     public String pack() {
         StringBuilder buf = new StringBuilder();
 
-        for (Pokemon set : pokemons) {
+        for (TeamPokemon set : pokemons) {
             if (buf.length() > 0) buf.append("]");
 
             // name
@@ -157,32 +157,32 @@ public class Team implements Serializable {
 
     public static Team unpack(final String label, String format, String buf) {
         if (buf == null || TextUtils.isEmpty(buf))
-            return new Team(label, new LinkedList<Pokemon>(), format);
+            return new Team(label, new LinkedList<TeamPokemon>(), format);
 
         if (buf.charAt(0) == '[' && buf.charAt(buf.length() - 1) == ']') {
             // TODO buf = this.packTeam(JSON.parse(buf));
         }
 
-        List<Pokemon> team = new LinkedList<>();
+        List<TeamPokemon> team = new LinkedList<>();
         int i = 0, j = 0;
 
         // limit to 24
         for (int count = 0; count < 24; count++) {
-            Pokemon pokemon = new Pokemon();
-            team.add(pokemon);
 
             // name
             j = buf.indexOf('|', i);
             if (j < 0) return null;
-            pokemon.name = buf.substring(i, j);
+            String name = buf.substring(i, j);
             i = j + 1;
 
             // species
             j = buf.indexOf('|', i);
             if (j < 0) return null;
-            pokemon.species = buf.substring(i, j);
-            if (pokemon.species.equals(""))
-                pokemon.species = pokemon.name;
+            String species = buf.substring(i, j);
+            if (species.equals(""))
+                species = name;
+            TeamPokemon pokemon = new TeamPokemon(species);
+            team.add(pokemon);
             i = j + 1;
 
             // item

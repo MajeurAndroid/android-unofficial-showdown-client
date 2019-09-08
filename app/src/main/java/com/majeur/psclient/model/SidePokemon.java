@@ -7,42 +7,25 @@ import org.json.JSONObject;
 
 import java.util.List;
 
-public class SidePokemon {
+public class SidePokemon extends BasePokemon {
 
-    public int index;
-    public String name;
-    public String gender = "";
-    public String species;
-    public boolean shiny;
-    public int level = 100;
-    public Condition condition;
-    public boolean active;
-    public Stats stats;
-    public List<String> moves;
-    public String baseAbility;
-    public String item;
-    public String pokeBall;
-    public String ability;
-
-    private StatModifiers statsModifiers;
-
-    public SidePokemon(int index, JSONObject jsonObject) throws JSONException {
-        statsModifiers = new StatModifiers();
-        this.index = index;
-
+    public static SidePokemon fromJson(JSONObject jsonObject, int index) throws JSONException {
         String ident = jsonObject.getString("ident");
-        name = ident.substring(ident.indexOf(':') + 1);
-        condition = new Condition(jsonObject.getString("condition"));
-        active = jsonObject.getBoolean("active");
-        stats = new Stats(jsonObject.getJSONObject("stats"));
-        moves = Utils.getList(jsonObject.getJSONArray("moves"));
-        baseAbility = jsonObject.getString("baseAbility");
-        item = jsonObject.getString("item");
-        pokeBall = jsonObject.getString("pokeball");
-        ability = jsonObject.getString("ability");
+        String name = ident.substring(ident.indexOf(':') + 1);
+        Condition condition = new Condition(jsonObject.getString("condition"));
+        boolean active = jsonObject.getBoolean("active");
+        Stats stats = new Stats(jsonObject.getJSONObject("stats"));
+        List<String> moves = Utils.getList(jsonObject.getJSONArray("moves"));
+        String baseAbility = jsonObject.getString("baseAbility");
+        String item = jsonObject.getString("item");
+        String pokeBall = jsonObject.getString("pokeball");
+        String ability = jsonObject.getString("ability");
 
         String[] detailsArray = jsonObject.getString("details").toLowerCase().split(", ");
-        species = detailsArray[0];
+        String species = detailsArray[0];
+        boolean shiny = false;
+        String gender = "";
+        int level = 100;
         for (int i = 1; i < detailsArray.length; i++) {
             switch (detailsArray[i].charAt(0)){
                 case 's':
@@ -59,5 +42,44 @@ public class SidePokemon {
                     break;
             }
         }
+
+        return new SidePokemon(species, index, name, gender, shiny, level, condition, active, stats,
+                moves, baseAbility, item, pokeBall, ability);
+    }
+
+    public int index;
+    public String name;
+    public String gender;
+    public boolean shiny;
+    public int level;
+    public Condition condition;
+    public boolean active;
+    public Stats stats;
+    public List<String> moves;
+    public String baseAbility;
+    public String item;
+    public String pokeBall;
+    public String ability;
+
+    private StatModifiers statsModifiers;
+
+    public SidePokemon(String species, int index, String name, String gender, boolean shiny, int level,
+                       Condition condition, boolean active, Stats stats, List<String> moves,
+                       String baseAbility, String item, String pokeBall, String ability) {
+        super(species);
+        this.index = index;
+        this.name = name;
+        this.gender = gender;
+        this.shiny = shiny;
+        this.level = level;
+        this.condition = condition;
+        this.active = active;
+        this.stats = stats;
+        this.moves = moves;
+        this.baseAbility = baseAbility;
+        this.item = item;
+        this.pokeBall = pokeBall;
+        this.ability = ability;
+        this.statsModifiers = new StatModifiers();
     }
 }

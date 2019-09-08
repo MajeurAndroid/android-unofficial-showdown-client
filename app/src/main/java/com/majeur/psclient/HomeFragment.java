@@ -1,6 +1,5 @@
 package com.majeur.psclient;
 
-import android.app.Dialog;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
@@ -41,7 +40,6 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
     private ShowdownService mService;
     private DexIconLoader mDexIconLoader;
 
-    private Dialog mCurrentDialog;
     private Button mBattleButton;
     private TextView mUsernameView;
     private View mUsernameContainer;
@@ -253,10 +251,6 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
 
         @Override
         protected void onUserChanged(String userName, boolean isGuest, String avatarId) {
-            if (mCurrentDialog != null) {
-                mCurrentDialog.dismiss();
-                mCurrentDialog = null;
-            }
             mCurrentUserName = userName;
             if (isGuest) {
                 Snackbar.make(getView(), "Connected as guest !", Snackbar.LENGTH_LONG).show();
@@ -361,9 +355,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
 
         @Override
         protected void onNetworkError() {
-            if (mCurrentDialog != null)
-                mCurrentDialog.dismiss();
-
+            mUsernameContainer.animate().alpha(0f).translationX(mUsernameContainer.getWidth()).start();
             Snackbar.make(getView(), "No internet connection", Snackbar.LENGTH_INDEFINITE)
                     .setAction("Try to reconnect", new View.OnClickListener() {
                         @Override

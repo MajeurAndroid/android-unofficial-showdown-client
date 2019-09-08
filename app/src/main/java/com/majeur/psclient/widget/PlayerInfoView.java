@@ -8,16 +8,17 @@ import android.text.Spanned;
 import android.text.style.ImageSpan;
 import android.text.style.StyleSpan;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 
 import com.majeur.psclient.R;
-import com.majeur.psclient.model.BattlingPokemon;
+import com.majeur.psclient.model.BasePokemon;
 
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import androidx.appcompat.widget.AppCompatTextView;
-import androidx.collection.ArraySet;
 
 import static com.majeur.psclient.model.Id.toId;
 
@@ -47,7 +48,7 @@ public class PlayerInfoView extends AppCompatTextView {
 
     public PlayerInfoView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        mPokemonIds = new ArraySet<>();
+        mPokemonIds = new LinkedHashSet<>();
 
         mSpannableBuilder = new SpannableStringBuilder(SUFFIX_PATTERN);
         mDexIconSize = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 16, getResources().getDisplayMetrics());
@@ -111,8 +112,8 @@ public class PlayerInfoView extends AppCompatTextView {
         invalidateText();
     }
 
-    public void appendPokemon(BattlingPokemon pokemon, Drawable dexIcon) {
-        if (!mPokemonIds.add(toId(pokemon.species)))
+    public void appendPokemon(BasePokemon pokemon, Drawable dexIcon) {
+        if (!mPokemonIds.add(toId(pokemon.baseSpecies)))
             return;
 
         int i;
@@ -120,6 +121,33 @@ public class PlayerInfoView extends AppCompatTextView {
             i = SUFFIX_OFFSET + MAX_TEAM_SIZE - mPokemonIds.size();
         else
             i = mSpannableBuilder.length() - MAX_TEAM_SIZE - SUFFIX_OFFSET + mPokemonIds.size() - 1;
+
+        ImageSpan previousSpan = mSpannableBuilder.getSpans(i , i + 1, ImageSpan.class)[0];
+        mSpannableBuilder.removeSpan(previousSpan);
+        float aspectRatio = dexIcon.getIntrinsicWidth() / (float)  dexIcon.getIntrinsicHeight();
+        dexIcon.setBounds(0, 0, Math.round(aspectRatio * mDexIconSize), mDexIconSize);
+        mSpannableBuilder.setSpan(new ImageSpan(dexIcon), i, i + 1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
+        invalidateText();
+    }
+
+    public void updatePokemon(BasePokemon pokemon, Drawable dexIcon) {
+        if (!mPokemonIds.contains(toId(pokemon.baseSpecies))) {
+            appendPokemon(pokemon, dexIcon);
+            return;
+        }
+
+        int index = 0;
+        for (String id : mPokemonIds) {
+            Log.e(getClass().getSimpleName(), id + " == " + pokemon.baseSpecies);
+            if (id.equals(toId(pokemon.baseSpecies))) break;
+            index++;
+        }
+
+        int i;
+        if ((getGravity() & Gravity.END) == Gravity.END)
+            i = SUFFIX_OFFSET + MAX_TEAM_SIZE - (index + 1);
+        else
+            i = mSpannableBuilder.length() - MAX_TEAM_SIZE - SUFFIX_OFFSET + index;
 
         ImageSpan previousSpan = mSpannableBuilder.getSpans(i , i + 1, ImageSpan.class)[0];
         mSpannableBuilder.removeSpan(previousSpan);

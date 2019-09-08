@@ -5,8 +5,6 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapRegionDecoder;
 import android.graphics.Rect;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
 import android.util.JsonReader;
 
 import com.majeur.psclient.R;
@@ -38,6 +36,12 @@ public class DexIconLoader extends DataLoader<String, Bitmap> {
     @Override
     protected LoadInterface<String, Bitmap> onCreateLoadInterface() {
         return new LoadInterfaceImpl();
+    }
+
+    @Override
+    protected void onInterceptQuery(String[] queries) {
+        for (int i = 0; i < queries.length; i++)
+            if (queries[i].contains("arceus")) queries[i] = "arceus";
     }
 
     @Override

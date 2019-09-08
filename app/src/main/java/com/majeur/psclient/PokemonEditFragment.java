@@ -28,12 +28,13 @@ import com.majeur.psclient.io.DataLoader;
 import com.majeur.psclient.io.DexPokemonLoader;
 import com.majeur.psclient.io.GlideHelper;
 import com.majeur.psclient.io.LearnsetLoader;
+import com.majeur.psclient.model.BasePokemon;
 import com.majeur.psclient.model.DexPokemon;
 import com.majeur.psclient.model.Item;
 import com.majeur.psclient.model.Nature;
-import com.majeur.psclient.model.Pokemon;
 import com.majeur.psclient.model.Species;
 import com.majeur.psclient.model.Stats;
+import com.majeur.psclient.model.TeamPokemon;
 import com.majeur.psclient.util.RangeNumberTextWatcher;
 import com.majeur.psclient.util.SimpleTextWatcher;
 
@@ -55,7 +56,7 @@ public class PokemonEditFragment extends Fragment {
     private static final String ARG_SLOT_INDEX = "arg-slot-index";
     private static final String ARG_PKMN = "arg-pkmn";
 
-    public static PokemonEditFragment create(int slotIndex, Pokemon pkmn) {
+    public static PokemonEditFragment create(int slotIndex, TeamPokemon pkmn) {
         PokemonEditFragment fragment = new PokemonEditFragment();
         Bundle args = new Bundle();
         args.putInt(ARG_SLOT_INDEX, slotIndex);
@@ -388,7 +389,7 @@ public class PokemonEditFragment extends Fragment {
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        Pokemon pokemon = (Pokemon) getArguments().getSerializable(ARG_PKMN);
+        TeamPokemon pokemon = (TeamPokemon) getArguments().getSerializable(ARG_PKMN);
         if (pokemon != null) {
             Species species = new Species();
             species.id = species.name = pokemon.species;
@@ -398,7 +399,7 @@ public class PokemonEditFragment extends Fragment {
         }
     }
 
-    private void initializeSpecies(final Species species, @Nullable final Pokemon basePokemon) {
+    private void initializeSpecies(final Species species, @Nullable final TeamPokemon basePokemon) {
         mCurrentSpecies = species;
         updatePokemonSprite();
         mNameTextView.setHint(species.name);
@@ -419,7 +420,7 @@ public class PokemonEditFragment extends Fragment {
                     placeHolderBottom.setImageDrawable(null);
 
                 // TODO
-                String[] genders = dexPokemon.gender.split("(?!^)");
+                //String[] genders = dexPokemon.gender.split("(?!^)");
                 mGenderTextView.setText(dexPokemon.gender);
 
                 List<String> abilities = new LinkedList<>();
@@ -552,7 +553,7 @@ public class PokemonEditFragment extends Fragment {
         if (mCurrentSpecies == null)
             mSpriteImageView.setImageResource(R.drawable.placeholder_pokeball);
         else
-            mGlideHelper.loadDexSprite(mCurrentSpecies.id, mShinyCheckbox.isChecked(), mSpriteImageView);
+            mGlideHelper.loadDexSprite(new BasePokemon(mCurrentSpecies.name), mShinyCheckbox.isChecked(), mSpriteImageView);
     }
 
     private void toggleInputViewsEnabled(boolean enabled) {
@@ -592,8 +593,7 @@ public class PokemonEditFragment extends Fragment {
 
     private void updatePokemonData() {
         if (!mHasPokemonData) return;
-        Pokemon pokemon = new Pokemon();
-        pokemon.species = mCurrentSpecies.id;
+        TeamPokemon pokemon = new TeamPokemon(mCurrentSpecies.name);
         pokemon.name = mNameTextView.length() > 0 ? mNameTextView.getText()
                 .toString() : null;
         pokemon.level = getCurrentLevel();

@@ -69,11 +69,11 @@ public final class BattleTextBuilder {
         //Log.d(getClass().getSimpleName(), "Resolving: " + objectKey + ":{" + key + "}");
         JSONObject object = object(objectKey);
         if (object == null) return null;
-        String rawMsg = object.optString(key);
-        if (rawMsg == null || TextUtils.isEmpty(rawMsg)) return null;
-        if (rawMsg.charAt(0) == '#')
-            return resolve(rawMsg.substring(1), key);
-        return rawMsg;
+        String template = object.optString(key);
+        if (template == null || TextUtils.isEmpty(template)) return null;
+        if (template.charAt(0) == '#')
+            return resolve(template.substring(1), key);
+        return template;
     }
 
     private Spanned line(String s) {
@@ -139,9 +139,9 @@ public final class BattleTextBuilder {
             from = from.substring("[from] ".length());
             if (from.contains(":"))
                 from = from.substring(from.indexOf(':') + 1);
-            String rawText = resolve(toId(from), "boost");
-            if (rawText != null)
-                return linef(rawText, pokemonName);
+            String template = resolve(toId(from), "boost");
+            if (template != null)
+                return linef(template, pokemonName);
         }
 
         return linef("%s's %s was boosted to %d", pokemonName, stat, value);
@@ -184,13 +184,13 @@ public final class BattleTextBuilder {
 
             if (from.contains("item")) {
                 String item = from.substring(from.indexOf(':') + 1);
-                String rawText = resolve(toId(status), start ? "startFromItem" : "endFromItem");
-                if (rawText != null)
-                    return linef(rawText, pokemonName, item);
+                String template = resolve(toId(status), start ? "startFromItem" : "endFromItem");
+                if (template != null)
+                    return linef(template, pokemonName, item);
             }
         }
-        String rawMessage = resolve(toId(status), start ? "start" : "end");
-        return linef(rawMessage, pokemonName);
+        String template = resolve(toId(status), start ? "start" : "end");
+        return linef(template, pokemonName);
     }
 
     // |-ability|p2a: Deoxys|Pressure
@@ -204,13 +204,13 @@ public final class BattleTextBuilder {
             msg = linef(global().optString("abilityActivation"), pokemonId.name, ability);
 
         if (ability == null) return new Spanned[]{msg};
-        String rawMessage = resolve(toId(ability), mainKey);
-        if (rawMessage == null) return new Spanned[]{msg};
+        String template = resolve(toId(ability), mainKey);
+        if (template == null) return new Spanned[]{msg};
 
         if (ability.equalsIgnoreCase("unnerve"))
             pokemonName = global().optString(player == Player.FOE ? "opposingTeam" : "team");
 
-        Spanned msg2 = linef(rawMessage, pokemonName);
+        Spanned msg2 = linef(template, pokemonName);
         if (msg == null)
             return new Spanned[]{msg2};
         return new Spanned[]{msg, msg2};
@@ -254,18 +254,19 @@ public final class BattleTextBuilder {
 
         effect = effect.substring(7); // "[from]".length()
 
+        //  |-heal|p1a: Gliscor|57/100 tox|[from] ability: Poison Heal
         //  |-damage|p1a: Marshad|75/100|[from] ability: Aftermath|[of] p2a: Electrode
         //  |-heal|p1a: Jellicent|28/100|[from] ability: Water Absorb|[of] p2a: Relicanth
         if (effect.contains("ability")) {
-            String ofPokemonName = pokemon(of);
+            String ofPokemonName = of != null ? pokemon(of) : null;
             String ability = effect.substring(effect.indexOf(':') + 1);
-            String concernedPokemon = mainKey.equals("heal") ? pokemonName : ofPokemonName;
+            String concernedPokemon = mainKey.equals("heal") || ofPokemonName == null ? pokemonName : ofPokemonName;
             Spanned msg1 = linef(global().optString("abilityActivation"), concernedPokemon, ability);
 
-            String rawMsg = resolve(toId(ability), mainKey);
+            String template = resolve(toId(ability), mainKey);
             Spanned msg2;
-            if (rawMsg != null)
-                msg2 = linef(rawMsg, ofPokemonName);
+            if (template != null)
+                msg2 = linef(template, ofPokemonName);
             else
                 msg2 = linef(global().optString(mainKey), pokemonName);
             return array(msg1, msg2);
@@ -273,26 +274,26 @@ public final class BattleTextBuilder {
 
         if (effect.contains("item")) {
             String item = effect.substring(effect.indexOf(':') + 1);
-            String rawMessage = resolve(toId(item), mainKey);
+            String template = resolve(toId(item), mainKey);
 
-            if (rawMessage == null) // Only append with damage
+            if (template == null) // Only append with damage
                 return array(linef(global().optString("damageFromItem"), pokemonName, item));
 
-            return array(linef(rawMessage, pokemonName, item));
+            return array(linef(template, pokemonName, item));
         }
 
         if (effect.contains("move")) {
             String move = effect.substring(effect.indexOf(':') + 1);
-            String rawMessage = resolve(toId(move), mainKey);
-            // Let throws if rawMessage is null
+            String template = resolve(toId(move), mainKey);
+            // Let throws if template is null
 
-            return array(linef(rawMessage, of.name, move));
+            return array(linef(template, of.name, move));
         }
 
         // Search if effect has an entry for damage or heal
-        String rawMessage = resolve(toId(effect), mainKey);
-        if (rawMessage != null)
-            return array(linef(rawMessage, of == null ? pokemonName : pokemon(of)));
+        String template = resolve(toId(effect), mainKey);
+        if (template != null)
+            return array(linef(template, of == null ? pokemonName : pokemon(of)));
 
         if ("heal".equals(mainKey))
             return array(linef(global().optString("healFromEffect"), pokemonName, effect));
@@ -331,9 +332,9 @@ public final class BattleTextBuilder {
 
         if (action.contains("move")) {
             String move = action.substring(action.indexOf(':') + 1);
-            String rawMessage = resolve(toId(move), "fail");
-            if (rawMessage != null)
-                return linef(rawMessage, pokemonName);
+            String template = resolve(toId(move), "fail");
+            if (template != null)
+                return linef(template, pokemonName);
         }
 
         return line(global().optString("fail"));
@@ -387,9 +388,9 @@ public final class BattleTextBuilder {
         }
         mLastWeather = weather;
 
-        if (action.contains("upkeep")) {
-            String upkeepText = resolve(toId(weather), "upkeep");
-            return upkeepText == null ? null : line(upkeepText);
+        if ("upkeep".contains(action)) {
+            String template = resolve(toId(weather), "upkeep");
+            return template == null ? null : line(template);
         }
         return line(resolve(toId(weather), "start"));
     }
@@ -401,8 +402,8 @@ public final class BattleTextBuilder {
         String key = start ? "start" : "end";
         if (side.contains("move"))
             side = side.substring(side.indexOf(':') + 1);
-        String rawText = resolve(toId(side), key);
-        return linef(rawText, teamName);
+        String template = resolve(toId(side), key);
+        return linef(template, teamName);
     }
 
     public Spanned mega(PokemonId pokemonId, String item, String username) {
@@ -410,6 +411,50 @@ public final class BattleTextBuilder {
         if (item == null)
             return linef(global().optString("megaNoItem"), pokemonName, username);
         return linef(global().optString("mega"), pokemonName, item);
+    }
+
+
+    // typeChange: "  [POKEMON] transformed into the [TYPE] type!",
+    //		typeChangeFromEffect: "  [POKEMON]'s [EFFECT] made it the [TYPE] type!",
+    public Spanned typeChange(PokemonId pokemonId, String type, String from) {
+        String pokemonName = pokemon(pokemonId);
+        if (from == null) {
+            return linef(global().optString("typeChange"), pokemonName, type);
+        } else {
+            if (from.contains(":")) from = from.substring(from.indexOf(':') + 1);
+            return linef(global().optString("typeChangeFromEffect"), pokemonName, from, type);
+        }
+    }
+
+    public Spanned win(String username) {
+        return linef(global().optString("winBattle"), username);
+    }
+
+    public Spanned tie(String username1, String username2) {
+        return linef(global().optString("tieBattle"), username1, username2);
+    }
+
+
+    // |cant|p2a: Steelix|slp
+    //
+    public Spanned cant(PokemonId pokemonId, String reason, String move) {
+        String pokemonName = pokemon(pokemonId);
+        if (reason.contains("move")) {
+            String reasonMove = reason.substring(reason.indexOf(':') + 1);
+            String template = resolve(toId(reasonMove), "cant");
+            if (template != null)
+                return linef(template, pokemonName, move);
+        } else if (reason.contains("ability")) {
+            String reasonAbility = reason.substring(reason.indexOf(':') + 1);
+            String template = resolve(toId(reasonAbility), "cant");
+            if (template != null)
+                return linef(template, pokemonName);
+        }
+
+        if (move == null)
+            return linef(global().optString("cantNoMove"), pokemonName);
+        else
+            return linef(global().optString("cant"), pokemonName, move);
     }
 
     //

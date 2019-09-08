@@ -1,5 +1,7 @@
 package com.majeur.psclient.model;
 
+import androidx.annotation.Nullable;
+
 public class PokemonId {
 
     public static PokemonId fromRawId(Player player, String rawId) {
@@ -42,6 +44,13 @@ public class PokemonId {
         this.position = position;
         foe = player == Player.FOE;
         isInBattle = false;
+    }
+
+    @Override
+    public boolean equals(@Nullable Object obj) {
+        return obj instanceof PokemonId
+                && foe == ((PokemonId) obj).foe
+                && position == ((PokemonId) obj).position;
     }
 
     @Override

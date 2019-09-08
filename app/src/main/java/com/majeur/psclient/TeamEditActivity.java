@@ -18,8 +18,8 @@ import com.majeur.psclient.io.DexPokemonLoader;
 import com.majeur.psclient.io.GlideHelper;
 import com.majeur.psclient.io.LearnsetLoader;
 import com.majeur.psclient.model.BattleFormat;
-import com.majeur.psclient.model.Pokemon;
 import com.majeur.psclient.model.Team;
+import com.majeur.psclient.model.TeamPokemon;
 import com.majeur.psclient.widget.CategoryAdapter;
 
 import java.util.LinkedList;
@@ -51,7 +51,7 @@ public class TeamEditActivity extends AppCompatActivity {
     private List<BattleFormat.Category> mBattleFormats;
     private Team mTeam;
     private boolean mTeamNeedsName;
-    private Pokemon[] mPokemons;
+    private TeamPokemon[] mPokemons;
 
     @SuppressWarnings("Unchecked")
     @Override
@@ -69,11 +69,11 @@ public class TeamEditActivity extends AppCompatActivity {
         mBattleFormats = (List<BattleFormat.Category>) getIntent().getSerializableExtra(INTENT_EXTRA_FORMATS);
         mTeam = (Team) getIntent().getSerializableExtra(INTENT_EXTRA_TEAM);
         if (mTeam == null) {
-            mTeam = new Team("Unnamed team", new LinkedList<Pokemon>(), BattleFormat.FORMAT_OTHER.id());
+            mTeam = new Team("Unnamed team", new LinkedList<TeamPokemon>(), BattleFormat.FORMAT_OTHER.id());
             mTeamNeedsName = true;
         }
 
-        mPokemons = new Pokemon[6];
+        mPokemons = new TeamPokemon[6];
         for (int i = 0; i < mTeam.pokemons.size(); i++) mPokemons[i] = mTeam.pokemons.get(i);
 
         ActionBar actionBar = getSupportActionBar();
@@ -234,13 +234,13 @@ public class TeamEditActivity extends AppCompatActivity {
         return mGlideHelper;
     }
 
-    public void onPokemonUpdated(int slotIndex, Pokemon pokemon) {
+    public void onPokemonUpdated(int slotIndex, TeamPokemon pokemon) {
         mPokemons[slotIndex] = pokemon;
         prepareTeam();
     }
 
     private void prepareTeam() {
         mTeam.pokemons.clear();
-        for (Pokemon pokemon : mPokemons) addNullSafe(mTeam.pokemons, pokemon);
+        for (TeamPokemon pokemon : mPokemons) addNullSafe(mTeam.pokemons, pokemon);
     }
 }
