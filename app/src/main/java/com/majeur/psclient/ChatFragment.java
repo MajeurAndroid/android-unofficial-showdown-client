@@ -186,7 +186,7 @@ public class ChatFragment extends Fragment implements MainActivity.Callbacks {
             mMessageView.setEnabled(false);
             mSendMessageView.setEnabled(false);
             mSendMessageView.getDrawable().setAlpha(128);
-            mTitleButton.setImageResource(R.drawable.ic_join);
+            mTitleButton.setImageResource(R.drawable.ic_enter);
             mTitleButton.requestFocus();
         }
     };

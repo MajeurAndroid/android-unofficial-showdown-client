@@ -38,7 +38,7 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:background="?attr/selectableItemBackground"
-            android:src="@drawable/ic_join"/>
+            android:src="@drawable/ic_enter"/>
 
     </LinearLayout>
 
