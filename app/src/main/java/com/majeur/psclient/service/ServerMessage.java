@@ -2,10 +2,12 @@ package com.majeur.psclient.service;
 
 import android.util.Log;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
-import java.util.NoSuchElementException;
-
-import androidx.annotation.NonNull;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 public class ServerMessage {
 
@@ -13,7 +15,9 @@ public class ServerMessage {
 
     public String roomId;
     public String command;
-    public Args args;
+    public List<String> args;
+    private Iterator<String> mArgsIterator;
+    public Map<String, String> kwargs;
 
     ServerMessage(String roomId, String data) {
         this.roomId = roomId;
@@ -21,20 +25,81 @@ public class ServerMessage {
 
         if (data.equals("|")) { // "|" type
             command = "break";
-            args = new Args("");
+            args = Collections.emptyList();
+            kwargs = Collections.emptyMap();
         } else if (data.charAt(0) != SEPARATOR || data.charAt(1) == SEPARATOR) { // "||MESSAGE" and "MESSAGE" type
             command = "raw";
-            args = new Args(data);
+            parseArguments(data);
         } else {
             int sepIndex = data.indexOf('|', 1);
             if (sepIndex == -1) {
                 command = data.substring(1).toLowerCase();
-                args = new Args("");
+                args = Collections.emptyList();
+                kwargs = Collections.emptyMap();
             } else {
                 command = data.substring(1, sepIndex).toLowerCase();
-                args = new Args(data.substring(sepIndex + 1));
+                parseArguments(data.substring(sepIndex + 1));
             }
         }
+    }
+
+    public boolean hasNextArg() {
+        return mArgsIterator.hasNext();
+    }
+
+    public String nextArg() {
+        return mArgsIterator.next();
+    }
+
+    public void resetArgsIteration() {
+        mArgsIterator = args.iterator();
+    }
+
+    public String rawArgs() {
+        StringBuilder builder = new StringBuilder();
+        for (String arg : args) builder.append(arg).append(SEPARATOR);
+        builder.deleteCharAt(builder.length() - 1);
+        return builder.toString();
+    }
+
+    public String kwarg(String key) {
+        return kwargs.get(key);
+    }
+
+    public boolean hasKwarg(String key) {
+        return kwargs.containsKey(key);
+    }
+
+    private void parseArguments(String rawArgs) {
+        args = new LinkedList<>();
+        kwargs = new HashMap<>();
+
+        int sep = rawArgs.indexOf(SEPARATOR);
+        if (sep == 0) rawArgs = rawArgs.substring(1);
+
+        int separatorStart = 0;
+        int separatorEnd = rawArgs.indexOf(SEPARATOR);
+        boolean hasNext = true;
+        while (hasNext) {
+            String next;
+            if (separatorEnd != -1) {
+                next = rawArgs.substring(separatorStart, separatorEnd);
+                separatorStart = separatorEnd + 1;
+                separatorEnd = rawArgs.indexOf(SEPARATOR, separatorStart);
+            } else {
+                next = rawArgs.substring(separatorStart);
+                hasNext = false;
+            }
+
+            if (next.contains("[") && next.contains("]")) {
+                String key = next.substring(next.indexOf('[') + 1, next.indexOf(']'));
+                String value = next.substring(key.length() + 2).trim();
+                kwargs.put(key, value);
+            } else {
+                args.add(next.trim());
+            }
+        }
+        mArgsIterator = args.iterator();
     }
 
     @Override
@@ -42,81 +107,8 @@ public class ServerMessage {
         return "ServerMessage{" +
                 "roomId='" + roomId + '\'' +
                 ", command='" + command + '\'' +
-                ", args=" + args.toString() +
+                ", args=" + args.size() +
+                ", kwargs=" + kwargs.size() +
                 '}';
-    }
-
-    public static class Args implements Iterator<String> {
-
-        private String mRawArgs;
-        private int mSeparatorStart;
-        private int mSeparatorEnd;
-
-        private boolean mHasNext;
-
-        Args(String rawArgs) {
-            int sep = rawArgs.indexOf(SEPARATOR);
-            if (sep == 0) rawArgs = rawArgs.substring(1);
-            mRawArgs = rawArgs;
-
-            mSeparatorStart = 0;
-            mSeparatorEnd = rawArgs.indexOf(SEPARATOR);
-            mHasNext = true;
-        }
-
-        public void reset() {
-            mSeparatorStart = 0;
-            mSeparatorEnd = mRawArgs.indexOf(SEPARATOR);
-            mHasNext = true;
-        }
-
-        public int getIndex() {
-            return mSeparatorStart;
-        }
-
-        public void moveTo(int index) {
-            if (index < 0 || index >= mRawArgs.length())
-                throw new IllegalArgumentException("index must be in [0;" + mRawArgs.length() + "[");
-            if (index != 0 && mRawArgs.charAt(index) != SEPARATOR)
-                throw new IllegalArgumentException("invalid index, use only values from getIndex()");
-            mSeparatorStart = index;
-            mSeparatorEnd = mRawArgs.indexOf(SEPARATOR, mSeparatorStart + 1);
-            mHasNext = true;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return mHasNext;
-        }
-
-        public String nextTillEnd() {
-            if (!mHasNext)
-                throw new NoSuchElementException();
-            String next = mRawArgs.substring(mSeparatorStart);
-            mHasNext = false;
-            return next;
-        }
-
-        @Override
-        public String next() {
-            if (!mHasNext)
-                throw new NoSuchElementException();
-            String next;
-            if (mSeparatorEnd != -1) {
-                next = mRawArgs.substring(mSeparatorStart, mSeparatorEnd);
-                mSeparatorStart = mSeparatorEnd + 1;
-                mSeparatorEnd = mRawArgs.indexOf(SEPARATOR, mSeparatorStart);
-            } else {
-                next = mRawArgs.substring(mSeparatorStart);
-                mHasNext = false;
-            }
-            return next;
-        }
-
-        @NonNull
-        @Override
-        public String toString() {
-            return getClass().getSimpleName() + " {" + mRawArgs + "}";
-        }
     }
 }

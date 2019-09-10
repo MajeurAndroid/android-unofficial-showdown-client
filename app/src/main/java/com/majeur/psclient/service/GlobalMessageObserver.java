@@ -39,26 +39,26 @@ public abstract class GlobalMessageObserver extends MessageObserver {
     public boolean onMessage(ServerMessage message) {
         switch (message.command) {
             case "challstr":
-                processChallengeString(message.args);
+                processChallengeString(message);
                 return true;
             case "updateuser":
-                processUpdateUser(message.args);
+                processUpdateUser(message);
                 return true;
             case "nametaken":
-                message.args.next(); // Skipping name
-                onShowPopup(message.args.next());
+                message.nextArg(); // Skipping name
+                onShowPopup(message.nextArg());
                 return true;
             case "queryresponse":
-                processQueryResponse(message.args);
+                processQueryResponse(message);
                 return true;
             case "formats":
-                processAvailableFormats(message.args);
+                processAvailableFormats(message);
                 return true;
             case "popup":
-                handlePopup(message.args);
+                handlePopup(message);
                 return true;
             case "updatesearch":
-                processUpdateSearch(message.args);
+                processUpdateSearch(message);
 
                 //final String searchStatus = messageDetail.substring(messageDetail.indexOf('|') + 1);
                 //BroadcastSender.get(this).sendBroadcastFromMyApplication(
@@ -73,11 +73,11 @@ public abstract class GlobalMessageObserver extends MessageObserver {
                 //        BroadcastSender.EXTRA_UPDATE_CHALLENGE, challengesStatus);
                 return true;
             case "error":
-                if (message.args.next().equals("network"))
+                if (message.nextArg().equals("network"))
                     onNetworkError();
                 return true;
             case "init":
-                onRoomInit(message.roomId, message.args.next());
+                onRoomInit(message.roomId, message.nextArg());
                 return false; // Must not consume init/deinit commands !
             case "deinit":
                 onRoomDeinit(message.roomId);
@@ -87,17 +87,17 @@ public abstract class GlobalMessageObserver extends MessageObserver {
         }
     }
 
-    private void processChallengeString(ServerMessage.Args args) {
-        getService().setChallengeString(args.nextTillEnd());
+    private void processChallengeString(ServerMessage args) {
+        getService().setChallengeString(args.rawArgs());
         getService().tryCookieSignIn();
     }
 
-    private void processUpdateUser(ServerMessage.Args args) {
-        String username = args.next().trim();
+    private void processUpdateUser(ServerMessage args) {
+        String username = args.nextArg().trim();
         if (username.charAt(0) == '!' || username.charAt(0) == '@')
             username = username.substring(1);
-        boolean isGuest = "0".equals(args.next());
-        String avatar = args.next();
+        boolean isGuest = "0".equals(args.nextArg());
+        String avatar = args.nextArg();
         avatar = ("000" + avatar).substring(avatar.length());
 
         mUserName = username;
@@ -106,9 +106,9 @@ public abstract class GlobalMessageObserver extends MessageObserver {
         onUserChanged(username, isGuest, avatar);
     }
 
-    private void processQueryResponse(ServerMessage.Args args) {
-        String query = args.next();
-        String queryContent = args.next();
+    private void processQueryResponse(ServerMessage args) {
+        String query = args.nextArg();
+        String queryContent = args.nextArg();
         switch (query) {
             case "rooms":
                 processRoomsQueryResponse(queryContent);
@@ -193,8 +193,8 @@ public abstract class GlobalMessageObserver extends MessageObserver {
         }
     }
 
-    private void processAvailableFormats(ServerMessage.Args args) {
-        String rawText = args.nextTillEnd();
+    private void processAvailableFormats(ServerMessage args) {
+        String rawText = args.rawArgs();
         List<BattleFormat.Category> battleFormatCategories = new LinkedList<>(); // /!\ needs to impl Serializable
         BattleFormat.Category currentCategory = null;
         int separator;
@@ -225,19 +225,19 @@ public abstract class GlobalMessageObserver extends MessageObserver {
         onBattleFormatsChanged(battleFormatCategories);
     }
 
-    private void handlePopup(ServerMessage.Args args) {
-        StringBuilder text = new StringBuilder(args.next());
-        while (args.hasNext()) {
-            String next = args.next();
+    private void handlePopup(ServerMessage args) {
+        StringBuilder text = new StringBuilder(args.nextArg());
+        while (args.hasNextArg()) {
+            String next = args.nextArg();
             if (!TextUtils.isEmpty(next))
                 text.append("\n").append(next);
         }
         onShowPopup(text.toString());
     }
 
-    private void processUpdateSearch(ServerMessage.Args args) {
+    private void processUpdateSearch(ServerMessage args) {
         try {
-            JSONObject jsonObject = new JSONObject(args.nextTillEnd());
+            JSONObject jsonObject = new JSONObject(args.rawArgs());
             JSONArray searchingArray = jsonObject.getJSONArray("searching");
             JSONObject games = jsonObject.optJSONObject("games");
             if (games == null || games.length() == 0) return;

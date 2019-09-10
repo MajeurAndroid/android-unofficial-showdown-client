@@ -49,21 +49,21 @@ public abstract class RoomMessageObserver extends MessageObserver {
                 onRoomInit();
                 return true;
             case "title":
-                onRoomTitleChanged(message.args.next());
+                onRoomTitleChanged(message.nextArg());
                 return true;
             case "users":
-                initializeUserList(message.args);
+                initializeUserList(message);
                 return true;
             case "j":
             case "join":
-                String username = message.args.next();
+                String username = message.nextArg();
                 mCurrentUsers.add(username);
                 onUpdateUsers(mCurrentUsers);
                 printUserRelatedMessage(username + " joined");
                 return true;
             case "l":
             case "leave":
-                username = message.args.next();
+                username = message.nextArg();
                 mCurrentUsers.remove(username);
                 onUpdateUsers(mCurrentUsers);
                 printUserRelatedMessage(username + " left");
@@ -79,15 +79,15 @@ public abstract class RoomMessageObserver extends MessageObserver {
                 return true;
             case "n":
             case "name":
-                handleNameChange(message.args);
+                handleNameChange(message);
                 return true;
             case "c":
             case "chat":
-                handleChatMessage(message.args);
+                handleChatMessage(message);
                 return true;
             case "c:":
-                message.args.next(); // Skipping time stamp
-                handleChatMessage(message.args);
+                message.nextArg(); // Skipping time stamp
+                handleChatMessage(message);
                 return true;
             case ":":
                 // Time stamp, we aren't using it yet
@@ -97,10 +97,10 @@ public abstract class RoomMessageObserver extends MessageObserver {
                 onPrintText("A battle started between XXX and YYY");
                 return true;
             case "error":
-                printErrorMessage(message.args.next());
+                printErrorMessage(message.nextArg());
                 return true;
             case "raw":
-                String s = message.args.nextTillEnd();
+                String s = message.rawArgs();
                 if (s.contains("href")) return true; // skipping complex Html formatted messages
                 onPrintText(Html.fromHtml(s));
                 return true;
@@ -116,8 +116,8 @@ public abstract class RoomMessageObserver extends MessageObserver {
         }
     }
 
-    private void initializeUserList(ServerMessage.Args args) {
-        String rawUsers = args.next();
+    private void initializeUserList(ServerMessage args) {
+        String rawUsers = args.nextArg();
         int separator = rawUsers.indexOf(',');
         int count = Integer.parseInt(rawUsers.substring(0, separator));
         mCurrentUsers = new ArrayList<>(count);
@@ -131,15 +131,15 @@ public abstract class RoomMessageObserver extends MessageObserver {
         onUpdateUsers(mCurrentUsers);
     }
 
-    private void handleNameChange(ServerMessage.Args args) {
-        String user = args.next();
-        String oldName = args.next();
+    private void handleNameChange(ServerMessage args) {
+        String user = args.nextArg();
+        String oldName = args.nextArg();
         printUserRelatedMessage("User " + oldName + " changed its name and is now " + user);
     }
 
-    private void handleChatMessage(ServerMessage.Args args) {
-        String user = args.next().substring(1);
-        String userMessage = args.nextTillEnd();
+    private void handleChatMessage(ServerMessage args) {
+        String user = args.nextArg().substring(1);
+        String userMessage = args.rawArgs();
 
         Spannable spannable = new SpannableString(user + ": " + userMessage);
         int textColor = obtainUsernameColor(user);
