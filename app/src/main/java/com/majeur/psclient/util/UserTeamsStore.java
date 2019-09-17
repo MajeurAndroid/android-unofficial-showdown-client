@@ -34,6 +34,7 @@ public class UserTeamsStore {
         mJsonFile = new File(context.getFilesDir(), FILE_NAME);
         try {
             FileInputStream fis = new FileInputStream(mJsonFile);
+            //Log.e(getClass().getSimpleName(), Utils.convertStreamToString(fis));
             fis.close();
         } catch (IOException e) {
             e.printStackTrace();
@@ -73,7 +74,7 @@ public class UserTeamsStore {
             JSONArray teamsJsonArray = teamGroupJson.getJSONArray(JSON_KEY_TEAMS);
             for (int j = 0; j < teamsJsonArray.length(); j++) {
                 JSONObject teamJsonObject = teamsJsonArray.getJSONObject(j);
-                String label = teamJsonObject.getString(JSON_KEY_TEAM_LABEL);
+                String label = teamJsonObject.optString(JSON_KEY_TEAM_LABEL);
                 String data = teamJsonObject.getString(JSON_KEY_TEAM_DATA);
                 teamGroup.teams.add(Team.unpack(label, format, data));
             }
@@ -112,7 +113,7 @@ public class UserTeamsStore {
             JSONArray teamsJsonArray = new JSONArray();
             for (Team team : teamGroup.teams) {
                 JSONObject teamJsonObject = new JSONObject();
-                teamJsonObject.put(JSON_KEY_TEAM_LABEL, team.label);
+                teamJsonObject.put(JSON_KEY_TEAM_LABEL, team.label == null ? "Unnamed team" : team.label);
                 teamJsonObject.put(JSON_KEY_TEAM_DATA, team.pack());
                 teamsJsonArray.put(teamJsonObject);
             }
