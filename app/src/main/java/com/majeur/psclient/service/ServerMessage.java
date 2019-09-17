@@ -1,5 +1,6 @@
 package com.majeur.psclient.service;
 
+import android.text.TextUtils;
 import android.util.Log;
 
 import java.util.Collections;
@@ -29,7 +30,7 @@ public class ServerMessage {
             kwargs = Collections.emptyMap();
         } else if (data.charAt(0) != SEPARATOR || data.charAt(1) == SEPARATOR) { // "||MESSAGE" and "MESSAGE" type
             command = "raw";
-            parseArguments(data);
+            parseArguments(data, true);
         } else {
             int sepIndex = data.indexOf('|', 1);
             if (sepIndex == -1) {
@@ -38,7 +39,8 @@ public class ServerMessage {
                 kwargs = Collections.emptyMap();
             } else {
                 command = data.substring(1, sepIndex).toLowerCase();
-                parseArguments(data.substring(sepIndex + 1));
+                parseArguments(data.substring(sepIndex + 1), command.equals("formats") || command.equals("c")
+                    || command.equals("tier"));
             }
         }
     }
@@ -56,6 +58,7 @@ public class ServerMessage {
     }
 
     public String rawArgs() {
+        if (args.size() < 1) return "";
         StringBuilder builder = new StringBuilder();
         for (String arg : args) builder.append(arg).append(SEPARATOR);
         builder.deleteCharAt(builder.length() - 1);
@@ -70,7 +73,7 @@ public class ServerMessage {
         return kwargs.containsKey(key);
     }
 
-    private void parseArguments(String rawArgs) {
+    private void parseArguments(String rawArgs, boolean escapeKwargs) {
         args = new LinkedList<>();
         kwargs = new HashMap<>();
 
@@ -91,7 +94,9 @@ public class ServerMessage {
                 hasNext = false;
             }
 
-            if (next.contains("[") && next.contains("]")) {
+            if (TextUtils.isEmpty(next)) continue;
+
+            if (!escapeKwargs && next.charAt(0) == '[' && next.contains("]")) {
                 String key = next.substring(next.indexOf('[') + 1, next.indexOf(']'));
                 String value = next.substring(key.length() + 2).trim();
                 kwargs.put(key, value);
