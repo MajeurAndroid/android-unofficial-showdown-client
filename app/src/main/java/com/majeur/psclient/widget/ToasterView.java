@@ -25,6 +25,7 @@ public class ToasterView extends FrameLayout {
     }
 
     public void makeToast(String text, int color) {
+        if (text == null) return;
         final ToastView toastView = obtainToastView();
         addView(toastView);
         toastView.setText(text);
