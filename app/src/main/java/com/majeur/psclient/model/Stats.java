@@ -88,6 +88,56 @@ public class Stats implements Serializable {
         return hp + atk + def + spa + spd + spe;
     }
 
+    public String hpType() {
+        int a = hp % 2 == 0 ? 0 : 1;
+        int b = atk % 2 == 0 ? 0 : 2;
+        int c = def % 2 == 0 ? 0 : 4;
+        int d = spe % 2 == 0 ? 0 : 8;
+        int e = spa % 2 == 0 ? 0 : 16;
+        int f = spd % 2 == 0 ? 0 : 32;
+        int t = (a + b + c + d + e + f) * 15 / 63;
+        switch (t) {
+            case 0: return "Fighting";
+            case 1: return "Flying";
+            case 2: return "Poison";
+            case 3: return "Ground";
+            case 4: return "Rock";
+            case 5: return "Bug";
+            case 6: return "Ghost";
+            case 7: return "Steel";
+            case 8: return "Fire";
+            case 9: return "Water";
+            case 10: return "Grass";
+            case 11: return "Electric";
+            case 12: return "Psychic";
+            case 13: return "Ice";
+            case 14: return "Dragon";
+            case 15: return "Dark";
+            default: return null;
+        }
+    }
+
+    public void setForHpType(String type) {
+        switch (type) {
+            case "Bug":			hp = 31; atk = 31; def = 31; spa = 31; spd = 30; spe = 30; break;
+            case "Dark":		hp = 31; atk = 31; def = 31; spa = 31; spd = 31; spe = 31; break;
+            case "Dragon":		hp = 30; atk = 31; def = 31; spa = 31; spd = 31; spe = 31; break;
+            case "Electric":	hp = 31; atk = 31; def = 31; spa = 30; spd = 31; spe = 31; break;
+            case "Fighting":	hp = 31; atk = 31; def = 30; spa = 30; spd = 30; spe = 30; break;
+            case "Fire":		hp = 31; atk = 30; def = 31; spa = 30; spd = 31; spe = 30; break;
+            case "Flying":		hp = 31; atk = 31; def = 31; spa = 30; spd = 30; spe = 30; break;
+            case "Ghost":		hp = 31; atk = 30; def = 31; spa = 31; spd = 30; spe = 31; break;
+            case "Grass":		hp = 30; atk = 31; def = 31; spa = 30; spd = 31; spe = 31; break;
+            case "Ground":		hp = 31; atk = 31; def = 31; spa = 30; spd = 30; spe = 31; break;
+            case "Ice":			hp = 31; atk = 31; def = 31; spa = 31; spd = 31; spe = 30; break;
+            case "Poison":		hp = 31; atk = 31; def = 30; spa = 30; spd = 30; spe = 31; break;
+            case "Psychic":		hp = 30; atk = 31; def = 31; spa = 31; spd = 31; spe = 30; break;
+            case "Rock":		hp = 31; atk = 31; def = 30; spa = 31; spd = 30; spe = 30; break;
+            case "Steel":		hp = 31; atk = 31; def = 31; spa = 31; spd = 30; spe = 31; break;
+            case "Water":		hp = 31; atk = 31; def = 31; spa = 30; spd = 31; spe = 30; break;
+        }
+    }
+
     public static final int[] calculateSpeedRange(int level, int baseSpe, String tier, int gen) {
         boolean isRandomBattle = tier.contains("Random Battle") || (tier.contains("Random") && tier.contains("Battle") && gen >= 6);
 

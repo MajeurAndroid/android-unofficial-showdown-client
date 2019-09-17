@@ -35,6 +35,7 @@ import com.majeur.psclient.model.Nature;
 import com.majeur.psclient.model.Species;
 import com.majeur.psclient.model.Stats;
 import com.majeur.psclient.model.TeamPokemon;
+import com.majeur.psclient.model.Type;
 import com.majeur.psclient.util.RangeNumberTextWatcher;
 import com.majeur.psclient.util.SimpleTextWatcher;
 
@@ -48,6 +49,7 @@ import androidx.fragment.app.Fragment;
 import static com.majeur.psclient.model.Id.toId;
 import static com.majeur.psclient.model.Stats.calculateHp;
 import static com.majeur.psclient.model.Stats.calculateStat;
+import static com.majeur.psclient.util.Utils.indexOf;
 import static com.majeur.psclient.util.Utils.parseInt;
 import static com.majeur.psclient.util.Utils.str;
 
@@ -87,6 +89,7 @@ public class PokemonEditFragment extends Fragment {
     private EditText[] mIvTextViews;
     private TextView[] mTotalStatTextViews;
     private Spinner mNatureSpinner;
+    private Spinner mHpTypeSpinner;
 
     private int mSlotIndex;
     private Species mCurrentSpecies;
@@ -173,6 +176,7 @@ public class PokemonEditFragment extends Fragment {
         mIvTextViews[5] = view.findViewById(R.id.speIvsTextView);
         mTotalStatTextViews[5] = view.findViewById(R.id.speTotalTextView);
         mNatureSpinner = view.findViewById(R.id.natureSpinner);
+        mHpTypeSpinner = view.findViewById(R.id.hpTypeSpinner);
 
         final String[] query = {""};
         mSpeciesLoader.load(query, new DataLoader.Callback<List>() {
@@ -370,6 +374,25 @@ public class PokemonEditFragment extends Fragment {
                 ArrayAdapter<Nature> adapter = (ArrayAdapter<Nature>) adapterView.getAdapter();
                 mCurrentNature = adapter.getItem(i);
                 updatePokemonTotalStats();
+                updatePokemonData();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+            }
+        });
+
+        adapter = new ArrayAdapter<>(getContext(),
+                android.R.layout.simple_dropdown_item_1line,
+                Type.HP_TYPES);
+        mHpTypeSpinner.setAdapter(adapter);
+        mHpTypeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                ArrayAdapter<String> adapter = (ArrayAdapter<String>) adapterView.getAdapter();
+                mCurrentIvs.setForHpType(adapter.getItem(i));
+                for (int j = 0; j < 6; j++)
+                    mIvTextViews[j].setText(str(mCurrentIvs.get(j)));
                 updatePokemonData();
             }
 
@@ -601,6 +624,9 @@ public class PokemonEditFragment extends Fragment {
         TextView evsCounter = getView().findViewById(R.id.evsCounterTextView);
         evsCounter.setText("Remaining Evs: " + str(remainingEvs));
         evsCounter.setTextColor(remainingEvs < 0 ? Color.RED : Color.DKGRAY);
+        int selectionIndex = indexOf(mCurrentIvs.hpType(), Type.HP_TYPES);
+        if (mHpTypeSpinner.getSelectedItemPosition() != selectionIndex)
+            mHpTypeSpinner.setSelection(selectionIndex, true);
     }
 
     private void updatePokemonData() {

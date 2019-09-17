@@ -91,6 +91,12 @@ public class Utils {
         return false;
     }
 
+    public static <T> int indexOf(T value, T[] array) {
+        for (int i = 0; i < array.length; i++)
+            if (array[i].equals(value)) return i;
+        return -1;
+    }
+
     public static String substring(String string, int startIndex) {
         if (startIndex < 0) startIndex = string.length() + startIndex;
         if (startIndex < 0 || startIndex >= string.length()) return null;
