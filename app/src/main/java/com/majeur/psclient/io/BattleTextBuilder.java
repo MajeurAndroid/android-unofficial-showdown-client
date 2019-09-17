@@ -3,9 +3,9 @@ package com.majeur.psclient.io;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.text.TextUtils;
-import android.util.Log;
 
 import com.majeur.psclient.R;
+import com.majeur.psclient.model.BattlingPokemon;
 import com.majeur.psclient.model.Player;
 import com.majeur.psclient.model.PokemonId;
 import com.majeur.psclient.util.Utils;
@@ -14,7 +14,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 
@@ -82,8 +81,6 @@ public final class BattleTextBuilder {
         if (objectKey == null && useDefault) objectKey = "default";
         if (objectKey == null) return null;
         objectKey = toId(effect(objectKey));
-        Log.e(TAG, " --- RESOLVE ---");
-        Log.e(TAG, "obj=" + objectKey + " key=" + key);
         JSONObject object = mJSONObject.optJSONObject(objectKey);
         if (object == null) return null;
         String template = object.optString(key);
@@ -115,20 +112,15 @@ public final class BattleTextBuilder {
     }
 
     private String formatPlaceHolders(String template, String... formats) {
-        Log.e(TAG, "--- FORMAT ---");
-        Log.e(TAG, "template=" + template);
-        Log.e(TAG, "formats=" + Arrays.toString(formats));
         if (template == null) return null;
         if (formats.length % 2 != 0)
             throw new IllegalArgumentException("Args formats aren't well mapped (Must be filled with 'ph/value' pairs)");
         for (int i = 0; i < formats.length - 1; ) {
             String placeHolder = formats[i++];
             String value = formats[i++];
-            Log.e(TAG, "#" + i + ": placeHolder=" + placeHolder + " value=" + value);
             if (placeHolder == null || value == null) continue;
             template = template.replaceFirst(Pattern.quote(placeHolder), value);
         }
-        Log.e(TAG, "result=" + template);
         return template.trim();
     }
 
@@ -177,6 +169,14 @@ public final class BattleTextBuilder {
         PokemonId id = getPokemonId(rawPoke);
         if (id == null) return "???" + rawPoke + "???";
         return pokemon(id);
+    }
+
+    private String pokemonFull(BattlingPokemon pokemon) {
+		String nickname = pokemon.name;
+		String species = pokemon.species;
+        if (species.equalsIgnoreCase(nickname) || nickname == null)
+            return "**" + species + "**";
+        return nickname + " (**" + species + "**)";
     }
 
     private String team(PokemonId pokemonId) {
@@ -245,13 +245,20 @@ public final class BattleTextBuilder {
                 PH_TRAINER, username2);
     }
 
-    public CharSequence switchIn(PokemonId pokemonId, String username) {
-        return line(resolveOwn("switchIn", !pokemonId.foe),
-                PH_FULLNAME, pokemonId.name, PH_TRAINER, username);
+    public CharSequence switchIn(BattlingPokemon pokemon, String username) {
+        return line(resolveOwn("switchIn", !pokemon.foe),
+                PH_FULLNAME, pokemonFull(pokemon), PH_TRAINER, username);
     }
 
-    public CharSequence drag(PokemonId pokemonId) {
-        return line(resolve("drag"), PH_FULLNAME, pokemonId.name);
+    public CharSequence drag(BattlingPokemon pokemon) {
+        return line(resolve("drag"), PH_FULLNAME, pokemonFull(pokemon));
+    }
+
+    public CharSequence switchOut(PokemonId pkmnId, String username, String from) {
+        String pokemonName = pokemon(pkmnId);
+        String template = resolveOwn(from, "switchOut", !pkmnId.foe);
+        return line(template, PH_TRAINER, username, PH_POKEMON, pokemonName,
+                PH_NICKNAME, pkmnId.name);
     }
 
     public CharSequence pokemonChange(String cmd, PokemonId pkmnId, String arg2, String arg3, String of, String from) {
@@ -323,13 +330,6 @@ public final class BattleTextBuilder {
         return lines(line1, line2);
     }
 
-    public CharSequence switchOut(PokemonId pkmnId, String username, String from) {
-        String pokemonName = pokemon(pkmnId);
-        String template = resolveOwn(from, "switchOut", !pkmnId.foe);
-        return line(template, PH_TRAINER, username, PH_POKEMON, pokemonName,
-                PH_NICKNAME, pkmnId.name);
-    }
-
     public CharSequence faint(PokemonId pokemonId) {
         return line(resolve("faint"), PH_POKEMON, pokemon(pokemonId));
     }
@@ -339,6 +339,7 @@ public final class BattleTextBuilder {
                 PH_TARGET, pokemon(target));
     }
 
+    // |move|p2a: salamencemega|Outrage|p1a: Wobbuffet|[from]lockedmove
     public CharSequence move(PokemonId pkmnId, String move, String from, String of, String zMove) {
         String pokemon = pokemon(pkmnId);
         CharSequence line1 = of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId);
@@ -607,6 +608,21 @@ public final class BattleTextBuilder {
         return line(template, PH_TEAM, team(player));
     }
 
+    public CharSequence weather(String weather, String from, String of, String upkeep) {
+        if (weather == null || weather.equals("none")) {
+            String template = resolve(from, "end", false);
+            if (template == null) return line(resolve("endFieldEffect"), PH_EFFECT, effect(weather));
+            return line(template);
+        }
+        if (upkeep != null) {
+            return line(resolve(weather, "upkeep", false));
+        }
+        CharSequence line1 = maybeAbility(from, of);
+        String template = resolve(weather, "start", false);
+        if (template == null) template = formatPlaceHolders(resolve("startFieldEffect"), PH_EFFECT, effect(weather));
+        return lines(line1, line(template));
+    }
+
     // case '-fieldstart': case '-fieldactivate': {
     public CharSequence field(String cmd, String effect, String from, String of) {
         CharSequence line1 = maybeAbility(from, of);
@@ -764,7 +780,25 @@ public final class BattleTextBuilder {
         return lines(line1, line2);
     }
 
+    public CharSequence setboost(PokemonId pkmnId, String from, String of) {
+        CharSequence line1 = of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId);
+        String template = resolve(from, "boost");
+        CharSequence line2 = line(template, PH_POKEMON, pokemon(pkmnId));
+        return lines(line1, line2);
+    }
+
     /* TODO
+    case '-swapboost': {
+        const [, pokemon, target] = args;
+        const line1 = this.maybeAbility(kwArgs.from, kwArgs.of || pokemon);
+        const id = BattleTextParser.effectId(kwArgs.from);
+        let templateId = 'swapBoost';
+        if (id === 'guardswap') templateId = 'swapDefensiveBoost';
+        if (id === 'powerswap') templateId = 'swapOffensiveBoost';
+        const template = this.template(templateId, kwArgs.from);
+        return line1 + template.replace('[POKEMON]', this.pokemon(pokemon)).replace('[TARGET]', this.pokemon(target));
+    }
+
     case '-copyboost': {
         const [, pokemon, target] = args;
         const line1 = this.maybeAbility(kwArgs.from, kwArgs.of || pokemon);
@@ -904,11 +938,13 @@ public final class BattleTextBuilder {
         String template = resolve(id, templateId);
         String trainer = trainer(pkmnId);
         String pokemonName = pokemon(pkmnId);
+        CharSequence line1 = line(template, PH_POKEMON, pokemonName, PH_ITEM, item, PH_TRAINER, trainer);
+        CharSequence line2 = null;
         if (!primal) {
             String template2 = resolve("transformMega");
-            template += formatPlaceHolders(template2, PH_POKEMON, pokemonName, PH_SPECIES, species);
+            line2 = line(template2, PH_POKEMON, pokemonName, PH_SPECIES, species);
         }
-        return line(template, PH_POKEMON, pokemonName, PH_ITEM, id, PH_TRAINER, trainer);
+        return lines(line1, line2);
     }
 
     public CharSequence zpower(PokemonId pkmnId) {

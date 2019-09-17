@@ -168,7 +168,7 @@ public abstract class RoomMessageObserver extends MessageObserver {
         onPrintText(spannable);
     }
 
-    private void printErrorMessage(String message) {
+    protected void printErrorMessage(String message) {
         Spannable spannable = new SpannableString(message);
         spannable.setSpan(new StyleSpan(Typeface.BOLD), 0, message.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
         spannable.setSpan(new ForegroundColorSpan(Color.RED), 0, message.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);

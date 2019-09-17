@@ -10,13 +10,14 @@ public class BattlingPokemon extends BasePokemon {
 
         String details = nextSeparator == -1 ? message.substring(separator+1)
                 : message.substring(separator+1, nextSeparator);
-        String[] detailsArray = details.toLowerCase().split(", ");
+        String[] detailsArray = details.split(", ");
         String species = detailsArray[0];
         boolean shiny = false;
         String gender = "";
         int level = 100;
         for (int i = 1; i < detailsArray.length; i++) {
-            switch (detailsArray[i].charAt(0)){
+            char c = detailsArray[i].toLowerCase().charAt(0);
+            switch (c){
                 case 's':
                     shiny = true;
                     break;

@@ -227,7 +227,6 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         if (mP1Username != null && mP2Username != null)
             onPlayerInit(Player.TRAINER.username(mP1Username, mP2Username, myUsername()),
                     Player.FOE.username(mP1Username, mP2Username, myUsername()));
-
     }
 
     private void handleFaint(ServerMessage msg) {
@@ -256,9 +255,13 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
                 break;
             case 'd':
                 mGameType = Const.DOUBLE;
+                printErrorMessage("Double battles aren't fully implemented yet. " +
+                        "App crash is a matter of seconds from now!");
                 break;
             case 't':
                 mGameType = Const.TRIPLE;
+                printErrorMessage("Triple battles aren't fully implemented yet. " +
+                        "App crash is a matter of seconds from now!");
                 break;
         }
     }
@@ -271,7 +274,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         //TODO Handle switch out
         String username = player.username(mP1Username, mP2Username, myUsername());
         //final Spanned text1 = mBattleTextBuilder.switcOut(player, username, "PREV PKMN");
-        final CharSequence text2 = mBattleTextBuilder.switchIn(pokemon.id, username);
+        final CharSequence text2 = mBattleTextBuilder.switchIn(pokemon, username);
 
         mActionQueue.enqueueMajorAction(new Runnable() {
             @Override
@@ -291,7 +294,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         //TODO Handle switch out
         String username = player.username(mP1Username, mP2Username, myUsername());
         //final Spanned text1 = mBattleTextBuilder.drag("PREV PKMN");
-        final CharSequence text2 = mBattleTextBuilder.drag(pokemon.id);
+        final CharSequence text2 = mBattleTextBuilder.drag(pokemon);
 
         mActionQueue.enqueueMajorAction(new Runnable() {
             @Override
@@ -303,8 +306,6 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         });
     }
 
-    // |detailschange|POKEMON|DETAILS|HP STATUS
-    // |detailschange|p1a: Aerodactyl|Aerodactyl-Mega, M
     private void handleDetailsChanged(ServerMessage msg) {
         String raw = msg.rawArgs();
         Player player = getPlayer(raw);
@@ -357,9 +358,6 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         }
     }
 
-    // p1|Zoroark, M|item
-    // p2|Crobat, M|
-    // p1|Shedinja|item
     private void handlePreviewPokemon(ServerMessage msg) {
         String rawId = msg.nextArg();
         Player player = getPlayer(rawId);
@@ -397,7 +395,6 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         });
     }
 
-    // |cant|POKEMON|REASON(|MOVE)
     private void handleCant(ServerMessage msg) {
         String rawId = msg.nextArg();
         PokemonId pokemonId = PokemonId.fromRawId(getPlayer(rawId), rawId);
@@ -485,7 +482,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
             case "item":
                 handleItem(message, true);
                 break;
-            case "enditem"://|-enditem|p2a: Magcargo|Air Balloon
+            case "enditem":
                 handleItem(message, false);
                 break;
             case "ability":
@@ -495,7 +492,10 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
                 handleAbility(message, false);
                 break;
             case "mega":
-                handleMega(message);
+                handleMega(message, false);
+                break;
+            case "primal":
+                handleMega(message, true);
                 break;
             case "formechange":
             case "transform":
@@ -531,6 +531,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
                 break;
             case "prepare":
                 handlePrepare(message);
+                break;
             case "zpower":
                 handleZPower(message, false);
                 break;
@@ -662,13 +663,10 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
     private void handleSetBoost(ServerMessage msg) {
         String rawId = msg.nextArg();
         final PokemonId id = PokemonId.fromRawId(getPlayer(rawId), rawId);
-
         final String stat = msg.nextArg();
-        final int amount = Integer.parseInt(msg.nextArg());
+        final int amount = parseWithDefault(msg.nextArg(), 0);
 
-        final String from = msg.hasNextArg() ? msg.nextArg() : null;
-
-        final CharSequence text = "STATSET"; //mBattleTextBuilder.statModifierSet(id, stat, amount, from)
+        final CharSequence text = mBattleTextBuilder.setboost(id, msg.kwarg("from"), msg.kwarg("of"));
 
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
@@ -683,14 +681,13 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         final String weather = msg.nextArg();
         final String action = msg.hasNextArg() ? msg.nextArg() : null;
 
+        final CharSequence text = mBattleTextBuilder.weather(weather, msg.kwarg("from"), msg.kwarg("of"),
+                msg.kwarg("upkeep"));
+
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
-                // TODO print ability activation when [from] ability: xxx
-                CharSequence text = "WEATHER";//mBattleTextBuilder.weather(weather, action);
-                if (text != null)
-                    printMinorActionText(text);
-
+                printMinorActionText(text);
                 if (action == null || !action.contains("upkeep"))
                     onWeatherChanged(weather);
             }
@@ -835,48 +832,38 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         });
     }
 
-    // |-mega|POKEMON|MEGASTONE
-    // |-mega|p1a: Aerodactyl|Aerodactyl|Aerodactylite
-    private void handleMega(ServerMessage msg) {
+    private void handleMega(ServerMessage msg, boolean primal) {
         String rawId = msg.nextArg();
-        final PokemonId pokemonId = PokemonId.fromRawId(getPlayer(rawId), rawId);
-        final String username = pokemonId.player.username(mP1Username, mP2Username, myUsername());
+        PokemonId pokemonId = PokemonId.fromRawId(getPlayer(rawId), rawId);
+        String species = msg.hasNextArg() ? msg.nextArg() : null;
         String item = msg.hasNextArg() ? msg.nextArg() : null;
-        if (item != null) {
-            if (item.equalsIgnoreCase(pokemonId.name))
-                if (msg.hasNextArg()) item = msg.nextArg();
-        }
 
-        final String finalItem = item;
+        final CharSequence text = mBattleTextBuilder.mega(pokemonId, species, item, primal);
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
-                printMinorActionText("MEGA");
+                printMinorActionText(text);
             }
         });
     }
 
-
-    // |-formechange|POKEMON|SPECIES|HP STATUS
     private void handleFormeChange(ServerMessage msg) {
         String rawId = msg.nextArg();
-        final PokemonId pokemonId = PokemonId.fromRawId(getPlayer(rawId), rawId);
-        String species = msg.nextArg();
+        PokemonId pokemonId = PokemonId.fromRawId(getPlayer(rawId), rawId);
+        String arg2 = msg.nextArg();
+        String arg3 = msg.nextArg();
+
+        final CharSequence text = mBattleTextBuilder.pokemonChange(msg.command,
+                pokemonId, arg2, arg3, msg.kwarg("of"), msg.kwarg("from"));
 
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
-                //TODO
+                printMinorActionText(text);
             }
         });
     }
 
-    // p1a: Kecleon|typechange|Fighting|[from] ability: Protean
-
-    // -start|POKEMON|EFFECT
-    // -start|p2a: Blissey|move: Yawn|[of] p1a: Meowstic
-    // -start|p1a: Wigglytuff|Disable|Dazzling Gleam|[from] ability: Cursed Body|[of] p2a: Froslass
-    // -end|p1: Regigigas|Slow Start|[silent]
     private void handleVolatileStatusStart(ServerMessage msg, final boolean start) {
         boolean silent = msg.hasKwarg("silent");
         if (silent) return;
@@ -1018,11 +1005,13 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
     }
 
     private void printMajorActionText(CharSequence text) {
+        if (text == null) return;
         onPrintText(text);
         onPrintBattleMessage(text);
     }
 
     private void printMinorActionText(CharSequence text) {
+        if (text == null) return;
         Spannable spannable = new SpannableString(text);
         spannable.setSpan(new RelativeSizeSpan(0.8f), 0, text.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
         onPrintText(spannable);
@@ -1030,6 +1019,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
     }
 
     private void printInactiveText(String text) {
+        if (text == null) return;
         Spannable spannable = new SpannableString(text);
         spannable.setSpan(new RelativeSizeSpan(0.8f), 0, text.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
         spannable.setSpan(new StyleSpan(Typeface.ITALIC), 0, text.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
