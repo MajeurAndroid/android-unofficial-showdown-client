@@ -1,7 +1,5 @@
 package com.majeur.psclient.model;
 
-import android.util.Log;
-
 import java.io.Serializable;
 
 import static com.majeur.psclient.model.Id.toId;
@@ -47,9 +45,5 @@ public class BasePokemon implements Serializable {
         spriteId = toId(baseSpecies) + "-" + formeId;
         if ("totem".equals(substring(spriteId, -5))) spriteId = substring(spriteId, 0, -5);
         if ("-".equals(substring(spriteId, -1))) spriteId = substring(spriteId, 0, -1);
-
-
-
-        Log.e(getClass().getSimpleName(), "raw=" + rawSpecies + ", base=" + baseSpecies + ", forme=" + forme);
     }
 }

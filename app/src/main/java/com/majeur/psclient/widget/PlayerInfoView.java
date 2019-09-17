@@ -8,7 +8,6 @@ import android.text.Spanned;
 import android.text.style.ImageSpan;
 import android.text.style.StyleSpan;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 
@@ -138,7 +137,6 @@ public class PlayerInfoView extends AppCompatTextView {
 
         int index = 0;
         for (String id : mPokemonIds) {
-            Log.e(getClass().getSimpleName(), id + " == " + pokemon.baseSpecies);
             if (id.equals(toId(pokemon.baseSpecies))) break;
             index++;
         }
