@@ -54,6 +54,7 @@ public class DexIconLoader extends DataLoader<String, Bitmap> {
 
         private JsonReader mJsonReader;
         private InputStream mInputStream;
+        private BitmapRegionDecoder mDecoder;
         private Rect mTempRect;
 
         @Override
@@ -67,11 +68,12 @@ public class DexIconLoader extends DataLoader<String, Bitmap> {
 
         @Override
         public void onLoadData(String[] queries, Bitmap[] results) {
-            int[] speciesIconIndexes = null;
+            int[] speciesIconIndexes;
             try {
                 speciesIconIndexes = parseJson(queries);
             } catch (IOException e) {
                 e.printStackTrace();
+                return;
             } finally {
                 try {
                     mJsonReader.close();
@@ -80,12 +82,22 @@ public class DexIconLoader extends DataLoader<String, Bitmap> {
                 }
             }
 
-            if (speciesIconIndexes == null)
+            try {
+                mDecoder = BitmapRegionDecoder.newInstance(mInputStream, true);
+            } catch (IOException e) {
+                e.printStackTrace();
                 return;
+            }
 
             for (int i = 0; i < results.length; i++) {
                 if (results[i] != null) continue;
                 results[i] = loadSpecieBitmap(speciesIconIndexes[i]);
+            }
+
+            try {
+                mInputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
 
@@ -112,12 +124,7 @@ public class DexIconLoader extends DataLoader<String, Bitmap> {
             int x = index % xDim;
             int y = index / xDim;
             mTempRect.set(x * ELEMENT_WIDTH, y * ELEMENT_HEIGHT, (x + 1) * ELEMENT_WIDTH, (y + 1) * ELEMENT_HEIGHT);
-            try {
-                return BitmapRegionDecoder.newInstance(mInputStream, true).decodeRegion(mTempRect, null);
-            } catch (IOException e) {
-                e.printStackTrace();
-                return null;
-            }
+            return mDecoder.decodeRegion(mTempRect, null);
         }
     }
 }
