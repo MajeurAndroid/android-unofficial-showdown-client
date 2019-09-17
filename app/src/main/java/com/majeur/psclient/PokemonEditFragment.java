@@ -390,109 +390,39 @@ public class PokemonEditFragment extends Fragment {
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         TeamPokemon pokemon = (TeamPokemon) getArguments().getSerializable(ARG_PKMN);
+        toggleInputViewsEnabled(false);
         if (pokemon != null) {
             Species species = new Species();
-            species.id = species.name = pokemon.species;
+            species.id = toId(pokemon.species);
+            species.name = pokemon.species;
             initializeSpecies(species, pokemon);
-        } else {
-            toggleInputViewsEnabled(false);
         }
     }
 
     private void initializeSpecies(final Species species, @Nullable final TeamPokemon basePokemon) {
-        mCurrentSpecies = species;
-        updatePokemonSprite();
-        mNameTextView.setHint(species.name);
-        toggleInputViewsEnabled(true);
-
         String[] query = {species.id};
         mDexPokemonLoader.load(query, new DataLoader.Callback<DexPokemon>() {
             @Override
             public void onLoaded(DexPokemon[] results) {
                 DexPokemon dexPokemon = results[0];
-
-                ImageView placeHolderTop = getView().findViewById(R.id.type1);
-                ImageView placeHolderBottom = getView().findViewById(R.id.type2);
-                mGlideHelper.loadTypeSprite(dexPokemon.firstType, placeHolderTop);
-                if (dexPokemon.secondType != null)
-                    mGlideHelper.loadTypeSprite(dexPokemon.secondType, placeHolderBottom);
-                else
-                    placeHolderBottom.setImageDrawable(null);
-
-                // TODO
-                //String[] genders = dexPokemon.gender.split("(?!^)");
-                mGenderTextView.setText(dexPokemon.gender);
-
-                List<String> abilities = new LinkedList<>();
-                for (int i = 0; i < dexPokemon.abilities.size(); i++)
-                    abilities.add(i + ": " + dexPokemon.abilities.get(i));
-                if (dexPokemon.hiddenAbility != null)
-                    abilities.add("H: " + dexPokemon.hiddenAbility);
-                ArrayAdapter<String> adapter = new ArrayAdapter<>(getContext(),
-                        android.R.layout.simple_dropdown_item_1line,
-                        abilities);
-                mAbilityTextView.setAdapter(adapter);
-                mAbilityTextView.getText().clear();
-                if (abilities.size() > 0) {
-                    mCurrentAbility = abilities.get(0);
-                    mAbilityTextView.setHint(mCurrentAbility);
-                } else
-                    mAbilityTextView.setHint("No ability for this pkmn");
-
-                Stats stats = dexPokemon.baseStats;
-                mCurrentBaseStats = stats;
-                for (int i = 0; i < 6; i++)
-                    mBaseStatTextViews[i].setText(str(stats.get(i)));
-
-                if (basePokemon != null) {
-                    mCurrentSpecies.name = dexPokemon.species;
-                    mSpeciesTextView.setText(dexPokemon.species);
-                    mNameTextView.setHint(dexPokemon.species);
-                    if (!basePokemon.species.equalsIgnoreCase(basePokemon.name))
-                        mNameTextView.setText(basePokemon.name);
-                    mLevelTextView.setText(str(basePokemon.level));
-                    mShinyCheckbox.setChecked(basePokemon.shiny);
-                    mHappinessEditText.setText(str(basePokemon.happiness));
-                    if (basePokemon.ability.length() > 0) {
-                        for (String ability : abilities)
-                            if (toId(ability).contains(toId(basePokemon.ability)))
-                                mAbilityTextView.setText(ability);
-                    }
-                    ArrayAdapter<Item> adapter2 = (ArrayAdapter<Item>) mItemTextView.getAdapter();
-                    if (adapter2 != null) {
-                        for (int i = 0; i < adapter2.getCount(); i++)
-                            if (adapter2.getItem(i).id.equals(basePokemon.item)) {
-                                mCurrentItem = adapter2.getItem(i);
-                                mItemTextView.setText(mCurrentItem.name);
-                            }
-                    }
-                    if (mCurrentItem == null) {
-                        mCurrentItem = new Item();
-                        mCurrentItem.id = mCurrentItem.name = basePokemon.item;
-                        mItemTextView.setText(basePokemon.item);
-                    }
-                    for (int i = 0; i < basePokemon.moves.length; i++)
-                        mMoveTextViews[i].setText(basePokemon.moves[i]);
-                    mCurrentEvs = basePokemon.evs;
-                    mCurrentIvs = basePokemon.ivs;
-                    for (int i = 0; i < 6; i++) {
-                        mEvTextViews[i].setText(str(basePokemon.evs.get(i)));
-                        mIvTextViews[i].setText(str(basePokemon.ivs.get(i)));
-                    }
-                    if (basePokemon.nature != null) {
-                        int index = 0;
-                        for (int i = 0; i < Nature.ALL.length; i++)
-                            if (Nature.ALL[i].name.equalsIgnoreCase(basePokemon.nature)) index = i;
-                        mNatureSpinner.setSelection(index);
-                    }
+                if (dexPokemon == null) {
+                    mCurrentSpecies = null;
+                    updatePokemonSprite();
+                    mSpeciesTextView.setText(species.name);
+                    toggleInputViewsEnabled(false);
+                } else {
+                    mCurrentSpecies = species;
+                    updatePokemonSprite();
+                    onDexPokemonLoaded(dexPokemon, basePokemon);
                 }
-                updatePokemonTotalStats();
-
-                mHasPokemonData = true;
-                updatePokemonData();
             }
         });
+    }
 
+    private void onDexPokemonLoaded(DexPokemon dexPokemon, TeamPokemon basePokemon) {
+        mNameTextView.setHint(mCurrentSpecies.name);
+
+        String[] query = {mCurrentSpecies.id};
         for (AutoCompleteTextView textView : mMoveTextViews) textView.getText().clear();
         mLearnsetLoader.load(query, new DataLoader.Callback<List>() {
             @Override
@@ -506,6 +436,88 @@ public class PokemonEditFragment extends Fragment {
                 }
             }
         });
+
+        ImageView placeHolderTop = getView().findViewById(R.id.type1);
+        ImageView placeHolderBottom = getView().findViewById(R.id.type2);
+        mGlideHelper.loadTypeSprite(dexPokemon.firstType, placeHolderTop);
+        if (dexPokemon.secondType != null)
+            mGlideHelper.loadTypeSprite(dexPokemon.secondType, placeHolderBottom);
+        else
+            placeHolderBottom.setImageDrawable(null);
+
+        // TODO
+        //String[] genders = dexPokemon.gender.split("(?!^)");
+        mGenderTextView.setText(dexPokemon.gender);
+
+        List<String> abilities = new LinkedList<>();
+        for (int i = 0; i < dexPokemon.abilities.size(); i++)
+            abilities.add(i + ": " + dexPokemon.abilities.get(i));
+        if (dexPokemon.hiddenAbility != null)
+            abilities.add("H: " + dexPokemon.hiddenAbility);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(getContext(),
+                android.R.layout.simple_dropdown_item_1line,
+                abilities);
+        mAbilityTextView.setAdapter(adapter);
+        mAbilityTextView.getText().clear();
+        if (abilities.size() > 0) {
+            mCurrentAbility = abilities.get(0);
+            mAbilityTextView.setHint(mCurrentAbility);
+        } else
+            mAbilityTextView.setHint("No ability for this pkmn");
+
+        Stats stats = dexPokemon.baseStats;
+        mCurrentBaseStats = stats;
+        for (int i = 0; i < 6; i++)
+            mBaseStatTextViews[i].setText(str(stats.get(i)));
+
+        if (basePokemon != null) {
+            mCurrentSpecies.name = dexPokemon.species;
+            mSpeciesTextView.setText(dexPokemon.species);
+            mNameTextView.setHint(dexPokemon.species);
+            if (!basePokemon.species.equalsIgnoreCase(basePokemon.name))
+                mNameTextView.setText(basePokemon.name);
+            mLevelTextView.setText(str(basePokemon.level));
+            mShinyCheckbox.setChecked(basePokemon.shiny);
+            mHappinessEditText.setText(str(basePokemon.happiness));
+            if (basePokemon.ability.length() > 0) {
+                for (String ability : abilities)
+                    if (toId(ability).contains(toId(basePokemon.ability)))
+                        mAbilityTextView.setText(ability);
+            }
+            ArrayAdapter<Item> adapter2 = (ArrayAdapter<Item>) mItemTextView.getAdapter();
+            if (adapter2 != null) {
+                for (int i = 0; i < adapter2.getCount(); i++)
+                    if (adapter2.getItem(i).id.equals(basePokemon.item)) {
+                        mCurrentItem = adapter2.getItem(i);
+                        mItemTextView.setText(mCurrentItem.name);
+                    }
+            }
+            if (mCurrentItem == null) {
+                mCurrentItem = new Item();
+                mCurrentItem.id = mCurrentItem.name = basePokemon.item;
+                mItemTextView.setText(basePokemon.item);
+            }
+            for (int i = 0; i < basePokemon.moves.length; i++) {
+                mCurrentMoves[i] = basePokemon.moves[i];
+                mMoveTextViews[i].setText(basePokemon.moves[i]);
+            }
+            mCurrentEvs = basePokemon.evs;
+            mCurrentIvs = basePokemon.ivs;
+            for (int i = 0; i < 6; i++) {
+                mEvTextViews[i].setText(str(basePokemon.evs.get(i)));
+                mIvTextViews[i].setText(str(basePokemon.ivs.get(i)));
+            }
+            if (basePokemon.nature != null) {
+                int index = 0;
+                for (int i = 0; i < Nature.ALL.length; i++)
+                    if (Nature.ALL[i].name.equalsIgnoreCase(basePokemon.nature)) index = i;
+                mNatureSpinner.setSelection(index);
+            }
+        }
+        toggleInputViewsEnabled(true);
+        updatePokemonTotalStats();
+        mHasPokemonData = true;
+        updatePokemonData();
     }
 
     private void clearSelectedSpecies() {
