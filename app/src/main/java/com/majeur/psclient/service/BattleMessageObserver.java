@@ -24,6 +24,8 @@ import com.majeur.psclient.util.Utils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import static com.majeur.psclient.util.Utils.parseWithDefault;
+
 public abstract class BattleMessageObserver extends RoomMessageObserver {
 
     private BattleTextBuilder mBattleTextBuilder;
@@ -38,6 +40,16 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
 
     public void gotContext(Context context) {
         mBattleTextBuilder = new BattleTextBuilder(context);
+        mBattleTextBuilder.setPokemonIdFactory(new BattleTextBuilder.PokemonIdFactory() {
+            @Override
+            public PokemonId getPokemonId(String rawString) {
+                try {
+                    return PokemonId.fromRawId(getPlayer(rawString), rawString);
+                } catch (NullPointerException | StringIndexOutOfBoundsException e) {
+                    return null;
+                }
+            }
+        });
     }
 
     @Override
@@ -67,6 +79,10 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
 
     private String myUsername() {
         return getService().getSharedData("username");
+    }
+
+    private Player getPlayer(String rawId) {
+        return Player.get(rawId, mP1Username, mP2Username, myUsername());
     }
 
     public void reAskForRequest() {
@@ -144,7 +160,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
                 mActionQueue.enqueueAction(ActionQueue.EMPTY_ACTION);
                 break;
             case "start":
-                onPrintText("\n" + mBattleTextBuilder.startBattle(mP1Username, mP2Username));
+                onPrintText("\n" + mBattleTextBuilder.start(mP1Username, mP2Username));
                 onBattleStarted();
                 break;
             case "request":
@@ -174,8 +190,8 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         String rawId = msg.nextArg();
         final PokemonId sourcePoke = PokemonId.fromRawId(getPlayer(rawId), rawId);
         final String moveName = msg.nextArg();
-        rawId = msg.nextArg();
-        final PokemonId targetPoke = rawId.length() > 0 ? PokemonId.fromRawId(getPlayer(rawId), rawId) : null;
+        //rawId = msg.nextArg();
+        //final PokemonId targetPoke = rawId.length() > 0 ? PokemonId.fromRawId(getPlayer(rawId), rawId) : null;
 
         final boolean shouldAnim;
         if (msg.hasNextArg()) {
@@ -185,19 +201,16 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
             shouldAnim = true;
         }
 
-        final Spanned text = mBattleTextBuilder.move(sourcePoke, moveName);
+        final CharSequence text = mBattleTextBuilder.move(sourcePoke, moveName, msg.kwarg("from"),
+                msg.kwarg("of"), msg.kwarg("zMove"));
 
         mActionQueue.enqueueMajorAction(new Runnable() {
             @Override
             public void run() {
-                onMove(sourcePoke, targetPoke, moveName, shouldAnim);
+                //onMove(sourcePoke, targetPoke, moveName, shouldAnim);
                 printMajorActionText(text);
             }
         });
-    }
-
-    private Player getPlayer(String rawId) {
-        return Player.get(rawId, mP1Username, mP2Username, myUsername());
     }
 
     private void handlePlayer(ServerMessage msg) {
@@ -257,8 +270,8 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
 
         //TODO Handle switch out
         String username = player.username(mP1Username, mP2Username, myUsername());
-        final Spanned text1 = mBattleTextBuilder.switcOut(player, username, "PREV PKMN");
-        final Spanned text2 = mBattleTextBuilder.switchIn(player, username, pokemon.name);
+        //final Spanned text1 = mBattleTextBuilder.switcOut(player, username, "PREV PKMN");
+        final CharSequence text2 = mBattleTextBuilder.switchIn(pokemon.id, username);
 
         mActionQueue.enqueueMajorAction(new Runnable() {
             @Override
@@ -277,8 +290,8 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
 
         //TODO Handle switch out
         String username = player.username(mP1Username, mP2Username, myUsername());
-        final Spanned text1 = mBattleTextBuilder.drag("PREV PKMN");
-        final Spanned text2 = mBattleTextBuilder.switchIn(player, username, pokemon.name);
+        //final Spanned text1 = mBattleTextBuilder.drag("PREV PKMN");
+        final CharSequence text2 = mBattleTextBuilder.drag(pokemon.id);
 
         mActionQueue.enqueueMajorAction(new Runnable() {
             @Override
@@ -296,11 +309,17 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         String raw = msg.rawArgs();
         Player player = getPlayer(raw);
         final BattlingPokemon pokemon = BattlingPokemon.fromSwitchMessage(player, raw);
+        String arg2 = msg.hasNextArg() ? msg.nextArg() : null;
+        String arg3 = msg.hasNextArg() ? msg.nextArg() : null;
+
+        final CharSequence text = mBattleTextBuilder.pokemonChange(msg.command, pokemon.id, arg2, arg3,
+                msg.kwarg("of"), msg.kwarg("from"));
 
         mActionQueue.enqueueAction(new Runnable() {
             @Override
             public void run() {
                 onDetailsChanged(pokemon);
+                printMajorActionText(text);
             }
         });
     }
@@ -365,7 +384,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
 
     private void handleWin(ServerMessage msg, boolean tie) {
         String username = msg.hasNextArg() ? msg.nextArg() : null;
-        final Spanned text = tie ? mBattleTextBuilder.tie(mP1Username, mP2Username)
+        final CharSequence text = tie ? mBattleTextBuilder.tie(mP1Username, mP2Username)
                 : mBattleTextBuilder.win(username);
         mActionQueue.enqueueAction(new Runnable() {
             @Override
@@ -385,7 +404,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         String reason = msg.nextArg();
         String move = msg.hasNextArg() ? msg.nextArg() : null;
 
-        final Spanned text = mBattleTextBuilder.cant(pokemonId, reason, move);
+        final CharSequence text = mBattleTextBuilder.cant(pokemonId, reason, move, msg.kwarg("of"));
 
         mActionQueue.enqueueMajorAction(new Runnable() {
             @Override
@@ -425,7 +444,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
                 handleStatus(message, true);
                 break;
             case "cureteam":
-
+                handleCureTeam(message);
                 break;
             case "boost":
                 handleStatChange(message, true);
@@ -439,11 +458,15 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
             case "weather":
                 handleWeather(message);
                 break;
+            case "fieldactivate":
             case "fieldstart":
-
+                handleField(message, true);
                 break;
             case "fieldend":
-
+                handleField(message, false);
+                break;
+            case "activate":
+                handleActivate(message);
                 break;
             case "sidestart":
                 handleSide(message, true);
@@ -454,14 +477,16 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
             case "crit":
             case "resisted":
             case "supereffective":
+                handleMoveEffect(message);
+                break;
             case "immune":
-                handleMoveEffect(message, command);
+                handleImmune(message);
                 break;
             case "item":
-
+                handleItem(message, true);
                 break;
             case "enditem"://|-enditem|p2a: Magcargo|Air Balloon
-
+                handleItem(message, false);
                 break;
             case "ability":
                 handleAbility(message, true);
@@ -469,13 +494,11 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
             case "endability":
                 handleAbility(message, false);
                 break;
-            case "transform":
-
-                break;
             case "mega":
                 handleMega(message);
                 break;
             case "formechange":
+            case "transform":
                 handleFormeChange(message);
                 break;
             case "hint":
@@ -494,31 +517,318 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
             case "end":
                 handleVolatileStatusStart(message, false);
                 break;
-//                |-hitcount|p1a: Toxicroak|1 TODO
-            //    |-prepare|p2a: Arceus|Shadow Force|p1a: Mandibuzz
-            //E/-sethp: Args {p1a: Barbaracle|52/100|[from] move: Pain Split|[silent]}
-            //W/ServerMessage: rommId: battle-gen7randombattle-972529271, data: |-sethp|p2a: Chandelure|133/233|[from] move: Pain Split
-            //E/-sethp: Args {p2a: Chandelure|133/233|[from] move: Pain Split}
+            case "block":
+                handleBlock(message);
+                break;
+            case "ohko":
+                handleOhko();
+                break;
+            case "combine":
+                handleCombine();
+                break;
+            case "notarget":
+                handleNoTarget();
+                break;
+            case "prepare":
+                handlePrepare(message);
+            case "zpower":
+                handleZPower(message, false);
+                break;
+            case "zbroken":
+                handleZPower(message, true);
+                break;
+            case "hitcount":
+                handleHitCount(message);
+                break;
+            case "sethp":
+                handleSetHp(message);
+                break;
+            case "singleturn":
+            case "singlemove":
+                handleSingle(message);
+                break;
         }
+    }
+
+    private void handleFail(ServerMessage msg) {
+        String rawId = msg.nextArg();
+        final PokemonId pokemonId = PokemonId.fromRawId(getPlayer(rawId), rawId);
+        String effect = msg.hasNextArg() ? msg.nextArg() : null;
+        String stat = msg.hasNextArg() ? msg.nextArg() : null;
+        final CharSequence text = mBattleTextBuilder.fail(pokemonId, effect, stat, msg.kwarg("from"),
+                msg.kwarg("of"), msg.kwarg("msg"), msg.kwarg("heavy"), msg.kwarg("weak"),
+                msg.kwarg("forme"));
+
+        mActionQueue.enqueueMinorAction(new Runnable() {
+            @Override
+            public void run() {
+                onDisplayBattleToast(pokemonId, "Failed", Color.GRAY);
+                printMinorActionText(text);
+            }
+        });
+    }
+
+    private void handleMiss(ServerMessage msg) {
+        String rawId = msg.nextArg();
+        final PokemonId pokemonId = PokemonId.fromRawId(getPlayer(rawId), rawId);
+        String targetRawId = msg.hasNextArg() ? msg.nextArg() : null;
+        final PokemonId targetPokeId = targetRawId != null ?
+                PokemonId.fromRawId(getPlayer(targetRawId), targetRawId) : null;
+
+        final CharSequence text = mBattleTextBuilder.miss(pokemonId, targetPokeId, msg.kwarg("from"),
+                msg.kwarg("of"));
+        mActionQueue.enqueueMinorAction(new Runnable() {
+            @Override
+            public void run() {
+                onDisplayBattleToast(targetPokeId != null ? targetPokeId : pokemonId, "Missed", Color.GRAY);
+                printMinorActionText(text);
+            }
+        });
+    }
+
+    private void handleHealthChange(ServerMessage msg, boolean damage) {
+        String rawId = msg.nextArg();
+        final PokemonId id = PokemonId.fromRawId(getPlayer(rawId), rawId);
+        String rawCondition = msg.nextArg();
+        final Condition condition = new Condition(rawCondition);
+
+        final CharSequence text;
+        if (damage)// TODO PERCENTAGE
+            text = mBattleTextBuilder.damage(id, "%", msg.kwarg("from"), msg.kwarg("of"),
+                    msg.kwarg("partiallytrapped"));
+        else
+            text = mBattleTextBuilder.heal(id, msg.kwarg("from"), msg.kwarg("of"), msg.kwarg("wisher"));
+
+        mActionQueue.enqueueMinorAction(new Runnable() {
+            @Override
+            public void run() {
+                onHealthChanged(id, condition);
+                printMinorActionText(text);
+            }
+        });
+    }
+
+    private void handleStatus(ServerMessage msg, final boolean cure) {
+        String rawId = msg.nextArg();
+        final PokemonId id = PokemonId.fromRawId(getPlayer(rawId), rawId);
+        final String status = msg.nextArg();
+
+        final CharSequence text;
+        if (!cure)
+            text = mBattleTextBuilder.status(id, status, msg.kwarg("from"), msg.kwarg("of"));
+        else
+            text = mBattleTextBuilder.curestatus(id, status, msg.kwarg("from"), msg.kwarg("of"), msg.kwarg("thaw"));
+
+        mActionQueue.enqueueMinorAction(new Runnable() {
+            @Override
+            public void run() {
+                onStatusChanged(id, cure ? null : status);
+                printMinorActionText(text);
+            }
+        });
+    }
+
+    private void handleCureTeam(ServerMessage msg) {
+        final CharSequence text = mBattleTextBuilder.cureTeam(msg.kwarg("from"));
+        mActionQueue.enqueueMinorAction(new Runnable() {
+            @Override
+            public void run() {
+                printMinorActionText(text);
+            }
+        });
+    }
+
+
+    private void handleStatChange(ServerMessage msg, final boolean boost) {
+        // POKEMON|STAT|AMOUNT
+        String rawId = msg.nextArg();
+        final PokemonId id = PokemonId.fromRawId(getPlayer(rawId), rawId);
+        final String stat = msg.hasNextArg() ? msg.nextArg() : null;
+        String amount = msg.hasNextArg() ? msg.nextArg() : null;
+        final int amountValue = parseWithDefault(amount, 0) * (boost ? 1 : -1);
+
+        final CharSequence text = mBattleTextBuilder.boost(msg.command, id, stat, amount,
+                msg.kwarg("from"), msg.kwarg("of"), msg.kwarg("multiple"), msg.kwarg("zeffect"));
+
+        mActionQueue.enqueueMinorAction(new Runnable() {
+            @Override
+            public void run() {
+                onStatChanged(id, stat, amountValue, false);
+                printMinorActionText(text);
+            }
+        });
+    }
+
+    private void handleSetBoost(ServerMessage msg) {
+        String rawId = msg.nextArg();
+        final PokemonId id = PokemonId.fromRawId(getPlayer(rawId), rawId);
+
+        final String stat = msg.nextArg();
+        final int amount = Integer.parseInt(msg.nextArg());
+
+        final String from = msg.hasNextArg() ? msg.nextArg() : null;
+
+        final CharSequence text = "STATSET"; //mBattleTextBuilder.statModifierSet(id, stat, amount, from)
+
+        mActionQueue.enqueueMinorAction(new Runnable() {
+            @Override
+            public void run() {
+                onStatChanged(id, stat, amount, true);
+                printMinorActionText(text);
+            }
+        });
+    }
+
+    private void handleWeather(ServerMessage msg) {
+        final String weather = msg.nextArg();
+        final String action = msg.hasNextArg() ? msg.nextArg() : null;
+
+        mActionQueue.enqueueMinorAction(new Runnable() {
+            @Override
+            public void run() {
+                // TODO print ability activation when [from] ability: xxx
+                CharSequence text = "WEATHER";//mBattleTextBuilder.weather(weather, action);
+                if (text != null)
+                    printMinorActionText(text);
+
+                if (action == null || !action.contains("upkeep"))
+                    onWeatherChanged(weather);
+            }
+        });
+    }
+
+    private void handleField(ServerMessage msg, boolean start) {
+        String effect = msg.nextArg();
+
+        final CharSequence text;
+        if (start)
+            text = mBattleTextBuilder.field(msg.command, effect, msg.kwarg("from"),
+                    msg.kwarg("of"));
+        else
+            text = mBattleTextBuilder.fieldend(effect);
+
+        mActionQueue.enqueueMinorAction(new Runnable() {
+            @Override
+            public void run() {
+                printMinorActionText(text);
+            }
+        });
+    }
+
+    private void handleActivate(ServerMessage msg) {
+        String rawId = msg.nextArg();
+        PokemonId id = PokemonId.fromRawId(getPlayer(rawId), rawId);
+        String effect = msg.hasNextArg() ? msg.nextArg() : null;
+        String target = msg.hasNextArg() ? msg.nextArg() : null;
+
+        final CharSequence text = mBattleTextBuilder.activate(id, effect, target, msg.kwarg("of"),
+                msg.kwarg("ability"), msg.kwarg("ability2"), msg.kwarg("move"), msg.kwarg("number"),
+                msg.kwarg("item"));
+
+        mActionQueue.enqueueMinorAction(new Runnable() {
+            @Override
+            public void run() {
+                printMinorActionText(text);
+            }
+        });
+    }
+
+    private void handleSide(ServerMessage msg, final boolean start) {
+        final Player player = getPlayer(msg.nextArg());
+        final String effect = msg.hasNextArg() ? msg.nextArg() : null;
+
+        final CharSequence text;
+        if (start)
+            text = mBattleTextBuilder.sidestart(player, effect);
+        else
+            text = mBattleTextBuilder.sideend(player, effect);
+
+        mActionQueue.enqueueMinorAction(new Runnable() {
+            @Override
+            public void run() {
+                onSideChanged(player, effect, start);
+                printMinorActionText(text);
+            }
+        });
+    }
+
+    private void handleMoveEffect(ServerMessage msg) {
+        String rawId = msg.nextArg();
+        final PokemonId pokemonId = PokemonId.fromRawId(getPlayer(rawId), rawId);
+
+        final CharSequence text = mBattleTextBuilder.moveeffect(msg.command,
+                pokemonId, msg.kwarg("spread"));
+        final String toastText;
+        switch (msg.command) {
+            case "crit": toastText = "Critical"; break;
+            case "resisted": toastText = "Resisted"; break;
+            case "supereffective": toastText = "Supper effective"; break;
+            default: toastText = null; break;
+        }
+
+        mActionQueue.enqueueMinorAction(new Runnable() {
+            @Override
+            public void run() {
+                printMinorActionText(text);//texts[0]);
+                onDisplayBattleToast(pokemonId, toastText, Color.RED);
+            }
+        });
+    }
+
+    private void handleImmune(ServerMessage msg) {
+        String rawId = msg.nextArg();
+        final PokemonId pokemonId = PokemonId.fromRawId(getPlayer(rawId), rawId);
+
+        final CharSequence text = mBattleTextBuilder.immune(pokemonId, msg.kwarg("from"),
+                msg.kwarg("of"), msg.kwarg("ohko"));
+
+        mActionQueue.enqueueMinorAction(new Runnable() {
+            @Override
+            public void run() {
+                printMinorActionText(text);//texts[0]);
+                onDisplayBattleToast(pokemonId, "Immune", Color.GRAY);
+            }
+        });
+    }
+
+    private void handleItem(ServerMessage msg, boolean start) {
+        String rawId = msg.nextArg();
+        final PokemonId id = PokemonId.fromRawId(getPlayer(rawId), rawId);
+        final String item = msg.hasNextArg() ? msg.nextArg() : null;
+        final CharSequence text;
+        if (start)
+            text = mBattleTextBuilder.item(id, item, msg.kwarg("from"), msg.kwarg("of"));
+        else
+            text = mBattleTextBuilder.enditem(id, item, msg.kwarg("from"), msg.kwarg("of"),
+                    msg.kwarg("eat"), msg.kwarg("move"), msg.kwarg("weaken"));
+        mActionQueue.enqueueMinorAction(new Runnable() {
+            @Override
+            public void run() {
+                // TODO Maybe show a toast ?
+                printMinorActionText(text);
+            }
+        });
     }
 
     private void handleAbility(final ServerMessage msg, final boolean start) {
         String rawId = msg.nextArg();
         final PokemonId pokemonId = PokemonId.fromRawId(getPlayer(rawId), rawId);
         final String ability = msg.hasNextArg() ? msg.nextArg() : null;
-        String extra = msg.hasNextArg() ? msg.nextArg() : null;
-        Player player = null;
-        if ("unnerve".equalsIgnoreCase(ability))
-            player = getPlayer(extra);
+        String oldAbility = msg.hasNextArg() ? msg.nextArg() : null;
+        String arg4 = msg.hasNextArg() ? msg.nextArg() : null;
 
-        final Spanned[] texts = mBattleTextBuilder.ability(pokemonId, ability, extra, player, start);
+        final CharSequence text;
+        if (start)
+            text = mBattleTextBuilder.ability(pokemonId, ability, oldAbility, arg4,
+                    msg.kwarg("from"), msg.kwarg("of"), msg.kwarg("fail"));
+        else
+            text = mBattleTextBuilder.endability(pokemonId, ability, msg.kwarg("from"),
+                    msg.kwarg("of"));
 
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
-                for (Spanned text : texts)
-                    if (text != null) printMinorActionText(text);
-
+                printMinorActionText(text);
                 if (start)
                     onDisplayBattleToast(pokemonId, ability, Color.GREEN);
             }
@@ -541,7 +851,22 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
-                printMinorActionText(mBattleTextBuilder.mega(pokemonId, finalItem, username));
+                printMinorActionText("MEGA");
+            }
+        });
+    }
+
+
+    // |-formechange|POKEMON|SPECIES|HP STATUS
+    private void handleFormeChange(ServerMessage msg) {
+        String rawId = msg.nextArg();
+        final PokemonId pokemonId = PokemonId.fromRawId(getPlayer(rawId), rawId);
+        String species = msg.nextArg();
+
+        mActionQueue.enqueueMinorAction(new Runnable() {
+            @Override
+            public void run() {
+                //TODO
             }
         });
     }
@@ -555,207 +880,139 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
     private void handleVolatileStatusStart(ServerMessage msg, final boolean start) {
         boolean silent = msg.hasKwarg("silent");
         if (silent) return;
-
         String rawId = msg.nextArg();
         final PokemonId id = PokemonId.fromRawId(getPlayer(rawId), rawId);
-        if (!id.isInBattle) return;
-
         final String effect = msg.nextArg();
-        String what = msg.hasNextArg() ? msg.nextArg() : null;
-        String of = msg.kwarg("of");
-        String from = msg.kwarg("from");
+        String arg3 = msg.hasNextArg() ? msg.nextArg() : null;
 
-        final Spanned text;
-        if ("typechange".equals(effect)) {
-
-            text = mBattleTextBuilder.typeChange(id, what, from);
-        } else {
-            text = mBattleTextBuilder.volatileStatus(id, effect, what, of, from, start);
-        }
+        final CharSequence text;
+        if (start)
+            text = mBattleTextBuilder.start(id, effect, arg3, msg.kwarg("from"), msg.kwarg("of"),
+                    msg.kwarg("already"), msg.kwarg("fatigue"), msg.kwarg("zeffect"),
+                    msg.kwarg("damage"), msg.kwarg("block"), msg.kwarg("upkeep"));
+        else
+            text = mBattleTextBuilder.end(id, effect, msg.kwarg("from"), msg.kwarg("of"));
 
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
                 if (effect.contains(":"))
-                    onVolatileStatusChanged(id, effect.substring(effect.indexOf(':') + 1), start);
+                    onVolatileStatusChanged(id, effect.substring(effect.indexOf(':') + 1).trim(), start);
                 else
                     onVolatileStatusChanged(id, effect, start);
 
-                if (text != null)
-                    printMinorActionText(text);
-            }
-        });
-    }
-
-    private void handleFail(ServerMessage msg) {
-        String rawId = msg.nextArg();
-        final PokemonId pokemonId = PokemonId.fromRawId(getPlayer(rawId), rawId);
-        String action = msg.hasNextArg() ? msg.nextArg() : null;
-        final Spanned text = mBattleTextBuilder.fail(pokemonId, action);
-        mActionQueue.enqueueMinorAction(new Runnable() {
-            @Override
-            public void run() {
-                onDisplayBattleToast(pokemonId, "Failed", Color.GRAY);
                 printMinorActionText(text);
             }
         });
     }
 
-    private void handleMiss(ServerMessage msg) {
+    private void handleBlock(ServerMessage msg) {
         String rawId = msg.nextArg();
-        final PokemonId pokemonId = PokemonId.fromRawId(getPlayer(rawId), rawId);
-        final PokemonId targetPokeId;
-        if (msg.hasNextArg()) {
-            rawId = msg.hasNextArg() ? msg.nextArg() : null;
-            targetPokeId = PokemonId.fromRawId(getPlayer(rawId), rawId);
-        } else {
-            targetPokeId = null;
-        }
-        final Spanned text = mBattleTextBuilder.miss(pokemonId, targetPokeId);
+        final PokemonId id = PokemonId.fromRawId(getPlayer(rawId), rawId);
+        String effect = msg.hasNextArg() ? msg.nextArg() : null;
+        String move = msg.hasNextArg() ? msg.nextArg() : null;
+        String attacker = msg.hasNextArg() ? msg.nextArg() : null;
+
+        final CharSequence text = mBattleTextBuilder.block(id, effect, move, attacker,
+                msg.kwarg("from"), msg.kwarg("of"));
+
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
-                onDisplayBattleToast(targetPokeId == null ? targetPokeId : pokemonId, "Missed", Color.GRAY);
                 printMinorActionText(text);
             }
         });
     }
 
-    private void handleHealthChange(ServerMessage msg, boolean damage) {
-        String rawId = msg.nextArg();
-        final PokemonId id = PokemonId.fromRawId(getPlayer(rawId), rawId);
-        String rawCondition = msg.nextArg();
-        final Condition condition = new Condition(rawCondition);
-        // |-heal|p1a: Gliscor|57/100 tox|[from] ability: Poison Heal
-        String mainKey = damage ? "damage" : "heal";
-        String from = null;
-        PokemonId of = null;
-        if (msg.hasNextArg()) from = msg.nextArg();
-        if (msg.hasNextArg()) {
-            rawId = msg.nextArg();
-            if (rawId.contains("[wisher]"))
-                of = PokemonId.mockNameOnly(rawId.substring("[wisher]".length() + 1));
-            else
-                of = PokemonId.fromRawId(getPlayer(rawId), rawId);
-        }
-
-        final Spanned[] texts = mBattleTextBuilder.healthChange(mainKey, id, condition, from, of);
-
+    private void handleOhko() {
+        final CharSequence text = mBattleTextBuilder.ohko();
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
-                onHealthChanged(id, condition);
-                for (Spanned text : texts)
-                    if (text != null) printMinorActionText(text);
-            }
-        });
-    }
-
-    private void handleStatus(ServerMessage msg, final boolean healed) {
-        String rawId = msg.nextArg();
-        final PokemonId id = PokemonId.fromRawId(getPlayer(rawId), rawId);
-        final String status = msg.nextArg();
-        final String action = msg.hasNextArg() ? msg.nextArg() : null;
-
-        mActionQueue.enqueueMinorAction(new Runnable() {
-            @Override
-            public void run() {
-                onStatusChanged(id, healed ? null : status);
-                printMinorActionText(mBattleTextBuilder.status(id, status, !healed, action));
-            }
-        });
-    }
-
-    private void handleStatChange(ServerMessage msg, final boolean boost) {
-        // POKEMON|STAT|AMOUNT
-        String rawId = msg.nextArg();
-        final PokemonId id = PokemonId.fromRawId(getPlayer(rawId), rawId);
-
-        final String stat = msg.nextArg();
-        final int amount = (boost ? 1 : -1) * Integer.parseInt(msg.nextArg());
-
-        mActionQueue.enqueueMinorAction(new Runnable() {
-            @Override
-            public void run() {
-                onStatChanged(id, stat, amount, false);
-                printMinorActionText(mBattleTextBuilder.statModifier(id, stat, amount));
-            }
-        });
-    }
-
-    private void handleSetBoost(ServerMessage msg) {
-        String rawId = msg.nextArg();
-        final PokemonId id = PokemonId.fromRawId(getPlayer(rawId), rawId);
-
-        final String stat = msg.nextArg();
-        final int amount = Integer.parseInt(msg.nextArg());
-
-        final String from = msg.hasNextArg() ? msg.nextArg() : null;
-
-        mActionQueue.enqueueMinorAction(new Runnable() {
-            @Override
-            public void run() {
-                onStatChanged(id, stat, amount, true);
-                printMinorActionText(mBattleTextBuilder.statModifierSet(id, stat, amount, from));
-            }
-        });
-    }
-
-    private void handleWeather(ServerMessage msg) {
-        final String weather = msg.nextArg();
-        final String action = msg.hasNextArg() ? msg.nextArg() : null;
-
-        mActionQueue.enqueueMinorAction(new Runnable() {
-            @Override
-            public void run() {
-                // TODO print ability activation when [from] ability: xxx
-                Spanned text = mBattleTextBuilder.weather(weather, action);
-                if (text != null)
-                    printMinorActionText(text);
-
-                if (action == null || !action.contains("upkeep"))
-                    onWeatherChanged(weather);
-            }
-        });
-    }
-
-    private void handleSide(ServerMessage msg, final boolean start) {
-        final Player player = getPlayer(msg.nextArg());
-        final String side = msg.nextArg();
-        mActionQueue.enqueueMinorAction(new Runnable() {
-            @Override
-            public void run() {
-                onSideChanged(player, side, start);
-                Spanned text = mBattleTextBuilder.side(player, side, start);
                 printMinorActionText(text);
             }
         });
     }
 
-    private void handleMoveEffect(ServerMessage msg, final String type) {
-        String rawId = msg.nextArg();
-        final PokemonId pokemonId = PokemonId.fromRawId(getPlayer(rawId), rawId);
-
+    private void handleCombine() {
+        final CharSequence text = mBattleTextBuilder.combine();
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
-                Spanned[] texts = mBattleTextBuilder.moveEffect(type, pokemonId);
-                printMinorActionText(texts[0]);
-                onDisplayBattleToast(pokemonId, texts[1].toString(), Color.RED);
+                printMinorActionText(text);
             }
         });
     }
 
-    // |-formechange|POKEMON|SPECIES|HP STATUS
-    private void handleFormeChange(ServerMessage msg) {
-        String rawId = msg.nextArg();
-        final PokemonId pokemonId = PokemonId.fromRawId(getPlayer(rawId), rawId);
-        String species = msg.nextArg();
-
+    private void handleNoTarget() {
+        final CharSequence text = mBattleTextBuilder.notarget();
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
-                //TODO
+                printMinorActionText(text);
+            }
+        });
+    }
+
+    private void handlePrepare(ServerMessage msg) {
+        String rawId = msg.nextArg();
+        PokemonId id = PokemonId.fromRawId(getPlayer(rawId), rawId);
+        String effect = msg.hasNextArg() ? msg.nextArg() : null;
+        String target = msg.hasNextArg() ? msg.nextArg() : null;
+        final CharSequence text = mBattleTextBuilder.prepare(id, effect, target);
+        mActionQueue.enqueueMinorAction(new Runnable() {
+            @Override
+            public void run() {
+                printMinorActionText(text);
+            }
+        });
+    }
+
+    private void handleZPower(ServerMessage msg, boolean broken) {
+        String rawId = msg.nextArg();
+        final PokemonId id = PokemonId.fromRawId(getPlayer(rawId), rawId);
+        final CharSequence text = broken ? mBattleTextBuilder.zbroken(id)
+                : mBattleTextBuilder.zpower(id);
+        mActionQueue.enqueueMinorAction(new Runnable() {
+            @Override
+            public void run() {
+                // Todo Animate callback
+                printMinorActionText(text);
+            }
+        });
+    }
+
+    private void handleHitCount(ServerMessage msg) {
+        String count = msg.hasNextArg() ? msg.nextArg() : null;
+        final CharSequence text = mBattleTextBuilder.hitcount(count);
+        mActionQueue.enqueueMinorAction(new Runnable() {
+            @Override
+            public void run() {
+                printMinorActionText(text);
+            }
+        });
+    }
+
+    private void handleSetHp(ServerMessage msg) {
+        final CharSequence text = mBattleTextBuilder.sethp(msg.kwarg("from"));
+        mActionQueue.enqueueMinorAction(new Runnable() {
+            @Override
+            public void run() {
+                printMinorActionText(text);
+            }
+        });
+    }
+
+    private void handleSingle(ServerMessage msg) {
+        String rawId = msg.nextArg();
+        PokemonId id = PokemonId.fromRawId(getPlayer(rawId), rawId);
+        String effect = msg.hasNextArg() ? msg.nextArg() : null;
+        final CharSequence text = mBattleTextBuilder.single(id, effect, msg.kwarg("from"),
+                msg.kwarg("of"));
+        mActionQueue.enqueueMinorAction(new Runnable() {
+            @Override
+            public void run() {
+                printMinorActionText(text);
             }
         });
     }

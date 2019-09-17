@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.text.Spannable;
 import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
@@ -60,7 +61,7 @@ public class Utils {
     }
 
     public static int parseWithDefault(String s, int defaultValue) {
-        return s.matches("-?\\d+") ? Integer.parseInt(s) : defaultValue;
+        return s != null && s.matches("-?\\d+") ? Integer.parseInt(s) : defaultValue;
     }
 
     public static String firstCharUpperCase(String string) {
@@ -84,6 +85,7 @@ public class Utils {
     }
 
     public static boolean contains(String string, String... ss) {
+        if (string == null) return false;
         for (String s : ss)
             if (string.contains(s)) return true;
         return false;
@@ -155,6 +157,20 @@ public class Utils {
         return spannableString;
     }
 
+    public static CharSequence parseBoldTags(String string) {
+        if (!string.contains("**")) return string;
+        SpannableStringBuilder spannable = new SpannableStringBuilder(string);
+        int openIndex, closeIndex = -1;
+        while ((openIndex = string.indexOf("**", closeIndex + 1)) != -1) {
+            if ((closeIndex = string.indexOf("**", openIndex + 1)) == -1) break;
+            spannable.delete(openIndex, openIndex + 2);
+            closeIndex -= 2;
+            spannable.delete(closeIndex, closeIndex + 2);
+            spannable.setSpan(new StyleSpan(Typeface.BOLD), openIndex, closeIndex, Spannable.SPAN_INCLUSIVE_EXCLUSIVE);
+        }
+        return spannable;
+    }
+
     public static Integer parseInt(String s) {
         try {
             return Integer.parseInt(s);
@@ -166,6 +182,10 @@ public class Utils {
     @SafeVarargs
     public static <T> T[] array(T... ts) {
         return ts;
+    }
+
+    public static String nonNull(String s) {
+        return s == null ? "" : s;
     }
 
     public static boolean notAllNull(Object[] objects) {

@@ -5,8 +5,12 @@ public class Id {
         return string.toLowerCase().replaceAll("[^a-z0-9]", "").trim();
     }
 
+    public static String toId(String string, String def) {
+        return string == null ? def : toId(string);
+    }
+
     public static String toIdSafe(String string) {
-        return string == null ? "" : toId(string);
+        return toId(string, "");
     }
 
     public static void toId(String[] strings) {
