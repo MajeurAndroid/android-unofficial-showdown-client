@@ -128,9 +128,7 @@ public class TeamsFragment extends Fragment implements MainActivity.Callbacks {
         view.findViewById(R.id.button_new_team).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                HomeFragment fragment = ((MainActivity) getContext()).getHomeFragment();
-                List<BattleFormat.Category> battleFormatCategories = fragment.getBattleFormats();
-                ImportTeamDialog.newInstance(TeamsFragment.this, battleFormatCategories)
+                ImportTeamDialog.newInstance(TeamsFragment.this)
                         .show(getFragmentManager(), "");
             }
         });

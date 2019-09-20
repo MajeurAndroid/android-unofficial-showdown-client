@@ -2,45 +2,52 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
-    android:layout_width="wrap_content"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:padding="12dp">
 
+    <LinearLayout android:id="@+id/teamBuilderStub"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+          android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Create new team"
+            android:layout_marginBottom="16dp"
+            android:layout_marginStart="10dp"
+            android:textAppearance="@style/TextAppearance.MaterialComponents.Headline5"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
+            android:text="Build a new team from scratch. Some features are not available here, so you might have to import your team from showdown. See below."/>
+
+
+        <Button
+            android:id="@+id/teambuilder_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="12dp"
+            android:layout_gravity="center_horizontal"
+            android:text="Open teambuilder"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+    </LinearLayout>
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Create new team"
         android:layout_marginBottom="16dp"
         android:layout_marginStart="10dp"
-        android:textAppearance="@style/TextAppearance.MaterialComponents.Headline5"/>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
-        android:text="Build a new team from scratch. Some features are not available here, so you might have to import your team from showdown. See below."/>
-
-
-    <Button
-        android:id="@+id/teambuilder_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="12dp"
-        android:layout_gravity="center_horizontal"
-        android:text="Open teambuilder"
-        style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Import new team(s)"
-        android:layout_marginBottom="16dp"
-        android:layout_marginStart="10dp"
-        android:textAppearance="@style/TextAppearance.MaterialComponents.Headline5"/>
+        android:textAppearance="@style/TextAppearance.MaterialComponents.Headline5"
+        android:text="Import new team(s)"/>
 
     <com.majeur.psclient.widget.SwitchLayout
         android:id="@+id/switch_layout"
-        android:layout_width="240dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
         <RadioGroup
@@ -78,26 +85,27 @@
 
         </RadioGroup>
 
-        <LinearLayout
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:layout_height="wrap_content">
 
             <ProgressBar
                 android:id="@+id/progress_bar"
-                style="@style/Base.Widget.AppCompat.ProgressBar.Horizontal"
                 android:layout_width="match_parent"
                 android:layout_height="8dp"
                 android:indeterminate="true"
-                android:visibility="visible"/>
+                android:visibility="visible"
+                style="@style/Base.Widget.AppCompat.ProgressBar.Horizontal"/>
 
             <EditText
+                android:layout_marginTop="8dp"
                 android:id="@+id/edit_text_import"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:maxHeight="280dp"/>
 
-
-        </LinearLayout>
+        </FrameLayout>
 
     </com.majeur.psclient.widget.SwitchLayout>
 
