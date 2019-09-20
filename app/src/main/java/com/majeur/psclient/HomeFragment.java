@@ -28,6 +28,7 @@ import com.majeur.psclient.service.GlobalMessageObserver;
 import com.majeur.psclient.service.ShowdownService;
 import com.majeur.psclient.widget.CategoryAdapter;
 
+import java.util.Collections;
 import java.util.List;
 
 import androidx.annotation.NonNull;
@@ -36,6 +37,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 
 import static com.majeur.psclient.model.Id.toId;
+import static com.majeur.psclient.model.Id.toIdSafe;
 
 public class HomeFragment extends Fragment implements MainActivity.Callbacks {
 
@@ -124,7 +126,8 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
 
             @Override
             protected String getCategoryLabel(int position) {
-                return ((Team.Group) getItem(position)).format;
+                String formatId = ((Team.Group) getItem(position)).format;
+                return resolveBattleFormatName(formatId);
             }
 
             class ViewHolder {
@@ -211,6 +214,15 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
         mBattleButtonsContainer = view.findViewById(R.id.joinedBattleContainer);
     }
 
+    public String resolveBattleFormatName(String formatId) {
+        if (mBattleFormats == null) return formatId;
+        if ("other".equals(formatId)) return "Other";
+        for (BattleFormat.Category category : mBattleFormats)
+            for (BattleFormat format : category.getBattleFormats())
+                if (format.id().contains(formatId)) return format.getLabel();
+        return formatId;
+    }
+
     private void setCurrentBattleFormat(BattleFormat battleFormat) {
         mCurrentBattleFormat = battleFormat;
         updateTeamSpinner();
@@ -221,7 +233,19 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
         CategoryAdapter adapter = (CategoryAdapter) mTeamsSpinner.getAdapter();
         adapter.clearItems();
         if (mCurrentBattleFormat.isTeamNeeded()) {
-            List<Team.Group> teamGroups = ((MainActivity) getActivity()).getTeamsFragment().getTeamGroups();
+            List<Team.Group> teamGroups = ((MainActivity) getActivity())
+                    .getTeamsFragment().getTeamGroups();
+            int matchingFormatGroupIndex = -1;
+            int otherFormatGroupIndex = -1;
+            for (int i = 0; i < teamGroups.size(); i++) {
+                String id = toIdSafe(teamGroups.get(i).format);
+                if (BattleFormat.FORMAT_OTHER.id().equals(id)) otherFormatGroupIndex = i;
+                if (mCurrentBattleFormat.id().equals(id)) matchingFormatGroupIndex = i;
+            }
+            if (matchingFormatGroupIndex != -1) Collections.swap(teamGroups,
+                    matchingFormatGroupIndex, 0);
+            if (otherFormatGroupIndex != -1) Collections.swap(teamGroups, otherFormatGroupIndex,
+                    matchingFormatGroupIndex == -1 ? 0 : 1);
             for (Team.Group group : teamGroups) {
                 adapter.addItem(group);
                 adapter.addItems(group.teams);

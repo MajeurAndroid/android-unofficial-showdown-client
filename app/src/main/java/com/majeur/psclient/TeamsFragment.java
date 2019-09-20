@@ -34,6 +34,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.List;
 
 import androidx.annotation.NonNull;
@@ -283,7 +284,15 @@ public class TeamsFragment extends Fragment implements MainActivity.Callbacks {
     }
 
     public List<Team.Group> getTeamGroups() {
-        return mTeamGroups;
+        List<Team.Group> copy = new LinkedList<>();
+        copy.addAll(mTeamGroups);
+        return copy;
+    }
+
+    private String resolveFormatName(String formatId) {
+        MainActivity activity = (MainActivity) getContext();
+        if (activity == null) return formatId;
+        return activity.getHomeFragment().resolveBattleFormatName(formatId);
     }
 
     private class TeamListAdapter extends BaseExpandableListAdapter {
@@ -312,9 +321,8 @@ public class TeamsFragment extends Fragment implements MainActivity.Callbacks {
         public View getGroupView(int i, boolean b, View view, ViewGroup parent) {
             if (view == null)
                 view = getLayoutInflater().inflate(R.layout.list_category_team, parent, false);
-
-            ((TextView) view).setText(getGroup(i).format);
-
+            String label = resolveFormatName(getGroup(i).format);
+            ((TextView) view).setText(label);
             return view;
         }
 
@@ -345,16 +353,12 @@ public class TeamsFragment extends Fragment implements MainActivity.Callbacks {
             } else {
                 viewHolder = (ViewHolder) view.getTag();
             }
-
             Team team = getChild(i, j);
             viewHolder.labelView.setText(team.label);
 
-            if (team.pokemons.isEmpty()) {
-                for (int k = 0; k < viewHolder.pokemonViews.length; k++)
-                    viewHolder.pokemonViews[k].setImageDrawable(null);
-                return view;
-            }
-
+            for (int k = 0; k < viewHolder.pokemonViews.length; k++)
+                viewHolder.pokemonViews[k].setImageDrawable(null);
+            if (team.pokemons.isEmpty()) return view;
             String[] queries = new String[team.pokemons.size()];
             for (int k = 0; k < queries.length; k++)
                 queries[k] = toId(team.pokemons.get(k).species);
@@ -367,10 +371,6 @@ public class TeamsFragment extends Fragment implements MainActivity.Callbacks {
                     }
                 }
             });
-
-            for (int k = queries.length; k < viewHolder.pokemonViews.length; k++)
-                viewHolder.pokemonViews[k].setImageDrawable(null);
-
             return view;
         }
 
