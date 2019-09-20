@@ -468,7 +468,7 @@ public final class BattleTextBuilder {
     public CharSequence item(PokemonId pkmnId, String item, String from, String of) {
         String id = toId(effect(from), null);
         String target = null;
-        if (id != null && id.equals("magician") || id.equals("pickpocket")) {
+        if (id != null && (id.equals("magician") || id.equals("pickpocket"))) {
             target = of;
             of = null;
         }
