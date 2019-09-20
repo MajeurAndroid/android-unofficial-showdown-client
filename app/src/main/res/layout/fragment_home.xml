@@ -10,7 +10,8 @@
         android:layout_height="wrap_content"
         android:layout_margin="12dp"
         android:layout_gravity="center"
-        app:contentPadding="16dp">
+        app:contentPadding="16dp"
+        android:id="@+id/searchBattleContainer">
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -46,6 +47,35 @@
                 android:minWidth="196dp"
                 android:text="Battle !"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp"
+        android:layout_gravity="center"
+        app:contentPadding="16dp"
+        android:id="@+id/currentBattleContainer"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="You are currently in:"/>
+
+            <LinearLayout
+                android:id="@+id/joinedBattleContainer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"/>
 
         </LinearLayout>
 

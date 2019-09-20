@@ -1,6 +1,7 @@
 package com.majeur.psclient;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -31,6 +32,7 @@ import java.util.List;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 
 import static com.majeur.psclient.model.Id.toId;
@@ -40,16 +42,20 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
     private ShowdownService mService;
     private DexIconLoader mDexIconLoader;
 
-    private Button mBattleButton;
     private TextView mUsernameView;
     private View mUsernameContainer;
 
+    private View mSearchBattleContainer;
+    private View mCurrentBattlesContainer;
+    private ViewGroup mBattleButtonsContainer;
+    private Button mBattleButton;
     private Spinner mFormatsSpinner;
     private Spinner mTeamsSpinner;
     private BattleFormat mCurrentBattleFormat;
     private List<BattleFormat.Category> mBattleFormats;
 
     private String mCurrentUserName;
+    private String mPendingBattleToJoin;
 
     @Override
     public void onAttach(@NonNull Context context) {
@@ -65,6 +71,8 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        mSearchBattleContainer = view.findViewById(R.id.searchBattleContainer);
+        mCurrentBattlesContainer = view.findViewById(R.id.currentBattleContainer);
         mUsernameView = view.findViewById(R.id.username_text);
         mUsernameContainer = view.findViewById(R.id.username_container);
         mUsernameContainer.setAlpha(0f);
@@ -200,6 +208,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
 //                ((MainActivity) getActivity()).showBattleFragmentView();
             }
         });
+        mBattleButtonsContainer = view.findViewById(R.id.joinedBattleContainer);
     }
 
     private void setCurrentBattleFormat(BattleFormat battleFormat) {
@@ -247,6 +256,36 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
         return true;
     }
 
+    private void tryJoinBattleRoom(final String roomId) {
+        MainActivity activity = (MainActivity) getActivity();
+        BattleFragment battleFragment = activity.getBattleFragment();
+        if (battleFragment.getObservedRoomId() == null || !battleFragment.battleRunning()) {
+            mService.sendGlobalCommand("join", roomId);
+        } else {
+            final String runningBattleRoomId = battleFragment.getObservedRoomId();
+            if (runningBattleRoomId.equals(roomId)) {
+                activity.showBattleFragmentView();
+                return;
+            }
+            String currentBattleName = runningBattleRoomId.substring("battle-".length());
+            String battleName = roomId.substring("battle-".length());
+            new AlertDialog.Builder(activity)
+                    .setTitle("Do you want to continue ?")
+                    .setMessage("Joining battle '" + battleName
+                            + "' will make you leave (and forfeit) the current battle.")
+                    .setPositiveButton("Continue", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            mPendingBattleToJoin = roomId;
+                            mService.sendRoomCommand(runningBattleRoomId, "forfeit");
+                            mService.sendRoomCommand(runningBattleRoomId, "leave");
+                        }
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+        }
+    }
+
     private final GlobalMessageObserver mObserver = new GlobalMessageObserver() {
 
         @Override
@@ -276,7 +315,28 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
         }
 
         @Override
-        protected void onBattlesFound(final String[] battleRoomIds, String[] battleRoomNames) {
+        protected void onSearchBattlesChanged(String[] battleRoomIds, String[] battleRoomNames) {
+            mBattleButtonsContainer.removeAllViews();
+            if (battleRoomIds.length == 0) {
+                mCurrentBattlesContainer.setVisibility(View.GONE);
+                mSearchBattleContainer.setVisibility(View.VISIBLE);
+            } else {
+                mCurrentBattlesContainer.setVisibility(View.VISIBLE);
+                mSearchBattleContainer.setVisibility(View.GONE);
+            }
+            for (int i = 0; i < battleRoomIds.length; i++) {
+                final String roomId = battleRoomIds[i];
+                getLayoutInflater().inflate(R.layout.joined_battle_button, mBattleButtonsContainer);
+                Button button = (Button) mBattleButtonsContainer
+                        .getChildAt(mBattleButtonsContainer.getChildCount() - 1);
+                button.setText(battleRoomNames[i]);
+                button.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        tryJoinBattleRoom(roomId);
+                    }
+                });
+            }
             mBattleButton.setText("Battle !");
             mBattleButton.setEnabled(true);
         }
@@ -322,14 +382,10 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
                         battleFragment.setObservedRoomId(roomId);
                         ((MainActivity) getActivity()).showBattleFragmentView();
                     } else {
-                        Snackbar.make(getView(),
-                                "Battle " + roomId + " ignored. This client supports only one room at a time",
-                                Snackbar.LENGTH_INDEFINITE).setAction("Got it", new View.OnClickListener() {
-                            @Override
-                            public void onClick(View view) {
-                                // Auto dismiss
-                            }
-                        }).show();
+                        // Most of the time this is an auto joined battle coming from a new search, let's
+                        // just leave it silently. If the user wants to join it deliberately, he will
+                        // be able to do that from the "you're currently in" menu.
+                        mService.sendRoomCommand(roomId, "leave");
                     }
                     break;
                 case "chat":
@@ -345,8 +401,14 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
             MainActivity activity = (MainActivity) getActivity();
 
             BattleFragment battleFragment = activity.getBattleFragment();
-            if (TextUtils.equals(battleFragment.getObservedRoomId(), roomId))
+            if (TextUtils.equals(battleFragment.getObservedRoomId(), roomId)) {
                 battleFragment.setObservedRoomId(null);
+                if (mPendingBattleToJoin != null) {
+                    mService.sendGlobalCommand("join", mPendingBattleToJoin);
+                    mPendingBattleToJoin = null;
+                }
+
+            }
 
             ChatFragment chatFragment = activity.getChatFragment();
             if (TextUtils.equals(chatFragment.getObservedRoomId(), roomId))

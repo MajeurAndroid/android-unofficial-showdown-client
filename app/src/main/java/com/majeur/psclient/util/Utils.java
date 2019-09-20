@@ -14,6 +14,7 @@ import com.majeur.psclient.model.Colors;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -175,6 +176,15 @@ public class Utils {
             spannable.setSpan(new StyleSpan(Typeface.BOLD), openIndex, closeIndex, Spannable.SPAN_INCLUSIVE_EXCLUSIVE);
         }
         return spannable;
+    }
+
+    public static JSONObject jsonObject(String string) {
+        if (string == null) return null;
+        try {
+            return new JSONObject(string);
+        } catch (JSONException e) {
+            return null;
+        }
     }
 
     public static Integer parseInt(String s) {

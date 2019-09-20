@@ -15,6 +15,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import static com.majeur.psclient.util.Utils.jsonObject;
+
 public abstract class GlobalMessageObserver extends MessageObserver {
 
     private static final String TAG = GlobalMessageObserver.class.getSimpleName();
@@ -58,11 +60,7 @@ public abstract class GlobalMessageObserver extends MessageObserver {
                 handlePopup(message);
                 return true;
             case "updatesearch":
-                processUpdateSearch(message);
-
-                //final String searchStatus = messageDetail.substring(messageDetail.indexOf('|') + 1);
-                //BroadcastSender.get(this).sendBroadcastFromMyApplication(
-                //        BroadcastSender.EXTRA_UPDATE_SEARCH, searchStatus);
+                handleUpdateSearch(message);
                 return true;
 
             case "pm":
@@ -235,34 +233,33 @@ public abstract class GlobalMessageObserver extends MessageObserver {
         onShowPopup(text.toString());
     }
 
-    private void processUpdateSearch(ServerMessage args) {
-        try {
-            JSONObject jsonObject = new JSONObject(args.rawArgs());
-            JSONArray searchingArray = jsonObject.getJSONArray("searching");
-            JSONObject games = jsonObject.optJSONObject("games");
-            if (games == null || games.length() == 0) return;
-            String[] battleRoomIds = new String[games.length()];
-            String[] battleRoomNames = new String[games.length()];
+    private void handleUpdateSearch(ServerMessage msg) {
+        JSONObject jsonObject = jsonObject(msg.rawArgs());
+        if (jsonObject == null) return;
+        JSONObject games = jsonObject.optJSONObject("games");
+        String[] battleRoomIds;
+        String[] battleRoomNames;
+        if (games == null) {
+            battleRoomIds = new String[0];
+            battleRoomNames = new String[0];
+        } else {
+            battleRoomIds = new String[games.length()];
+            battleRoomNames = new String[games.length()];
             Iterator<String> iterator = games.keys();
-            int i = 0;
-            while (iterator.hasNext()) {
+            for (int i = 0; iterator.hasNext(); i++) {
                 String key = iterator.next();
                 battleRoomIds[i] = key;
-                battleRoomNames[i] = games.getString(key);
-                i++;
+                battleRoomNames[i] = games.optString(key);
             }
-            onBattlesFound(battleRoomIds, battleRoomNames);
-
-        } catch (JSONException e) {
-            e.printStackTrace();
         }
+        onSearchBattlesChanged(battleRoomIds, battleRoomNames);
     }
 
     protected abstract void onUserChanged(String userName, boolean isGuest, String avatarId);
 
     protected abstract void onBattleFormatsChanged(List<BattleFormat.Category> battleFormats);
 
-    protected abstract void onBattlesFound(String[] battleRoomIds, String[] battleRoomNames);
+    protected abstract void onSearchBattlesChanged(String[] battleRoomIds, String[] battleRoomNames);
 
     protected abstract void onShowPopup(String message);
 
