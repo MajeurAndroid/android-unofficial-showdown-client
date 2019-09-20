@@ -3,6 +3,7 @@ package com.majeur.psclient.util;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import com.majeur.psclient.model.BattleFormat;
 import com.majeur.psclient.model.DexPokemon;
 import com.majeur.psclient.model.Team;
 import com.majeur.psclient.model.TeamPokemon;
@@ -79,10 +80,12 @@ public class ShowdownTeamParser {
                 String teamLabel = getLabelFromHeader(teamHeader);
                 teams.add(parseTeam(teamString, format, teamLabel, dexPokemonFactory));
             } else {
-                teams.add(parseTeam(teamString, null, null, dexPokemonFactory));
+                teams.add(parseTeam(teamString,
+                        BattleFormat.FORMAT_OTHER.id(),
+                        "Unnamed team",
+                        dexPokemonFactory));
             }
         }
-
         return teams;
     }
 
