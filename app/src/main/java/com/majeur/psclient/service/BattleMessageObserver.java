@@ -10,6 +10,7 @@ import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
+import android.util.Log;
 
 import com.majeur.psclient.io.BattleTextBuilder;
 import com.majeur.psclient.model.BasePokemon;
@@ -310,6 +311,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         String raw = msg.rawArgs();
         Player player = getPlayer(raw);
         final BattlingPokemon pokemon = BattlingPokemon.fromSwitchMessage(player, raw);
+        msg.resetArgsIteration(); msg.nextArg();
         String arg2 = msg.hasNextArg() ? msg.nextArg() : null;
         String arg3 = msg.hasNextArg() ? msg.nextArg() : null;
 
@@ -354,6 +356,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
                 }
             });
         } catch (JSONException e) {
+            Log.e(getClass().getSimpleName(), "Error while parsing request json");
             e.printStackTrace();
         }
     }
