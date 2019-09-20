@@ -60,7 +60,7 @@ public class ServerMessage {
     public String rawArgs() {
         if (args.size() < 1) return "";
         StringBuilder builder = new StringBuilder();
-        for (String arg : args) builder.append(arg).append(SEPARATOR);
+        while (hasNextArg()) builder.append(nextArg()).append(SEPARATOR);
         builder.deleteCharAt(builder.length() - 1);
         return builder.toString();
     }
