@@ -40,7 +40,7 @@ public class ServerMessage {
             } else {
                 command = data.substring(1, sepIndex).toLowerCase();
                 parseArguments(data.substring(sepIndex + 1), command.equals("formats") || command.equals("c")
-                    || command.equals("tier"));
+                        || command.equals("c:") || command.equals("tier") || command.equals("error"));
             }
         }
     }
