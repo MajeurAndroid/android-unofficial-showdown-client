@@ -14,11 +14,13 @@ import android.view.ViewGroup;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.Animation;
 import android.view.animation.OvershootInterpolator;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.majeur.psclient.io.DataLoader;
 import com.majeur.psclient.io.DexIconLoader;
 import com.majeur.psclient.io.DexPokemonLoader;
@@ -234,7 +236,23 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                             .show();
                     break;
                 case R.id.button_send:
-
+                    View dialogView = getLayoutInflater().inflate(R.layout.dialog_battle_message, null);
+                    final EditText editText = dialogView.findViewById(R.id.edit_text_team_name);
+                    new MaterialAlertDialogBuilder(getContext())
+                            .setTitle("Send chat message")
+                            .setPositiveButton("Send", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    String input = editText.getText().toString();
+                                    String regex = "[{}:\",|\\[\\]]";
+                                    if (input.matches(".*" + regex + ".*")) input = input.replaceAll(regex, "");
+                                    mService.sendRoomMessage(mObservedRoomId, input);
+                                }
+                            })
+                            .setNegativeButton("Cancel", null)
+                            .setView(dialogView)
+                            .show();
+                    editText.requestFocus();
                     break;
                 case R.id.button_timer:
                     if (!battleRunning()) break;
@@ -285,7 +303,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
 
         descView.append("\n");
         if (!pokemon.foe) {
-            SidePokemon sidePokemon = mLastActionRequest.getSide().get(0);
+            SidePokemon sidePokemon = mLastActionRequest.getSide().get(0); //TODO
             descView.append(smallText("Atk:"));
             descView.append(pokemon.statModifiers.calcReadableStat("atk", sidePokemon.stats.atk));
             descView.append(smallText(" Def:"));
@@ -473,27 +491,6 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
             }
             mAudioManager.playBattleMusic();
             //sendChatMessage("[Playing from the unofficial Android Showdown client]");
-            mBattleLayout.getSideView(Player.TRAINER).clearAllSides();
-            mBattleLayout.getSideView(Player.FOE).clearAllSides();
-            mOverlayImageView.setImageDrawable(null);
-
-            mBackgroundImageView.animate()
-                    .setDuration(100)
-                    .alpha(0)
-                    .withEndAction(new Runnable() {
-                        @Override
-                        public void run() {
-                            int resId = Math.random() > 0.5 ? R.drawable.battle_bg_1
-                                    : R.drawable.battle_bg_2;
-                            mBackgroundImageView.setImageResource(resId);
-                            mBackgroundImageView.animate()
-                                    .setDuration(100)
-                                    .alpha(1)
-                                    .withEndAction(null)
-                                    .start();
-                        }
-                    })
-                    .start();
         }
 
         @Override
@@ -829,6 +826,26 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
             mLastActionRequest = null;
             mActionWidget.dismissNow();
             onTimerEnabled(false);
+            mBattleLayout.getSideView(Player.TRAINER).clearAllSides();
+            mBattleLayout.getSideView(Player.FOE).clearAllSides();
+            mOverlayImageView.setImageDrawable(null);
+            mBackgroundImageView.animate()
+                    .setDuration(100)
+                    .alpha(0)
+                    .withEndAction(new Runnable() {
+                        @Override
+                        public void run() {
+                            int resId = Math.random() > 0.5 ? R.drawable.battle_bg_1
+                                    : R.drawable.battle_bg_2;
+                            mBackgroundImageView.setImageResource(resId);
+                            mBackgroundImageView.animate()
+                                    .setDuration(100)
+                                    .alpha(1)
+                                    .withEndAction(null)
+                                    .start();
+                        }
+                    })
+                    .start();
         }
 
         @Override
