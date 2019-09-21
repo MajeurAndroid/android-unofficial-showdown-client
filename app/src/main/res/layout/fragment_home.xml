@@ -13,12 +13,12 @@
         app:contentPadding="16dp"
         android:id="@+id/searchBattleContainer">
 
-        <LinearLayout
+        <RelativeLayout
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:layout_height="wrap_content">
 
             <TextView
+                android:id="@+id/format_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Format:"/>
@@ -26,29 +26,44 @@
             <Spinner
                 android:id="@+id/spinner_formats"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/format_label"/>
 
             <TextView
+                android:id="@+id/team_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_below="@id/spinner_formats"
                 android:text="Team:"/>
 
             <Spinner
                 android:id="@+id/spinner_teams"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content"
+                android:layout_below="@id/team_label"/>
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/button_battle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
+                android:layout_below="@id/spinner_teams"
+                android:layout_centerHorizontal="true"
                 android:layout_marginTop="8dp"
                 android:minWidth="196dp"
                 android:text="Battle !"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
 
-        </LinearLayout>
+            <ImageButton
+                android:id="@+id/sound_button"
+                android:layout_width="42dp"
+                android:layout_height="match_parent"
+                android:layout_alignParentEnd="true"
+                android:layout_alignTop="@id/button_battle"
+                android:layout_alignBottom="@id/button_battle"
+                android:src="@drawable/ic_sound_off"
+                android:background="?selectableItemBackground"/>
+
+        </RelativeLayout>
 
     </com.google.android.material.card.MaterialCardView>
 

@@ -26,6 +26,7 @@ import com.majeur.psclient.model.RoomInfo;
 import com.majeur.psclient.model.Team;
 import com.majeur.psclient.service.GlobalMessageObserver;
 import com.majeur.psclient.service.ShowdownService;
+import com.majeur.psclient.util.Preferences;
 import com.majeur.psclient.widget.CategoryAdapter;
 
 import java.util.Collections;
@@ -51,6 +52,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
     private View mCurrentBattlesContainer;
     private ViewGroup mBattleButtonsContainer;
     private Button mBattleButton;
+    private ImageButton mSoundButton;
     private Spinner mFormatsSpinner;
     private Spinner mTeamsSpinner;
     private BattleFormat mCurrentBattleFormat;
@@ -58,11 +60,13 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
 
     private String mCurrentUserName;
     private String mPendingBattleToJoin;
+    private boolean mSoundEnabled;
 
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         mDexIconLoader = ((MainActivity) context).getDexIconLoader();
+        mSoundEnabled = Preferences.getBoolPreference(getContext(), "sound");
     }
 
     @Nullable
@@ -116,7 +120,6 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
 
             }
         });
-
         mTeamsSpinner = view.findViewById(R.id.spinner_teams);
         mTeamsSpinner.setAdapter(new CategoryAdapter(getContext()) {
             @Override
@@ -187,7 +190,6 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
                 return convertView;
             }
         });
-
         mBattleButton = view.findViewById(R.id.button_battle);
         mBattleButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -207,8 +209,18 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
                         }
                     }
                 }
-//                mObserver.fakeBattle();
-//                ((MainActivity) getActivity()).showBattleFragmentView();
+            }
+        });
+        mSoundButton = view.findViewById(R.id.sound_button);
+        int resId = mSoundEnabled ? R.drawable.ic_sound_on : R.drawable.ic_sound_off;
+        mSoundButton.setImageResource(resId);
+        mSoundButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mSoundEnabled = !mSoundEnabled;
+                int resId = mSoundEnabled ? R.drawable.ic_sound_on : R.drawable.ic_sound_off;
+                mSoundButton.setImageResource(resId);
+                Preferences.setPreference(getContext(), "sound", mSoundEnabled);
             }
         });
         mBattleButtonsContainer = view.findViewById(R.id.joinedBattleContainer);
@@ -361,8 +373,6 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
                     }
                 });
             }
-            mBattleButton.setText("Battle !");
-            mBattleButton.setEnabled(true);
         }
 
         @Override
@@ -411,6 +421,8 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
                         // be able to do that from the "you're currently in" menu.
                         mService.sendRoomCommand(roomId, "leave");
                     }
+                    mBattleButton.setText("Battle !");
+                    mBattleButton.setEnabled(true);
                     break;
                 case "chat":
                     ChatFragment chatFragment = activity.getChatFragment();

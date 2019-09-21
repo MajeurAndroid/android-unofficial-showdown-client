@@ -44,6 +44,7 @@ import com.majeur.psclient.service.ShowdownService;
 import com.majeur.psclient.util.AudioBattleManager;
 import com.majeur.psclient.util.BackForthTranslateAnimation;
 import com.majeur.psclient.util.CircularTranslateAnimation;
+import com.majeur.psclient.util.Preferences;
 import com.majeur.psclient.util.ShakeTranslateAnimation;
 import com.majeur.psclient.util.Utils;
 import com.majeur.psclient.widget.BattleActionWidget;
@@ -97,6 +98,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
 
     private BattleActionRequest mLastActionRequest;
     private boolean mTimerEnabled;
+    private boolean mSoundEnabled;
     private boolean mWasPlayingBattleMusicWhenPaused;
 
     private String mObservedRoomId;
@@ -488,7 +490,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                     mBattleLayout.setMode(BattleLayout.MODE_BATTLE_TRIPLE);
                     break;
             }
-            mAudioManager.playBattleMusic();
+            if (mSoundEnabled) mAudioManager.playBattleMusic();
             //sendChatMessage("[Playing from the unofficial Android Showdown client]");
         }
 
@@ -551,7 +553,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
             View statusView = mBattleLayout.getStatusView(id);
             statusView.animate().alpha(0f).start();
 
-//            mAudioManager.playPokemonCry(id.foe ? mFoePokemons[id.position] : mPlayerPokemons[id.position]);
+            if (mSoundEnabled) mAudioManager.playPokemonCry(getBattlingPokemon(id));
         }
 
         @Override
@@ -631,8 +633,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                     infoView.updatePokemon(pokemon, icon);
                 }
             });
-
-//            mAudioManager.playPokemonCry(pokemon);
+            if (mSoundEnabled) mAudioManager.playPokemonCry(pokemon);
         }
 
         @Override
@@ -648,6 +649,8 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                     infoView.updatePokemon(pokemon, icon);
                 }
             });
+
+            if (mSoundEnabled && "mega".equals(pokemon.forme)) mAudioManager.playPokemonCry(pokemon);
         }
 
         @Override
@@ -821,6 +824,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         @Override
         public void onRoomInit() {
             super.onRoomInit();
+            mSoundEnabled = Preferences.getBoolPreference(getContext(), "sound");
             mLogTextView.setText("");
             mLastActionRequest = null;
             mActionWidget.dismissNow();
@@ -845,12 +849,15 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                         }
                     })
                     .start();
+            // In case of corrupted battle stream make sure we stop music at the next one
+            mAudioManager.stopBattleMusic();
         }
 
         @Override
         public void onRoomDeInit() {
             super.onRoomDeInit();
-            // Ignored
+            // In case of corrupted battle stream make sure we stop music at the next one
+            mAudioManager.stopBattleMusic();
         }
     };
 }

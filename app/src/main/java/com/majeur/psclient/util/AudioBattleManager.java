@@ -8,12 +8,13 @@ import android.media.AudioFocusRequest;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Build;
-import android.util.Log;
-import android.widget.Toast;
 
 import com.majeur.psclient.R;
+import com.majeur.psclient.model.BasePokemon;
 
 import java.io.IOException;
+
+import static com.majeur.psclient.model.Id.toId;
 
 public class AudioBattleManager implements AudioManager.OnAudioFocusChangeListener {
 
@@ -41,7 +42,6 @@ public class AudioBattleManager implements AudioManager.OnAudioFocusChangeListen
 
     @Override
     public void onAudioFocusChange(int focusChange) {
-        Toast.makeText(mContext, "onAudioFocusChanged: " + focusChange, 0);
         switch (focusChange) {
             case AudioManager.AUDIOFOCUS_GAIN:
                 if (mPlaybackDelayed) {
@@ -111,36 +111,31 @@ public class AudioBattleManager implements AudioManager.OnAudioFocusChangeListen
         }
     }
 
-//    public void playPokemonCry(BattlingPokemon pokemon) {
-//        if (!requestAudioFocus()) return;
-//
-//        String url = cryUrl(pokemon.species);
-//        MediaPlayer mediaPlayer = newMediaPlayer(url);
-//
-//        if (mediaPlayer == null) return;
-//
-//        mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-//            @Override
-//            public void onPrepared(MediaPlayer mediaPlayer) {
-//                mActiveMediaPlayers.add(mediaPlayer);
-//                if (mPaused)
-//                    mMediaPlayersToResume.add(mediaPlayer);
-//                else
-//                    mediaPlayer.start();
-//            }
-//        });
-//        mediaPlayer.prepareAsync();
-//        mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-//            @Override
-//            public void onCompletion(MediaPlayer mediaPlayer) {
-//                mActiveMediaPlayers.remove(mediaPlayer);
-//                mediaPlayer.release();
-//            }
-//        });
-//    }
+    public void playPokemonCry(BasePokemon pokemon) {
+        // We do not ask for audio focus here cause it should have been requested by the music part
+        // TODO Check for delayed focus
+        // Also as long as cries are really short, we do not take care of pausing it if user leaves
+        String species = toId(pokemon.baseSpecies) + ("mega".equals(pokemon.forme) ? "-mega" : "");
+        String url = cryUrl(species);
+        MediaPlayer mediaPlayer = newMediaPlayer(url);
+        if (mediaPlayer == null) return;
+        mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+            @Override
+            public void onPrepared(MediaPlayer mediaPlayer) {
+                mediaPlayer.start();
+            }
+        });
+        mediaPlayer.prepareAsync();
+        mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            @Override
+            public void onCompletion(MediaPlayer mediaPlayer) {
+                mediaPlayer.release();
+            }
+        });
+    }
 
     private String cryUrl(String species) {
-        return "http://play.pokemonshowdown.com/audio/cries/" + species + ".mp3";
+        return "https://play.pokemonshowdown.com/audio/cries/" + species + ".mp3";
     }
 
     public void playBattleMusic() {
