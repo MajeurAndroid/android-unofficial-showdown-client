@@ -625,29 +625,24 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         });
     }
 
-    private void handleHealthChange(ServerMessage msg, final boolean damage) {
+    private void handleHealthChange(final ServerMessage msg, final boolean damage) {
         String rawId = msg.nextArg();
         final PokemonId id = PokemonId.fromRawId(getPlayer(rawId), rawId);
         String rawCondition = msg.nextArg();
         final Condition condition = new Condition(rawCondition);
 
-        final String percentage;
-        Condition prevCondition = getBattlingPokemon(id).condition;
-        if (prevCondition != null)
-            percentage = Math.round(100f * Math.abs(condition.hp - prevCondition.hp) / condition.maxHp) + "%";
-        else
-            percentage = condition.hp + "/" + condition.maxHp;
-
-        final CharSequence text;
-        if (damage)
-            text = mBattleTextBuilder.damage(id, percentage, msg.kwarg("from"), msg.kwarg("of"),
-                    msg.kwarg("partiallytrapped"));
-        else
-            text = mBattleTextBuilder.heal(id, msg.kwarg("from"), msg.kwarg("of"), msg.kwarg("wisher"));
-
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
+                // Here we need to do text creation and percentage computation in the action queue to
+                // prevent pkmn's condition to be updated too early (ex: damage then heal)
+                String percentage = computePercentage(getBattlingPokemon(id).condition, condition);
+                final CharSequence text;
+                if (damage)
+                    text = mBattleTextBuilder.damage(id, percentage, msg.kwarg("from"), msg.kwarg("of"),
+                            msg.kwarg("partiallytrapped"));
+                else
+                    text = mBattleTextBuilder.heal(id, msg.kwarg("from"), msg.kwarg("of"), msg.kwarg("wisher"));
                 getBattlingPokemon(id).condition = condition;
                 onHealthChanged(id, condition);
                 printMinorActionText(text);
@@ -656,6 +651,13 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
                         damage ? Colors.RED : Colors.GREEN);
             }
         });
+    }
+
+    private String computePercentage(Condition old, Condition neW) {
+        if (old != null)
+            return Math.round(100f * Math.abs(neW.hp - old.hp) / old.maxHp) + "%";
+        else
+            return "[" + neW.hp + "/" + neW.maxHp + "]";
     }
 
     private void handleStatus(ServerMessage msg, final boolean cure) {
@@ -754,7 +756,9 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         final String pseudoWeather;
         if (effect != null && effect.contains(":"))
             pseudoWeather = effect.substring(effect.indexOf(':') + 1);
+        else if (!start) pseudoWeather = null;
         else pseudoWeather = effect;
+
 
         final CharSequence text;
         if (start)
@@ -916,8 +920,8 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
     private void handleFormeChange(ServerMessage msg) {
         String rawId = msg.nextArg();
         PokemonId pokemonId = PokemonId.fromRawId(getPlayer(rawId), rawId);
-        String arg2 = msg.nextArg();
-        String arg3 = msg.nextArg();
+        String arg2 = msg.hasNextArg() ? msg.nextArg() : null;
+        String arg3 = msg.hasNextArg() ? msg.nextArg() : null;
 
         final CharSequence text = mBattleTextBuilder.pokemonChange(msg.command,
                 pokemonId, arg2, arg3, msg.kwarg("of"), msg.kwarg("from"));
