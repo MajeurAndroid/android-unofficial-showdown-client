@@ -735,7 +735,11 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
 
     private void handleSide(ServerMessage msg, final boolean start) {
         final Player player = getPlayer(msg.nextArg());
-        final String effect = msg.hasNextArg() ? msg.nextArg() : null;
+        String effect = msg.hasNextArg() ? msg.nextArg() : null;
+        final String sideName;
+        if (effect != null && effect.contains(":"))
+            sideName = effect.substring(effect.indexOf(':') + 1);
+        else sideName = effect;
 
         final CharSequence text;
         if (start)
@@ -746,7 +750,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
-                onSideChanged(player, effect, start);
+                onSideChanged(player, sideName, start);
                 printMinorActionText(text);
             }
         });
@@ -973,6 +977,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
     }
 
     private void handleHitCount(ServerMessage msg) {
+        if (msg.hasNextArg()) msg.nextArg();
         String count = msg.hasNextArg() ? msg.nextArg() : null;
         final CharSequence text = mBattleTextBuilder.hitcount(count);
         mActionQueue.enqueueMinorAction(new Runnable() {

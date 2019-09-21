@@ -92,6 +92,33 @@ public class Colors {
         }
     }
 
+    public static int sideColor(String side) {
+        switch (side) {
+            case "AV": // Aurora Veil
+                return TYPE_ICE;
+            case "LS": // Light Screen
+                return TYPE_PSYCHIC;
+            case "MI": // Mist
+                return TYPE_ICE;
+            case "RE": // Reflect
+                return TYPE_PSYCHIC;
+            case "SG": // Safe Guard
+                return TYPE_NORMAL;
+            case "SP": // Spikes
+                return TYPE_GROUND;
+            case "SR": // Stealth Rock
+                return TYPE_ROCK;
+            case "SW": // Sticky Web
+                return TYPE_BUG;
+            case "TA": // Tailwhind
+                return TYPE_FLYING;
+            case "TS": // Toxic Spikes
+                return TYPE_POISON;
+            default:
+                return BLACK;
+        }
+    }
+
     public static int healthColor(float health) {
         if (health > 0.5f)
             return Color.GREEN;

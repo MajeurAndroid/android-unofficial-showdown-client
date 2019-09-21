@@ -48,6 +48,7 @@ import com.majeur.psclient.widget.BattleActionWidget;
 import com.majeur.psclient.widget.BattleLayout;
 import com.majeur.psclient.widget.BattleTipPopup;
 import com.majeur.psclient.widget.PlayerInfoView;
+import com.majeur.psclient.widget.SideView;
 import com.majeur.psclient.widget.StatusView;
 import com.majeur.psclient.widget.ToasterView;
 
@@ -482,6 +483,9 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                     break;
             }
             mAudioManager.playBattleMusic();
+            //sendChatMessage("[Playing from the unofficial Android Showdown client]");
+            mBattleLayout.getSideView(Player.TRAINER).clearAllSides();
+            mBattleLayout.getSideView(Player.FOE).clearAllSides();
         }
 
         @Override
@@ -502,7 +506,8 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                 @Override
                 public void run() {
                     ImageView imageView = mBattleLayout.getPokemonView(id);
-                    mSpritesLoader.loadPreviewSprite(id.player, pokemon, imageView);
+                    if (imageView != null) // Happens when joining a battle where the preview has already been done
+                        mSpritesLoader.loadPreviewSprite(id.player, pokemon, imageView);
                 }
             });
 
@@ -765,7 +770,9 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
 
         @Override
         protected void onSideChanged(Player player, String side, boolean start) {
-
+            SideView sideView = mBattleLayout.getSideView(player);
+            if (start) sideView.sideStart(side);
+            else sideView.sideEnd(side);
         }
 
         @Override

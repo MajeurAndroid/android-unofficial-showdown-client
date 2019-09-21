@@ -54,6 +54,8 @@ public class BattleLayout extends ViewGroup {
     private SparseArray<ImageView> mP2ImageViews;
     private SparseArray<StatusView> mP2StatusViews;
     private SparseArray<ToasterView> mP2ToasterViews;
+    private SideView mP1SideView;
+    private SideView mP2SideView;
 
     public BattleLayout(Context context) {
         this(context, null);
@@ -69,11 +71,17 @@ public class BattleLayout extends ViewGroup {
         mP1ImageViews = new SparseArray<>();
         mP1StatusViews = new SparseArray<>();
         mP1ToasterViews = new SparseArray<>();
+        mP1SideView = new SideView(context);
         mP2ImageViews = new SparseArray<>();
         mP2StatusViews = new SparseArray<>();
         mP2ToasterViews = new SparseArray<>();
+        mP2SideView = new SideView(context);
 
         mStatusBarOffset = Utils.dpToPx(18);
+
+        addView(mP1SideView);
+        addView(mP2SideView);
+        mP2SideView.setGravity(Gravity.END);
     }
 
     public void setMode(int currentMode) {
@@ -105,6 +113,12 @@ public class BattleLayout extends ViewGroup {
             return null;
         SparseArray<ImageView> imageViews = id.player == Player.TRAINER ? mP1ImageViews : mP2ImageViews;
         return imageViews.get(id.position);
+    }
+
+    public SideView getSideView(Player player) {
+        SideView sideView = player == Player.TRAINER ? mP1SideView : mP2SideView;
+        sideView.bringToFront();
+        return sideView;
     }
 
     @Override
@@ -276,6 +290,9 @@ public class BattleLayout extends ViewGroup {
             layoutChild(mP2StatusViews.get(i), cX, point.y - mStatusBarOffset, Gravity.CENTER_HORIZONTAL, true);
             layoutChild(mP2ToasterViews.get(i), cX, cY, Gravity.CENTER, false);
         }
+
+        layoutChild(mP1SideView, 0, 4 * height / 5, Gravity.CENTER_VERTICAL, true);
+        layoutChild(mP2SideView, width, 3 * height / 5, Gravity.CENTER_VERTICAL, true);
     }
 
     private void fillNeededViews(SparseArray<ImageView> pXImageViews, int needed, int width, int height) {
