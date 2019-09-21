@@ -189,8 +189,6 @@ public class StatusView extends View {
         drawStatus(canvas, measureRect);
         updateMeasurePoint(measurePoint, measureRect);
 
-
-
         for (String vStatus : mVolatileStatus) {
             mTempRect2.set(measureRect);
             drawVolatileStatus(mMockCanvas, measureRect, y, vStatus);
@@ -296,7 +294,7 @@ public class StatusView extends View {
         int w = mTempRect.width() + 2 * mRectRadius;
         int h = mTempRect.height() + 2 * mRectRadius;
         canvas.drawRoundRect(x, cY - h / 2, x + w, cY + h / 2, mRectRadius, mRectRadius, mPaint);
-        measureRect.set(x, cY - h / 2, x + w + mShadowRadius, cY + h / 2);
+        measureRect.set(x, cY - h / 2, x + w + mShadowRadius, cY + h / 2 + mShadowRadius);
         mPaint.clearShadowLayer();
 
         mPaint.setColor(color);
