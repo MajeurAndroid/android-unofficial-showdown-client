@@ -239,7 +239,6 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                     View dialogView = getLayoutInflater().inflate(R.layout.dialog_battle_message, null);
                     final EditText editText = dialogView.findViewById(R.id.edit_text_team_name);
                     new MaterialAlertDialogBuilder(getContext())
-                            .setTitle("Send chat message")
                             .setPositiveButton("Send", new DialogInterface.OnClickListener() {
                                 @Override
                                 public void onClick(DialogInterface dialogInterface, int i) {
