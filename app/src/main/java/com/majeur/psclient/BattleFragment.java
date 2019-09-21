@@ -8,7 +8,6 @@ import android.graphics.PorterDuff;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -66,6 +65,7 @@ import static com.majeur.psclient.util.Utils.array;
 import static com.majeur.psclient.util.Utils.boldText;
 import static com.majeur.psclient.util.Utils.italicText;
 import static com.majeur.psclient.util.Utils.smallText;
+import static com.majeur.psclient.util.Utils.str;
 import static com.majeur.psclient.util.Utils.tagText;
 import static com.majeur.psclient.util.Utils.toStringSigned;
 
@@ -337,29 +337,22 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
     private void bindMoveTipPopup(Move move, TextView titleView, TextView descView, ImageView placeHolderTop,
                                   ImageView placeHolderBottom) {
         titleView.setText(move.name);
-
         descView.setText("PP: " + move.pp + "/" + move.ppMax);
         descView.append("\n");
-
-        if (move.extraInfo == null)
-            return;
-
+        if (move.extraInfo == null) return;
         if (move.extraInfo.priority != 0) {
             descView.append(boldText("Priority: " + toStringSigned(move.extraInfo.priority)));
             descView.append("\n");
         }
-
         if (move.extraInfo.basePower != 0) {
             descView.append("Base power: " + move.extraInfo.basePower);
             descView.append("\n");
         }
         descView.append("Accuracy: " + (move.extraInfo.accuracy == -1 ? "-" : move.extraInfo.accuracy));
-
         if (move.extraInfo.desc != null) {
             descView.append("\n");
             descView.append(italicText(move.extraInfo.desc));
         }
-
         placeHolderTop.setImageDrawable(null);
         placeHolderBottom.setImageDrawable(null);
         mSpritesLoader.loadTypeSprite(move.extraInfo.type, placeHolderTop);
@@ -373,17 +366,31 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         descView.setText(smallText("HP: "));
         String healthText = String.format("%.1f%% ", pokemon.condition.health * 100);
         descView.append(boldText(healthText, Colors.healthColor(pokemon.condition.health)));
-
         descView.append(smallText("(" + pokemon.condition.hp + "/" + pokemon.condition.maxHp + ")"));
-
         if (pokemon.condition.status != null)
             descView.append(smallText(tagText(pokemon.condition.status.toUpperCase(),
                     Colors.statusColor(pokemon.condition.status))));
 
         descView.append("\n");
+        descView.append(smallText("Atk:"));
+        descView.append(str(pokemon.stats.atk));
+        descView.append(smallText(" Def:"));
+        descView.append(str(pokemon.stats.def));
+        descView.append(smallText(" Spa:"));
+        descView.append(str(pokemon.stats.spa));
+        descView.append(smallText(" Spd:"));
+        descView.append(str(pokemon.stats.spd));
+        descView.append(smallText(" Spe:"));
+        descView.append(str(pokemon.stats.spe));
+        descView.append("\n");
+        descView.append(smallText("Ability: "));
+        descView.append(pokemon.ability);
+        descView.append("\n");
+        descView.append(smallText("Item: "));
+        descView.append(pokemon.item);
+        descView.append("\n");
 
-
-        descView.append("Moves:");
+        descView.append(smallText("Moves:"));
         for (String move : pokemon.moves) {
             descView.append("\n\t");
             descView.append(move);
@@ -467,6 +474,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
             //sendChatMessage("[Playing from the unofficial Android Showdown client]");
             mBattleLayout.getSideView(Player.TRAINER).clearAllSides();
             mBattleLayout.getSideView(Player.FOE).clearAllSides();
+            mOverlayImageView.setImageDrawable(null);
         }
 
         @Override
@@ -707,7 +715,6 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
 
         @Override
         protected void onWeatherChanged(String weather) {
-            Log.e(getClass().getSimpleName(), "weather: " + weather);
             final int resId = Weather.weatherResId(weather);
             if (Integer.valueOf(resId).equals(mOverlayImageView.getTag())) return;
             if (resId > 0) {
