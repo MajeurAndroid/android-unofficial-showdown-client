@@ -1,7 +1,6 @@
 package com.majeur.psclient.service;
 
 import android.text.TextUtils;
-import android.util.Log;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -22,7 +21,6 @@ public class ServerMessage {
 
     ServerMessage(String roomId, String data) {
         this.roomId = roomId;
-        Log.w(getClass().getSimpleName(), "rommId: " + roomId + ", data: " + data);
 
         if (data.equals("|")) { // "|" type
             command = "break";
