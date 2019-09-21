@@ -53,7 +53,6 @@ import com.majeur.psclient.widget.StatusView;
 import com.majeur.psclient.widget.ToasterView;
 
 import java.util.List;
-import java.util.Objects;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -69,12 +68,14 @@ import static com.majeur.psclient.util.Utils.str;
 import static com.majeur.psclient.util.Utils.tagText;
 import static com.majeur.psclient.util.Utils.toStringSigned;
 
+@SuppressLint({"DefaultLocale", "SetTextI18n"})
 public class BattleFragment extends Fragment implements MainActivity.Callbacks {
 
     private TextView mLogTextView;
     private ScrollView mLogScrollView;
     private BattleLayout mBattleLayout;
     private ImageView mOverlayImageView;
+    private ImageView mBackgroundImageView;
     private PlayerInfoView mTrainerInfoView;
     private PlayerInfoView mFoeInfoView;
     private BattleActionWidget mActionWidget;
@@ -137,6 +138,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         mLogScrollView = view.findViewById(R.id.scroll_view_log);
         mBattleLayout = view.findViewById(R.id.battle_layout);
         mOverlayImageView = view.findViewById(R.id.overlay_image_view);
+        mBackgroundImageView = view.findViewById(R.id.background_image_view);
         mTrainerInfoView = view.findViewById(R.id.player1_info_view);
         mFoeInfoView = view.findViewById(R.id.player2_info_view);
         mActionWidget = view.findViewById(R.id.battle_action_widget);
@@ -264,21 +266,24 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
     private void bindBattlingPokemonTipPopup(final BattlingPokemon pokemon, final TextView titleView,
                                              final TextView descView, final ImageView placeHolderTop,
                                              final ImageView placeHolderBottom) {
-        titleView.setText(pokemon.name + " " + Objects.toString(pokemon.gender, "") + " l." + pokemon.level);
+        titleView.setText(pokemon.name);
+        titleView.append(" ");
+        titleView.append(pokemon.gender);
+        titleView.append(" l.");
+        titleView.append(str(pokemon.level));
 
-        descView.setText(smallText("HP: "));
+        descView.setText("");
+        if (!pokemon.species.equals(pokemon.name)) descView.append(pokemon.species + "\n");
+        descView.append(smallText("HP: "));
         String healthText = String.format("%.1f%% ", pokemon.condition.health * 100);
         descView.append(boldText(healthText, Colors.healthColor(pokemon.condition.health)));
-
         if (!pokemon.foe)
             descView.append(smallText("(" + pokemon.condition.hp + "/" + pokemon.condition.maxHp + ")"));
-
         if (pokemon.condition.status != null)
             descView.append(smallText(tagText(pokemon.condition.status.toUpperCase(),
                     Colors.statusColor(pokemon.condition.status))));
 
         descView.append("\n");
-
         if (!pokemon.foe) {
             SidePokemon sidePokemon = mLastActionRequest.getSide().get(0);
             descView.append(smallText("Atk:"));
@@ -298,7 +303,6 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
             descView.append(smallText("Item: "));
             descView.append(sidePokemon.item);
         }
-
         placeHolderTop.setImageDrawable(null);
         placeHolderBottom.setImageDrawable(null);
         mDexPokemonLoader.load(array(toId(pokemon.species)), new DataLoader.Callback<DexPokemon>() {
@@ -312,9 +316,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                 mSpritesLoader.loadTypeSprite(dexPokemon.firstType, placeHolderTop);
                 if (dexPokemon.secondType != null)
                     mSpritesLoader.loadTypeSprite(dexPokemon.secondType, placeHolderBottom);
-
                 if (!pokemon.foe) return;
-
                 if (dexPokemon.abilities.size() > 1) {
                     descView.append(smallText("Possible abilities: "));
                     for (String ability : dexPokemon.abilities)
@@ -325,7 +327,6 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                     descView.append(dexPokemon.abilities.get(0));
                     descView.append("\n");
                 }
-
                 int[] speedRange = Stats.calculateSpeedRange(pokemon.level, dexPokemon.baseStats.spe, "Random Battle", 7);
                 descView.append(smallText("Speed: "));
                 descView.append(speedRange[0] + " to " + speedRange[1]);
@@ -475,6 +476,24 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
             mBattleLayout.getSideView(Player.TRAINER).clearAllSides();
             mBattleLayout.getSideView(Player.FOE).clearAllSides();
             mOverlayImageView.setImageDrawable(null);
+
+            mBackgroundImageView.animate()
+                    .setDuration(100)
+                    .alpha(0)
+                    .withEndAction(new Runnable() {
+                        @Override
+                        public void run() {
+                            int resId = Math.random() > 0.5 ? R.drawable.battle_bg_1
+                                    : R.drawable.battle_bg_2;
+                            mBackgroundImageView.setImageResource(resId);
+                            mBackgroundImageView.animate()
+                                    .setDuration(100)
+                                    .alpha(1)
+                                    .withEndAction(null)
+                                    .start();
+                        }
+                    })
+                    .start();
         }
 
         @Override
