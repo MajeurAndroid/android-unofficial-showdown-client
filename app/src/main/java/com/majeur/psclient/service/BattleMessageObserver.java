@@ -38,6 +38,8 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
     private boolean mBattleRunning = false;
     private int[] mPreviewPokemonIndexes;
     private BattleActionRequest mLastActionRequest;
+    private String mCurrentWeather;
+    private String mCurrentPseudoWeather;
 
     public void gotContext(Context context) {
         mBattleTextBuilder = new BattleTextBuilder(context);
@@ -61,6 +63,8 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         mActionQueue.clear();
         mBattleRunning = true;
         mPreviewPokemonIndexes = new int[2];
+        mCurrentWeather = null;
+        mCurrentPseudoWeather = null;
     }
 
     @Override
@@ -682,23 +686,29 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
 
     private void handleWeather(ServerMessage msg) {
         final String weather = msg.nextArg();
-        final String action = msg.hasNextArg() ? msg.nextArg() : null;
 
-        final CharSequence text = mBattleTextBuilder.weather(weather, msg.kwarg("from"), msg.kwarg("of"),
-                msg.kwarg("upkeep"));
+        final CharSequence text = mBattleTextBuilder.weather(weather, mCurrentWeather,
+                msg.kwarg("from"), msg.kwarg("of"), msg.kwarg("upkeep"));
+
+        mCurrentWeather = "none".equals(weather) ? null : weather;
 
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
                 printMinorActionText(text);
-                if (action == null || !action.contains("upkeep"))
-                    onWeatherChanged(weather);
+                onWeatherChanged(weather);
+                if (mCurrentWeather == null && mCurrentPseudoWeather != null)
+                    onWeatherChanged(mCurrentPseudoWeather);
             }
         });
     }
 
     private void handleField(ServerMessage msg, boolean start) {
         String effect = msg.nextArg();
+        final String pseudoWeather;
+        if (effect != null && effect.contains(":"))
+            pseudoWeather = effect.substring(effect.indexOf(':') + 1);
+        else pseudoWeather = effect;
 
         final CharSequence text;
         if (start)
@@ -707,9 +717,13 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         else
             text = mBattleTextBuilder.fieldend(effect);
 
+        mCurrentPseudoWeather = pseudoWeather;
+
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
+                if (mCurrentWeather == null)
+                    onWeatherChanged(pseudoWeather);
                 printMinorActionText(text);
             }
         });

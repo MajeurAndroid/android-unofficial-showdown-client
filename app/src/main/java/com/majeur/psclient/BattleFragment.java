@@ -9,6 +9,7 @@ import android.graphics.PorterDuff;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -37,6 +38,7 @@ import com.majeur.psclient.model.PokemonId;
 import com.majeur.psclient.model.SidePokemon;
 import com.majeur.psclient.model.StatModifiers;
 import com.majeur.psclient.model.Stats;
+import com.majeur.psclient.model.Weather;
 import com.majeur.psclient.service.BattleMessageObserver;
 import com.majeur.psclient.service.ShowdownService;
 import com.majeur.psclient.util.AudioBattleManager;
@@ -73,6 +75,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
     private TextView mLogTextView;
     private ScrollView mLogScrollView;
     private BattleLayout mBattleLayout;
+    private ImageView mOverlayImageView;
     private PlayerInfoView mTrainerInfoView;
     private PlayerInfoView mFoeInfoView;
     private BattleActionWidget mActionWidget;
@@ -136,6 +139,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         mLogTextView = view.findViewById(R.id.text_view_log);
         mLogScrollView = view.findViewById(R.id.scroll_view_log);
         mBattleLayout = view.findViewById(R.id.battle_layout);
+        mOverlayImageView = view.findViewById(R.id.overlay_image_view);
         mTrainerInfoView = view.findViewById(R.id.player1_info_view);
         mFoeInfoView = view.findViewById(R.id.player2_info_view);
         mActionWidget = view.findViewById(R.id.battle_action_widget);
@@ -143,22 +147,6 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         mExtraActionsContainer = view.findViewById(R.id.extra_action_container);
         mExtraUndoContainer = view.findViewById(R.id.extra_undo_container);
         mExtraActionsContainer.animate().setInterpolator(new OvershootInterpolator(1.4f)).setDuration(500);
-
-        final ImageView imageView = view.findViewById(R.id.overlay_image_view);
-        imageView.setAlpha(0.65f);
-
-        mTrainerInfoView.setOnClickListener(new View.OnClickListener() {
-
-            boolean b = false;
-            @Override
-            public void onClick(View view) {
-//                if (!b)
-//                    Glide.with(view).load(R.raw.weather_hail).transition(withCrossFade()).into(imageView);
-//                else
-//                    Glide.with(view).load(R.raw.weather_sunny).transition(withCrossFade()).into(imageView);
-//                b = !b;
-            }
-        });
 
         mActionWidget.setOnRevealListener(new BattleActionWidget.OnRevealListener() {
             @Override
@@ -765,7 +753,30 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
 
         @Override
         protected void onWeatherChanged(String weather) {
-
+            Log.e(getClass().getSimpleName(), "weather: " + weather);
+            final int resId = Weather.weatherResId(weather);
+            if (Integer.valueOf(resId).equals(mOverlayImageView.getTag())) return;
+            if (resId > 0) {
+                mOverlayImageView.setAlpha(0f);
+                mOverlayImageView.setImageResource(resId);
+                mOverlayImageView.setTag(resId);
+                mOverlayImageView.animate()
+                        .alpha(0.75f)
+                        .setDuration(250)
+                        .withEndAction(null)
+                        .start();
+            } else {
+                mOverlayImageView.animate()
+                        .alpha(0f)
+                        .setDuration(250)
+                        .withEndAction(new Runnable() {
+                            @Override
+                            public void run() {
+                                mOverlayImageView.setImageDrawable(null);
+                            }
+                        })
+                        .start();
+            }
         }
 
         @Override

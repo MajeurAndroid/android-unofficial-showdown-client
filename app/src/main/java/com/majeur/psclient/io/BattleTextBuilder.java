@@ -608,10 +608,10 @@ public final class BattleTextBuilder {
         return line(template, PH_TEAM, team(player));
     }
 
-    public CharSequence weather(String weather, String from, String of, String upkeep) {
+    public CharSequence weather(String weather, String previousWeather, String from, String of, String upkeep) {
         if (weather == null || weather.equals("none")) {
             String template = resolve(from, "end", false);
-            if (template == null) return line(resolve("endFieldEffect"), PH_EFFECT, effect(weather));
+            if (template == null) return line(resolve("endFieldEffect"), PH_EFFECT, effect(previousWeather));
             return line(template);
         }
         if (upkeep != null) {
@@ -963,7 +963,6 @@ public final class BattleTextBuilder {
     }
 
     public CharSequence hitcount(String num) {
-			//const [, , num] = args;
         if ("1".equals(num))
             return line(resolve("hitCountSingular"));
         return line (resolve("hitCount"), PH_NUMBER, num);
