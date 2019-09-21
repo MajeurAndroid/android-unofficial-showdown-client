@@ -51,7 +51,7 @@ public class SideView extends View {
         mMockCanvas = new Canvas();
         mMeasurePoint = new Point();
 
-        mShadowRadius = Utils.dpToPx(4);
+        mShadowRadius = Utils.dpToPx(2);
         mVerticalMargin = Utils.dpToPx(4);
         mRectRadius = Utils.dpToPx(2);
         mTextSize = Utils.dpToPx(9);
