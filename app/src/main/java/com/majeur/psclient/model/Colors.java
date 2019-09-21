@@ -4,8 +4,12 @@ import android.graphics.Color;
 
 public class Colors {
 
-    public static final int BLACK = Color.BLACK;
-    public static final int WHITE = Color.WHITE;
+    public static final int BLACK   = Color.BLACK;
+    public static final int WHITE   = Color.WHITE;
+    public static final int GREEN   = 0xFF00B403;
+    public static final int RED     = 0xFFD90000;
+    public static final int BLUE    = Color.BLUE;
+    public static final int GRAY    = 0xFF636363;
 
     public static final int STAT_BOOST      = Color.BLUE;
     public static final int STAT_UNBOOST    = Color.RED;

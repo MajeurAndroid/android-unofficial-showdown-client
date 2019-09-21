@@ -1,7 +1,6 @@
 package com.majeur.psclient.service;
 
 import android.content.Context;
-import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Looper;
 import android.text.Spannable;
@@ -16,10 +15,12 @@ import com.majeur.psclient.io.BattleTextBuilder;
 import com.majeur.psclient.model.BasePokemon;
 import com.majeur.psclient.model.BattleActionRequest;
 import com.majeur.psclient.model.BattlingPokemon;
+import com.majeur.psclient.model.Colors;
 import com.majeur.psclient.model.Condition;
 import com.majeur.psclient.model.Const;
 import com.majeur.psclient.model.Player;
 import com.majeur.psclient.model.PokemonId;
+import com.majeur.psclient.model.StatModifiers;
 import com.majeur.psclient.util.Utils;
 
 import org.json.JSONException;
@@ -40,6 +41,8 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
     private BattleActionRequest mLastActionRequest;
     private String mCurrentWeather;
     private String mCurrentPseudoWeather;
+    private BattlingPokemon[] mTrainerPokemons;
+    private BattlingPokemon[] mFoePokemons;
 
     public void gotContext(Context context) {
         mBattleTextBuilder = new BattleTextBuilder(context);
@@ -93,6 +96,13 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
     public void reAskForRequest() {
         if (mLastActionRequest != null)
             onRequestAsked(mLastActionRequest);
+    }
+
+    public BattlingPokemon getBattlingPokemon(PokemonId id) {
+        if (id.foe)
+           return mFoePokemons[id.position];
+        else
+            return mTrainerPokemons[id.position];
     }
 
     @Override
@@ -257,16 +267,22 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         switch (msg.nextArg().charAt(0)) {
             case 's':
                 mGameType = Const.SINGLE;
+                mTrainerPokemons = new BattlingPokemon[1];
+                mFoePokemons = new BattlingPokemon[1];
                 break;
             case 'd':
                 mGameType = Const.DOUBLE;
                 printErrorMessage("Double battles aren't fully implemented yet. " +
                         "App crash is a matter of seconds from now!");
+                mTrainerPokemons = new BattlingPokemon[2];
+                mFoePokemons = new BattlingPokemon[2];
                 break;
             case 't':
                 mGameType = Const.TRIPLE;
                 printErrorMessage("Triple battles aren't fully implemented yet. " +
                         "App crash is a matter of seconds from now!");
+                mTrainerPokemons = new BattlingPokemon[3];
+                mFoePokemons = new BattlingPokemon[3];
                 break;
         }
     }
@@ -280,6 +296,11 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         String username = player.username(mP1Username, mP2Username, myUsername());
         //final Spanned text1 = mBattleTextBuilder.switcOut(player, username, "PREV PKMN");
         final CharSequence text2 = mBattleTextBuilder.switchIn(pokemon, username);
+
+        if (pokemon.position >= 0) {
+            if (pokemon.foe) mFoePokemons[pokemon.position] = pokemon;
+            else mTrainerPokemons[pokemon.position] = pokemon;
+        }
 
         mActionQueue.enqueueMajorAction(new Runnable() {
             @Override
@@ -321,6 +342,18 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
 
         final CharSequence text = mBattleTextBuilder.pokemonChange(msg.command, pokemon.id, arg2, arg3,
                 msg.kwarg("of"), msg.kwarg("from"));
+
+        if (!pokemon.foe) {
+            mTrainerPokemons[pokemon.position].species = pokemon.species;
+            mTrainerPokemons[pokemon.position].baseSpecies = pokemon.baseSpecies;
+            mTrainerPokemons[pokemon.position].forme = pokemon.forme;
+            mTrainerPokemons[pokemon.position].spriteId = pokemon.spriteId;
+        } else {
+            mFoePokemons[pokemon.position].species = pokemon.species;
+            mFoePokemons[pokemon.position].baseSpecies = pokemon.baseSpecies;
+            mFoePokemons[pokemon.position].forme = pokemon.forme;
+            mFoePokemons[pokemon.position].spriteId = pokemon.spriteId;
+        }
 
         mActionQueue.enqueueAction(new Runnable() {
             @Override
@@ -570,7 +603,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
-                onDisplayBattleToast(pokemonId, "Failed", Color.GRAY);
+                onDisplayBattleToast(pokemonId, "Failed", Colors.GRAY);
                 printMinorActionText(text);
             }
         });
@@ -588,30 +621,42 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
-                onDisplayBattleToast(targetPokeId != null ? targetPokeId : pokemonId, "Missed", Color.GRAY);
+                onDisplayBattleToast(targetPokeId != null ? targetPokeId : pokemonId, "Missed", Colors.GRAY);
                 printMinorActionText(text);
             }
         });
     }
 
-    private void handleHealthChange(ServerMessage msg, boolean damage) {
+    private void handleHealthChange(ServerMessage msg, final boolean damage) {
         String rawId = msg.nextArg();
         final PokemonId id = PokemonId.fromRawId(getPlayer(rawId), rawId);
         String rawCondition = msg.nextArg();
         final Condition condition = new Condition(rawCondition);
 
+        final String percentage;
+        Condition prevCondition = getBattlingPokemon(id).condition;
+        if (prevCondition != null)
+            percentage = Math.round(100f * Math.abs(condition.hp - prevCondition.hp) / condition.maxHp) + "%";
+        else
+            percentage = condition.hp + "/" + condition.maxHp;
+
         final CharSequence text;
-        if (damage)// TODO PERCENTAGE
-            text = mBattleTextBuilder.damage(id, "%", msg.kwarg("from"), msg.kwarg("of"),
+        if (damage)
+            text = mBattleTextBuilder.damage(id, percentage, msg.kwarg("from"), msg.kwarg("of"),
                     msg.kwarg("partiallytrapped"));
         else
             text = mBattleTextBuilder.heal(id, msg.kwarg("from"), msg.kwarg("of"), msg.kwarg("wisher"));
+
+        getBattlingPokemon(id).condition = condition;
 
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
                 onHealthChanged(id, condition);
                 printMinorActionText(text);
+                onDisplayBattleToast(id,
+                        (damage ? "-" : "+") + percentage,
+                        damage ? Colors.RED : Colors.GREEN);
             }
         });
     }
@@ -626,6 +671,8 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
             text = mBattleTextBuilder.status(id, status, msg.kwarg("from"), msg.kwarg("of"));
         else
             text = mBattleTextBuilder.curestatus(id, status, msg.kwarg("from"), msg.kwarg("of"), msg.kwarg("thaw"));
+
+        getBattlingPokemon(id).condition.status = status;
 
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
@@ -658,6 +705,9 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         final CharSequence text = mBattleTextBuilder.boost(msg.command, id, stat, amount,
                 msg.kwarg("from"), msg.kwarg("of"), msg.kwarg("multiple"), msg.kwarg("zeffect"));
 
+        StatModifiers statModifiers = getBattlingPokemon(id).statModifiers;
+        statModifiers.inc(stat, amountValue);
+
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
@@ -674,6 +724,9 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         final int amount = parseWithDefault(msg.nextArg(), 0);
 
         final CharSequence text = mBattleTextBuilder.setboost(id, msg.kwarg("from"), msg.kwarg("of"));
+
+        StatModifiers statModifiers = getBattlingPokemon(id).statModifiers;
+        statModifiers.set(stat, amount);
 
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
@@ -788,7 +841,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
             @Override
             public void run() {
                 printMinorActionText(text);//texts[0]);
-                onDisplayBattleToast(pokemonId, toastText, Color.RED);
+                onDisplayBattleToast(pokemonId, toastText, Colors.RED);
             }
         });
     }
@@ -804,7 +857,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
             @Override
             public void run() {
                 printMinorActionText(text);//texts[0]);
-                onDisplayBattleToast(pokemonId, "Immune", Color.GRAY);
+                onDisplayBattleToast(pokemonId, "Immune", Colors.GRAY);
             }
         });
     }
@@ -848,7 +901,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
             public void run() {
                 printMinorActionText(text);
                 if (start)
-                    onDisplayBattleToast(pokemonId, ability, Color.GREEN);
+                    onDisplayBattleToast(pokemonId, ability, Colors.BLUE);
             }
         });
     }
@@ -1003,6 +1056,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
     }
 
     private void handleSetHp(ServerMessage msg) {
+        //TODO
         final CharSequence text = mBattleTextBuilder.sethp(msg.kwarg("from"));
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override

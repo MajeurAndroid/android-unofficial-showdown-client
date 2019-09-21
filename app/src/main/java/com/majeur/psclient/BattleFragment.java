@@ -4,7 +4,6 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -93,8 +92,6 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
     private DexIconLoader mDexIconLoader;
     private AudioBattleManager mAudioManager;
 
-    private BattlingPokemon[] mPlayerPokemons;
-    private BattlingPokemon[] mFoePokemons;
     private BattleActionRequest mLastActionRequest;
     private boolean mTimerEnabled;
     private boolean mWasPlayingBattleMusicWhenPaused;
@@ -458,13 +455,9 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
             switch (getGameType()) {
                 case SINGLE:
                     mBattleLayout.setMode(BattleLayout.MODE_BATTLE_SINGLE);
-                    mPlayerPokemons = new BattlingPokemon[1];
-                    mFoePokemons = new BattlingPokemon[1];
                     break;
                 case DOUBLE:
                     mBattleLayout.setMode(BattleLayout.MODE_BATTLE_DOUBLE);
-                    mPlayerPokemons = new BattlingPokemon[2];
-                    mFoePokemons = new BattlingPokemon[2];
                     break;
                 case TRIPLE:
                     mBattleLayout.setMode(BattleLayout.MODE_BATTLE_TRIPLE);
@@ -607,11 +600,6 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
             mBattleTipPopup.addTippedView(imageView);
             mSpritesLoader.loadSprite(pokemon, imageView, mBattleLayout.getWidth());
 
-            if (!pokemon.foe)
-                mPlayerPokemons[pokemon.position] = pokemon;
-            else
-                mFoePokemons[pokemon.position] = pokemon;
-
             mDexIconLoader.load(array(toId(pokemon.species)), new DataLoader.Callback<Bitmap>() {
                 @Override
                 public void onLoaded(Bitmap[] results) {
@@ -629,18 +617,6 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
             ImageView imageView = mBattleLayout.getPokemonView(pokemon.id);
             mSpritesLoader.loadSprite(pokemon, imageView, mBattleLayout.getWidth());
 
-            if (!pokemon.foe) {
-                mPlayerPokemons[pokemon.position].species = pokemon.species;
-                mPlayerPokemons[pokemon.position].baseSpecies = pokemon.baseSpecies;
-                mPlayerPokemons[pokemon.position].forme = pokemon.forme;
-                mPlayerPokemons[pokemon.position].spriteId = pokemon.spriteId;
-            } else {
-                mFoePokemons[pokemon.position].species = pokemon.species;
-                mFoePokemons[pokemon.position].baseSpecies = pokemon.baseSpecies;
-                mFoePokemons[pokemon.position].forme = pokemon.forme;
-                mFoePokemons[pokemon.position].spriteId = pokemon.spriteId;
-            }
-
             mDexIconLoader.load(array(toId(pokemon.species)), new DataLoader.Callback<Bitmap>() {
                 @Override
                 public void onLoaded(Bitmap[] results) {
@@ -655,39 +631,17 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         protected void onHealthChanged(PokemonId id, Condition condition) {
             StatusView statusView = mBattleLayout.getStatusView(id);
             statusView.setHealth(condition.health);
-
-            ToasterView toasterView = mBattleLayout.getToasterView(id);
-            toasterView.makeToast(condition.hp + "/" + condition.maxHp, Color.RED);
-
-            if (!id.foe)
-                mPlayerPokemons[id.position].condition = condition;
-            else
-                mFoePokemons[id.position].condition = condition;
         }
 
         @Override
         protected void onStatusChanged(PokemonId id, String status) {
             StatusView statusView = mBattleLayout.getStatusView(id);
             statusView.setStatus(status);
-
-            if (!id.foe)
-                mPlayerPokemons[id.position].condition.status = status;
-            else
-                mFoePokemons[id.position].condition.status = status;
         }
 
         @Override
         protected void onStatChanged(PokemonId id, String stat, int amount, boolean set) {
-            StatModifiers statModifiers;
-            if (id.foe)
-                statModifiers = mFoePokemons[id.position].statModifiers;
-            else
-                statModifiers = mPlayerPokemons[id.position].statModifiers;
-
-            if (set)
-                statModifiers.set(stat, amount);
-            else
-                statModifiers.inc(stat, amount);
+            StatModifiers statModifiers = getBattlingPokemon(id).statModifiers;
             StatusView statusView = mBattleLayout.getStatusView(id);
             statusView.updateModifier(statModifiers);
         }
