@@ -297,14 +297,13 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         //final Spanned text1 = mBattleTextBuilder.switcOut(player, username, "PREV PKMN");
         final CharSequence text2 = mBattleTextBuilder.switchIn(pokemon, username);
 
-        if (pokemon.position >= 0) {
-            if (pokemon.foe) mFoePokemons[pokemon.position] = pokemon;
-            else mTrainerPokemons[pokemon.position] = pokemon;
-        }
-
         mActionQueue.enqueueMajorAction(new Runnable() {
             @Override
             public void run() {
+                if (pokemon.position >= 0) {
+                    if (pokemon.foe) mFoePokemons[pokemon.position] = pokemon;
+                    else mTrainerPokemons[pokemon.position] = pokemon;
+                }
                 onSwitch(pokemon);
                 //printMajorActionText(text1);
                 printMajorActionText(text2);
@@ -343,21 +342,20 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         final CharSequence text = mBattleTextBuilder.pokemonChange(msg.command, pokemon.id, arg2, arg3,
                 msg.kwarg("of"), msg.kwarg("from"));
 
-        if (!pokemon.foe) {
-            mTrainerPokemons[pokemon.position].species = pokemon.species;
-            mTrainerPokemons[pokemon.position].baseSpecies = pokemon.baseSpecies;
-            mTrainerPokemons[pokemon.position].forme = pokemon.forme;
-            mTrainerPokemons[pokemon.position].spriteId = pokemon.spriteId;
-        } else {
-            mFoePokemons[pokemon.position].species = pokemon.species;
-            mFoePokemons[pokemon.position].baseSpecies = pokemon.baseSpecies;
-            mFoePokemons[pokemon.position].forme = pokemon.forme;
-            mFoePokemons[pokemon.position].spriteId = pokemon.spriteId;
-        }
-
         mActionQueue.enqueueAction(new Runnable() {
             @Override
             public void run() {
+                if (!pokemon.foe) {
+                    mTrainerPokemons[pokemon.position].species = pokemon.species;
+                    mTrainerPokemons[pokemon.position].baseSpecies = pokemon.baseSpecies;
+                    mTrainerPokemons[pokemon.position].forme = pokemon.forme;
+                    mTrainerPokemons[pokemon.position].spriteId = pokemon.spriteId;
+                } else {
+                    mFoePokemons[pokemon.position].species = pokemon.species;
+                    mFoePokemons[pokemon.position].baseSpecies = pokemon.baseSpecies;
+                    mFoePokemons[pokemon.position].forme = pokemon.forme;
+                    mFoePokemons[pokemon.position].spriteId = pokemon.spriteId;
+                }
                 onDetailsChanged(pokemon);
                 printMajorActionText(text);
             }
@@ -647,11 +645,10 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         else
             text = mBattleTextBuilder.heal(id, msg.kwarg("from"), msg.kwarg("of"), msg.kwarg("wisher"));
 
-        getBattlingPokemon(id).condition = condition;
-
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
+                getBattlingPokemon(id).condition = condition;
                 onHealthChanged(id, condition);
                 printMinorActionText(text);
                 onDisplayBattleToast(id,
@@ -672,11 +669,10 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         else
             text = mBattleTextBuilder.curestatus(id, status, msg.kwarg("from"), msg.kwarg("of"), msg.kwarg("thaw"));
 
-        getBattlingPokemon(id).condition.status = status;
-
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
+                getBattlingPokemon(id).condition.status = status;
                 onStatusChanged(id, cure ? null : status);
                 printMinorActionText(text);
             }
@@ -705,12 +701,11 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         final CharSequence text = mBattleTextBuilder.boost(msg.command, id, stat, amount,
                 msg.kwarg("from"), msg.kwarg("of"), msg.kwarg("multiple"), msg.kwarg("zeffect"));
 
-        StatModifiers statModifiers = getBattlingPokemon(id).statModifiers;
-        statModifiers.inc(stat, amountValue);
-
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
+                StatModifiers statModifiers = getBattlingPokemon(id).statModifiers;
+                statModifiers.inc(stat, amountValue);
                 onStatChanged(id, stat, amountValue, false);
                 printMinorActionText(text);
             }
@@ -725,12 +720,11 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
 
         final CharSequence text = mBattleTextBuilder.setboost(id, msg.kwarg("from"), msg.kwarg("of"));
 
-        StatModifiers statModifiers = getBattlingPokemon(id).statModifiers;
-        statModifiers.set(stat, amount);
-
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
+                StatModifiers statModifiers = getBattlingPokemon(id).statModifiers;
+                statModifiers.set(stat, amount);
                 onStatChanged(id, stat, amount, true);
                 printMinorActionText(text);
             }
@@ -743,11 +737,10 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         final CharSequence text = mBattleTextBuilder.weather(weather, mCurrentWeather,
                 msg.kwarg("from"), msg.kwarg("of"), msg.kwarg("upkeep"));
 
-        mCurrentWeather = "none".equals(weather) ? null : weather;
-
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
+                mCurrentWeather = "none".equals(weather) ? null : weather;
                 printMinorActionText(text);
                 onWeatherChanged(weather);
                 if (mCurrentWeather == null && mCurrentPseudoWeather != null)
@@ -770,11 +763,10 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         else
             text = mBattleTextBuilder.fieldend(effect);
 
-        mCurrentPseudoWeather = pseudoWeather;
-
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
+                mCurrentPseudoWeather = pseudoWeather;
                 if (mCurrentWeather == null)
                     onWeatherChanged(pseudoWeather);
                 printMinorActionText(text);
