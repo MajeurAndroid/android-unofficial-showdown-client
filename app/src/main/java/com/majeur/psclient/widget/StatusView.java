@@ -193,7 +193,7 @@ public class StatusView extends View {
             mTempRect2.set(measureRect);
             drawVolatileStatus(mMockCanvas, measureRect, y, vStatus);
             if (measureRect.right > mLabelsWidthLimit) {
-                y = measureRect.bottom + measureRect.height() / 2;
+                y = measureRect.bottom + measureRect.height() / 2 - mShadowRadius - mExtraMargin;
                 measureRect.set(mHorizontalMargin, y, mHorizontalMargin, y);
             } else {
                 measureRect.set(mTempRect2);
@@ -209,7 +209,7 @@ public class StatusView extends View {
             mTempRect2.set(measureRect);
             drawStatModifier(mMockCanvas, measureRect, y, entry);
             if (measureRect.right > mLabelsWidthLimit) {
-                y = measureRect.bottom + measureRect.height() / 2;
+                y = measureRect.bottom + measureRect.height() / 2 - mShadowRadius - mExtraMargin;
                 measureRect.set(mHorizontalMargin, y, mHorizontalMargin, y);
             } else {
                 measureRect.set(mTempRect2);
