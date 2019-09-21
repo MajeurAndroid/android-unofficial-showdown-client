@@ -268,7 +268,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                                              final ImageView placeHolderBottom) {
         titleView.setText(pokemon.name);
         titleView.append(" ");
-        titleView.append(pokemon.gender);
+        titleView.append(smallText(pokemon.gender));
         titleView.append(" l.");
         titleView.append(str(pokemon.level));
 
