@@ -116,7 +116,7 @@ public class SideView extends View {
 
     private void drawContent(Canvas canvas, Point measurePoint) {
         boolean gravityEnd = (mGravity & Gravity.END) == Gravity.END;
-        int yOffset = 0;
+        int yOffset = mShadowRadius;
         for (Map.Entry<String, Integer> entry : mCurrentSides.entrySet()) {
             mPaint.setTextSize(mTextSize);
             int count = entry.getValue();
