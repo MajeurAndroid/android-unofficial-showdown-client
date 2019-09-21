@@ -6,13 +6,14 @@ public class Colors {
 
     public static final int BLACK   = Color.BLACK;
     public static final int WHITE   = Color.WHITE;
-    public static final int GREEN   = 0xFF00B403;
+    public static final int GREEN   = 0xFF12D600;
     public static final int RED     = 0xFFD90000;
     public static final int BLUE    = Color.BLUE;
+    public static final int YELLOW  = Color.YELLOW;
     public static final int GRAY    = 0xFF636363;
 
-    public static final int STAT_BOOST      = Color.BLUE;
-    public static final int STAT_UNBOOST    = Color.RED;
+    public static final int STAT_BOOST      = BLUE;
+    public static final int STAT_UNBOOST    = RED;
     public static final int VOLATILE_STATUS = 0xFF6F35FC;
 
     public static final int TYPE_NORMAL     = 0xFFA8A77A;
@@ -125,10 +126,10 @@ public class Colors {
 
     public static int healthColor(float health) {
         if (health > 0.5f)
-            return Color.GREEN;
+            return GREEN;
         else if (health > 0.2f)
-            return Color.YELLOW;
+            return YELLOW;
         else
-            return Color.RED;
+            return RED;
     }
 }
