@@ -20,7 +20,7 @@
         android:paddingBottom="6dp"
         android:paddingStart="4dp"
         android:paddingEnd="4dp"
-        android:background="?selectableItemBackground"
+        android:background="@android:color/transparent"
         android:src="@drawable/ic_create_message"
         android:tint="@color/primary"/>
 
