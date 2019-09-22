@@ -111,7 +111,7 @@ public class AudioBattleManager implements AudioManager.OnAudioFocusChangeListen
         }
     }
 
-    public void playPokemonCry(BasePokemon pokemon) {
+    public void playPokemonCry(BasePokemon pokemon, final boolean faint) {
         // We do not ask for audio focus here cause it should have been requested by the music part
         // TODO Check for delayed focus
         // Also as long as cries are really short, we do not take care of pausing it if user leaves
@@ -122,6 +122,10 @@ public class AudioBattleManager implements AudioManager.OnAudioFocusChangeListen
         mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
             @Override
             public void onPrepared(MediaPlayer mediaPlayer) {
+                if (faint && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    float speed = 0.65f;
+                    mediaPlayer.setPlaybackParams(mediaPlayer.getPlaybackParams().setSpeed(speed));
+                }
                 mediaPlayer.start();
             }
         });
@@ -136,6 +140,25 @@ public class AudioBattleManager implements AudioManager.OnAudioFocusChangeListen
 
     private String cryUrl(String species) {
         return "https://play.pokemonshowdown.com/audio/cries/" + species + ".mp3";
+    }
+
+    public void playMoveHitSound() {
+        // For audio focus, same goes here
+        MediaPlayer mediaPlayer = newMediaPlayer(R.raw.hit_normal);
+        if (mediaPlayer == null) return;
+        mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+            @Override
+            public void onPrepared(MediaPlayer mediaPlayer) {
+                mediaPlayer.start();
+            }
+        });
+        mediaPlayer.prepareAsync();
+        mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            @Override
+            public void onCompletion(MediaPlayer mediaPlayer) {
+                mediaPlayer.release();
+            }
+        });
     }
 
     public void playBattleMusic() {

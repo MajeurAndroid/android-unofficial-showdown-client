@@ -196,7 +196,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
             case "cant":
                 handleCant(message);
                 break;
-        }
+        } // TODO: replace: [p2a: Zoroark, Zoroark, L78, M]
     }
 
     // |move|p2a: Pinsir|Close Combat|p1a: Latias|[miss]
@@ -205,24 +205,20 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         String rawId = msg.nextArg();
         final PokemonId sourcePoke = PokemonId.fromRawId(getPlayer(rawId), rawId);
         final String moveName = msg.nextArg();
-        //rawId = msg.nextArg();
-        //final PokemonId targetPoke = rawId.length() > 0 ? PokemonId.fromRawId(getPlayer(rawId), rawId) : null;
+        rawId = msg.hasNextArg() ? msg.nextArg() : null;
+        final PokemonId targetPoke = rawId != null && rawId.length() > 0
+                ? PokemonId.fromRawId(getPlayer(rawId), rawId) : null;
 
-        final boolean shouldAnim;
-        if (msg.hasNextArg()) {
-            String next = msg.nextArg();
-            shouldAnim = !(next.contains("still") || next.contains("notarget"));
-        } else {
-            shouldAnim = true;
-        }
+        final boolean shouldAnim = !(msg.hasKwarg("still") || msg.hasKwarg("notarget")
+                || msg.hasKwarg("miss"));
 
         final CharSequence text = mBattleTextBuilder.move(sourcePoke, moveName, msg.kwarg("from"),
                 msg.kwarg("of"), msg.kwarg("zMove"));
 
-        mActionQueue.enqueueMajorAction(new Runnable() {
+        mActionQueue.enqueueMinorAction(new Runnable() { // Major action's duration would be too long here
             @Override
             public void run() {
-                //onMove(sourcePoke, targetPoke, moveName, shouldAnim);
+                onMove(sourcePoke, targetPoke, moveName, shouldAnim);
                 printMajorActionText(text);
             }
         });

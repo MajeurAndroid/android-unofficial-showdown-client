@@ -1,15 +1,20 @@
 package com.majeur.psclient.widget;
 
 import android.content.Context;
+import android.graphics.Canvas;
 import android.graphics.Point;
 import android.graphics.PointF;
+import android.graphics.Rect;
+import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.util.SparseArray;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
+import com.majeur.psclient.R;
 import com.majeur.psclient.model.Player;
 import com.majeur.psclient.model.PokemonId;
 import com.majeur.psclient.util.Utils;
@@ -57,6 +62,10 @@ public class BattleLayout extends ViewGroup {
     private SideView mP1SideView;
     private SideView mP2SideView;
 
+    private Drawable mFxDrawable;
+    private Rect mFxDrawingRect;
+    private boolean mDrawFx;
+
     public BattleLayout(Context context) {
         this(context, null);
     }
@@ -82,6 +91,8 @@ public class BattleLayout extends ViewGroup {
         addView(mP1SideView);
         addView(mP2SideView);
         mP2SideView.setGravity(Gravity.END);
+
+        mFxDrawable = getResources().getDrawable(R.drawable.ic_hit);
     }
 
     public void setMode(int currentMode) {
@@ -119,6 +130,30 @@ public class BattleLayout extends ViewGroup {
         SideView sideView = player == Player.TRAINER ? mP1SideView : mP2SideView;
         sideView.bringToFront();
         return sideView;
+    }
+
+    public void displayHitIndicator(PokemonId id) {
+        View view = getPokemonView(id);
+        if (view == null) return;
+        int cX = (view.getRight() + view.getLeft()) / 2;
+        int cY = (view.getBottom() + view.getTop()) / 2;
+        int w , h;
+        w = h = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 32,
+                getResources().getDisplayMetrics());
+        mFxDrawingRect = new Rect(cX - w/2, cY - h/2, cX + w/2, cY + h/2);
+        float rw = (float) Math.random();
+        float rh = (float) Math.random();
+        if (id.foe) mFxDrawingRect.offset(-Math.round(rw*w/4), Math.round(rh*h/4));
+        else mFxDrawingRect.offset(Math.round(rw*w/4), -Math.round(rh*h/4));
+        postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                mDrawFx = false;
+                invalidate();
+            }
+        }, 175);
+        mDrawFx = true;
+        invalidate();
     }
 
     @Override
@@ -350,6 +385,15 @@ public class BattleLayout extends ViewGroup {
                 pXToasterViews.remove(i);
                 removeViewInLayout(child);
             }
+        }
+    }
+
+    @Override
+    protected void dispatchDraw(Canvas canvas) {
+        super.dispatchDraw(canvas);
+        if (mDrawFx) {
+            mFxDrawable.setBounds(mFxDrawingRect);
+            mFxDrawable.draw(canvas);
         }
     }
 

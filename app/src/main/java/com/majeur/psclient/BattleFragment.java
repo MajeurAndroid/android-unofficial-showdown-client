@@ -12,7 +12,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AccelerateDecelerateInterpolator;
-import android.view.animation.Animation;
 import android.view.animation.OvershootInterpolator;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -42,11 +41,7 @@ import com.majeur.psclient.model.Weather;
 import com.majeur.psclient.service.BattleMessageObserver;
 import com.majeur.psclient.service.ShowdownService;
 import com.majeur.psclient.util.AudioBattleManager;
-import com.majeur.psclient.util.BackForthTranslateAnimation;
-import com.majeur.psclient.util.CircularTranslateAnimation;
 import com.majeur.psclient.util.Preferences;
-import com.majeur.psclient.util.ShakeTranslateAnimation;
-import com.majeur.psclient.util.Utils;
 import com.majeur.psclient.widget.BattleActionWidget;
 import com.majeur.psclient.widget.BattleLayout;
 import com.majeur.psclient.widget.BattleTipPopup;
@@ -553,57 +548,19 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
             View statusView = mBattleLayout.getStatusView(id);
             statusView.animate().alpha(0f).start();
 
-            if (mSoundEnabled) mAudioManager.playPokemonCry(getBattlingPokemon(id));
+            if (mSoundEnabled) mAudioManager.playPokemonCry(getBattlingPokemon(id), true);
         }
 
         @Override
         protected void onMove(final PokemonId sourceId, final PokemonId targetId, String moveName, boolean shouldAnim) {
-            if (!shouldAnim) return;
+            if (!shouldAnim || targetId == null) return;
             mMoveDetailsLoader.load(array(toId(moveName)), new DataLoader.Callback<Move.ExtraInfo>() {
                 @Override
                 public void onLoaded(Move.ExtraInfo[] results) {
-                    int color = results[0].color;
                     String category = toId(results[0].category);
-                    boolean selfAttack = sourceId.equals(targetId) || targetId == null;
-                    View sourceView = mBattleLayout.getPokemonView(sourceId);
-                    View targetView = !selfAttack ? mBattleLayout.getPokemonView(targetId) : null;
-                    Animation sourceAnimation;
-                    Animation targetAnimation;
-                    int circleRadius = Utils.dpToPx(10);
-                    int shakeAmplitude = Utils.dpToPx(8);
-                    if (selfAttack) {
-                        sourceAnimation = new CircularTranslateAnimation(circleRadius, 1.5f);
-                        sourceAnimation.setDuration(1000);
-                        sourceView.startAnimation(sourceAnimation);
-                        return;
-                    }
-                    switch (category) {
-                        case "status":
-                            sourceAnimation = new CircularTranslateAnimation(circleRadius, 1.5f);
-                            sourceAnimation.setDuration(1000);
-                            sourceView.startAnimation(sourceAnimation);
-                            targetAnimation = new ShakeTranslateAnimation(shakeAmplitude, 4f);
-                            targetAnimation.setDuration(1000);
-                            targetAnimation.setStartOffset(500);
-                            targetView.startAnimation(targetAnimation);
-                            break;
-                        case "physical":
-                        case "special":
-                            sourceAnimation = new BackForthTranslateAnimation(
-                                    sourceView.getX() + sourceView.getWidth() / 2f,
-                                    sourceView.getY() + sourceView.getHeight() / 2f,
-                                    targetView.getX() + targetView.getWidth() / 2f,
-                                    targetView.getY() + targetView.getHeight() / 2f);
-                            sourceAnimation.setDuration(750);
-                            sourceAnimation.setStartOffset(250);
-                            sourceView.startAnimation(sourceAnimation);
-
-                            targetAnimation = new ShakeTranslateAnimation(shakeAmplitude, 4f);
-                            targetAnimation.setDuration(750);
-                            targetAnimation.setStartOffset(500);
-                            targetView.startAnimation(targetAnimation);
-                            break;
-                    }
+                    if ("status".equals(category)) return;
+                    mBattleLayout.displayHitIndicator(targetId);
+                    if (mSoundEnabled) mAudioManager.playMoveHitSound();
                 }
             });
         }
@@ -633,7 +590,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                     infoView.updatePokemon(pokemon, icon);
                 }
             });
-            if (mSoundEnabled) mAudioManager.playPokemonCry(pokemon);
+            if (mSoundEnabled) mAudioManager.playPokemonCry(pokemon, false);
         }
 
         @Override
@@ -650,7 +607,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                 }
             });
 
-            if (mSoundEnabled && "mega".equals(pokemon.forme)) mAudioManager.playPokemonCry(pokemon);
+            if (mSoundEnabled && "mega".equals(pokemon.forme)) mAudioManager.playPokemonCry(pokemon, false);
         }
 
         @Override
