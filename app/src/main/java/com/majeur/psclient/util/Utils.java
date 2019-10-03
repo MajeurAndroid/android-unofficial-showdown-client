@@ -152,6 +152,12 @@ public class Utils {
         return spannableString;
     }
 
+    public static Spannable coloredText(CharSequence cs, int color) {
+        SpannableString spannableString = new SpannableString(cs);
+        spannableString.setSpan(new ForegroundColorSpan(color), 0, cs.length(), Spannable.SPAN_INCLUSIVE_EXCLUSIVE);
+        return spannableString;
+    }
+
     public static Spannable tagText(String s) {
         SpannableString spannableString = new SpannableString(s);
         spannableString.setSpan(new TextTagSpan(Color.GRAY, Colors.WHITE), 0, s.length(), Spannable.SPAN_INCLUSIVE_EXCLUSIVE);

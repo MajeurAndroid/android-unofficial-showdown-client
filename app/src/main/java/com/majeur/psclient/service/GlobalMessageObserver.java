@@ -23,6 +23,7 @@ public abstract class GlobalMessageObserver extends MessageObserver {
 
     private String mUserName;
     private boolean mIsUserGuest;
+    private boolean mRequestServerCountsOnly;
 
     public GlobalMessageObserver() {
         setObserveAll(true);
@@ -102,6 +103,10 @@ public abstract class GlobalMessageObserver extends MessageObserver {
         mIsUserGuest = isGuest;
         getService().putSharedData("username", username);
         onUserChanged(username, isGuest, avatar);
+
+        // Update server counts
+        mRequestServerCountsOnly = true;
+        getService().sendGlobalCommand("cmd", "rooms");
     }
 
     private void processQueryResponse(ServerMessage args) {
@@ -134,8 +139,13 @@ public abstract class GlobalMessageObserver extends MessageObserver {
 
         try {
             JSONObject jsonObject = new JSONObject(queryContent);
-            getService().putSharedData("userCount", jsonObject.getInt("userCount"));
-            getService().putSharedData("battleCount", jsonObject.getInt("battleCount"));
+            int userCount = jsonObject.getInt("userCount");
+            int battleCount = jsonObject.getInt("battleCount");
+            onUpdateCounts(userCount, battleCount);
+            if (mRequestServerCountsOnly) {
+                mRequestServerCountsOnly = false;
+                return;
+            }
 
             JSONArray jsonArray = jsonObject.getJSONArray("official");
             int N = jsonArray.length();
@@ -176,15 +186,27 @@ public abstract class GlobalMessageObserver extends MessageObserver {
     }
 
     private void processUserDetailsQueryResponse(String queryContent) {
-        // Unused for now
         try {
             JSONObject jsonObject = new JSONObject(queryContent);
             String userId = jsonObject.optString("userid");
-            if (userId != null && getUserId().equals(userId)) {
-                String avatarId = jsonObject.getString("avatar");
-                avatarId = ("000" + avatarId).substring(avatarId.length());
+            if (userId == null) return;
 
+            String name = jsonObject.optString("name");
+            boolean online = jsonObject.has("status");
+            String group = jsonObject.optString("group");
+            Object rooms = jsonObject.opt("rooms");
+            List<String> chatRooms = new LinkedList<>();
+            List<String> battles = new LinkedList<>();
+            if (rooms instanceof JSONObject) {
+                Iterator<String> iterator = ((JSONObject) rooms).keys();
+                while (iterator.hasNext()) {
+                    String roomId = iterator.next();
+                    if (roomId.contains("battle-")) battles.add(roomId);
+                    else chatRooms.add(roomId);
+                }
             }
+
+            onUserDetails(userId, name, online, group, chatRooms, battles);
 
         } catch (JSONException e) {
             e.printStackTrace();
@@ -257,9 +279,13 @@ public abstract class GlobalMessageObserver extends MessageObserver {
 
     protected abstract void onUserChanged(String userName, boolean isGuest, String avatarId);
 
+    protected abstract void onUpdateCounts(int userCount, int battleCount);
+
     protected abstract void onBattleFormatsChanged(List<BattleFormat.Category> battleFormats);
 
     protected abstract void onSearchBattlesChanged(String[] battleRoomIds, String[] battleRoomNames);
+
+    protected abstract void onUserDetails(String id, String name, boolean online, String group, List<String> rooms, List<String> battles);
 
     protected abstract void onShowPopup(String message);
 

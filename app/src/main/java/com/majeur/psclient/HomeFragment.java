@@ -3,20 +3,24 @@ package com.majeur.psclient;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
 import com.majeur.psclient.io.DataLoader;
 import com.majeur.psclient.io.DexIconLoader;
@@ -39,6 +43,11 @@ import androidx.fragment.app.Fragment;
 
 import static com.majeur.psclient.model.Id.toId;
 import static com.majeur.psclient.model.Id.toIdSafe;
+import static com.majeur.psclient.util.Utils.boldText;
+import static com.majeur.psclient.util.Utils.coloredText;
+import static com.majeur.psclient.util.Utils.italicText;
+import static com.majeur.psclient.util.Utils.smallText;
+import static com.majeur.psclient.util.Utils.str;
 
 public class HomeFragment extends Fragment implements MainActivity.Callbacks {
 
@@ -48,6 +57,8 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
     private TextView mUsernameView;
     private View mUsernameContainer;
 
+    private TextView mUserCountView;
+    private TextView mBattleCountView;
     private View mSearchBattleContainer;
     private View mCurrentBattlesContainer;
     private ViewGroup mBattleButtonsContainer;
@@ -77,6 +88,8 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        mUserCountView = view.findViewById(R.id.userCountTextView);
+        mBattleCountView = view.findViewById(R.id.battleCountTextView);
         mSearchBattleContainer = view.findViewById(R.id.searchBattleContainer);
         mCurrentBattlesContainer = view.findViewById(R.id.currentBattleContainer);
         mUsernameView = view.findViewById(R.id.username_text);
@@ -224,6 +237,35 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
             }
         });
         mBattleButtonsContainer = view.findViewById(R.id.joinedBattleContainer);
+        view.findViewById(R.id.button_finduser).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                View dialogView = getLayoutInflater().inflate(R.layout.dialog_battle_message, null);
+                final EditText editText = dialogView.findViewById(R.id.edit_text_team_name);
+                editText.setHint("Type a username");
+                new MaterialAlertDialogBuilder(getContext())
+                        .setPositiveButton("Find", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                String input = editText.getText().toString();
+                                String regex = "[{}:\",|\\[\\]]";
+                                if (input.matches(".*" + regex + ".*")) input = input.replaceAll(regex, "");
+                                if (input.length() > 0)
+                                    mService.sendGlobalCommand("cmd userdetails", input);
+                            }
+                        })
+                        .setNegativeButton("Cancel", null)
+                        .setView(dialogView)
+                        .show();
+                editText.requestFocus();
+            }
+        });
+        view.findViewById(R.id.button_watchbattle).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mService.sendGlobalCommand("cmd", "roomlist");
+            }
+        });
     }
 
     public String resolveBattleFormatName(String formatId) {
@@ -339,6 +381,14 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
         }
 
         @Override
+        protected void onUpdateCounts(int userCount, int battleCount) {
+            mUserCountView.setText(boldText(str(userCount)));
+            mUserCountView.append("\nusers online");
+            mBattleCountView.setText(boldText(str(battleCount)));
+            mBattleCountView.append("\nactive battles");
+        }
+
+        @Override
         protected void onBattleFormatsChanged(List<BattleFormat.Category> battleFormats) {
             mBattleFormats = battleFormats;
             CategoryAdapter adapter = (CategoryAdapter) mFormatsSpinner.getAdapter();
@@ -373,6 +423,39 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
                     }
                 });
             }
+        }
+
+        @Override
+        protected void onUserDetails(String id, String name, boolean online, String group,
+                                     List<String> chatrooms, List<String> battles) {
+            SpannableStringBuilder builder = new SpannableStringBuilder();
+            if (group != null) builder.append(italicText("Group: ")).append(group).append("\n");
+            builder.append(italicText("Battles: "));
+            if (battles.size() > 0) {
+                StringBuilder stringBuilder = new StringBuilder();
+                for (String battle : battles) stringBuilder.append(battle).append(", ");
+                stringBuilder.deleteCharAt(stringBuilder.length() - 2);
+                builder.append(smallText(stringBuilder.toString()));
+            } else {
+                builder.append(smallText("None")).append("\n");
+            }
+            builder.append(italicText("Chatrooms: "));
+            if (chatrooms.size() > 0) {
+                StringBuilder stringBuilder = new StringBuilder();
+                for (String room : chatrooms) stringBuilder.append(room).append(", ");
+                stringBuilder.deleteCharAt(stringBuilder.length() - 2);
+                builder.append(smallText(stringBuilder.toString()));
+            } else {
+                builder.append(smallText("None")).append("\n");
+            }
+            if (!online) builder.append(coloredText("(Offline)", Color.RED));
+            new AlertDialog.Builder(getContext())
+                    .setTitle(name)
+                    .setMessage(builder)
+                    .setPositiveButton("Challenge", null)
+                    .setNegativeButton("Chat", null)
+                    .setNeutralButton("Ignore", null)
+                    .show();
         }
 
         @Override

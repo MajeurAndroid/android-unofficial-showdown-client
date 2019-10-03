@@ -5,97 +5,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.google.android.material.card.MaterialCardView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="12dp"
-        android:layout_gravity="center"
-        app:contentPadding="16dp"
-        android:id="@+id/searchBattleContainer">
-
-        <RelativeLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content">
-
-            <TextView
-                android:id="@+id/format_label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Format:"/>
-
-            <Spinner
-                android:id="@+id/spinner_formats"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@+id/format_label"/>
-
-            <TextView
-                android:id="@+id/team_label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/spinner_formats"
-                android:text="Team:"/>
-
-            <Spinner
-                android:id="@+id/spinner_teams"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/team_label"/>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/button_battle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/spinner_teams"
-                android:layout_centerHorizontal="true"
-                android:layout_marginTop="8dp"
-                android:minWidth="196dp"
-                android:text="Battle !"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
-
-            <ImageButton
-                android:id="@+id/sound_button"
-                android:layout_width="42dp"
-                android:layout_height="match_parent"
-                android:layout_alignParentEnd="true"
-                android:layout_alignTop="@id/button_battle"
-                android:layout_alignBottom="@id/button_battle"
-                android:src="@drawable/ic_sound_off"
-                android:background="?selectableItemBackground"/>
-
-        </RelativeLayout>
-
-    </com.google.android.material.card.MaterialCardView>
-
-    <com.google.android.material.card.MaterialCardView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="12dp"
-        android:layout_gravity="center"
-        app:contentPadding="16dp"
-        android:id="@+id/currentBattleContainer"
-        android:visibility="gone">
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="You are currently in:"/>
-
-            <LinearLayout
-                android:id="@+id/joinedBattleContainer"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"/>
-
-        </LinearLayout>
-
-    </com.google.android.material.card.MaterialCardView>
-
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -103,6 +12,173 @@
         android:layout_margin="2dp"
         android:text="Art by Jessica Valencia"
         android:textSize="10sp"/>
+
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="12dp"
+            app:contentPadding="16dp">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:divider="@color/divider"
+                android:showDividers="middle">
+
+                <TextView
+                    android:id="@+id/userCountTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:gravity="center"
+                    android:textColor="@android:color/black"/>
+
+                <TextView
+                    android:id="@+id/battleCountTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:gravity="center"
+                    android:textColor="@android:color/black"/>
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="12dp"
+            android:layout_gravity="center"
+            app:contentPadding="16dp"
+            android:id="@+id/searchBattleContainer">
+
+            <RelativeLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:id="@+id/format_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Format:"/>
+
+                <Spinner
+                    android:id="@+id/spinner_formats"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/format_label"/>
+
+                <TextView
+                    android:id="@+id/team_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/spinner_formats"
+                    android:text="Team:"/>
+
+                <Spinner
+                    android:id="@+id/spinner_teams"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/team_label"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/button_battle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/spinner_teams"
+                    android:layout_centerHorizontal="true"
+                    android:layout_marginTop="8dp"
+                    android:minWidth="196dp"
+                    android:text="Battle !"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+                <ImageButton
+                    android:id="@+id/sound_button"
+                    android:layout_width="42dp"
+                    android:layout_height="match_parent"
+                    android:layout_alignParentEnd="true"
+                    android:layout_alignTop="@id/button_battle"
+                    android:layout_alignBottom="@id/button_battle"
+                    android:src="@drawable/ic_sound_off"
+                    android:background="?selectableItemBackground"/>
+
+            </RelativeLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="12dp"
+            android:layout_gravity="center"
+            app:contentPadding="16dp"
+            android:id="@+id/currentBattleContainer"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="You are currently in:"/>
+
+                <LinearLayout
+                    android:id="@+id/joinedBattleContainer"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"/>
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="12dp"
+            app:contentPadding="16dp">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/button_finduser"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minWidth="196dp"
+                    android:text="Find a user"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/button_watchbattle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:minWidth="196dp"
+                    android:text="Watch a battle"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/username_container"
