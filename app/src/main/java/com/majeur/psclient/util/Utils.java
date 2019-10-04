@@ -229,4 +229,9 @@ public class Utils {
     public static String str(int number) {
         return Integer.toString(number);
     }
+
+    public static String truncate(String s, int max) {
+        if (s.length() > max) return s.substring(0, max) + "…";
+        return s;
+    }
 }

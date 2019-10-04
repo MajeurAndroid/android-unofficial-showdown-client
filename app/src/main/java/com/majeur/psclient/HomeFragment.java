@@ -48,6 +48,7 @@ import static com.majeur.psclient.util.Utils.coloredText;
 import static com.majeur.psclient.util.Utils.italicText;
 import static com.majeur.psclient.util.Utils.smallText;
 import static com.majeur.psclient.util.Utils.str;
+import static com.majeur.psclient.util.Utils.truncate;
 
 public class HomeFragment extends Fragment implements MainActivity.Callbacks {
 
@@ -55,9 +56,8 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
     private DexIconLoader mDexIconLoader;
 
     private TextView mUsernameView;
-    private View mUsernameContainer;
-
     private TextView mUserCountView;
+    private ImageButton mLoginButton;
     private TextView mBattleCountView;
     private View mSearchBattleContainer;
     private View mCurrentBattlesContainer;
@@ -93,14 +93,16 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
         mSearchBattleContainer = view.findViewById(R.id.searchBattleContainer);
         mCurrentBattlesContainer = view.findViewById(R.id.currentBattleContainer);
         mUsernameView = view.findViewById(R.id.username_text);
-        mUsernameContainer = view.findViewById(R.id.username_container);
-        mUsernameContainer.setAlpha(0f);
-        ImageButton logoutButton = view.findViewById(R.id.logout_button);
-        logoutButton.setOnClickListener(new View.OnClickListener() {
+        mLoginButton = view.findViewById(R.id.logout_button);
+        mLoginButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                mService.sendGlobalCommand("logout");
-                mService.forgetUserLoginInfos();
+                if (mCurrentUserName == null || mCurrentUserName.toLowerCase().startsWith("guest")) {
+                    SignInDialog.newInstance().show(getFragmentManager(), "");
+                } else {
+                    mService.sendGlobalCommand("logout");
+                    mService.forgetUserLoginInfos();
+                }
             }
         });
         mFormatsSpinner = view.findViewById(R.id.spinner_formats);
@@ -124,8 +126,12 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int position, long id) {
                 CategoryAdapter adapter = (CategoryAdapter) adapterView.getAdapter();
-                BattleFormat format = (BattleFormat) adapter.getItem(position);
-                setCurrentBattleFormat(format);
+                if (!adapter.isEnabled(position)) {
+                    mFormatsSpinner.setSelection(position+1);
+                } else {
+                    BattleFormat format = (BattleFormat) adapter.getItem(position);
+                    setCurrentBattleFormat(format);
+                }
             }
 
             @Override
@@ -369,23 +375,23 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
         @Override
         protected void onUserChanged(String userName, boolean isGuest, String avatarId) {
             mCurrentUserName = userName;
+            mUsernameView.setText(smallText("Connected as\n"));
+            mUsernameView.append(boldText(truncate(userName, 10)));
             if (isGuest) {
                 Snackbar.make(getView(), "Connected as guest !", Snackbar.LENGTH_LONG).show();
-                mUsernameContainer.animate().alpha(0f).translationX(mUsernameContainer.getWidth()).start();
+                mLoginButton.setImageResource(R.drawable.ic_login);
             } else {
                 Snackbar.make(getView(), "Connected as " + userName, Snackbar.LENGTH_LONG).show();
-                mUsernameView.setText(userName);
-                mUsernameContainer.setTranslationX(mUsernameContainer.getWidth());
-                mUsernameContainer.animate().alpha(1f).translationX(0).start();
+                mLoginButton.setImageResource(R.drawable.ic_logout);
             }
         }
 
         @Override
         protected void onUpdateCounts(int userCount, int battleCount) {
             mUserCountView.setText(boldText(str(userCount)));
-            mUserCountView.append("\nusers online");
+            mUserCountView.append(smallText("\nusers online"));
             mBattleCountView.setText(boldText(str(battleCount)));
-            mBattleCountView.append("\nactive battles");
+            mBattleCountView.append(smallText("\nactive battles"));
         }
 
         @Override
@@ -536,7 +542,6 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
 
         @Override
         protected void onNetworkError() {
-            mUsernameContainer.animate().alpha(0f).translationX(mUsernameContainer.getWidth()).start();
             Snackbar.make(getView(), "No internet connection", Snackbar.LENGTH_INDEFINITE)
                     .setAction("Try to reconnect", new View.OnClickListener() {
                         @Override

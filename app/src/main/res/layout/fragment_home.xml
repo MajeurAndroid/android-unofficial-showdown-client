@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
+<ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
-
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+<!--
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -12,9 +13,7 @@
         android:layout_margin="2dp"
         android:text="Art by Jessica Valencia"
         android:textSize="10sp"/>
-
-
-
+-->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -35,10 +34,28 @@
                 android:divider="@color/divider"
                 android:showDividers="middle">
 
+                <ImageButton
+                    android:id="@+id/logout_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="4dp"
+                    android:padding="4dp"
+                    android:background="?selectableItemBackground"/>
+
+                <TextView
+                    android:id="@+id/username_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:gravity="center"
+                    android:textColor="@android:color/black"/>
+
                 <TextView
                     android:id="@+id/userCountTextView"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
                     android:layout_marginEnd="8dp"
                     android:gravity="center"
                     android:textColor="@android:color/black"/>
@@ -180,35 +197,4 @@
 
     </LinearLayout>
 
-    <LinearLayout
-        android:id="@+id/username_container"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="end"
-        android:layout_marginTop="16dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:background="@drawable/battle_extra_actions_bg"
-        android:elevation="4dp">
-
-        <TextView
-            android:id="@+id/username_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@android:color/black"
-            android:textStyle="bold"
-            android:paddingStart="8dp"
-            android:paddingEnd="4dp"
-            android:text="cardut"/>
-
-        <ImageButton
-            android:id="@+id/logout_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="4dp"
-            android:background="?selectableItemBackground"
-            android:src="@drawable/ic_logout"/>
-
-    </LinearLayout>
-
-</FrameLayout>
+</ScrollView>
