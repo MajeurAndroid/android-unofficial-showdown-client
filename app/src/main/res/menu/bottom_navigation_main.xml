@@ -2,25 +2,25 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item
-        android:id="@+id/action_home"
+        android:id="@+id/fragment_home"
         android:enabled="true"
         android:icon="@drawable/ic_home_variant"
         android:title="Home"/>
 
     <item
-        android:id="@+id/action_battle"
+        android:id="@+id/fragment_battle"
         android:enabled="true"
         android:icon="@drawable/ic_battle"
         android:title="Battle" />
 
     <item
-        android:id="@+id/action_chat"
+        android:id="@+id/fragment_chat"
         android:enabled="true"
         android:icon="@drawable/ic_chat"
         android:title="Chat" />
 
     <item
-        android:id="@+id/action_teams"
+        android:id="@+id/fragment_teams"
         android:enabled="true"
         android:icon="@drawable/ic_pokeball"
         android:title="Teams" />

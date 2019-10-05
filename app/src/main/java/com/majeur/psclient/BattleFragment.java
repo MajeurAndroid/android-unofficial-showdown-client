@@ -754,6 +754,9 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                     mLogScrollView.fullScroll(View.FOCUS_DOWN);
                 }
             });
+            MainActivity activity = (MainActivity) getActivity();
+            if (getId() != activity.getSelectedFragmentId())
+                activity.showBadge(getId());
         }
 
         @Override

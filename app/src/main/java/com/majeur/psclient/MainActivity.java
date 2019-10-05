@@ -10,6 +10,7 @@ import android.os.IBinder;
 import android.view.MenuItem;
 import android.view.WindowManager;
 
+import com.google.android.material.badge.BadgeDrawable;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.majeur.psclient.io.DexIconLoader;
@@ -61,17 +62,18 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
                 if (menuItem.getItemId() == mNavigationView.getSelectedItemId()) return false;
+                clearBadge(menuItem.getItemId());
                 switch (menuItem.getItemId()) {
-                    case R.id.action_home:
+                    case R.id.fragment_home:
                         switchLayout.smoothSwitchTo(0);
                         return true;
-                    case R.id.action_battle:
+                    case R.id.fragment_battle:
                         switchLayout.smoothSwitchTo(1);
                         return true;
-                    case R.id.action_chat:
+                    case R.id.fragment_chat:
                         switchLayout.smoothSwitchTo(2);
                         return true;
-                    case R.id.action_teams:
+                    case R.id.fragment_teams:
                         switchLayout.smoothSwitchTo(3);
                         return true;
                     default:
@@ -86,8 +88,8 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        if (mNavigationView.getSelectedItemId() != R.id.action_home)
-            mNavigationView.setSelectedItemId(R.id.action_home);
+        if (mNavigationView.getSelectedItemId() != R.id.fragment_home)
+            mNavigationView.setSelectedItemId(R.id.fragment_home);
         else
             new MaterialAlertDialogBuilder(this)
                     .setTitle("Are you sure you want to quit ?")
@@ -100,6 +102,19 @@ public class MainActivity extends AppCompatActivity {
                     })
                     .setNegativeButton("No", null)
                     .show();
+    }
+
+    public int getSelectedFragmentId() {
+        return mNavigationView.getSelectedItemId();
+    }
+
+    public void showBadge(int fragmentId) {
+        BadgeDrawable badge = mNavigationView.getOrCreateBadge(fragmentId);
+        badge.setBackgroundColor(getColor(R.color.accent));
+    }
+
+    public void clearBadge(int fragmentId) {
+        mNavigationView.removeBadge(fragmentId);
     }
 
     public DexIconLoader getDexIconLoader() {
@@ -171,7 +186,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void showBattleFragmentView() {
         BottomNavigationView navigationView = findViewById(R.id.bottom_navigation);
-        navigationView.setSelectedItemId(R.id.action_battle);
+        navigationView.setSelectedItemId(R.id.fragment_battle);
     }
 
     public void setKeepScreenOn(boolean keep) {
