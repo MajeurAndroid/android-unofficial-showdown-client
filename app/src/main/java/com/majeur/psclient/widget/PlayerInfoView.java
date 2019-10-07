@@ -1,6 +1,8 @@
 package com.majeur.psclient.widget;
 
 import android.content.Context;
+import android.graphics.ColorMatrix;
+import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.text.SpannableStringBuilder;
@@ -152,6 +154,30 @@ public class PlayerInfoView extends AppCompatTextView {
         float aspectRatio = dexIcon.getIntrinsicWidth() / (float)  dexIcon.getIntrinsicHeight();
         dexIcon.setBounds(0, 0, Math.round(aspectRatio * mDexIconSize), mDexIconSize);
         mSpannableBuilder.setSpan(new ImageSpan(dexIcon), i, i + 1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
+        invalidateText();
+    }
+
+    public void setPokemonFainted(BasePokemon pokemon) {
+        if (!mPokemonIds.contains(toId(pokemon.baseSpecies)))
+            return;
+
+        int index = 0;
+        for (String id : mPokemonIds) {
+            if (id.equals(toId(pokemon.baseSpecies))) break;
+            index++;
+        }
+
+        int i;
+        if ((getGravity() & Gravity.END) == Gravity.END)
+            i = SUFFIX_OFFSET + MAX_TEAM_SIZE - (index + 1);
+        else
+            i = mSpannableBuilder.length() - MAX_TEAM_SIZE - SUFFIX_OFFSET + index;
+
+        ImageSpan previousSpan = mSpannableBuilder.getSpans(i , i + 1, ImageSpan.class)[0];
+        ColorMatrix matrix = new ColorMatrix();
+        matrix.setSaturation(0);
+        ColorMatrixColorFilter filter = new ColorMatrixColorFilter(matrix);
+        previousSpan.getDrawable().setColorFilter(filter);
         invalidateText();
     }
 

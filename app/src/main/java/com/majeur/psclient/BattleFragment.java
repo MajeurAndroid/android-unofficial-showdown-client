@@ -548,6 +548,9 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
             View statusView = mBattleLayout.getStatusView(id);
             statusView.animate().alpha(0f).start();
 
+            PlayerInfoView playerView = id.foe ? mFoeInfoView : mTrainerInfoView;
+            playerView.setPokemonFainted(getBattlingPokemon(id));
+
             if (mSoundEnabled) mAudioManager.playPokemonCry(getBattlingPokemon(id), true);
         }
 
