@@ -276,6 +276,12 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                                 }
                             })
                             .setNegativeButton("Cancel", null)
+                            .setNeutralButton("\"gg\"", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    mService.sendRoomMessage(mObservedRoomId, "gg");
+                                }
+                            })
                             .setView(dialogView)
                             .show();
                     editText.requestFocus();
