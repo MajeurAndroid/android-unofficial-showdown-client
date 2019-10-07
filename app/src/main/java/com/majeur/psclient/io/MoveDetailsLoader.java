@@ -14,6 +14,8 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.majeur.psclient.model.Id.toId;
+
 public class MoveDetailsLoader extends DataLoader<String, Move.ExtraInfo> {
 
     private Resources mResources;
@@ -25,6 +27,14 @@ public class MoveDetailsLoader extends DataLoader<String, Move.ExtraInfo> {
     @Override
     protected Move.ExtraInfo[] onCreateResultArray(int length) {
         return new Move.ExtraInfo[length];
+    }
+
+    @Override
+    protected void onInterceptQuery(String[] queries) {
+        for (int i = 0; i < queries.length; i++) {
+            if (queries[i].toLowerCase().startsWith("z-")) queries[i] = queries[i].substring(2);
+            queries[i] = toId(queries[i]);
+        }
     }
 
     @Override

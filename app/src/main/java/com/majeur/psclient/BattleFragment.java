@@ -554,13 +554,13 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         @Override
         protected void onMove(final PokemonId sourceId, final PokemonId targetId, String moveName, boolean shouldAnim) {
             if (!shouldAnim || targetId == null) return;
-            mMoveDetailsLoader.load(array(toId(moveName)), new DataLoader.Callback<Move.ExtraInfo>() {
+            mMoveDetailsLoader.load(array(moveName), new DataLoader.Callback<Move.ExtraInfo>() {
                 @Override
-                public void onLoaded(Move.ExtraInfo[] results) {//TODO
+                public void onLoaded(Move.ExtraInfo[] results) {
                     String category = toId(results[0].category);
                     if ("status".equals(category)) return;
                     mBattleLayout.displayHitIndicator(targetId);
-                    if (mSoundEnabled) mAudioManager.playMoveHitSound();
+                    //if (mSoundEnabled) mAudioManager.playMoveHitSound();
                 }
             });
         }
@@ -658,7 +658,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
 
             if (!hideMoves && moves != null && moves.size() > 0) {
                 String[] keys = new String[moves.size()];
-                for (int i = 0; i < keys.length; i++) keys[i] = toId(moves.get(i).id);
+                for (int i = 0; i < keys.length; i++) keys[i] = moves.get(i).id;
                 mMoveDetailsLoader.load(keys, new DataLoader.Callback<Move.ExtraInfo>() {
                     @Override
                     public void onLoaded(Move.ExtraInfo[] results) {
