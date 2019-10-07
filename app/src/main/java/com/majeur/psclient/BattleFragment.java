@@ -92,7 +92,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
     private DexIconLoader mDexIconLoader;
     private AudioBattleManager mAudioManager;
 
-    private Drawable mInactiveBattleOverlayDrawable;
+    private InactiveBattleOverlayDrawable mInactiveBattleOverlayDrawable;
     private BattleActionRequest mLastActionRequest;
     private boolean mTimerEnabled;
     private boolean mSoundEnabled;
@@ -527,9 +527,10 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         }
 
         @Override
-        protected void onBattleEnded() {
+        protected void onBattleEnded(String winner) {
             ((MainActivity) getContext()).setKeepScreenOn(false);
             mAudioManager.stopBattleMusic();
+            mInactiveBattleOverlayDrawable.setWinner(winner);
             clearBattleFieldUi();
         }
 

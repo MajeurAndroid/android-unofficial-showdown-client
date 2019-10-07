@@ -12,7 +12,8 @@ public class InactiveBattleOverlayDrawable extends ColorDrawable {
 
     private Paint mPaint;
     private Rect mTextBounds;
-    private String mText;
+    private String mText1;
+    private String mText2;
 
     public InactiveBattleOverlayDrawable(Resources resources) {
         super(0x90000000);
@@ -22,15 +23,24 @@ public class InactiveBattleOverlayDrawable extends ColorDrawable {
         mPaint.setTextSize(textSize);
         mPaint.setColor(Color.WHITE);
         mTextBounds = new Rect();
-        mText = "No battle running";
+        mText1 = "No battle running";
+    }
+
+    public void setWinner(String user) {
+        mText2 = "(" + user + " won !)";
+        invalidateSelf();
     }
 
     @Override
     public void draw(Canvas canvas) {
         super.draw(canvas);
-        mPaint.getTextBounds(mText, 0, mText.length(), mTextBounds);
+        mPaint.getTextBounds(mText1, 0, mText1.length(), mTextBounds);
         int cx = getBounds().width() / 2;
         int cy = getBounds().height() / 2;
-        canvas.drawText(mText, cx - (mTextBounds.width() / 2), cy, mPaint);
+        canvas.drawText(mText1, cx - (mTextBounds.width() / 2), cy, mPaint);
+        if (mText2 == null) return;
+        int yOffset = mTextBounds.height();
+        mPaint.getTextBounds(mText2, 0, mText2.length(), mTextBounds);
+        canvas.drawText(mText2, cx - (mTextBounds.width() / 2), cy + yOffset, mPaint);
     }
 }

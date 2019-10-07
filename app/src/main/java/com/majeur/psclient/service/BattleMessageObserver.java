@@ -411,14 +411,14 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
     }
 
     private void handleWin(ServerMessage msg, boolean tie) {
-        String username = msg.hasNextArg() ? msg.nextArg() : null;
+        final String username = msg.hasNextArg() ? msg.nextArg() : null;
         final CharSequence text = tie ? mBattleTextBuilder.tie(mP1Username, mP2Username)
                 : mBattleTextBuilder.win(username);
         mActionQueue.enqueueAction(new Runnable() {
             @Override
             public void run() {
                 mBattleRunning = false;
-                onBattleEnded();
+                onBattleEnded(username);
                 displayMajorActionMessage(text);
                 mActionQueue.setLastAction(null);
             }
@@ -1109,7 +1109,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
 
     protected abstract void onBattleStarted();
 
-    protected abstract void onBattleEnded();
+    protected abstract void onBattleEnded(String winner);
 
     protected abstract void onTimerEnabled(boolean enabled);
 
