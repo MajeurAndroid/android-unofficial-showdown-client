@@ -233,6 +233,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                             .show();
                     break;
                 case R.id.button_send:
+                    if (mObserver.observedRoomId() == null) break;
                     View dialogView = getLayoutInflater().inflate(R.layout.dialog_battle_message, null);
                     final EditText editText = dialogView.findViewById(R.id.edit_text_team_name);
                     new MaterialAlertDialogBuilder(getContext())

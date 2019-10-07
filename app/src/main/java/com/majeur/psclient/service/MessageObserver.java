@@ -16,7 +16,7 @@ public abstract class MessageObserver {
         mObserveAll = observeAll;
     }
 
-    protected String observedRoomId() {
+    public String observedRoomId() {
         return mObservedRoomId;
     }
 
