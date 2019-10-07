@@ -556,7 +556,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
             if (!shouldAnim || targetId == null) return;
             mMoveDetailsLoader.load(array(toId(moveName)), new DataLoader.Callback<Move.ExtraInfo>() {
                 @Override
-                public void onLoaded(Move.ExtraInfo[] results) {
+                public void onLoaded(Move.ExtraInfo[] results) {//TODO
                     String category = toId(results[0].category);
                     if ("status".equals(category)) return;
                     mBattleLayout.displayHitIndicator(targetId);

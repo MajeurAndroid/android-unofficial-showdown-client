@@ -77,6 +77,8 @@ public class GlideHelper {
     public void loadPreviewSprite(Player player, BasePokemon pokemon, ImageView imageView) {
         RequestBuilder<Drawable> request = mRequestManager.load(spriteUri(pokemon.spriteId, player == FOE, false));
         request.apply(new RequestOptions().error(R.drawable.missingno));
+        ViewGroup.LayoutParams layoutParams = imageView.getLayoutParams();
+        layoutParams.width = layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT;
         request.into(imageView);
     }
 
