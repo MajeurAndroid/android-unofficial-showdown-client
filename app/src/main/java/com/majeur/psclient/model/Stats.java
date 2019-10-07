@@ -138,7 +138,7 @@ public class Stats implements Serializable {
         }
     }
 
-    public static final int[] calculateSpeedRange(int level, int baseSpe, String tier, int gen) {
+    public static int[] calculateSpeedRange(int level, int baseSpe, String tier, int gen) {
         boolean isRandomBattle = tier.contains("Random Battle") || (tier.contains("Random") && tier.contains("Battle") && gen >= 6);
 
         float minNature = (isRandomBattle || gen < 3) ? 1f : 0.9f;
@@ -148,16 +148,16 @@ public class Stats implements Serializable {
         int min;
         int max;
         if (tier.contains("Let's Go")) {
-            min = tr(tr(tr(2 * baseSpe * level / 100 + 5) * minNature) * tr((70 / 255 / 10 + 1) * 100) / 100);
-            max = tr(tr(tr((2 * baseSpe + maxIv) * level / 100 + 5) * maxNature) * tr((70 / 255 / 10 + 1) * 100) / 100);
+            min = tr(tr(tr(2 * baseSpe * level / 100f + 5) * minNature) * tr((70f / 255f / 10f + 1) * 100) / 100f);
+            max = tr(tr(tr((2 * baseSpe + maxIv) * level / 100f + 5) * maxNature) * tr((70f / 255f / 10f + 1) * 100) / 100f);
             if (tier.contains("No Restrictions")) max += 200;
             else if (tier.contains("Random")) max += 20;
         } else {
             float maxIvEvOffset = maxIv + ((isRandomBattle && gen >= 3) ? 21 : 63);
-            min = tr(tr(2 * baseSpe * level / 100 + 5) * minNature);
-            max = tr(tr((2 * baseSpe + maxIvEvOffset) * level / 100 + 5) * maxNature);
+            min = tr(tr(2 * baseSpe * level / 100f + 5) * minNature);
+            max = tr(tr((2 * baseSpe + maxIvEvOffset) * level / 100f + 5) * maxNature);
         }
-        return new int[]{(int) min, (int) max};
+        return new int[]{min, max};
     }
 
     private static int tr(float value) {
