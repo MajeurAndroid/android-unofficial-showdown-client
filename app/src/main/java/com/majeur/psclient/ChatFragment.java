@@ -103,8 +103,28 @@ public class ChatFragment extends Fragment implements MainActivity.Callbacks {
             }
         });
 
-        // Set the UI to the "no room joined" state
-        mObserver.onRoomDeInit();
+        setDefaultUiState();
+    }
+
+    private void setDefaultUiState() {
+        mTitleView.setText("—");
+        mUserCountView.setText("-\nusers");
+        mChatTextView.animate().alpha(0f).withEndAction(new Runnable() {
+            @Override
+            public void run() {
+                mChatTextView.setText("\n\n\n\n\n\n\n\n\n\nTap the join button to join a room");
+                mChatTextView.setGravity(Gravity.CENTER_HORIZONTAL);
+                mChatTextView.animate().alpha(1f).withEndAction(null).start();
+            }
+        }).start();
+        mMessageView.getText().clear();
+        mMessageView.clearFocus();
+        mInputMethodManager.hideSoftInputFromWindow(mMessageView.getWindowToken(), 0);
+        mMessageView.setEnabled(false);
+        mSendMessageView.setEnabled(false);
+        mSendMessageView.getDrawable().setAlpha(128);
+        mTitleButton.setImageResource(R.drawable.ic_enter);
+        mTitleButton.requestFocus();
     }
 
     private void sendMessageIfAny() {
@@ -173,24 +193,7 @@ public class ChatFragment extends Fragment implements MainActivity.Callbacks {
 
         @Override
         public void onRoomDeInit() {
-            mTitleView.setText("—");
-            mUserCountView.setText("-\nusers");
-            mChatTextView.animate().alpha(0f).withEndAction(new Runnable() {
-                @Override
-                public void run() {
-                    mChatTextView.setText("\n\n\n\n\n\n\n\n\n\nTap the join button to join a room");
-                    mChatTextView.setGravity(Gravity.CENTER_HORIZONTAL);
-                    mChatTextView.animate().alpha(1f).withEndAction(null).start();
-                }
-            }).start();
-            mMessageView.getText().clear();
-            mMessageView.clearFocus();
-            mInputMethodManager.hideSoftInputFromWindow(mMessageView.getWindowToken(), 0);
-            mMessageView.setEnabled(false);
-            mSendMessageView.setEnabled(false);
-            mSendMessageView.getDrawable().setAlpha(128);
-            mTitleButton.setImageResource(R.drawable.ic_enter);
-            mTitleButton.requestFocus();
+            setDefaultUiState();
         }
     };
 }

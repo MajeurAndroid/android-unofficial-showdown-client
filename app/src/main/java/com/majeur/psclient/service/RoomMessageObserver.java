@@ -6,7 +6,6 @@ import android.text.Html;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.Spanned;
-import android.text.SpannedString;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
@@ -69,10 +68,10 @@ public abstract class RoomMessageObserver extends MessageObserver {
                 printUserRelatedMessage(username + " left");
                 return true;
             case "html":
-                // onPrintText("~html messages aren't supported yet~");
+                // printMessage("~html messages aren't supported yet~");
                 return true;
             case "uhtml":
-                // onPrintText("~html messages aren't supported yet~");
+                // printMessage("~html messages aren't supported yet~");
                 return true;
             case "uhtmlchange":
                 // TODO
@@ -94,7 +93,7 @@ public abstract class RoomMessageObserver extends MessageObserver {
                 return true;
             case "b":
             case "battle":
-                onPrintText("A battle started between XXX and YYY");
+                printMessage("A battle started between XXX and YYY");
                 return true;
             case "error":
                 printErrorMessage(message.nextArg());
@@ -102,7 +101,7 @@ public abstract class RoomMessageObserver extends MessageObserver {
             case "raw":
                 String s = message.rawArgs();
                 if (s.contains("href")) return true; // skipping complex Html formatted messages
-                onPrintText(Html.fromHtml(s));
+                printMessage(Html.fromHtml(s));
                 return true;
             case "deinit":
                 mRoomJoined = false;
@@ -145,7 +144,7 @@ public abstract class RoomMessageObserver extends MessageObserver {
         int textColor = obtainUsernameColor(user);
         Object span = new TextTagSpan(Utils.getTagColor(textColor), textColor);
         spannable.setSpan(span, 0, user.length() + 1, Spannable.SPAN_INCLUSIVE_EXCLUSIVE);
-        onPrintText(spannable);
+        printMessage(spannable);
     }
 
     private int obtainUsernameColor(String username) {
@@ -165,27 +164,27 @@ public abstract class RoomMessageObserver extends MessageObserver {
         spannable.setSpan(new StyleSpan(Typeface.ITALIC), 0, message.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
         spannable.setSpan(new ForegroundColorSpan(0xFF424242), 0, message.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
         spannable.setSpan(new RelativeSizeSpan(0.8f), 0, message.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
-        onPrintText(spannable);
+        printMessage(spannable);
     }
 
     protected void printErrorMessage(String message) {
         Spannable spannable = new SpannableString(message);
         spannable.setSpan(new StyleSpan(Typeface.BOLD), 0, message.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
         spannable.setSpan(new ForegroundColorSpan(Color.RED), 0, message.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
-        onPrintText(spannable);
+        printMessage(spannable);
     }
 
-    public abstract void onRoomInit();
-
-    public abstract void onPrintText(CharSequence text);
-
-    public void onPrintText(String text) {
-        onPrintText(new SpannedString(text));
+    protected void printMessage(CharSequence text) {
+        onPrintText(text);
     }
 
-    public abstract void onRoomTitleChanged(String title);
+    protected abstract void onRoomInit();
 
-    public abstract void onUpdateUsers(List<String> users);
+    protected abstract void onPrintText(CharSequence text);
 
-    public abstract void onRoomDeInit();
+    protected abstract void onRoomTitleChanged(String title);
+
+    protected abstract void onUpdateUsers(List<String> users);
+
+    protected abstract void onRoomDeInit();
 }

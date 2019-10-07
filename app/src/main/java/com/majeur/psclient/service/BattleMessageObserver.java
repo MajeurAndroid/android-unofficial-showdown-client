@@ -72,8 +72,8 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
 
     @Override
     public void onRoomDeInit() {
-        onPrintText("~ deinit ~");
-
+        // No need of queuing this, calling super
+        super.printMessage("~ deinit ~");
     }
 
     public Const getGameType() {
@@ -155,13 +155,13 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
                 handleGameType(message);
                 break;
             case "tier":
-                onPrintText(Utils.boldText(message.nextArg()));
+                printMessage(Utils.boldText(message.nextArg()));
                 break;
             case "rated":
-                onPrintText(Utils.tagText("Rated battle"));
+                printMessage(Utils.tagText("Rated battle"));
                 break;
             case "rule":
-                onPrintText(Utils.italicText(message.nextArg()));
+                printMessage(Utils.italicText(message.nextArg()));
                 break;
             case "clearpoke":
                 mPreviewPokemonIndexes[0] = mPreviewPokemonIndexes[1] = 0;
@@ -175,7 +175,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
                 mActionQueue.enqueueAction(ActionQueue.EMPTY_ACTION);
                 break;
             case "start":
-                onPrintText("\n" + mBattleTextBuilder.start(mP1Username, mP2Username));
+                printMessage("\n" + mBattleTextBuilder.start(mP1Username, mP2Username));
                 onBattleStarted();
                 break;
             case "request":
@@ -219,7 +219,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
             @Override
             public void run() {
                 onMove(sourcePoke, targetPoke, moveName, shouldAnim);
-                printMajorActionText(text);
+                displayMajorActionMessage(text);
             }
         });
     }
@@ -247,7 +247,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
             @Override
             public void run() {
                 onFaint(pokemonId);
-                printMajorActionText(mBattleTextBuilder.faint(pokemonId));
+                displayMajorActionMessage(mBattleTextBuilder.faint(pokemonId));
             }
         });
     }
@@ -301,8 +301,8 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
                     else mTrainerPokemons[pokemon.position] = pokemon;
                 }
                 onSwitch(pokemon);
-                //printMajorActionText(text1);
-                printMajorActionText(text2);
+                //displayMajorActionMessage(text1);
+                displayMajorActionMessage(text2);
             }
         });
     }
@@ -321,8 +321,8 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
             @Override
             public void run() {
                 onSwitch(pokemon);
-                //printMajorActionText(text1);
-                printMajorActionText(text2);
+                //displayMajorActionMessage(text1);
+                displayMajorActionMessage(text2);
             }
         });
     }
@@ -353,7 +353,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
                     mFoePokemons[pokemon.position].spriteId = pokemon.spriteId;
                 }
                 onDetailsChanged(pokemon);
-                printMajorActionText(text);
+                displayMajorActionMessage(text);
             }
         });
     }
@@ -367,7 +367,8 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         mActionQueue.enqueueTurnAction(new Runnable() {
             @Override
             public void run() {
-                onPrintText(spannable);
+                // Prevents from queuing message print
+                BattleMessageObserver.super.printMessage(spannable);
             }
         });
     }
@@ -406,12 +407,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         onTimerEnabled(on);
         final String text = msg.nextArg();
         if (text.startsWith("Time left:")) return;
-        mActionQueue.enqueueAction(new Runnable() {
-            @Override
-            public void run() {
-                printInactiveText(text);
-            }
-        });
+        printInactiveText(text);
     }
 
     private void handleWin(ServerMessage msg, boolean tie) {
@@ -423,7 +419,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
             public void run() {
                 mBattleRunning = false;
                 onBattleEnded();
-                printMajorActionText(text);
+                displayMajorActionMessage(text);
                 mActionQueue.setLastAction(null);
             }
         });
@@ -440,7 +436,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         mActionQueue.enqueueMajorAction(new Runnable() {
             @Override
             public void run() {
-                printMajorActionText(text);
+                displayMajorActionMessage(text);
             }
         });
     }
@@ -449,12 +445,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         String command = message.command.substring(1);
         switch (command) {
             case "message":
-                mActionQueue.enqueueMinorAction(new Runnable() {
-                    @Override
-                    public void run() {
-                        onPrintText(message.rawArgs());
-                    }
-                });
+                printMessage(message.rawArgs());
                 break;
             case "fail":
                 handleFail(message);
@@ -539,7 +530,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
                 mActionQueue.enqueueMinorAction(new Runnable() {
                     @Override
                     public void run() {
-                        printMinorActionText("(" + message.nextArg() + ")");
+                        displayMinorActionMessage("(" + message.nextArg() + ")");
                     }
                 });
                 break;
@@ -598,7 +589,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
             @Override
             public void run() {
                 onDisplayBattleToast(pokemonId, "Failed", Colors.GRAY);
-                printMinorActionText(text);
+                displayMinorActionMessage(text);
             }
         });
     }
@@ -616,7 +607,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
             @Override
             public void run() {
                 onDisplayBattleToast(targetPokeId != null ? targetPokeId : pokemonId, "Missed", Colors.GRAY);
-                printMinorActionText(text);
+                displayMinorActionMessage(text);
             }
         });
     }
@@ -641,7 +632,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
                     text = mBattleTextBuilder.heal(id, msg.kwarg("from"), msg.kwarg("of"), msg.kwarg("wisher"));
                 getBattlingPokemon(id).condition = condition;
                 onHealthChanged(id, condition);
-                printMinorActionText(text);
+                displayMinorActionMessage(text);
                 onDisplayBattleToast(id,
                         (damage ? "-" : "+") + percentage,
                         damage ? Colors.RED : Colors.GREEN);
@@ -672,7 +663,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
             public void run() {
                 getBattlingPokemon(id).condition.status = status;
                 onStatusChanged(id, cure ? null : status);
-                printMinorActionText(text);
+                displayMinorActionMessage(text);
             }
         });
     }
@@ -682,7 +673,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
-                printMinorActionText(text);
+                displayMinorActionMessage(text);
             }
         });
     }
@@ -705,7 +696,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
                 StatModifiers statModifiers = getBattlingPokemon(id).statModifiers;
                 statModifiers.inc(stat, amountValue);
                 onStatChanged(id, stat, amountValue, false);
-                printMinorActionText(text);
+                displayMinorActionMessage(text);
             }
         });
     }
@@ -724,7 +715,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
                 StatModifiers statModifiers = getBattlingPokemon(id).statModifiers;
                 statModifiers.set(stat, amount);
                 onStatChanged(id, stat, amount, true);
-                printMinorActionText(text);
+                displayMinorActionMessage(text);
             }
         });
     }
@@ -739,7 +730,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
             @Override
             public void run() {
                 mCurrentWeather = "none".equals(weather) ? null : weather;
-                printMinorActionText(text);
+                displayMinorActionMessage(text);
                 onWeatherChanged(weather);
                 if (mCurrentWeather == null && mCurrentPseudoWeather != null)
                     onWeatherChanged(mCurrentPseudoWeather);
@@ -769,7 +760,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
                 mCurrentPseudoWeather = pseudoWeather;
                 if (mCurrentWeather == null)
                     onWeatherChanged(pseudoWeather);
-                printMinorActionText(text);
+                displayMinorActionMessage(text);
             }
         });
     }
@@ -787,7 +778,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
-                printMinorActionText(text);
+                displayMinorActionMessage(text);
             }
         });
     }
@@ -810,7 +801,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
             @Override
             public void run() {
                 onSideChanged(player, sideName, start);
-                printMinorActionText(text);
+                displayMinorActionMessage(text);
             }
         });
     }
@@ -832,7 +823,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
-                printMinorActionText(text);//texts[0]);
+                displayMinorActionMessage(text);//texts[0]);
                 onDisplayBattleToast(pokemonId, toastText, Colors.RED);
             }
         });
@@ -848,7 +839,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
-                printMinorActionText(text);//texts[0]);
+                displayMinorActionMessage(text);//texts[0]);
                 onDisplayBattleToast(pokemonId, "Immune", Colors.GRAY);
             }
         });
@@ -868,7 +859,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
             @Override
             public void run() {
                 // TODO Maybe show a toast ?
-                printMinorActionText(text);
+                displayMinorActionMessage(text);
             }
         });
     }
@@ -891,7 +882,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
-                printMinorActionText(text);
+                displayMinorActionMessage(text);
                 if (start)
                     onDisplayBattleToast(pokemonId, ability, Colors.BLUE);
             }
@@ -908,7 +899,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
-                printMinorActionText(text);
+                displayMinorActionMessage(text);
             }
         });
     }
@@ -925,7 +916,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
-                printMinorActionText(text);
+                displayMinorActionMessage(text);
             }
         });
     }
@@ -954,7 +945,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
                 else
                     onVolatileStatusChanged(id, effect, start);
 
-                printMinorActionText(text);
+                displayMinorActionMessage(text);
             }
         });
     }
@@ -972,7 +963,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
-                printMinorActionText(text);
+                displayMinorActionMessage(text);
             }
         });
     }
@@ -982,7 +973,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
-                printMinorActionText(text);
+                displayMinorActionMessage(text);
             }
         });
     }
@@ -992,7 +983,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
-                printMinorActionText(text);
+                displayMinorActionMessage(text);
             }
         });
     }
@@ -1002,7 +993,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
-                printMinorActionText(text);
+                displayMinorActionMessage(text);
             }
         });
     }
@@ -1016,7 +1007,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
-                printMinorActionText(text);
+                displayMinorActionMessage(text);
             }
         });
     }
@@ -1030,7 +1021,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
             @Override
             public void run() {
                 // Todo Animate callback
-                printMinorActionText(text);
+                displayMinorActionMessage(text);
             }
         });
     }
@@ -1042,7 +1033,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
-                printMinorActionText(text);
+                displayMinorActionMessage(text);
             }
         });
     }
@@ -1053,7 +1044,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
-                printMinorActionText(text);
+                displayMinorActionMessage(text);
             }
         });
     }
@@ -1067,22 +1058,26 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
-                printMinorActionText(text);
+                displayMinorActionMessage(text);
             }
         });
     }
 
-    private void printMajorActionText(CharSequence text) {
+    // This should be called only from action queue runnables
+    private void displayMajorActionMessage(CharSequence text) {
         if (text == null) return;
-        onPrintText(text);
+        // Calling super to prevent queuing
+        super.printMessage(text);
         onPrintBattleMessage(text);
     }
 
-    private void printMinorActionText(CharSequence text) {
+    // This should be called only from action queue runnables
+    private void displayMinorActionMessage(CharSequence text) {
         if (text == null) return;
         Spannable spannable = new SpannableString(text);
         spannable.setSpan(new RelativeSizeSpan(0.8f), 0, text.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
-        onPrintText(spannable);
+        // Calling super to prevent queuing
+        super.printMessage(spannable);
         onPrintBattleMessage(spannable);
     }
 
@@ -1092,7 +1087,18 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         spannable.setSpan(new RelativeSizeSpan(0.8f), 0, text.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
         spannable.setSpan(new StyleSpan(Typeface.ITALIC), 0, text.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
         spannable.setSpan(new ForegroundColorSpan(0xFF8B0000), 0, text.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
-        onPrintText(spannable);
+        printMessage(spannable);
+    }
+
+    @Override
+    protected void printMessage(final CharSequence text) {
+        // Include eventual message prints from super class in the action queue.
+        mActionQueue.enqueueAction(new Runnable() {
+            @Override
+            public void run() {
+                BattleMessageObserver.super.printMessage(text);
+            }
+        });
     }
 
     protected abstract void onPlayerInit(String playerUsername, String foeUsername);
@@ -1136,11 +1142,11 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
     protected abstract void onPrintBattleMessage(CharSequence message);
 
     protected void onMarkBreak() {
-        mActionQueue.enqueueMinorAction(new Runnable() {
-            @Override
-            public void run() {
-                //onPrintText("");
-            }
-        });
+//        mActionQueue.enqueueMinorAction(new Runnable() {
+//            @Override
+//            public void run() {
+//                printMessage("");
+//            }
+//        });
     }
 }
