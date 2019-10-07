@@ -84,7 +84,9 @@ public class ShowdownService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        mWebSocket.close(WS_CLOSE_GOING_AWAY, null);
+        Log.e(TAG, "Service onDestroy()");
+        if (isConnected())
+            mWebSocket.close(WS_CLOSE_GOING_AWAY, null);
     }
 
     public boolean isConnected() {
@@ -92,7 +94,7 @@ public class ShowdownService extends Service {
     }
 
     public void connectToServer() {
-        if (mWebSocket != null)
+        if (isConnected())
             return;
         Request request = new Request.Builder().url(SHOWDOWN_SOCKET_URL).build();
         mWebSocket = mOkHttpClient.newWebSocket(request, mWebSocketListener);
@@ -104,7 +106,7 @@ public class ShowdownService extends Service {
     }
 
     public void disconnectFromServer() {
-        if (mWebSocket != null)
+        if (isConnected())
             mWebSocket.close(WS_CLOSE_NORMAL, null);
     }
 
@@ -130,12 +132,15 @@ public class ShowdownService extends Service {
     }
 
     private void sendMessage(String message) {
-        Log.w(TAG + "[SEND]", message);
-        mWebSocket.send(message);
+        if (isConnected()) {
+            Log.w(TAG + "[SEND]", message);
+            mWebSocket.send(message);
+        } else {
+            Log.e(TAG + "[SEND]", "Error: WebSocket not connected. Ignoring message: " + message);
+        }
     }
 
     public void registerMessageObserver(MessageObserver observer, boolean asGlobal) {
-        Log.w(TAG, "register " + asGlobal);
         if (asGlobal) {
             if (mGlobalMessageObserver != null)
                 unregisterMessageObserver(mGlobalMessageObserver);

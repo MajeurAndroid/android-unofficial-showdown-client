@@ -856,8 +856,21 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         @Override
         public void onRoomDeInit() {
             super.onRoomDeInit();
-            // In case of corrupted battle stream make sure we stop music at the next one
+            ((MainActivity) getContext()).setKeepScreenOn(false);
             mAudioManager.stopBattleMusic();
+            mInactiveBattleOverlayDrawable.setWinner(null);
+            clearBattleFieldUi();
+            mActionWidget.dismiss();
+            mLogTextView.setText("");
+            mLastActionRequest = null;
+            mActionWidget.dismiss();
+            mUndoButton.setEnabled(false);
+            mExtraUndoContainer.animate()
+                    .setStartDelay(0)
+                    .translationX(mExtraActionsContainer.getWidth())
+                    .alpha(0f)
+                    .start();
+            mTimerButton.getDrawable().clearColorFilter();
         }
     };
 }

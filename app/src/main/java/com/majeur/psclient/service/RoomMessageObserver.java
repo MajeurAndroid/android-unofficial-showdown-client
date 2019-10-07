@@ -31,6 +31,17 @@ public abstract class RoomMessageObserver extends MessageObserver {
         mUsernameColorCache = new HashMap<>();
     }
 
+    @Override
+    public void observeForRoomId(String roomId) {
+        if (roomId == null && observedRoomId() != null) {
+            mRoomJoined = false;
+            mCurrentUsers.clear();
+            mUsernameColorCache.clear();
+            onRoomDeInit();
+        }
+        super.observeForRoomId(roomId);
+    }
+
     public boolean roomJoined() {
         return mRoomJoined;
     }
@@ -105,6 +116,8 @@ public abstract class RoomMessageObserver extends MessageObserver {
                 return true;
             case "deinit":
                 mRoomJoined = false;
+                mCurrentUsers.clear();
+                mUsernameColorCache.clear();
                 onRoomDeInit();
                 return true;
             case "noinit":

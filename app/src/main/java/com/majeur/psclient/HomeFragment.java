@@ -97,6 +97,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
         mLoginButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if (mService == null || !mService.isConnected()) return;
                 if (mCurrentUserName == null || mCurrentUserName.toLowerCase().startsWith("guest")) {
                     SignInDialog.newInstance().show(getFragmentManager(), "");
                 } else {
@@ -213,7 +214,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
         mBattleButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (!mService.isConnected()) return;
+                if (mService == null || !mService.isConnected()) return;
                 if (mObserver.isUserGuest())
                     SignInDialog.newInstance().show(getFragmentManager(), "");
                 else {
@@ -246,6 +247,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
         view.findViewById(R.id.button_finduser).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if (mService == null || !mService.isConnected()) return;
                 View dialogView = getLayoutInflater().inflate(R.layout.dialog_battle_message, null);
                 final EditText editText = dialogView.findViewById(R.id.edit_text_team_name);
                 editText.setHint("Type a username");
@@ -269,6 +271,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
         view.findViewById(R.id.button_watchbattle).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if (mService == null || !mService.isConnected()) return;
                 mService.sendGlobalCommand("cmd", "roomlist");
             }
         });
@@ -324,8 +327,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
     }
 
     private boolean searchForBattle() {
-        if (mService == null) return false;
-
+        if (mService == null || !mService.isConnected()) return false;
         if (mCurrentBattleFormat.isTeamNeeded()) {
             Team team = (Team) mTeamsSpinner.getSelectedItem();
             if (team.isEmpty()) {
@@ -341,6 +343,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
     }
 
     private void tryJoinBattleRoom(final String roomId) {
+        if (mService == null || !mService.isConnected()) return;
         MainActivity activity = (MainActivity) getActivity();
         BattleFragment battleFragment = activity.getBattleFragment();
         if (battleFragment.getObservedRoomId() == null || !battleFragment.battleRunning()) {
@@ -348,7 +351,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
         } else {
             final String runningBattleRoomId = battleFragment.getObservedRoomId();
             if (runningBattleRoomId.equals(roomId)) {
-                activity.showBattleFragmentView();
+                activity.showBattleFragment();
                 return;
             }
             String currentBattleName = runningBattleRoomId.substring("battle-".length());
@@ -384,6 +387,20 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
                 Snackbar.make(getView(), "Connected as " + userName, Snackbar.LENGTH_LONG).show();
                 mLoginButton.setImageResource(R.drawable.ic_logout);
             }
+            MainActivity activity = (MainActivity) getActivity();
+            activity.showHomeFragment();
+
+            checkRooms();
+        }
+
+        private void checkRooms() {
+            MainActivity activity = (MainActivity) getActivity();
+            BattleFragment battleFragment = activity.getBattleFragment();
+            if (battleFragment.getObservedRoomId() != null)
+                battleFragment.setObservedRoomId(null);
+            ChatFragment chatFragment = activity.getChatFragment();
+            if (chatFragment.getObservedRoomId() != null)
+                chatFragment.setObservedRoomId(null);
         }
 
         @Override
@@ -503,7 +520,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
                     BattleFragment battleFragment = activity.getBattleFragment();
                     if (battleFragment.getObservedRoomId() == null || !battleFragment.battleRunning()) {
                         battleFragment.setObservedRoomId(roomId);
-                        ((MainActivity) getActivity()).showBattleFragmentView();
+                        ((MainActivity) getActivity()).showBattleFragment();
                     } else {
                         // Most of the time this is an auto joined battle coming from a new search, let's
                         // just leave it silently. If the user wants to join it deliberately, he will
@@ -560,7 +577,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
         mService = service;
         service.registerMessageObserver(mObserver, true);
 
-        if (!mService.isConnected()) {
+        if (!service.isConnected()) {
             Snackbar.make(getView(), "Connecting to Showdown server...",
                     Snackbar.LENGTH_INDEFINITE).show();
             service.connectToServer();

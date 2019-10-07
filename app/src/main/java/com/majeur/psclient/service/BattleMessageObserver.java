@@ -66,20 +66,26 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         mActionQueue.clear();
         mBattleRunning = true;
         mPreviewPokemonIndexes = new int[2];
+        mLastActionRequest = null;
         mCurrentWeather = null;
         mCurrentPseudoWeather = null;
     }
 
     @Override
     public void onRoomDeInit() {
-        // No need of queuing this, calling super
-        super.printMessage("~ deinit ~");
+        mP1Username = null;
+        mP2Username = null;
+        mGameType = null;
+        mActionQueue.clear();
+        mBattleRunning = false;
+        mPreviewPokemonIndexes = new int[2];
+        mCurrentWeather = null;
+        mCurrentPseudoWeather = null;
     }
 
     public Const getGameType() {
         return mGameType;
     }
-
 
     public boolean battleRunning() {
         return mBattleRunning;

@@ -27,7 +27,8 @@ public class InactiveBattleOverlayDrawable extends ColorDrawable {
     }
 
     public void setWinner(String user) {
-        mText2 = "(" + user + " won !)";
+        if (user == null) mText2 = null;
+        else mText2 = "(" + user + " won !)";
         invalidateSelf();
     }
 

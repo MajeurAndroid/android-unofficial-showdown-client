@@ -107,6 +107,8 @@ public abstract class GlobalMessageObserver extends MessageObserver {
         // Update server counts
         mRequestServerCountsOnly = true;
         getService().sendGlobalCommand("cmd", "rooms");
+
+        onSearchBattlesChanged(new String[0], new String[0]);
     }
 
     private void processQueryResponse(ServerMessage args) {

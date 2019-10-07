@@ -184,9 +184,12 @@ public class MainActivity extends AppCompatActivity {
             stopService(mShowdownServiceIntent);
     }
 
-    public void showBattleFragmentView() {
-        BottomNavigationView navigationView = findViewById(R.id.bottom_navigation);
-        navigationView.setSelectedItemId(R.id.fragment_battle);
+    public void showHomeFragment() {
+        mNavigationView.setSelectedItemId(R.id.fragment_home);
+    }
+
+    public void showBattleFragment() {
+        mNavigationView.setSelectedItemId(R.id.fragment_battle);
     }
 
     public void setKeepScreenOn(boolean keep) {
