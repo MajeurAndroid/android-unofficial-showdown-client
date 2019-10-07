@@ -29,9 +29,6 @@ public class PlayerInfoView extends AppCompatTextView {
     private static final int SUFFIX_OFFSET = 2;
     private static final int MAX_TEAM_SIZE = 6;
 
-    private String mUsername;
-    private int mTeamSize;
-
     private int mDexIconSize;
     private SpannableStringBuilder mSpannableBuilder;
     private Drawable mPokeballDrawable;
@@ -50,7 +47,6 @@ public class PlayerInfoView extends AppCompatTextView {
     public PlayerInfoView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         mPokemonIds = new LinkedHashSet<>();
-
         mSpannableBuilder = new SpannableStringBuilder(SUFFIX_PATTERN);
         mDexIconSize = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 16, getResources().getDisplayMetrics());
         int size = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 16, getResources().getDisplayMetrics());
@@ -58,6 +54,14 @@ public class PlayerInfoView extends AppCompatTextView {
         mPokeballDrawable.setBounds(0, 0, size, size);
         mEmptyPokeballDrawable = getResources().getDrawable(R.drawable.ic_team_poke_empty);
         mEmptyPokeballDrawable.setBounds(0, 0, size, size);
+    }
+
+    public void clear() {
+        mPokemonIds.clear();
+        mSpannableBuilder.clear();
+        mSpannableBuilder.clearSpans();
+        mSpannableBuilder.append(SUFFIX_PATTERN);
+        setText(null);
     }
 
     public void setUsername(String username) {
@@ -86,7 +90,6 @@ public class PlayerInfoView extends AppCompatTextView {
             mSpannableBuilder.removeSpan(potentialStyleSpans[0]);
         mSpannableBuilder.setSpan(new StyleSpan(Typeface.BOLD), start, start + username.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
 
-        mUsername = username;
         invalidateText();
     }
 
@@ -109,7 +112,6 @@ public class PlayerInfoView extends AppCompatTextView {
             for (int i = k + teamSize; i < l - SUFFIX_OFFSET; i++)
                 mSpannableBuilder.setSpan(new ImageSpan(mEmptyPokeballDrawable), i, i + 1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
         }
-        mTeamSize = teamSize;
         invalidateText();
     }
 

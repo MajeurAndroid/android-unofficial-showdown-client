@@ -41,6 +41,7 @@ import com.majeur.psclient.model.Weather;
 import com.majeur.psclient.service.BattleMessageObserver;
 import com.majeur.psclient.service.ShowdownService;
 import com.majeur.psclient.util.AudioBattleManager;
+import com.majeur.psclient.util.InactiveBattleOverlayDrawable;
 import com.majeur.psclient.util.Preferences;
 import com.majeur.psclient.widget.BattleActionWidget;
 import com.majeur.psclient.widget.BattleLayout;
@@ -91,6 +92,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
     private DexIconLoader mDexIconLoader;
     private AudioBattleManager mAudioManager;
 
+    private Drawable mInactiveBattleOverlayDrawable;
     private BattleActionRequest mLastActionRequest;
     private boolean mTimerEnabled;
     private boolean mSoundEnabled;
@@ -145,6 +147,9 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         mExtraActionsContainer = view.findViewById(R.id.extra_action_container);
         mExtraUndoContainer = view.findViewById(R.id.extra_undo_container);
         mExtraActionsContainer.animate().setInterpolator(new OvershootInterpolator(1.4f)).setDuration(500);
+
+        mInactiveBattleOverlayDrawable = new InactiveBattleOverlayDrawable(getResources());
+        mOverlayImageView.setImageDrawable(mInactiveBattleOverlayDrawable);
 
         mActionWidget.setOnRevealListener(new BattleActionWidget.OnRevealListener() {
             @Override
@@ -212,6 +217,30 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
     public void onServiceWillUnbound(ShowdownService service) {
         mService = null;
         service.unregisterMessageObserver(mObserver);
+    }
+
+    private void prepareBattleFieldUi() {
+        mBattleLayout.setAlpha(1f);
+        mOverlayImageView.setAlpha(1f);
+        mOverlayImageView.setImageDrawable(null);
+    }
+
+    private void clearBattleFieldUi() {
+        mBattleLayout.animate().alpha(0f).withEndAction(new Runnable() {
+            @Override
+            public void run() {
+                mBattleLayout.getSideView(Player.TRAINER).clearAllSides();
+                mBattleLayout.getSideView(Player.FOE).clearAllSides();
+                mOverlayImageView.setImageDrawable(null);
+
+                mTrainerInfoView.clear();
+                mFoeInfoView.clear();
+
+                mOverlayImageView.setAlpha(0f);
+                mOverlayImageView.setImageDrawable(mInactiveBattleOverlayDrawable);
+                mOverlayImageView.animate().alpha(1f);
+            }
+        }).start();
     }
 
     private final View.OnClickListener mExtraClickListener = new View.OnClickListener() {
@@ -474,6 +503,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
 
         @Override
         protected void onBattleStarted() {
+            prepareBattleFieldUi();
             ((MainActivity) getContext()).setKeepScreenOn(true);
             switch (getGameType()) {
                 case SINGLE:
@@ -494,10 +524,12 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         protected void onBattleEnded() {
             ((MainActivity) getContext()).setKeepScreenOn(false);
             mAudioManager.stopBattleMusic();
+            clearBattleFieldUi();
         }
 
         @Override
         protected void onPreviewStarted() {
+            prepareBattleFieldUi();
             mBattleLayout.setMode(BattleLayout.MODE_PREVIEW);
         }
 
@@ -793,9 +825,6 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
             mLastActionRequest = null;
             mActionWidget.dismissNow();
             onTimerEnabled(false);
-            mBattleLayout.getSideView(Player.TRAINER).clearAllSides();
-            mBattleLayout.getSideView(Player.FOE).clearAllSides();
-            mOverlayImageView.setImageDrawable(null);
             mBackgroundImageView.animate()
                     .setDuration(100)
                     .alpha(0)
