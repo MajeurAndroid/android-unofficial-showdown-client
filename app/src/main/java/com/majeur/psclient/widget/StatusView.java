@@ -7,6 +7,7 @@ import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.Typeface;
+import android.text.TextUtils;
 import android.util.Property;
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
@@ -178,6 +179,8 @@ public class StatusView extends View {
     private void drawContent(Canvas canvas, Point measurePoint) {
         Rect measureRect = mMeasureRect;
         measureRect.setEmpty();
+
+        if (TextUtils.isEmpty(mLabel)) return; // Nothing to draw
 
         drawLabelText(canvas, measureRect);
         updateMeasurePoint(measurePoint, measureRect);
