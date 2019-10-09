@@ -32,11 +32,11 @@ public class ServerMessage {
         } else {
             int sepIndex = data.indexOf('|', 1);
             if (sepIndex == -1) {
-                command = data.substring(1).toLowerCase();
+                command = data.substring(1);
                 args = Collections.emptyList();
                 kwargs = Collections.emptyMap();
             } else {
-                command = data.substring(1, sepIndex).toLowerCase();
+                command = data.substring(1, sepIndex);
                 parseArguments(data.substring(sepIndex + 1), command.equals("formats") || command.equals("c")
                         || command.equals("c:") || command.equals("tier") || command.equals("error"));
             }

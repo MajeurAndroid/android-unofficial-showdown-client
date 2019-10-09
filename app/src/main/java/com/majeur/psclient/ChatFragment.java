@@ -131,7 +131,7 @@ public class ChatFragment extends Fragment implements MainActivity.Callbacks {
         String message = mMessageView.getText().toString();
         if (message.length() == 0 || TextUtils.isEmpty(message))
             return;
-        mObserver.sendChatMessage(message);
+        mShowdownService.sendRoomMessage(mObservedRoomId, message);
         mMessageView.getText().clear();
         mInputMethodManager.hideSoftInputFromWindow(mMessageView.getWindowToken(), 0);
     }

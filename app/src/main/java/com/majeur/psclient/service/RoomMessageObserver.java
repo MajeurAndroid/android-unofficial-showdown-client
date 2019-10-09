@@ -46,10 +46,6 @@ public abstract class RoomMessageObserver extends MessageObserver {
         return mRoomJoined;
     }
 
-    public void sendChatMessage(String message) {
-        getService().sendRoomMessage(observedRoomId(), message);
-    }
-
     @Override
     public boolean onMessage(ServerMessage message) {
         switch (message.command) {
@@ -64,32 +60,38 @@ public abstract class RoomMessageObserver extends MessageObserver {
             case "users":
                 initializeUserList(message);
                 return true;
+            case "J":
             case "j":
             case "join":
                 String username = message.nextArg();
                 mCurrentUsers.add(username);
                 onUpdateUsers(mCurrentUsers);
-                printUserRelatedMessage(username + " joined");
+                if (!message.command.equals("J"))
+                    printUserRelatedMessage(username + " joined");
                 return true;
+            case "L":
             case "l":
             case "leave":
                 username = message.nextArg();
                 mCurrentUsers.remove(username);
                 onUpdateUsers(mCurrentUsers);
-                printUserRelatedMessage(username + " left");
+                if (!message.command.equals("L"))
+                    printUserRelatedMessage(username + " left");
                 return true;
             case "html":
-                // printMessage("~html messages aren't supported yet~");
+                printMessage("~html messages aren't supported yet~");
                 return true;
             case "uhtml":
-                // printMessage("~html messages aren't supported yet~");
+                printMessage("~html messages aren't supported yet~");
                 return true;
             case "uhtmlchange":
                 // TODO
                 return true;
+            case "N":
             case "n":
             case "name":
-                handleNameChange(message);
+                if (!message.command.equals("N"))
+                    handleNameChange(message);
                 return true;
             case "c":
             case "chat":
@@ -102,9 +104,14 @@ public abstract class RoomMessageObserver extends MessageObserver {
             case ":":
                 // Time stamp, we aren't using it yet
                 return true;
+            case "B":
             case "b":
             case "battle":
-                printMessage("A battle started between XXX and YYY");
+                String roomId = message.nextArg();
+                String user1 = message.nextArg();
+                String user2 = message.nextArg();
+                if (!message.command.equals("B"))
+                    printMessage("A battle started between " + user1 + " and " + user2 + " (in room " + roomId + ")");
                 return true;
             case "error":
                 printErrorMessage(message.nextArg());
@@ -170,9 +177,6 @@ public abstract class RoomMessageObserver extends MessageObserver {
     }
 
     private void printUserRelatedMessage(String message) {
-        if (mCurrentUsers.size() >= 8)
-            return;
-
         Spannable spannable = new SpannableString(message);
         spannable.setSpan(new StyleSpan(Typeface.ITALIC), 0, message.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
         spannable.setSpan(new ForegroundColorSpan(0xFF424242), 0, message.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
