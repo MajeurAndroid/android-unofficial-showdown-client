@@ -452,7 +452,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
         protected void onUserDetails(String id, String name, boolean online, String group,
                                      List<String> chatrooms, List<String> battles) {
             SpannableStringBuilder builder = new SpannableStringBuilder();
-            if (group != null) builder.append(italicText("Group: ")).append(group).append("\n");
+            if (group != null) builder.append(italicText("Group: ")).append(group.replace(" ", "␣")).append("\n");
             builder.append(italicText("Battles: "));
             if (battles.size() > 0) {
                 StringBuilder stringBuilder = new StringBuilder();
