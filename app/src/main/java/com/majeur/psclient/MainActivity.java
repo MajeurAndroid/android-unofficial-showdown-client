@@ -17,11 +17,12 @@ import com.majeur.psclient.io.DexIconLoader;
 import com.majeur.psclient.io.GlideHelper;
 import com.majeur.psclient.service.ShowdownService;
 import com.majeur.psclient.util.Utils;
-import com.majeur.psclient.widget.SwitchLayout;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -56,34 +57,35 @@ public class MainActivity extends AppCompatActivity {
         mGlideHelper = new GlideHelper(this);
         setContentView(R.layout.activity_main);
 
-        final SwitchLayout switchLayout = findViewById(R.id.fragment_container);
         mNavigationView = findViewById(R.id.bottom_navigation);
         mNavigationView.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
-                if (menuItem.getItemId() == mNavigationView.getSelectedItemId()) return false;
-                clearBadge(menuItem.getItemId());
-                switch (menuItem.getItemId()) {
-                    case R.id.fragment_home:
-                        switchLayout.smoothSwitchTo(0);
-                        return true;
-                    case R.id.fragment_battle:
-                        switchLayout.smoothSwitchTo(1);
-                        return true;
-                    case R.id.fragment_chat:
-                        switchLayout.smoothSwitchTo(2);
-                        return true;
-                    case R.id.fragment_teams:
-                        switchLayout.smoothSwitchTo(3);
-                        return true;
-                    default:
-                        return false;
+                final int fragmentId = menuItem.getItemId();
+                if (fragmentId == mNavigationView.getSelectedItemId()) return false;
+                clearBadge(fragmentId);
+                FragmentManager fm = getSupportFragmentManager();
+                FragmentTransaction transaction = fm.beginTransaction();
+                transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
+                for (Fragment fragment : fm.getFragments()) {
+                    if (fragment.getId() == fragmentId && fragment.isHidden())
+                        transaction.show(fragment);
+                    if (fragment.isVisible())
+                        transaction.hide(fragment);
                 }
+                transaction.commit();
+                return true;
             }
         });
 
         mShowdownServiceIntent = new Intent(this, ShowdownService.class);
         startService(mShowdownServiceIntent);
+
+        getSupportFragmentManager().beginTransaction()
+                .hide(getBattleFragment())
+                .hide(getChatFragment())
+                .hide(getTeamsFragment())
+                .commit();
     }
 
     @Override
@@ -110,7 +112,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void showBadge(int fragmentId) {
         BadgeDrawable badge = mNavigationView.getOrCreateBadge(fragmentId);
-        badge.setBackgroundColor(getColor(R.color.accent));
+        badge.setBackgroundColor(getResources().getColor(R.color.accent));
     }
 
     public void clearBadge(int fragmentId) {

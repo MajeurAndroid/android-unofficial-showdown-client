@@ -18,8 +18,7 @@
         android:layout_height="match_parent"
         android:layout_above="@id/bottom_navigation">
 
-        <com.majeur.psclient.widget.SwitchLayout
-            android:id="@+id/fragment_container"
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
@@ -47,7 +46,7 @@
                 android:layout_height="match_parent"
                 android:name="com.majeur.psclient.TeamsFragment"/>
 
-        </com.majeur.psclient.widget.SwitchLayout>
+        </FrameLayout>
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
