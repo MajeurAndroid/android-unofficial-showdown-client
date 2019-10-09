@@ -3,12 +3,12 @@ package com.majeur.psclient.widget;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.util.ArrayMap;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 
@@ -26,6 +26,7 @@ public class SideView extends View {
     private int mWidth;
 
     private Paint mPaint;
+    private Path mPath;
     private Rect mTempRect;
     private Canvas mMockCanvas;
     private Point mMeasurePoint;
@@ -47,6 +48,7 @@ public class SideView extends View {
         mCurrentSides = new ArrayMap<>();
         mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.NORMAL));
+        mPath = new Path();
         mTempRect = new Rect();
         mMockCanvas = new Canvas();
         mMeasurePoint = new Point();
@@ -62,7 +64,6 @@ public class SideView extends View {
     }
 
     public void sideStart(String rawSide) {
-        Log.e(getClass().getSimpleName(), "side start: " + rawSide);
         String key = rawSideToKey(rawSide);
         Integer currentCount = mCurrentSides.get(key);
         if (currentCount == null) currentCount = 0;
@@ -72,7 +73,6 @@ public class SideView extends View {
     }
 
     public void sideEnd(String rawSide) {
-        Log.e(getClass().getSimpleName(), "side end: " + rawSide);
         String key = rawSideToKey(rawSide);
         mCurrentSides.remove(key);
         requestLayout();
@@ -129,15 +129,13 @@ public class SideView extends View {
             int w = mTempRect.width() + 2 * mRectRadius + mShadowRadius;
             int h = mTempRect.height() + 2 * mRectRadius;
             if (gravityEnd) {
-                canvas.drawRoundRect(mWidth - w + mShadowRadius, yOffset, mWidth, yOffset + h, mRectRadius, mRectRadius, mPaint);
+                drawRoundRect(canvas, mWidth - w + mShadowRadius, yOffset, mWidth, yOffset + h, true);
                 mPaint.clearShadowLayer();
-                canvas.drawRect(mWidth - mRectRadius, yOffset, mWidth, yOffset + h, mPaint);
                 mPaint.setColor(Colors.WHITE);
                 canvas.drawText(text, mWidth - w + mRectRadius + mShadowRadius, mRectRadius + yOffset + mTempRect.height(), mPaint);
             } else {
-                canvas.drawRoundRect(0, yOffset, w - mShadowRadius, yOffset + h, mRectRadius, mRectRadius, mPaint);
+                drawRoundRect(canvas, 0, yOffset, w - mShadowRadius, yOffset + h, false);
                 mPaint.clearShadowLayer();
-                canvas.drawRect(0, yOffset, mRectRadius, yOffset + h, mPaint);
                 mPaint.setColor(Colors.WHITE);
                 canvas.drawText(text, mRectRadius, mRectRadius + yOffset + mTempRect.height(), mPaint);
             }
@@ -148,5 +146,27 @@ public class SideView extends View {
                 if (measurePoint.y < yOffset) measurePoint.y = yOffset;
             }
         }
+    }
+
+    private void drawRoundRect(Canvas canvas, int left, int top, int right, int bottom, boolean leftSide) {
+        mPath.reset();
+        if (leftSide) {
+            mPath.moveTo(right, top);
+            mPath.lineTo(left + mRectRadius, top);
+            mPath.quadTo(left, top, left, top + mRectRadius);
+            mPath.lineTo(left, bottom - mRectRadius);
+            mPath.quadTo(left, bottom, left + mRectRadius, bottom);
+            mPath.lineTo(right, bottom);
+            mPath.lineTo(right, top);
+        } else {
+            mPath.moveTo(left, top);
+            mPath.lineTo(right - mRectRadius, top);
+            mPath.quadTo(right, top, right, top + mRectRadius);
+            mPath.lineTo(right, bottom - mRectRadius);
+            mPath.quadTo(right, bottom, right - mRectRadius, bottom);
+            mPath.lineTo(left, bottom);
+            mPath.lineTo(left, top);
+        }
+        canvas.drawPath(mPath, mPaint);
     }
 }
