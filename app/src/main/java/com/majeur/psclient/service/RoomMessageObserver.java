@@ -157,7 +157,7 @@ public abstract class RoomMessageObserver extends MessageObserver {
     }
 
     private void handleChatMessage(ServerMessage args) {
-        String user = args.nextArg().substring(1);
+        String user = args.nextArg().trim();
         String userMessage = args.rawArgs();
 
         Spannable spannable = new SpannableString(user + ": " + userMessage);
