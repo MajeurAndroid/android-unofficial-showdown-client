@@ -1107,6 +1107,17 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         });
     }
 
+    @Override
+    protected void printHtml(final String html) {
+        // Include eventual html prints from super class in the action queue.
+        mActionQueue.enqueueAction(new Runnable() {
+            @Override
+            public void run() {
+                BattleMessageObserver.super.printHtml(html);
+            }
+        });
+    }
+
     protected abstract void onPlayerInit(String playerUsername, String foeUsername);
 
     protected abstract void onFaint(PokemonId id);

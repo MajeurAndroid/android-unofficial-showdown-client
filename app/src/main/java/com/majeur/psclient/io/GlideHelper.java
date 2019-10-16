@@ -1,6 +1,9 @@
 package com.majeur.psclient.io;
 
 import android.content.Context;
+import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.view.ViewGroup;
 import android.view.ViewPropertyAnimator;
@@ -18,8 +21,12 @@ import com.majeur.psclient.model.BasePokemon;
 import com.majeur.psclient.model.BattlingPokemon;
 import com.majeur.psclient.model.Player;
 import com.majeur.psclient.util.Utils;
+import com.majeur.psclient.util.html.Html;
+
+import java.util.concurrent.ExecutionException;
 
 import static com.majeur.psclient.model.Player.FOE;
+import static com.majeur.psclient.util.Utils.array;
 
 public class GlideHelper {
 
@@ -28,8 +35,11 @@ public class GlideHelper {
     }
 
     private RequestManager mRequestManager;
+    private Html.ImageGetter mImageGetter;
+    private Resources mResources;
 
     public GlideHelper(Context context) {
+        mResources = context.getResources();
         mRequestManager = Glide.with(context);
     }
 
@@ -148,5 +158,47 @@ public class GlideHelper {
                 .append(avatar)
                 .append(".png")
                 .toString();
+    }
+
+    public Html.ImageGetter getHtmlImageGetter(final DexIconLoader iconLoader, int maxWidth) {
+        final int mw = maxWidth - Utils.dpToPx(2);
+        return new Html.ImageGetter() {
+            @Override
+            public Drawable getDrawable(final String source, int reqw, int reqh) {
+                try {
+                    Drawable d = null;
+                    if (source.startsWith("content://com.majeur.psclient/dex-icon/")) {
+                        String species = source.substring(source.lastIndexOf('/') + 1, source.length());
+                        Bitmap icon = iconLoader.load(array(species))[0];
+                        if (icon != null) d = new BitmapDrawable(icon);
+                    } else {
+                        d = mRequestManager.asDrawable().load(source).submit().get();
+                    }
+                    if (d == null) return null;
+                    float r = d.getIntrinsicWidth() / (float) d.getIntrinsicHeight();
+                    int w, h;
+                    if (reqw != 0 && reqh == 0) {
+                        w = reqw;
+                        h = (int) (w / r);
+                    } else if (reqw == 0 && reqh != 0) {
+                        h = reqh;
+                        w = (int) (h * r);
+                    } else {
+                        w = reqw;
+                        h = reqh;
+                    }
+                    float mr = w / (float) mw;
+                    if (mr > 1) {
+                        w = mw;
+                        h /= mr;
+                    }
+                    d.setBounds(0, 0, w, h);
+                    return d;
+                } catch (ExecutionException | InterruptedException e) {
+                    e.printStackTrace();
+                    return null;
+                }
+            }
+        };
     }
 }

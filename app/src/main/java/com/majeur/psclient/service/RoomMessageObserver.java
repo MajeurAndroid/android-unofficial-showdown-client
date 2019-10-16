@@ -2,7 +2,6 @@ package com.majeur.psclient.service;
 
 import android.graphics.Color;
 import android.graphics.Typeface;
-import android.text.Html;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.Spanned;
@@ -79,10 +78,10 @@ public abstract class RoomMessageObserver extends MessageObserver {
                     printUserRelatedMessage(username + " left");
                 return true;
             case "html":
-                printMessage("~html messages aren't supported yet~");
+                //printMessage("~html messages aren't supported yet~");
                 return true;
             case "uhtml":
-                printMessage("~html messages aren't supported yet~");
+                //printMessage("~html messages aren't supported yet~");
                 return true;
             case "uhtmlchange":
                 // TODO
@@ -117,9 +116,8 @@ public abstract class RoomMessageObserver extends MessageObserver {
                 printErrorMessage(message.nextArg());
                 return true;
             case "raw":
-                String s = message.rawArgs();
-                if (s.contains("href")) return true; // skipping complex Html formatted messages
-                printMessage(Html.fromHtml(s));
+                String html = message.rawArgs().replace("&ThickSpace;", "  ");
+                printHtml(html);
                 return true;
             case "deinit":
                 mRoomJoined = false;
@@ -194,6 +192,12 @@ public abstract class RoomMessageObserver extends MessageObserver {
     protected void printMessage(CharSequence text) {
         onPrintText(text);
     }
+
+    protected void printHtml(String html) {
+        onPrintHtml(html);
+    }
+
+    protected abstract void onPrintHtml(String html);
 
     protected abstract void onRoomInit();
 

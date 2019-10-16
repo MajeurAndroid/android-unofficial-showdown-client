@@ -8,6 +8,7 @@ import android.graphics.PorterDuff;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.text.Spanned;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -41,8 +42,11 @@ import com.majeur.psclient.model.Weather;
 import com.majeur.psclient.service.BattleMessageObserver;
 import com.majeur.psclient.service.ShowdownService;
 import com.majeur.psclient.util.AudioBattleManager;
+import com.majeur.psclient.util.Callback;
 import com.majeur.psclient.util.InactiveBattleOverlayDrawable;
 import com.majeur.psclient.util.Preferences;
+import com.majeur.psclient.util.Utils;
+import com.majeur.psclient.util.html.Html;
 import com.majeur.psclient.widget.BattleActionWidget;
 import com.majeur.psclient.widget.BattleLayout;
 import com.majeur.psclient.widget.BattleTipPopup;
@@ -492,6 +496,12 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         mService.sendRoomCommand(mObservedRoomId, "undo");
     }
 
+    private void notifyNewMessageReceived() {
+        MainActivity activity = (MainActivity) getActivity();
+        if (getId() != activity.getSelectedFragmentId())
+            activity.showBadge(getId());
+    }
+
     private BattleMessageObserver mObserver = new BattleMessageObserver() {
 
         @Override
@@ -788,18 +798,12 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
 
         @Override
         public void onPrintText(CharSequence text) {
-            if (mLogTextView.getText().length() > 0)
-                mLogTextView.append("\n");
+            boolean fullScrolled = Utils.fullScrolled(mLogScrollView);
+            int l = mLogTextView.length();
+            if (l > 0) mLogTextView.append("\n");
             mLogTextView.append(text);
-            mLogScrollView.post(new Runnable() {
-                @Override
-                public void run() {
-                    mLogScrollView.fullScroll(View.FOCUS_DOWN);
-                }
-            });
-            MainActivity activity = (MainActivity) getActivity();
-            if (getId() != activity.getSelectedFragmentId())
-                activity.showBadge(getId());
+            notifyNewMessageReceived();
+            if (fullScrolled) postFullScroll();
         }
 
         @Override
@@ -812,6 +816,39 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                     .setStartDelay(750)
                     .alpha(0f)
                     .start();
+        }
+
+        @Override
+        protected void onPrintHtml(String html) {
+            final Object mark = new Object();
+            int l = mLogTextView.length();
+            mLogTextView.append("\u200C");
+            mLogTextView.getEditableText().setSpan(mark, l, l + 1, Spanned.SPAN_MARK_MARK);
+            Html.fromHtml(html,
+                    Html.FROM_HTML_MODE_COMPACT,
+                    mSpritesLoader.getHtmlImageGetter(mDexIconLoader, mLogTextView.getWidth()),
+                    new Callback<Spanned>() {
+                        @Override
+                        public void callback(Spanned spanned) {
+                            int at = mLogTextView.getEditableText().getSpanStart(mark);
+                            if (at == -1) return; // Check if text has been cleared
+                            boolean fullScrolled = Utils.fullScrolled(mLogScrollView);
+                            mLogTextView.getEditableText()
+                                    .insert(at, "\n")
+                                    .insert(at + 1, spanned);
+                            notifyNewMessageReceived();
+                            if (fullScrolled) postFullScroll();
+                        }
+                    });
+        }
+
+        private void postFullScroll() {
+            mLogScrollView.post(new Runnable() {
+                @Override
+                public void run() {
+                    mLogScrollView.fullScroll(View.FOCUS_DOWN);
+                }
+            });
         }
 
         @Override
@@ -828,7 +865,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         public void onRoomInit() {
             super.onRoomInit();
             mSoundEnabled = Preferences.getBoolPreference(getContext(), "sound");
-            mLogTextView.setText("");
+            mLogTextView.setText("", TextView.BufferType.EDITABLE);
             mLastActionRequest = null;
             mActionWidget.dismissNow();
             onTimerEnabled(false);

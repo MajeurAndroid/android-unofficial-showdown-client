@@ -9,6 +9,8 @@ import android.text.SpannableStringBuilder;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
+import android.view.View;
+import android.widget.ScrollView;
 
 import com.majeur.psclient.model.Colors;
 
@@ -28,12 +30,17 @@ public class Utils {
 
     private static float sScreenDensity;
 
-    public static void setStaticScreenDensity(Resources resources) {
-        sScreenDensity = resources.getDisplayMetrics().density;
+    public static int dpToPx(float dp) {
+        if (sScreenDensity == 0f) sScreenDensity = Resources.getSystem().getDisplayMetrics().density;
+        return (int) (sScreenDensity * dp);
     }
 
-    public static int dpToPx(float dp) {
-        return (int) (sScreenDensity * dp);
+    public static boolean fullScrolled(ScrollView scrollView) {
+        if (scrollView.getChildCount() == 0) return false;
+        View child = scrollView.getChildAt(scrollView.getChildCount() - 1);
+        int slop = dpToPx(14);
+        int diff = (child.getBottom() - slop - (scrollView.getHeight() + scrollView.getScrollY()));
+        return diff <= 0;
     }
 
     public static int hashColor(String name) {
@@ -41,9 +48,9 @@ public class Utils {
         for (int i = 0; i < name.length(); i++)
             sum += name.charAt(i);
 
-        int r = (int) (Double.parseDouble("0." + Double.toString(Math.sin(sum+1)).substring(6)) * 256);
-        int g = (int) (Double.parseDouble("0." + Double.toString(Math.sin(sum+2)).substring(6)) * 256);
-        int b = (int) (Double.parseDouble("0." + Double.toString(Math.sin(sum+3)).substring(6)) * 256);
+        int r = (int) (Double.parseDouble("0." + Double.toString(Math.sin(sum + 1)).substring(6)) * 256);
+        int g = (int) (Double.parseDouble("0." + Double.toString(Math.sin(sum + 2)).substring(6)) * 256);
+        int b = (int) (Double.parseDouble("0." + Double.toString(Math.sin(sum + 3)).substring(6)) * 256);
 
         return Color.rgb(r, g, b);
     }
@@ -233,5 +240,39 @@ public class Utils {
     public static String truncate(String s, int max) {
         if (s.length() > max) return s.substring(0, max) + "…";
         return s;
+    }
+
+    public static int convertXmlValueToInt(CharSequence charSeq, int defaultValue) {
+        if (null == charSeq || charSeq.length() == 0)
+            return defaultValue;
+        String nm = charSeq.toString();
+        // XXX This code is copied from Integer.decode() so we don't
+        // have to instantiate an Integer!
+        int value;
+        int sign = 1;
+        int index = 0;
+        int len = nm.length();
+        int base = 10;
+        if ('-' == nm.charAt(0)) {
+            sign = -1;
+            index++;
+        }
+        if ('0' == nm.charAt(index)) {
+            //  Quick check for a zero by itself
+            if (index == (len - 1))
+                return 0;
+            char c = nm.charAt(index + 1);
+            if ('x' == c || 'X' == c) {
+                index += 2;
+                base = 16;
+            } else {
+                index++;
+                base = 8;
+            }
+        } else if ('#' == nm.charAt(index)) {
+            index++;
+            base = 16;
+        }
+        return Integer.parseInt(nm.substring(index), base) * sign;
     }
 }
