@@ -20,7 +20,6 @@ import com.majeur.psclient.service.ShowdownService;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
 public class MainActivity extends AppCompatActivity {
@@ -62,13 +61,13 @@ public class MainActivity extends AppCompatActivity {
                 final int fragmentId = menuItem.getItemId();
                 if (fragmentId == mNavigationView.getSelectedItemId()) return false;
                 clearBadge(fragmentId);
-                FragmentManager fm = getSupportFragmentManager();
-                FragmentTransaction transaction = fm.beginTransaction();
+                FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
                 transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
-                for (Fragment fragment : fm.getFragments()) {
-                    if (fragment.getId() == fragmentId && fragment.isHidden())
-                        transaction.show(fragment);
-                    if (fragment.isVisible())
+                for (Fragment fragment : new Fragment[]{getHomeFragment(), getBattleFragment(),
+                        getChatFragment(), getTeamsFragment()}) {
+                    if (fragment.getId() == fragmentId)
+                       transaction.show(fragment);
+                    else
                         transaction.hide(fragment);
                 }
                 transaction.commit();
