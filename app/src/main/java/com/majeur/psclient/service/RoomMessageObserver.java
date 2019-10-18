@@ -9,6 +9,7 @@ import android.text.style.ForegroundColorSpan;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
 
+import com.majeur.psclient.model.User;
 import com.majeur.psclient.util.TextTagSpan;
 import com.majeur.psclient.util.Utils;
 
@@ -16,6 +17,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.majeur.psclient.model.Id.toId;
 
 public abstract class RoomMessageObserver extends MessageObserver {
 
@@ -168,7 +171,8 @@ public abstract class RoomMessageObserver extends MessageObserver {
     private int obtainUsernameColor(String username) {
         Integer usernameColor = mUsernameColorCache.get(username);
         if (usernameColor == null) {
-            usernameColor = Utils.hashColor(username);
+            if (User.getGroup(username) != 0) username = username.substring(1);
+            usernameColor = Utils.hashColor(toId(username));
             mUsernameColorCache.put(username, usernameColor);
         }
         return usernameColor;

@@ -43,10 +43,60 @@ public class Utils {
         return diff <= 0;
     }
 
-    public static int hashColor(String name) {
+    public static int hashColor(String string) {
+        String md5 = MD5.hash(string);
+        if (md5 != null)
+            return md5Color(md5);
+        else
+            return sinColor(string);
+    }
+
+    private static int md5Color(String hash) {
+        float H = parseInt(substringlen(hash, 4, 4), 16) % 360f; // 0 to 360
+        float S = parseInt(substringlen(hash, 0, 4), 16) % 50f + 40; // 40 to 89
+        float L = (float) Math.floor(parseInt(substringlen(hash, 8, 4), 16) % 20f + 30); // 30 to 49
+        float[] rgb = hslToRgb(H, S, L);
+        float R = rgb[0];
+        float G = rgb[1];
+        float B = rgb[2];
+        float lum = R * R * R * 0.2126f + G * G * G * 0.7152f + B * B * B * 0.0722f; // 0.013 (dark blue) to 0.737 (yellow)
+        float HLmod = (lum - 0.2f) * -150; // -80 (yellow) to 28 (dark blue)
+        if (HLmod > 18) HLmod = (HLmod - 18) * 2.5f;
+        else if (HLmod < 0) HLmod = (HLmod - 0) / 3f;
+        else HLmod = 0f;
+        // let mod = ';border-right: ' + Math.abs(HLmod) + 'px solid ' + (HLmod > 0 ? 'red' : '#0088FF');
+        float Hdist = Math.min(Math.abs(180 - H), Math.abs(240 - H));
+        if (Hdist < 15) {
+            HLmod += (15 - Hdist) / 3f;
+        }
+        L += HLmod;
+        rgb =hslToRgb(H, S, L);
+        R = rgb[0];
+        G = rgb[1];
+        B = rgb[2];
+        return Color.rgb(R, G, B);
+    }
+
+    public static float[] hslToRgb(float h, float s, float l){
+        float C = (100 - Math.abs(2 * l - 100)) * s / 100 / 100;
+        float X = C * (1 - Math.abs((h / 60) % 2 - 1));
+        float m = l / 100 - C / 2;
+        float R, G, B;
+        switch ((int) Math.floor(h / 60)) {
+            case 1: R = X; G = C; B = 0; break;
+            case 2: R = 0; G = C; B = X; break;
+            case 3: R = 0; G = X; B = C; break;
+            case 4: R = X; G = 0; B = C; break;
+            case 5: R = C; G = 0; B = X; break;
+            case 0: default: R = C; G = X; B = 0; break;
+        }
+        return new float[] {R + m, G + m, B + m};
+    }
+
+    private static int sinColor(String username) {
         int sum = 0;
-        for (int i = 0; i < name.length(); i++)
-            sum += name.charAt(i);
+        for (int i = 0; i < username.length(); i++)
+            sum += username.charAt(i);
 
         int r = (int) (Double.parseDouble("0." + Double.toString(Math.sin(sum + 1)).substring(6)) * 256);
         int g = (int) (Double.parseDouble("0." + Double.toString(Math.sin(sum + 2)).substring(6)) * 256);
@@ -115,6 +165,11 @@ public class Utils {
         if (startIndex < 0) startIndex = string.length() + startIndex;
         if (endIndex < 0) endIndex = string.length() + endIndex;
         return string.substring(startIndex, endIndex);
+    }
+
+    public static String substringlen(String string, int startIndex, int len) {
+        if (startIndex < 0) startIndex = string.length() + startIndex;
+        return string.substring(startIndex, startIndex + len);
     }
 
     public static <T> ArrayList<T> toArrayList(Collection<T> collection) {
@@ -205,6 +260,14 @@ public class Utils {
             return Integer.parseInt(s);
         } catch (NumberFormatException e) {
             return null;
+        }
+    }
+
+    public static int parseInt(String s, int b) {
+        try {
+            return Integer.parseInt(s, b);
+        } catch (NumberFormatException e) {
+            return 0;
         }
     }
 
