@@ -16,7 +16,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.majeur.psclient.io.DexIconLoader;
 import com.majeur.psclient.io.GlideHelper;
 import com.majeur.psclient.service.ShowdownService;
-import com.majeur.psclient.util.Utils;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -52,7 +51,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Utils.setStaticScreenDensity(getResources());
         mDexIconLoader = new DexIconLoader(this);
         mGlideHelper = new GlideHelper(this);
         setContentView(R.layout.activity_main);
