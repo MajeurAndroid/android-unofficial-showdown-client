@@ -29,10 +29,11 @@ public class Nature {
     public static final Nature Sassy = new Nature("Sassy", "spd", "spe");
     public static final Nature Serious = new Nature("Serious", null, null);
     public static final Nature Timid = new Nature("Timid", "spe", "atk");
+    public static final Nature DEFAULT = Serious;
     public static final Nature[] ALL = new Nature[25];
 
     static {
-        ALL[0] = Adamant;
+        ALL[23] = Adamant;
         ALL[5] = Careful;
         ALL[10] = Impish;
         ALL[15] = Modest;
@@ -51,7 +52,7 @@ public class Nature {
         ALL[8] = Hardy;
         ALL[13] = Lonely;
         ALL[18] = Quiet;
-        ALL[23] = Serious;
+        ALL[0] = Serious;
         ALL[4] = Calm;
         ALL[9] = Hasty;
         ALL[14] = Mild;
@@ -107,7 +108,7 @@ public class Nature {
         }
     }
 
-    public float get(int index) {
+    public float getStatModifier(int index) {
         switch (index) {
             case 1:
                 return atk;
