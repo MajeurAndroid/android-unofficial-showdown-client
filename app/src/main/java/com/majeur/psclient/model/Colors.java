@@ -16,6 +16,11 @@ public class Colors {
     public static final int STAT_UNBOOST    = RED;
     public static final int VOLATILE_STATUS = 0xFF6F35FC;
 
+    public static final int CATEGORY_PHYSICAL   = 0xFFEB5628;
+    public static final int CATEGORY_PHY_INNER = 0xFFFFF064;
+    public static final int CATEGORY_SPECIAL    = 0xFF2260C2;
+    public static final int CATEGORY_STATUS     = 0xFF9A9997;
+
     public static final int TYPE_NORMAL     = 0xFFA8A77A;
     public static final int TYPE_FIRE       = 0xFFEE8130;
     public static final int TYPE_WATER      = 0xFF6390F0;
@@ -131,5 +136,18 @@ public class Colors {
             return YELLOW;
         else
             return RED;
+    }
+
+    public static int categoryColor(String cat) {
+        switch (cat) {
+            case "physical":
+                return CATEGORY_PHYSICAL;
+            case "special":
+                return CATEGORY_SPECIAL;
+            case "status":
+                return CATEGORY_STATUS;
+            default:
+                return 0;
+        }
     }
 }

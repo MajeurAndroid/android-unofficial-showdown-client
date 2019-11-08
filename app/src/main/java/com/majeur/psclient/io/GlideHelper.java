@@ -20,6 +20,8 @@ import com.majeur.psclient.R;
 import com.majeur.psclient.model.BasePokemon;
 import com.majeur.psclient.model.BattlingPokemon;
 import com.majeur.psclient.model.Player;
+import com.majeur.psclient.util.CategoryDrawable;
+import com.majeur.psclient.util.TypeDrawable;
 import com.majeur.psclient.util.Utils;
 import com.majeur.psclient.util.html.Html;
 
@@ -93,13 +95,15 @@ public class GlideHelper {
     }
 
     public void loadTypeSprite(String type, ImageView imageView) {
-        RequestBuilder<Drawable> request = mRequestManager.load(typeSpriteUri(type));
-        request.into(imageView);
+//        RequestBuilder<Drawable> request = mRequestManager.load(typeSpriteUri(type));
+//        request.into(imageView);
+        imageView.setImageDrawable(new TypeDrawable(type));
     }
 
     public void loadCategorySprite(String category, ImageView imageView) {
-        RequestBuilder<Drawable> request = mRequestManager.load(categorySpriteUri(category));
-        request.into(imageView);
+//        RequestBuilder<Drawable> request = mRequestManager.load(categorySpriteUri(category));
+//        request.into(imageView);
+        imageView.setImageDrawable(new CategoryDrawable(category));
     }
 
     public void loadDexSprite(BasePokemon pokemon, boolean shiny, ImageView imageView) {
