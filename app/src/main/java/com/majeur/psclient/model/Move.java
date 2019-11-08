@@ -51,6 +51,7 @@ public class Move {
     }
 
     public static class ExtraInfo {
+        public final String name;
         public final int accuracy;
         public final int priority;
         public final int basePower;
@@ -58,8 +59,10 @@ public class Move {
         public final String category;
         public final String desc;
         public final String type;
+        public final int pp;
 
-        public ExtraInfo(int accuracy, int priority, int basePower, String category, String desc, String type) {
+        public ExtraInfo(String name, int accuracy, int priority, int basePower, String category, String desc, String type, int pp) {
+            this.name = name;
             this.accuracy = accuracy;
             this.priority = priority;
             this.basePower = basePower;
@@ -67,6 +70,7 @@ public class Move {
             this.desc = desc;
             this.type = type;
             this.color = Colors.typeColor(toId(type));
+            this.pp = pp;
         }
 
     }

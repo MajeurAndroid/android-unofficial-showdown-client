@@ -32,6 +32,7 @@ public class MoveDetailsLoader extends DataLoader<String, Move.ExtraInfo> {
     @Override
     protected void onInterceptQuery(String[] queries) {
         for (int i = 0; i < queries.length; i++) {
+            if (queries[i] == null) continue;
             if (queries[i].toLowerCase().startsWith("z-")) queries[i] = queries[i].substring(2);
             queries[i] = toId(queries[i]);
         }
@@ -92,9 +93,11 @@ public class MoveDetailsLoader extends DataLoader<String, Move.ExtraInfo> {
             int accuracy = 0;
             int basePower = 0;
             int priority = 0;
+            int pp = 0;
             String category = null;
             String desc = null;
             String type = null;
+            String moveName = null;
             mJsonReader.beginObject();
             while (mJsonReader.hasNext()) {
                 String name = mJsonReader.nextName();
@@ -122,13 +125,19 @@ public class MoveDetailsLoader extends DataLoader<String, Move.ExtraInfo> {
                     case "priority":
                         priority = mJsonReader.nextInt();
                         break;
+                    case "name":
+                        moveName = mJsonReader.nextString();
+                        break;
+                    case "pp":
+                        pp = mJsonReader.nextInt();
+                        break;
                     default:
                         mJsonReader.skipValue();
                         break;
                 }
             }
             mJsonReader.endObject();
-            return new Move.ExtraInfo(accuracy, priority, basePower, category, desc, type);
+            return new Move.ExtraInfo(moveName, accuracy, priority, basePower, category, desc, type, pp);
         }
     }
 }
