@@ -38,6 +38,7 @@ import com.majeur.psclient.model.PokemonId;
 import com.majeur.psclient.model.SidePokemon;
 import com.majeur.psclient.model.StatModifiers;
 import com.majeur.psclient.model.Stats;
+import com.majeur.psclient.model.Type;
 import com.majeur.psclient.model.Weather;
 import com.majeur.psclient.service.BattleMessageObserver;
 import com.majeur.psclient.service.ShowdownService;
@@ -338,8 +339,8 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                     Colors.statusColor(pokemon.condition.status))));
 
         descView.append("\n");
-        if (!pokemon.foe) {
-            SidePokemon sidePokemon = mLastActionRequest.getSide().get(0); //TODO
+        if (!pokemon.foe && mLastActionRequest != null) {
+            SidePokemon sidePokemon = mLastActionRequest.getSide().get(0);
             descView.append(smallText("Atk:"));
             descView.append(pokemon.statModifiers.calcReadableStat("atk", sidePokemon.stats.atk));
             descView.append(smallText(" Def:"));
@@ -367,9 +368,9 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                     descView.append("No dex entry for " + pokemon.species);
                     return;
                 }
-                mSpritesLoader.loadTypeSprite(dexPokemon.firstType, placeHolderTop);
+                placeHolderTop.setImageResource(Type.getResId(dexPokemon.firstType));
                 if (dexPokemon.secondType != null)
-                    mSpritesLoader.loadTypeSprite(dexPokemon.secondType, placeHolderBottom);
+                    placeHolderBottom.setImageResource(Type.getResId(dexPokemon.secondType));
                 if (!pokemon.foe) return;
                 if (dexPokemon.abilities.size() > 1) {
                     descView.append(smallText("Possible abilities: "));
@@ -410,7 +411,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         }
         placeHolderTop.setImageDrawable(null);
         placeHolderBottom.setImageDrawable(null);
-        mSpritesLoader.loadTypeSprite(move.extraInfo.type, placeHolderTop);
+        placeHolderTop.setImageResource(Type.getResId(move.extraInfo.type));
         mSpritesLoader.loadCategorySprite(move.extraInfo.category, placeHolderBottom);
     }
 
@@ -457,9 +458,9 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
             @Override
             public void onLoaded(DexPokemon[] results) {
                 DexPokemon dexPokemon = results[0];
-                mSpritesLoader.loadTypeSprite(dexPokemon.firstType, placeHolderTop);
+                placeHolderTop.setImageResource(Type.getResId(dexPokemon.firstType));
                 if (dexPokemon.secondType != null)
-                    mSpritesLoader.loadTypeSprite(dexPokemon.secondType, placeHolderBottom);
+                    placeHolderBottom.setImageResource(Type.getResId(dexPokemon.secondType));
             }
         });
     }
