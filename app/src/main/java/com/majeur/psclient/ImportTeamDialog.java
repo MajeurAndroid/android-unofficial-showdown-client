@@ -171,13 +171,12 @@ public class ImportTeamDialog extends DialogFragment {
         mEditText.setEnabled(false);
         String text = mEditText.getText().toString();
 
-        final ShowdownTeamParser parser = new ShowdownTeamParser();
-        parser.setDexPokemonFactory(new ShowdownTeamParser.DexPokemonFactory() {
+        final ShowdownTeamParser.DexPokemonFactory factory = new ShowdownTeamParser.DexPokemonFactory() {
             @Override
             public DexPokemon loadDexPokemon(String name) {
                 return mDexPokemonLoader.load(array(toId(name)))[0];
             }
-        });
+        };
         switch (mImportType) {
             case IMPORT_TYPE_PASTEBIN:
                 text = text.substring(text.length() - 8);
@@ -189,8 +188,7 @@ public class ImportTeamDialog extends DialogFragment {
                             Toast.makeText(getContext(), msg, Toast.LENGTH_LONG).show();
                             handleParseResult(null, false);
                         } else {
-                            parser.setInput(s);
-                            parser.parse(new Callback<List<Team>>() {
+                            ShowdownTeamParser.parseTeams(s, factory, new Callback<List<Team>>() {
                                 @Override
                                 public void callback(List<Team> teams) {
                                     handleParseResult(teams, true);
@@ -201,8 +199,7 @@ public class ImportTeamDialog extends DialogFragment {
                 });
                 break;
             case IMPORT_TYPE_RAW_TEXT:
-                parser.setInput(text);
-                parser.parse(new Callback<List<Team>>() {
+                ShowdownTeamParser.parseTeams(text, factory, new Callback<List<Team>>() {
                     @Override
                     public void callback(List<Team> teams) {
                         handleParseResult(teams, true);
