@@ -4,6 +4,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -17,6 +18,7 @@ import com.majeur.psclient.io.AllSpeciesLoader;
 import com.majeur.psclient.io.DexPokemonLoader;
 import com.majeur.psclient.io.GlideHelper;
 import com.majeur.psclient.io.LearnsetLoader;
+import com.majeur.psclient.io.MoveDetailsLoader;
 import com.majeur.psclient.model.BattleFormat;
 import com.majeur.psclient.model.Team;
 import com.majeur.psclient.model.TeamPokemon;
@@ -46,6 +48,7 @@ public class TeamEditActivity extends AppCompatActivity {
     private AllItemsLoader mItemsLoader;
     private DexPokemonLoader mDexPokemonLoader;
     private LearnsetLoader mLearnsetLoader;
+    private MoveDetailsLoader mMoveDetailsLoader;
     private GlideHelper mGlideHelper;
 
     private List<BattleFormat.Category> mBattleFormats;
@@ -64,6 +67,7 @@ public class TeamEditActivity extends AppCompatActivity {
         mItemsLoader = new AllItemsLoader(this);
         mDexPokemonLoader = new DexPokemonLoader(this);
         mLearnsetLoader = new LearnsetLoader(this);
+        mMoveDetailsLoader = new MoveDetailsLoader(this);
         mGlideHelper = new GlideHelper(this);
 
         mBattleFormats = (List<BattleFormat.Category>) getIntent().getSerializableExtra(INTENT_EXTRA_FORMATS);
@@ -230,12 +234,17 @@ public class TeamEditActivity extends AppCompatActivity {
         return mLearnsetLoader;
     }
 
+    public MoveDetailsLoader getMoveDetailsLoader() {
+        return mMoveDetailsLoader;
+    }
+
     public GlideHelper getGlideHelper() {
         return mGlideHelper;
     }
 
     public void onPokemonUpdated(int slotIndex, TeamPokemon pokemon) {
         mPokemons[slotIndex] = pokemon;
+        Log.e(getClass().getSimpleName(), "PKMN: " + pokemon);
         prepareTeam();
     }
 

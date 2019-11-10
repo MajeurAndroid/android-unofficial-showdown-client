@@ -1,8 +1,10 @@
 package com.majeur.psclient.util;
 
+import android.app.Activity;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.os.IBinder;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
@@ -10,6 +12,7 @@ import android.text.style.ForegroundColorSpan;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ScrollView;
 
 import com.majeur.psclient.model.Colors;
@@ -43,6 +46,13 @@ public class Utils {
         return diff <= 0;
     }
 
+    public static void hideSoftInputMethod(Activity activity) {
+        InputMethodManager inputMethodManager =
+                (InputMethodManager) activity.getSystemService(Activity.INPUT_METHOD_SERVICE);
+        IBinder token = activity.getWindow().getDecorView().getWindowToken();
+        inputMethodManager.hideSoftInputFromWindow(token, 0);
+    }
+
     public static int hashColor(String string) {
         String md5 = MD5.hash(string);
         if (md5 != null)
@@ -74,7 +84,7 @@ public class Utils {
         R = rgb[0];
         G = rgb[1];
         B = rgb[2];
-        return Color.rgb(R, G, B);
+        return rgb(R, G, B);
     }
 
     public static float[] hslToRgb(float h, float s, float l){
@@ -105,9 +115,21 @@ public class Utils {
         return Color.rgb(r, g, b);
     }
 
+    public static int alphaColor(int color, float a) {
+        return Color.argb((int)(a*255), Color.red(color), Color.green(color), Color.blue(color));
+    }
+
     public static int getTagColor(int textColor) {
         float B = (0.299f * Color.red(textColor) + 0.587f * Color.green(textColor) + 0.114f * Color.blue(textColor)) / 255;
         return (B <= 0.65f) ? 0xFFEDEDED : 0xFF606060;
+    }
+
+    /* Compat method for {@link Color.rgb(float, float, float)} */
+    public static int rgb(float red, float green, float blue) {
+        return 0xff000000 |
+                ((int) (red   * 255.0f + 0.5f) << 16) |
+                ((int) (green * 255.0f + 0.5f) <<  8) |
+                (int) (blue  * 255.0f + 0.5f);
     }
 
     @SuppressWarnings("unchecked")
@@ -147,6 +169,12 @@ public class Utils {
         for (String s : ss)
             if (string.contains(s)) return true;
         return false;
+    }
+
+    public static String concat(String[] strings) {
+        StringBuilder builder = new StringBuilder();
+        for (String s : strings) builder.append(s);
+        return builder.toString();
     }
 
     public static <T> int indexOf(T value, T[] array) {

@@ -5,6 +5,7 @@ import android.util.Log;
 
 import com.majeur.psclient.model.BattleFormat;
 import com.majeur.psclient.model.DexPokemon;
+import com.majeur.psclient.model.Stats;
 import com.majeur.psclient.model.Team;
 import com.majeur.psclient.model.TeamPokemon;
 
@@ -23,23 +24,13 @@ public class ShowdownTeamParser {
         public DexPokemon loadDexPokemon(String name);
     }
 
-    private String mInput;
-    private DexPokemonFactory mDexPokemonFactory;
-
-    public void setInput(String input) {
-        mInput = input;
-    }
-
-    public void setDexPokemonFactory(DexPokemonFactory dexPokemonFactory) {
-        mDexPokemonFactory = dexPokemonFactory;
-    }
-
     @SuppressWarnings("StaticFieldLeak")
-    public void parse(final Callback<List<Team>> callback) {
+    public static void parseTeams(final String importString, final DexPokemonFactory factory,
+                           final Callback<List<Team>> callback) {
         new AsyncTask<Object, Object, List<Team>>() {
             @Override
             protected List<Team> doInBackground(Object[] unused) {
-                return parse();
+                return parseTeams(importString, factory);
             }
 
             @Override
@@ -49,13 +40,7 @@ public class ShowdownTeamParser {
         }.execute();
     }
 
-    public List<Team> parse() {
-        if (mInput == null || mDexPokemonFactory == null)
-            throw new IllegalStateException("Input and Factory must be both set before calling parse().");
-        return parseTeams(mInput, mDexPokemonFactory);
-    }
-
-    private List<Team> parseTeams(String importString, DexPokemonFactory dexPokemonFactory) {
+    public static List<Team> parseTeams(String importString, DexPokemonFactory dexPokemonFactory) {
         Pattern pattern = Pattern.compile("(?<====).*?(?====)");
         Matcher matcher = pattern.matcher(importString);
         Queue<String> teamHeaders = new LinkedList<>();
@@ -89,22 +74,22 @@ public class ShowdownTeamParser {
         return teams;
     }
 
-    private String getFormatFromHeader(String teamHeader) {
+    private static String getFormatFromHeader(String teamHeader) {
         int startIndex = teamHeader.indexOf('[');
         int endIndex = teamHeader.indexOf(']');
         if (startIndex < 0 || endIndex < 0)
             return null;
-        return teamHeader.substring(startIndex+1, endIndex);
+        return teamHeader.substring(startIndex + 1, endIndex);
     }
 
-    private String getLabelFromHeader(String teamHeader) {
+    private static String getLabelFromHeader(String teamHeader) {
         int startIndex = teamHeader.indexOf(']');
         if (startIndex < 0)
             return teamHeader.trim();
-        return teamHeader.substring(startIndex+1).trim();
+        return teamHeader.substring(startIndex + 1).trim();
     }
 
-    private Team parseTeam(String importString, String format, String label, DexPokemonFactory dexPokemonFactory) {
+    private static Team parseTeam(String importString, String format, String label, DexPokemonFactory dexPokemonFactory) {
         importString = importString.replace("\r", ""); // Make sure there is no CR char when we split with LF
         String[] teamStrings = importString.split("\n\n");
         if (teamStrings.length == 0) {
@@ -120,12 +105,12 @@ public class ShowdownTeamParser {
 
         if (label != null && label.contains("[") && label.contains("]")) {
             int charIndex = label.indexOf(']');
-            return new Team(label.substring(charIndex+1), pokemons, label.substring(1, charIndex));
+            return new Team(label.substring(charIndex + 1), pokemons, label.substring(1, charIndex));
         }
         return new Team(label, pokemons, format);
     }
 
-    private TeamPokemon parsePokemon(String importString, DexPokemonFactory dexPokemonFactory) {
+    public static TeamPokemon parsePokemon(String importString, DexPokemonFactory dexPokemonFactory) {
         String[] pokemonStrings = importString.trim().split("\n");
         if (pokemonStrings.length == 0) {
             return null;
@@ -314,5 +299,112 @@ public class ShowdownTeamParser {
         return p.moves != null ? p : null;
     }
 
+    public static String fromPokemon(TeamPokemon curSet) {
+        String text = "";
+        if (curSet.name != null && !curSet.name.equals(curSet.species)) {
+            text += "" + curSet.name + " (" + curSet.species + ")";
+        } else {
+            text += "" + curSet.species;
+        }
+        if ("m".equalsIgnoreCase(curSet.gender)) text += " (M)";
+        if ("f".equalsIgnoreCase(curSet.gender)) text += " (F)";
+        if (curSet.item != null && curSet.item.length() > 0) {
+            text += " @ " + curSet.item;
+        }
+        text += "  \n";
+        if (curSet.ability != null) {
+            text += "Ability: " + curSet.ability + "  \n";
+        }
+        if (curSet.level != 100) {
+            text += "Level: " + curSet.level + "  \n";
+        }
+        if (curSet.shiny) {
+            text += "Shiny: Yes  \n";
+        }
+        if (curSet.happiness != 255) {
+            text += "Happiness: " + curSet.happiness + "  \n";
+        }
+        if (curSet.pokeball != null) {
+            text += "Pokeball: " + curSet.pokeball + "  \n";
+        }
+        if (curSet.hpType != null) {
+            text += "Hidden Power: " + curSet.hpType + "  \n";
+        }
+        boolean first = true;
+        if (curSet.evs != null) {
+            for (int i = 0; i < 6; i++) {
+                if (curSet.evs.get(i) == 0) continue;
+                if (first) {
+                    text += "EVs: ";
+                    first = false;
+                } else {
+                    text += " / ";
+                }
+                text += curSet.evs.get(i) + " " + Stats.getName(i);
+            }
+        }
+        if (!first) {
+            text += "  \n";
+        }
+        if (curSet.nature != null) {
+            text += curSet.nature + " Nature" + "  \n";
+        }
+        first = true;
+        if (curSet.ivs != null) {
+            boolean defaultIvs = true;
+            String hpType = null;
+            Stats dummyStats = new Stats(0);
+            for (int j = 0; j < curSet.moves.length; j++) {
+                String move = curSet.moves[j];
+                if (move != null && move.length() >= 13 && move.substring(0, 13).equals("Hidden Power ")
+                        && !move.substring(0, 14).equals("Hidden Power [")) {
+                    hpType = move.substring(13);
+                    if (!Stats.checkHpType(hpType)) {
+                        continue;
+                    }
+                    for (int i = 0; i < 6; i++) {
+                        dummyStats.setForHpType(hpType);
+                        if (curSet.ivs.get(i) != dummyStats.get(i)) {
+                            defaultIvs = false;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (defaultIvs && hpType == null) {
+                for (int i = 0; i < 6; i++) {
+                    if (curSet.ivs.get(i) != 31) {
+                        defaultIvs = false;
+                        break;
+                    }
+                }
+            }
+            if (!defaultIvs) {
+                for (int i = 0; i < 6; i++) {
+                    if (curSet.ivs.get(i) == 31) continue;
+                    if (first) {
+                        text += "IVs: ";
+                        first = false;
+                    } else {
+                        text += " / ";
+                    }
+                    text += curSet.ivs.get(i) + " " + Stats.getName(i);
+                }
+            }
+        }
+        if (!first) {
+            text += "  \n";
+        }
+        if (curSet.moves != null && curSet.moves.length > 0)
+            for (int j = 0; j < curSet.moves.length; j++) {
+                String move = curSet.moves[j];
+                if (move == null) continue;
+                if (move.length() >= 13 && move.substring(0, 13).equalsIgnoreCase("Hidden Power ")) {
+                    move = move.substring(0, 13) + '[' + move.substring(13) + ']';
+                }
+                text += "- " + move + "  \n";
+            }
+        return text;
+    }
 
 }

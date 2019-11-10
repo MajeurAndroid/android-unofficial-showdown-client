@@ -72,6 +72,18 @@ public class Stats implements Serializable {
         return new int[]{hp, atk, def, spa, spd, spe};
     }
 
+    public static String getName(int index) {
+        switch (index) {
+            case 0: return "HP";
+            case 1: return "Atk";
+            case 2: return "Def";
+            case 3: return "SpA";
+            case 4: return "Spd";
+            case 5: return "Spe";
+            default: return null;
+        }
+    }
+
     @Override
     public String toString() {
         return "Stats{" +
@@ -138,6 +150,30 @@ public class Stats implements Serializable {
         }
     }
 
+    public static boolean checkHpType(String type) {
+        if (type == null) return false;
+        type = type.toLowerCase().trim();
+        switch (type) {
+            case "bug":			return true;
+            case "dark":		return true;
+            case "dragon":		return true;
+            case "electric":	return true;
+            case "fighting":	return true;
+            case "fire":		return true;
+            case "flying":		return true;
+            case "ghost":		return true;
+            case "grass":		return true;
+            case "ground":		return true;
+            case "ice":			return true;
+            case "poison":		return true;
+            case "psychic":		return true;
+            case "rock":		return true;
+            case "steel":		return true;
+            case "water":		return true;
+            default:            return false;
+        }
+    }
+
     public static int[] calculateSpeedRange(int level, int baseSpe, String tier, int gen) {
         boolean isRandomBattle = tier.contains("Random Battle") || (tier.contains("Random") && tier.contains("Battle") && gen >= 6);
 
@@ -171,5 +207,21 @@ public class Stats implements Serializable {
 
     public static int calculateHp(int base, int iv, int ev, int niv) {
         return ((2 * base + iv + ev / 4) * niv) / 100 + niv + 10;
+    }
+
+    public static int toIndex(String name) {
+        name = name.trim().toLowerCase();
+        if (name.contains("atk") || name.contains("attack")) {
+            if (name.contains("sp")) return 3;
+            else return 1;
+        } else if (name.contains("def")) {
+            if (name.contains("sp")) return 4;
+            else return 2;
+        } else if (name.contains("sp")) {
+            return 5;
+        } else if (name.contains("h")) {
+            return 0;
+        }
+        return -1;
     }
 }
