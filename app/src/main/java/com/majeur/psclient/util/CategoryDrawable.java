@@ -18,7 +18,7 @@ import androidx.annotation.Nullable;
 public class CategoryDrawable extends Drawable {
 
     static final float PADDING_AMOUNT = 0.16f;
-    static final float CORNER_RADIUS_AMOUNT = TypeDrawable.CORNER_RADIUS_AMOUNT;
+    static final float CORNER_RADIUS_AMOUNT = 0.15f;
 
     private int mCategoryColor;
     private Paint mPaint;

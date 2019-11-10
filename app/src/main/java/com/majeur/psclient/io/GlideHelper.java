@@ -21,7 +21,6 @@ import com.majeur.psclient.model.BasePokemon;
 import com.majeur.psclient.model.BattlingPokemon;
 import com.majeur.psclient.model.Player;
 import com.majeur.psclient.util.CategoryDrawable;
-import com.majeur.psclient.util.TypeDrawable;
 import com.majeur.psclient.util.Utils;
 import com.majeur.psclient.util.html.Html;
 
@@ -92,12 +91,6 @@ public class GlideHelper {
         ViewGroup.LayoutParams layoutParams = imageView.getLayoutParams();
         layoutParams.width = layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT;
         request.into(imageView);
-    }
-
-    public void loadTypeSprite(String type, ImageView imageView) {
-//        RequestBuilder<Drawable> request = mRequestManager.load(typeSpriteUri(type));
-//        request.into(imageView);
-        imageView.setImageDrawable(new TypeDrawable(type));
     }
 
     public void loadCategorySprite(String category, ImageView imageView) {
