@@ -90,6 +90,7 @@ public abstract class DataLoader<Q, R> {
                 if (!mCache.containsKey(query))
                     mCache.put(query, resultArray[i]);
             }
+            onInterceptResult(resultArray);
             return resultArray;
         }
     }
