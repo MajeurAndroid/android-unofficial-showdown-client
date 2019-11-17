@@ -400,7 +400,7 @@ public class PokemonEditFragment extends Fragment {
                             }
                         });
                     } else {
-                        Toast.makeText(getContext(), "No Pokemon found in clipboard text.",
+                        Toast.makeText(getContext(), "No Pokemon found in clipboard.",
                                 Toast.LENGTH_LONG).show();
                     }
                 } else {
@@ -522,9 +522,9 @@ public class PokemonEditFragment extends Fragment {
                 if (i < pokemon.moves.length) mCurrentMoves[i] = pokemon.moves[i];
             if (mCurrentMoves.length > 0) {
                 // Retrieve full name for moves
-                mMoveDetailsLoader.load(mCurrentMoves, new DataLoader.Callback<Move.ExtraInfo>() {
+                mMoveDetailsLoader.load(mCurrentMoves, new DataLoader.Callback<Move.Details>() {
                     @Override
-                    public void onLoaded(Move.ExtraInfo[] results) {
+                    public void onLoaded(Move.Details[] results) {
                         for (int i = 0; i < results.length; i++) {
                             if (results[i] != null)
                                 mMoveTextViews[i].setText(results[i].name);
@@ -733,12 +733,12 @@ public class PokemonEditFragment extends Fragment {
             holder.mCategoryView.animate().cancel();
             holder.mCategoryView.setAlpha(0f);
 
-            mLoader.load(array(moveId), new DataLoader.Callback<Move.ExtraInfo>() {
+            mLoader.load(array(moveId), new DataLoader.Callback<Move.Details>() {
                 @Override
-                public void onLoaded(Move.ExtraInfo[] results) {
+                public void onLoaded(Move.Details[] results) {
                     // Check if callback arrives in time
                     if (!holder.moveId.equals(moveId)) return;
-                    Move.ExtraInfo info = results[0];
+                    Move.Details info = results[0];
                     holder.mNameView.setText(info.name, TextView.BufferType.SPANNABLE);
                     showMatch(holder.mNameView);
                     holder.mDetailsView.setText(buildDetailsText(info.pp, info.basePower, info.accuracy));
