@@ -16,7 +16,7 @@ import java.util.List;
 
 import static com.majeur.psclient.model.Id.toId;
 
-public class MoveDetailsLoader extends DataLoader<String, Move.ExtraInfo> {
+public class MoveDetailsLoader extends DataLoader<String, Move.Details> {
 
     private Resources mResources;
 
@@ -25,8 +25,8 @@ public class MoveDetailsLoader extends DataLoader<String, Move.ExtraInfo> {
     }
 
     @Override
-    protected Move.ExtraInfo[] onCreateResultArray(int length) {
-        return new Move.ExtraInfo[length];
+    protected Move.Details[] onCreateResultArray(int length) {
+        return new Move.Details[length];
     }
 
     @Override
@@ -39,11 +39,11 @@ public class MoveDetailsLoader extends DataLoader<String, Move.ExtraInfo> {
     }
 
     @Override
-    protected LoadInterface<String, Move.ExtraInfo> onCreateLoadInterface() {
+    protected LoadInterface<String, Move.Details> onCreateLoadInterface() {
         return new LoadInterfaceImpl();
     }
 
-    private class LoadInterfaceImpl implements LoadInterface<String, Move.ExtraInfo> {
+    private class LoadInterfaceImpl implements LoadInterface<String, Move.Details> {
 
         private JsonReader mJsonReader;
 
@@ -54,7 +54,7 @@ public class MoveDetailsLoader extends DataLoader<String, Move.ExtraInfo> {
         }
 
         @Override
-        public void onLoadData(String[] queries, Move.ExtraInfo[] results) {
+        public void onLoadData(String[] queries, Move.Details[] results) {
             try {
                 parseJson(queries, results);
             } catch (IOException e) {
@@ -68,10 +68,10 @@ public class MoveDetailsLoader extends DataLoader<String, Move.ExtraInfo> {
             }
         }
 
-        private void parseJson(String[] queries, Move.ExtraInfo[] results) throws IOException {
+        private void parseJson(String[] queries, Move.Details[] results) throws IOException {
             List<String> desiredKeys = new ArrayList<>();
             for (int i = 0; i < queries.length; i++) {
-                if (results[i] == null)
+                if (queries[i] != null && results[i] == null)
                     desiredKeys.add(queries[i]);
                 else
                     desiredKeys.add("do_not_match");
@@ -89,15 +89,18 @@ public class MoveDetailsLoader extends DataLoader<String, Move.ExtraInfo> {
             mJsonReader.endObject();
         }
 
-        private Move.ExtraInfo parseMove() throws IOException {
+        private Move.Details parseMove() throws IOException {
             int accuracy = 0;
             int basePower = 0;
+            int zPower = 0;
             int priority = 0;
             int pp = 0;
             String category = null;
             String desc = null;
+            String zEffect = null;
             String type = null;
             String moveName = null;
+            String target = null;
             mJsonReader.beginObject();
             while (mJsonReader.hasNext()) {
                 String name = mJsonReader.nextName();
@@ -116,7 +119,7 @@ public class MoveDetailsLoader extends DataLoader<String, Move.ExtraInfo> {
                     case "category":
                         category = mJsonReader.nextString();
                         break;
-                    case "desc":
+                    case "shortDesc":
                         desc = mJsonReader.nextString();
                         break;
                     case "type":
@@ -131,13 +134,36 @@ public class MoveDetailsLoader extends DataLoader<String, Move.ExtraInfo> {
                     case "pp":
                         pp = mJsonReader.nextInt();
                         break;
+                    case "zMovePower":
+                        zPower = mJsonReader.nextInt();
+                        break;
+                    case "target":
+                        target = mJsonReader.nextString();
+                        break;
+                    case "zMoveEffect":
+                        zEffect = zMoveEffects(mJsonReader.nextString());
+                        break;
                     default:
                         mJsonReader.skipValue();
                         break;
                 }
             }
             mJsonReader.endObject();
-            return new Move.ExtraInfo(moveName, accuracy, priority, basePower, category, desc, type, pp);
+            return new Move.Details(moveName, accuracy, priority, basePower, zPower, category,
+                    desc, type, pp, target, zEffect);
+        }
+
+        private String zMoveEffects(String effect) {
+            if (effect == null) return null;
+            switch (effect) {
+                case "clearnegativeboost": return "Restores negative stat stages to 0";
+                case "crit2": return "Crit ratio +2";
+                case "heal": return "Restores HP 100%";
+                case "curse": return "Restores HP 100% if user is Ghost type, otherwise Attack +1";
+                case "redirect": return "Redirects opposing attacks to user";
+                case "healreplacement": return "Restores replacement's HP 100%";
+                default: return null;
+            }
         }
     }
 }

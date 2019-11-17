@@ -5,6 +5,7 @@ import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.IBinder;
+import android.text.Editable;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
@@ -156,6 +157,12 @@ public class Utils {
         try (Scanner s = new Scanner(is, "UTF-8").useDelimiter("\\A")) {
             return s.hasNext() ? s.next() : "";
         }
+    }
+
+    public static void replace(Editable e, String what, CharSequence with) {
+        int startIndex = e.toString().indexOf(what);
+        if (startIndex < 0) return;
+        e.replace(startIndex, startIndex + what.length(), with);
     }
 
     public static <T> T[] append(T[] array, T value) {

@@ -44,6 +44,7 @@ import com.majeur.psclient.service.BattleMessageObserver;
 import com.majeur.psclient.service.ShowdownService;
 import com.majeur.psclient.util.AudioBattleManager;
 import com.majeur.psclient.util.Callback;
+import com.majeur.psclient.util.CategoryDrawable;
 import com.majeur.psclient.util.InactiveBattleOverlayDrawable;
 import com.majeur.psclient.util.Preferences;
 import com.majeur.psclient.util.Utils;
@@ -64,9 +65,12 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 
 import static com.majeur.psclient.model.Id.toId;
+import static com.majeur.psclient.model.Id.toIdSafe;
 import static com.majeur.psclient.util.Utils.array;
 import static com.majeur.psclient.util.Utils.boldText;
 import static com.majeur.psclient.util.Utils.italicText;
+import static com.majeur.psclient.util.Utils.notAllNull;
+import static com.majeur.psclient.util.Utils.replace;
 import static com.majeur.psclient.util.Utils.smallText;
 import static com.majeur.psclient.util.Utils.str;
 import static com.majeur.psclient.util.Utils.tagText;
@@ -339,8 +343,10 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                     Colors.statusColor(pokemon.condition.status))));
 
         descView.append("\n");
+        final String ability;
         if (!pokemon.foe && mLastActionRequest != null) {
             SidePokemon sidePokemon = mLastActionRequest.getSide().get(0);
+            ability = sidePokemon.ability;
             descView.append(smallText("Atk:"));
             descView.append(pokemon.statModifiers.calcReadableStat("atk", sidePokemon.stats.atk));
             descView.append(smallText(" Def:"));
@@ -357,7 +363,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
             descView.append("\n");
             descView.append(smallText("Item: "));
             descView.append(sidePokemon.item);
-        }
+        } else ability = null;
         placeHolderTop.setImageDrawable(null);
         placeHolderBottom.setImageDrawable(null);
         mDexPokemonLoader.load(array(toId(pokemon.species)), new DataLoader.Callback<DexPokemon>() {
@@ -371,11 +377,23 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                 placeHolderTop.setImageResource(Type.getResId(dexPokemon.firstType));
                 if (dexPokemon.secondType != null)
                     placeHolderBottom.setImageResource(Type.getResId(dexPokemon.secondType));
-                if (!pokemon.foe) return;
-                if (dexPokemon.abilities.size() > 1) {
+                if (!pokemon.foe) {
+                    if (ability == null) return;
+                    String abilityName = null;
+                    if (ability.equals(toIdSafe(dexPokemon.hiddenAbility)))
+                        abilityName = dexPokemon.hiddenAbility;
+                    else for (String ab : dexPokemon.abilities)
+                        if (toId(ab).equals(ability))
+                            abilityName = ab;
+                    if (abilityName != null)
+                        replace(descView.getEditableText(), ability, abilityName);
+                    return;
+                }
+                if (dexPokemon.abilities.size() > 1 || dexPokemon.hiddenAbility != null) {
                     descView.append(smallText("Possible abilities: "));
                     for (String ability : dexPokemon.abilities)
                         descView.append(ability + ", ");
+                    descView.append(dexPokemon.hiddenAbility);
                     descView.append("\n");
                 } else if (dexPokemon.abilities.size() > 0) {
                     descView.append(smallText("Ability: "));
@@ -392,30 +410,48 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
 
     private void bindMoveTipPopup(Move move, TextView titleView, TextView descView, ImageView placeHolderTop,
                                   ImageView placeHolderBottom) {
-        titleView.setText(move.name);
-        descView.setText("PP: " + move.pp + "/" + move.ppMax);
-        descView.append("\n");
-        if (move.extraInfo == null) return;
-        if (move.extraInfo.priority != 0) {
-            descView.append(boldText("Priority: " + toStringSigned(move.extraInfo.priority)));
+        if (move.zflag) {
+            titleView.setText(move.zName);
+            descView.setText("PP: 1/1");
+            descView.append("\n");
+            if (move.details != null && move.details.zPower > 0) {
+                descView.append("Base power: " + move.details.zPower);
+                descView.append("\n");
+            }
+            if (move.details != null && move.details.zEffect != null) {
+                descView.append("Z-Effect: " + move.details.zEffect);
+                descView.append("\n");
+            }
+            if (move.zDetails != null && move.zDetails.desc != null) {
+                descView.append(italicText(move.zDetails.desc));
+            } else if (move.details != null){
+                descView.append(italicText(move.details.desc));
+            }
+        } else {
+            titleView.setText(move.name);
+            descView.setText("PP: " + move.pp + "/" + move.ppMax);
             descView.append("\n");
         }
-        if (move.extraInfo.basePower != 0) {
-            descView.append("Base power: " + move.extraInfo.basePower);
+        if (move.details == null) return;
+        placeHolderTop.setImageResource(Type.getResId(move.details.type));
+        placeHolderBottom.setImageDrawable(new CategoryDrawable(move.details.category));
+        if (move.zflag) return;
+        if (move.details.priority > 0) {
+            descView.append(boldText("Priority: " + toStringSigned(move.details.priority)));
             descView.append("\n");
         }
-        descView.append("Accuracy: " + (move.extraInfo.accuracy == -1 ? "-" : move.extraInfo.accuracy));
-        if (move.extraInfo.desc != null) {
+        if (move.details.basePower > 0) {
+            descView.append("Base power: " + move.details.basePower);
             descView.append("\n");
-            descView.append(italicText(move.extraInfo.desc));
         }
-        placeHolderTop.setImageDrawable(null);
-        placeHolderBottom.setImageDrawable(null);
-        placeHolderTop.setImageResource(Type.getResId(move.extraInfo.type));
-        mSpritesLoader.loadCategorySprite(move.extraInfo.category, placeHolderBottom);
+        descView.append("Accuracy: " + (move.details.accuracy > 0 ? move.details.accuracy : "Can't miss"));
+        if (move.details.desc != null) {
+            descView.append("\n");
+            descView.append(italicText(move.details.desc));
+        }
     }
 
-    private void bindSidePokemonPopup(SidePokemon pokemon, final TextView titleView,
+    private void bindSidePokemonPopup(final SidePokemon pokemon, final TextView titleView,
                                       final TextView descView, final ImageView placeHolderTop, final ImageView placeHolderBottom) {
         titleView.setText(pokemon.name);
 
@@ -447,10 +483,19 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         descView.append("\n");
 
         descView.append(smallText("Moves:"));
-        for (String move : pokemon.moves) {
-            descView.append("\n\t");
-            descView.append(move);
-        }
+        String[] query = new String[pokemon.moves.size()];
+        for (int i = 0; i < query.length; i++)
+            query[i] = toId(pokemon.moves.get(i));
+        mMoveDetailsLoader.load(query, new DataLoader.Callback<Move.Details>() {
+            @Override
+            public void onLoaded(Move.Details[] results) {
+                for (int i = 0; i < results.length; i++) {
+                    descView.append("\n\t");
+                    descView.append(results[i] != null ?
+                            results[i].name : pokemon.moves.get(i));
+                }
+            }
+        });
 
         placeHolderTop.setImageDrawable(null);
         placeHolderBottom.setImageDrawable(null);
@@ -608,9 +653,10 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         @Override
         protected void onMove(final PokemonId sourceId, final PokemonId targetId, String moveName, boolean shouldAnim) {
             if (!shouldAnim || targetId == null) return;
-            mMoveDetailsLoader.load(array(moveName), new DataLoader.Callback<Move.ExtraInfo>() {
+            mMoveDetailsLoader.load(array(moveName), new DataLoader.Callback<Move.Details>() {
                 @Override
-                public void onLoaded(Move.ExtraInfo[] results) {
+                public void onLoaded(Move.Details[] results) {
+                    if (results[0] == null) return;
                     String category = toId(results[0].category);
                     if ("status".equals(category)) return;
                     mBattleLayout.displayHitIndicator(targetId);
@@ -713,10 +759,18 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
             if (!hideMoves && moves != null && moves.size() > 0) {
                 String[] keys = new String[moves.size()];
                 for (int i = 0; i < keys.length; i++) keys[i] = moves.get(i).id;
-                mMoveDetailsLoader.load(keys, new DataLoader.Callback<Move.ExtraInfo>() {
+                mMoveDetailsLoader.load(keys, new DataLoader.Callback<Move.Details>() {
                     @Override
-                    public void onLoaded(Move.ExtraInfo[] results) {
-                        mActionWidget.updateMoveExtras(results);
+                    public void onLoaded(Move.Details[] results) {
+                        mActionWidget.updateMoveDetails(results);
+                    }
+                });
+                keys = new String[moves.size()];
+                for (int i = 0; i < keys.length; i++) keys[i] = toIdSafe(moves.get(i).zName);
+                if (notAllNull(keys)) mMoveDetailsLoader.load(keys, new DataLoader.Callback<Move.Details>() {
+                    @Override
+                    public void onLoaded(Move.Details[] results) {
+                        mActionWidget.updateMoveZDetails(results);
                     }
                 });
             }

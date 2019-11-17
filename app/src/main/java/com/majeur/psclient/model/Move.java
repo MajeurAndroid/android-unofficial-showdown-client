@@ -17,8 +17,12 @@ public class Move {
     public final String target;
     public final boolean disabled;
     public final String zName;
-    public ExtraInfo extraInfo;
+    public Details details;
+    public Details zDetails;
 
+    // Flag to know if this move should be read as
+    // zmove or regular base one
+    public boolean zflag;
 
     public Move(int index, JSONObject jsonObject, @Nullable JSONObject zJsonObject) throws JSONException {
         this.index = index;
@@ -46,32 +50,55 @@ public class Move {
                 ", target='" + target + '\'' +
                 ", disabled=" + disabled +
                 ", zName='" + zName + '\'' +
-                ", extraInfo=" + extraInfo +
+                ", details=" + details +
                 '}';
     }
 
-    public static class ExtraInfo {
+    public static class Details {
+
         public final String name;
         public final int accuracy;
         public final int priority;
         public final int basePower;
+        public final int zPower;
         public final int color;
         public final String category;
         public final String desc;
         public final String type;
         public final int pp;
+        public final Target target;
+        public final String zEffect;
 
-        public ExtraInfo(String name, int accuracy, int priority, int basePower, String category, String desc, String type, int pp) {
+        public Details(String name, int accuracy, int priority, int basePower, int zPower,
+                       String category, String desc, String type, int pp, String target,
+                       String zEffect) {
             this.name = name;
             this.accuracy = accuracy;
             this.priority = priority;
             this.basePower = basePower;
+            this.zPower = zPower;
             this.category = category;
             this.desc = desc;
             this.type = type;
             this.color = Colors.typeColor(toId(type));
             this.pp = pp;
+            this.target = parse(target);
+            this.zEffect = zEffect;
         }
 
+        private Target parse(String target) {
+            if (target == null) return Target.NORMAL;
+            target = target.toLowerCase().trim();
+            switch (target) {
+                case "normal": return Target.NORMAL;
+                case "allyside": return Target.ALLYSIDE;
+                case "self": return Target.SELF;
+                default: return Target.NORMAL;
+            }
+        }
+    }
+
+    public enum Target {
+        NORMAL, ALLYSIDE, SELF
     }
 }

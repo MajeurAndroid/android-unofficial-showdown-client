@@ -263,14 +263,20 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
         }
     }
 
-    public void updateMoveExtras(Move.ExtraInfo[] extraInfos) {
-        for (int i = 0; i < extraInfos.length; i++) {
+    public void updateMoveDetails(Move.Details[] details) {
+        for (int i = 0; i < details.length; i++) {
             Button button = mMoveButtons.get(i);
             Move move = (Move) button.getTag(R.id.battle_data_tag);
-            Move.ExtraInfo extraInfo = extraInfos[i];
+            move.details = details[i];
+            button.getBackground().setColorFilter(move.details.color, PorterDuff.Mode.MULTIPLY);
+        }
+    }
 
-            button.getBackground().setColorFilter(extraInfo.color, PorterDuff.Mode.MULTIPLY);
-            move.extraInfo = extraInfo;
+    public void updateMoveZDetails(Move.Details[] zDetails) {
+        for (int i = 0; i < zDetails.length; i++) {
+            Button button = mMoveButtons.get(i);
+            Move move = (Move) button.getTag(R.id.battle_data_tag);
+            move.zDetails = zDetails[i];
         }
     }
 
@@ -344,6 +350,7 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
             if (toggle) {
                 if (move.canZMove()) {
                     button.setText(move.zName);
+                    move.zflag = true;
                 } else {
                     button.setText("—");
                     setMoveButtonEnabled(button, false);
@@ -351,6 +358,7 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
             } else {
                 button.setText(sp(move));
                 setMoveButtonEnabled(button, true);
+                move.zflag = false;
             }
            // battleTipPopup.addTippedView(button);
 
