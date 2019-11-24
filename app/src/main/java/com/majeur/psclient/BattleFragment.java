@@ -522,9 +522,20 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
             @Override
             public void onLoaded(DexPokemon[] results) {
                 DexPokemon dexPokemon = results[0];
+                if (dexPokemon == null) return;
                 placeHolderTop.setImageResource(Type.getResId(dexPokemon.firstType));
                 if (dexPokemon.secondType != null)
                     placeHolderBottom.setImageResource(Type.getResId(dexPokemon.secondType));
+
+                if (pokemon.ability == null) return;
+                String abilityName = null;
+                if (pokemon.ability.equals(toIdSafe(dexPokemon.hiddenAbility)))
+                    abilityName = dexPokemon.hiddenAbility;
+                else for (String ab : dexPokemon.abilities)
+                    if (toId(ab).equals(pokemon.ability))
+                        abilityName = ab;
+                if (abilityName != null)
+                    replace(descView.getEditableText(), pokemon.ability, abilityName);
             }
         });
     }
