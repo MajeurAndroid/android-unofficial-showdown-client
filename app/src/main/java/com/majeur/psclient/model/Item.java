@@ -9,6 +9,9 @@ public class Item implements Serializable {
     public String id;
     public String name;
 
+    public String desc;
+    public int spriteNum;
+
     @NonNull
     @Override
     public String toString() {

@@ -25,6 +25,7 @@ import com.majeur.psclient.io.DataLoader;
 import com.majeur.psclient.io.DexIconLoader;
 import com.majeur.psclient.io.DexPokemonLoader;
 import com.majeur.psclient.io.GlideHelper;
+import com.majeur.psclient.io.ItemLoader;
 import com.majeur.psclient.io.MoveDetailsLoader;
 import com.majeur.psclient.model.BasePokemon;
 import com.majeur.psclient.model.BattleActionRequest;
@@ -32,6 +33,7 @@ import com.majeur.psclient.model.BattlingPokemon;
 import com.majeur.psclient.model.Colors;
 import com.majeur.psclient.model.Condition;
 import com.majeur.psclient.model.DexPokemon;
+import com.majeur.psclient.model.Item;
 import com.majeur.psclient.model.Move;
 import com.majeur.psclient.model.Player;
 import com.majeur.psclient.model.PokemonId;
@@ -99,6 +101,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
     private DexPokemonLoader mDexPokemonLoader;
     private MoveDetailsLoader mMoveDetailsLoader;
     private DexIconLoader mDexIconLoader;
+    private ItemLoader mItemLoader;
     private AudioBattleManager mAudioManager;
 
     private InactiveBattleOverlayDrawable mInactiveBattleOverlayDrawable;
@@ -132,6 +135,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         mDexPokemonLoader = new DexPokemonLoader(context);
         mMoveDetailsLoader = new MoveDetailsLoader(context);
         mDexIconLoader = ((MainActivity) context).getDexIconLoader();
+        mItemLoader = new ItemLoader(context);
         mAudioManager = new AudioBattleManager(context);
     }
 
@@ -345,7 +349,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         descView.append("\n");
         final String ability;
         if (!pokemon.foe && mLastActionRequest != null) {
-            SidePokemon sidePokemon = mLastActionRequest.getSide().get(0);
+            final SidePokemon sidePokemon = mLastActionRequest.getSide().get(0);
             ability = sidePokemon.ability;
             descView.append(smallText("Atk:"));
             descView.append(pokemon.statModifiers.calcReadableStat("atk", sidePokemon.stats.atk));
@@ -363,6 +367,14 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
             descView.append("\n");
             descView.append(smallText("Item: "));
             descView.append(sidePokemon.item);
+            mItemLoader.load(array(toId(sidePokemon.item)), new DataLoader.Callback<Item>() {
+                @Override
+                public void onLoaded(Item[] results) {
+                    if (results[0] != null)
+                        replace(descView.getEditableText(), sidePokemon.item, results[0].name);
+                }
+            });
+
         } else ability = null;
         placeHolderTop.setImageDrawable(null);
         placeHolderBottom.setImageDrawable(null);
@@ -480,6 +492,13 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         descView.append("\n");
         descView.append(smallText("Item: "));
         descView.append(pokemon.item);
+        mItemLoader.load(array(toId(pokemon.item)), new DataLoader.Callback<Item>() {
+            @Override
+            public void onLoaded(Item[] results) {
+                if (results[0] != null)
+                    replace(descView.getEditableText(), pokemon.item, results[0].name);
+            }
+        });
         descView.append("\n");
 
         descView.append(smallText("Moves:"));
