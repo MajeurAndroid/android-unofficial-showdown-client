@@ -81,7 +81,11 @@ public class MoveDetailsLoader extends DataLoader<String, Move.Details> {
             while (mJsonReader.hasNext()) {
                 String name = mJsonReader.nextName();
                 if (desiredKeys.contains(name)) {
-                    results[desiredKeys.indexOf(name)] = parseMove();
+                    Move.Details move = parseMove();
+                    for (int i = 0; i < results.length; i++) {
+                        if (desiredKeys.get(i).equals(name))
+                            results[i] = move;
+                    }
                 } else {
                     mJsonReader.skipValue();
                 }
