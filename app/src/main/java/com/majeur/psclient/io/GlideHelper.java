@@ -110,7 +110,7 @@ public class GlideHelper {
 
     private String spriteUri(String spriteId, boolean foe, boolean shiny) {
         return baseUri()
-                .append(foe ? "xyani" : "xyani-back")
+                .append(foe ? "ani" : "ani-back")
                 .append(shiny ? "-shiny/" : "/")
                 .append(spriteId)
                 .append(".gif")
@@ -119,7 +119,7 @@ public class GlideHelper {
 
     private String dexSpriteUri(String spriteId, boolean shiny) {
         return baseUri()
-                .append("xydex")
+                .append("dex")
                 .append(shiny ? "-shiny/" : "/")
                 .append(spriteId)
                 .append(".png")
