@@ -1,7 +1,6 @@
 package com.majeur.psclient.io;
 
 import android.content.Context;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -15,6 +14,7 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.RequestBuilder;
 import com.bumptech.glide.RequestManager;
 import com.bumptech.glide.request.RequestOptions;
+import com.bumptech.glide.request.target.Target;
 import com.bumptech.glide.request.target.ViewTarget;
 import com.majeur.psclient.R;
 import com.majeur.psclient.model.BasePokemon;
@@ -35,11 +35,8 @@ public class GlideHelper {
     }
 
     private RequestManager mRequestManager;
-    private Html.ImageGetter mImageGetter;
-    private Resources mResources;
 
     public GlideHelper(Context context) {
-        mResources = context.getResources();
         mRequestManager = Glide.with(context);
     }
 
@@ -48,7 +45,15 @@ public class GlideHelper {
     @SuppressWarnings("CheckResult")
     public void loadSprite(final BattlingPokemon pokemon, final ImageView imageView, final int fieldWidth) {
         RequestBuilder<Drawable> request = mRequestManager.load(spriteUri(pokemon.spriteId, pokemon.foe, pokemon.shiny));
-        request.apply(new RequestOptions().error(R.drawable.missingno));
+        RequestOptions options = new RequestOptions().override(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL);
+        request.apply(options);
+        request.error(
+                mRequestManager.load(spriteUriAlt(pokemon.spriteId, pokemon.foe, pokemon.shiny))
+                .error(
+                        mRequestManager.load(spriteUriAltAlt(pokemon.spriteId, pokemon.foe, pokemon.shiny))
+                        .apply(options.error(R.drawable.missingno))
+                )
+        );
         request.into(new AnimatedImageViewTarget(imageView) {
             @Override
             protected void onInitInAnimation(ViewPropertyAnimator viewPropertyAnimator) {
@@ -114,6 +119,24 @@ public class GlideHelper {
                 .append(shiny ? "-shiny/" : "/")
                 .append(spriteId)
                 .append(".gif")
+                .toString();
+    }
+
+    private String spriteUriAlt(String spriteId, boolean foe, boolean shiny) {
+        return baseUri()
+                .append(foe ? "gen5ani" : "gen5ani-back")
+                .append(shiny ? "-shiny/" : "/")
+                .append(spriteId)
+                .append(".png")
+                .toString();
+    }
+
+    private String spriteUriAltAlt(String spriteId, boolean foe, boolean shiny) {
+        return baseUri()
+                .append(foe ? "gen5" : "gen5-back")
+                .append(shiny ? "-shiny/" : "/")
+                .append(spriteId)
+                .append(".png")
                 .toString();
     }
 
