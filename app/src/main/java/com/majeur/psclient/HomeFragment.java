@@ -330,6 +330,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
         if (mService == null || !mService.isConnected()) return false;
         if (mCurrentBattleFormat.isTeamNeeded()) {
             Team team = (Team) mTeamsSpinner.getSelectedItem();
+            if (team == null) return false; // Happens sometimes if teams aren't loaded yet, let user retry later.
             if (team.isEmpty()) {
                 Snackbar.make(getView(), "Your team is empty !", Snackbar.LENGTH_SHORT).show();
                 return false;
