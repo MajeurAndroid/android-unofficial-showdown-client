@@ -173,7 +173,7 @@ public class BattleActionRequest {
     }
 
     public boolean isDynamaxed(int which) {
-        if (canDynamax(which)) return false;
+        if (canDynamax(which) || getMoves(which) == null) return false;
         boolean hasMaxMoves = false;
         for (Move move : getMoves(which)) {
             if (move.maxMoveId != null) {
