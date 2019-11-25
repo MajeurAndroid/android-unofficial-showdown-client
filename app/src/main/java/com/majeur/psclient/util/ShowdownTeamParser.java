@@ -263,23 +263,24 @@ public class ShowdownTeamParser {
                             break;
                     }
                 }
-            } else if (currentString.contains("Nature")) { /** Example : Adamant Nature*/
+            } else if (currentString.contains("Nature")) { /* Example : Adamant Nature*/
                 String nature = currentString.substring(0, currentString.indexOf("Nature")).trim();
                 p.nature = nature;
             } else if (currentString.startsWith("Ability:")) {
                 String abilityName = currentString.substring(currentString.indexOf(":") + 1).trim();
                 DexPokemon dexPokemon = dexPokemonFactory.loadDexPokemon(toId(p.species));
-
-                for (int j = 0; j < dexPokemon.abilities.size(); j++) {
-                    String ability = dexPokemon.abilities.get(j);
-                    if (ability.equals(abilityName)) {
-                        p.ability = abilityName;
-                        break;
+                if (dexPokemon != null) {
+                    for (int j = 0; j < dexPokemon.abilities.size(); j++) {
+                        String ability = dexPokemon.abilities.get(j);
+                        if (ability.equals(abilityName)) {
+                            p.ability = abilityName;
+                            break;
+                        }
                     }
-                }
 
-                if (abilityName.equals(dexPokemon.hiddenAbility)) {
-                    p.ability = abilityName;
+                    if (abilityName.equals(dexPokemon.hiddenAbility)) {
+                        p.ability = abilityName;
+                    }
                 }
             } else if (currentString.startsWith("Level:")) {
                 String level = currentString.substring(currentString.indexOf(":") + 1).trim();
