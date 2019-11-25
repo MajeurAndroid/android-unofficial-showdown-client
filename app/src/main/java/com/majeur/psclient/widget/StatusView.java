@@ -301,7 +301,7 @@ public class StatusView extends View {
         mPaint.clearShadowLayer();
 
         mPaint.setColor(color);
-        canvas.drawText(text, x + mRectRadius, cY + mTempRect.height() / 2, mPaint);
+        canvas.drawText(text, x + mRectRadius, cY - mTempRect.height() / 2 - mTempRect.top, mPaint);
     }
 
     private void updateMeasurePoint(Point measurePoint, Rect measureRect) {
