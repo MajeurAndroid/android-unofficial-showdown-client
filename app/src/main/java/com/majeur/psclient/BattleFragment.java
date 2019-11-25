@@ -422,45 +422,97 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
 
     private void bindMoveTipPopup(Move move, TextView titleView, TextView descView, ImageView placeHolderTop,
                                   ImageView placeHolderBottom) {
-        if (move.zflag) {
-            titleView.setText(move.zName);
-            descView.setText("PP: 1/1");
-            descView.append("\n");
-            if (move.details != null && move.details.zPower > 0) {
-                descView.append("Base power: " + move.details.zPower);
-                descView.append("\n");
-            }
-            if (move.details != null && move.details.zEffect != null) {
-                descView.append("Z-Effect: " + move.details.zEffect);
-                descView.append("\n");
-            }
-            if (move.zDetails != null && move.zDetails.desc != null) {
-                descView.append(italicText(move.zDetails.desc));
-            } else if (move.details != null){
-                descView.append(italicText(move.details.desc));
-            }
-        } else {
-            titleView.setText(move.name);
-            descView.setText("PP: " + move.pp + "/" + move.ppMax);
+        String moveName = null;
+        if (move.maxflag) moveName = move.maxDetails != null ? move.maxDetails.name : move.maxMoveId;
+        if (move.zflag) moveName = move.zName;
+        if (moveName == null) moveName = move.name;
+        titleView.setText(moveName);
+
+        descView.setText("");
+        int priority = -20;
+        if (move.maxflag) priority = move.maxDetails != null ? move.maxDetails.priority : 0;
+        if (move.zflag) priority = move.zDetails != null ? move.zDetails.priority : 0;
+        if (priority == -20) priority = move.details != null ? move.details.priority : 0;
+        if (priority > 1) {
+            descView.append("Nearly always moves first ");
+            descView.append(italicText("(priority " + toStringSigned(priority) + ")\n"));
+        } else if (priority <= -1) {
+            descView.append("Nearly always moves last ");
+            descView.append(italicText("(priority " + toStringSigned(priority) + ")\n"));
+        } else if (priority == 1) {
+            descView.append("Usually moves first ");
+            descView.append(italicText("(priority " + toStringSigned(priority) + ")\n"));
+        }
+
+        int basePower = -1;
+        if (move.maxflag) basePower = move.details != null ? move.details.maxPower : 0;
+        if (move.zflag) basePower = move.zDetails != null ? move.zDetails.basePower :
+                move.details != null ? move.details.zPower : 0;
+        if (basePower == -1) basePower = move.details != null ? move.details.basePower : 0;
+        if (basePower > 0)
+            descView.append("Base power: " + basePower + "\n");
+
+        int accuracy = -20;
+        if (move.maxflag) accuracy = move.maxDetails != null ? move.maxDetails.accuracy : 0;
+        if (move.zflag) accuracy = 0;
+        if (accuracy == -20) accuracy = move.details != null ? move.details.accuracy : 0;
+        if (accuracy != 0) {
+            descView.append("Accuracy: ");
+            if (accuracy == Integer.MAX_VALUE) descView.append("can't miss");
+            else descView.append(str(accuracy));
             descView.append("\n");
         }
-        if (move.details == null) return;
-        placeHolderTop.setImageResource(Type.getResId(move.details.type));
-        placeHolderBottom.setImageDrawable(new CategoryDrawable(move.details.category));
-        if (move.zflag) return;
-        if (move.details.priority > 0) {
-            descView.append(boldText("Priority: " + toStringSigned(move.details.priority)));
-            descView.append("\n");
-        }
-        if (move.details.basePower > 0) {
-            descView.append("Base power: " + move.details.basePower);
-            descView.append("\n");
-        }
-        descView.append("Accuracy: " + (move.details.accuracy > 0 ? move.details.accuracy : "Can't miss"));
-        if (move.details.desc != null) {
-            descView.append("\n");
-            descView.append(italicText(move.details.desc));
-        }
+
+        String desc = null;
+        if (move.maxflag) desc = move.maxDetails != null ? move.maxDetails.desc : "";
+        if (move.zflag) desc = move.zDetails != null ? move.zDetails.desc :
+                move.details != null ? "Z-Effect: " + move.details.zEffect : "";
+        if (desc == null) desc = move.details != null ? move.details.desc : "";
+        if (desc != null && desc.length() > 0)
+            descView.append(italicText(desc));
+
+        String type = null;
+        if (move.maxflag) type = move.maxDetails != null ? move.maxDetails.type : "???";
+        if (type == null) type = move.details != null ? move.details.type : "???";
+        placeHolderTop.setImageResource(Type.getResId(type));
+
+        String category = move.details != null ? move.details.category : null;
+        Drawable drawable = category != null ? new CategoryDrawable(move.details.category) : null;
+        placeHolderBottom.setImageDrawable(drawable);
+
+//        if (move.zflag) {
+//            titleView.setText(move.zName);
+//            descView.setText("PP: 1/1");
+//            descView.append("\n");
+//            if (move.details != null && move.details.zPower > 0) {
+//                descView.append("Base power: " + move.details.zPower);
+//                descView.append("\n");
+//            }
+//            if (move.details != null && move.details.zEffect != null) {
+//                descView.append("Z-Effect: " + move.details.zEffect);
+//                descView.append("\n");
+//            }
+//            if (move.zDetails != null && move.zDetails.desc != null) {
+//                descView.append(italicText(move.zDetails.desc));
+//            } else if (move.details != null){
+//                descView.append(italicText(move.details.desc));
+//            }
+//        } else if (move.maxflag) {
+//            titleView.setText(move.maxDetails.name);
+//            descView.setText(move.maxDetails.toString());
+//
+//            descView.append("\n");
+//        }
+//        if (move.details == null) return;
+//        if (move.zflag) return;
+//
+//
+//        if (move.details.basePower > 0) {
+//            descView.append("Base power: " + move.details.basePower);
+//            descView.append("\n");
+//        }
+//        descView.append("Accuracy: " + (move.details.accuracy > 0 ? move.details.accuracy : "Can't miss"));
+
     }
 
     private void bindSidePokemonPopup(final SidePokemon pokemon, final TextView titleView,
@@ -555,11 +607,13 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         mService.sendRoomCommand(mObservedRoomId, "switch", who, reqId);
     }
 
-    public void sendMoveDecision(int reqId, int which, boolean mega, boolean zmove) {
+    public void sendMoveDecision(int reqId, int which, boolean mega, boolean zmove, boolean dynamax) {
         if (mega)
             mService.sendRoomCommand(mObservedRoomId, "move", which + " mega", reqId);
         else if (zmove)
             mService.sendRoomCommand(mObservedRoomId, "move", which + " zmove", reqId);
+        else if (dynamax)
+            mService.sendRoomCommand(mObservedRoomId, "move", which + " dynamax", reqId);
         else
             mService.sendRoomCommand(mObservedRoomId, "move", which, reqId);
     }
@@ -767,14 +821,14 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
 
             boolean hideMoves = request.forceSwitch();
             boolean hideSwitch = request.trapped();
-            List<Move> moves = hideMoves ? null : request.getMoves();
+            final List<Move> moves = hideMoves ? null : request.getMoves();
             List<SidePokemon> team = hideSwitch ? null : request.getSide();
 
-            mActionWidget.promptChoice(mBattleTipPopup, moves, request.canMegaEvo(), team, request.teamPreview(),
-                    new BattleActionWidget.OnChoiceListener() {
+            mActionWidget.promptChoice(mBattleTipPopup, moves, request.canMegaEvo(), request.canDynamax(),
+                    request.isDynamaxed(0), team, request.teamPreview(), new BattleActionWidget.OnChoiceListener() {
                 @Override
-                public void onMoveChose(int which, boolean mega, boolean zmove) {
-                    sendMoveDecision(request.getId(), which, mega, zmove);
+                public void onMoveChose(int which, boolean mega, boolean zmove, boolean dynamax) {
+                    sendMoveDecision(request.getId(), which, mega, zmove, dynamax);
                 }
 
                 @Override
@@ -792,7 +846,9 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                 mMoveDetailsLoader.load(keys, new DataLoader.Callback<Move.Details>() {
                     @Override
                     public void onLoaded(Move.Details[] results) {
-                        mActionWidget.updateMoveDetails(results);
+                        for (int i = 0; i < results.length; i++)
+                            moves.get(i).details = results[i];
+                        mActionWidget.notifyDetailsUpdated();
                     }
                 });
                 keys = new String[moves.size()];
@@ -800,7 +856,18 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                 if (notAllNull(keys)) mMoveDetailsLoader.load(keys, new DataLoader.Callback<Move.Details>() {
                     @Override
                     public void onLoaded(Move.Details[] results) {
-                        mActionWidget.updateMoveZDetails(results);
+                        for (int i = 0; i < results.length; i++)
+                            moves.get(i).zDetails = results[i];
+                    }
+                });
+                keys = new String[moves.size()];
+                for (int i = 0; i < keys.length; i++) keys[i] = toIdSafe(moves.get(i).maxMoveId);
+                if (notAllNull(keys)) mMoveDetailsLoader.load(keys, new DataLoader.Callback<Move.Details>() {
+                    @Override
+                    public void onLoaded(Move.Details[] results) {
+                        for (int i = 0; i < results.length; i++)
+                            moves.get(i).maxDetails = results[i];
+                        mActionWidget.notifyMaxDetailsUpdated();
                     }
                 });
             }

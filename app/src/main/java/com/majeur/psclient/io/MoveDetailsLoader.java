@@ -96,11 +96,12 @@ public class MoveDetailsLoader extends DataLoader<String, Move.Details> {
             int priority = 0;
             int pp = 0;
             String category = null;
-            String desc = null;
+            String desc = null, shortDesc = null;
             String zEffect = null;
             String type = null;
             String moveName = null;
             String target = null;
+            int maxPower = 0;
             mJsonReader.beginObject();
             while (mJsonReader.hasNext()) {
                 String name = mJsonReader.nextName();
@@ -108,8 +109,7 @@ public class MoveDetailsLoader extends DataLoader<String, Move.Details> {
                     case "accuracy":
                         JsonToken token = mJsonReader.peek();
                         if (token == JsonToken.BOOLEAN) {
-                            mJsonReader.nextBoolean();
-                            accuracy = -1;
+                            accuracy = mJsonReader.nextBoolean() ? Integer.MAX_VALUE : Integer.MIN_VALUE;
                         } else
                             accuracy = mJsonReader.nextInt();
                         break;
@@ -119,8 +119,11 @@ public class MoveDetailsLoader extends DataLoader<String, Move.Details> {
                     case "category":
                         category = mJsonReader.nextString();
                         break;
-                    case "shortDesc":
+                    case "desc":
                         desc = mJsonReader.nextString();
+                        break;
+                    case "shortDesc":
+                        shortDesc = mJsonReader.nextString();
                         break;
                     case "type":
                         type = mJsonReader.nextString();
@@ -143,6 +146,9 @@ public class MoveDetailsLoader extends DataLoader<String, Move.Details> {
                     case "zMoveEffect":
                         zEffect = zMoveEffects(mJsonReader.nextString());
                         break;
+                    case "gmaxPower":
+                        maxPower = mJsonReader.nextInt();
+                        break;
                     default:
                         mJsonReader.skipValue();
                         break;
@@ -150,7 +156,7 @@ public class MoveDetailsLoader extends DataLoader<String, Move.Details> {
             }
             mJsonReader.endObject();
             return new Move.Details(moveName, accuracy, priority, basePower, zPower, category,
-                    desc, type, pp, target, zEffect);
+                    desc != null ? desc : shortDesc, type, pp, target, zEffect, maxPower);
         }
 
         private String zMoveEffects(String effect) {

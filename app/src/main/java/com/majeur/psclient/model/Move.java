@@ -20,11 +20,16 @@ public class Move {
     public Details details;
     public Details zDetails;
 
+    public String maxMoveId;
+    public Target maxMoveTarget;
+    public Details maxDetails;
+
     // Flag to know if this move should be read as
     // zmove or regular base one
     public boolean zflag;
+    public boolean maxflag;
 
-    public Move(int index, JSONObject jsonObject, @Nullable JSONObject zJsonObject) throws JSONException {
+    public Move(int index, JSONObject jsonObject, @Nullable JSONObject zJsonObject, JSONObject maxJsonObject) throws JSONException {
         this.index = index;
         name = jsonObject.getString("move").replace("Hidden Power", "HP");
         id = jsonObject.getString("id");
@@ -33,11 +38,47 @@ public class Move {
         target = jsonObject.optString("target", null);
         disabled = jsonObject.optBoolean("disabled", false);
         zName = zJsonObject != null ? zJsonObject.optString("move", null) : null;
+        maxMoveId = maxJsonObject != null ? maxJsonObject.optString("move", null) : null;
+        maxMoveTarget = maxJsonObject != null ? Target.parse(maxJsonObject.optString("target", null)) : null;
     }
 
     public boolean canZMove() {
         return zName != null;
     }
+
+    public String maxMoveName() {
+        for (String name : MAX_MOVES)
+            if (toId(name).equals(maxMoveId))
+                return name;
+        return maxMoveId;
+//        switch (details.type) {
+//                case "Poison":  return "Max Ooze";
+//                case "Fighting": return "Max Knuckle";
+//                case "Dark": return "Max Darkness";
+//                case "Grass": return "Max Overgrowth";
+//                case "Normal": return "Max Strike";
+//                case "Rock": return "Max Rockfall";
+//                case "Steel": return "Max Steelspike";
+//                case "Dragon": return "Max Wyrmwind";
+//                case "Electric": return "Max Lightning";
+//                case "Water": return "Max Geyser";
+//                case "Fire": return "Max Flare";
+//                case "Ghost": return "Max Phantasm";
+//                case "Bug": return "Max Flutterby";
+//                case "Psychic": return "Max Mindstorm";
+//                case "Ice": return "Max Hailstorm";
+//                case "Flying": return "Max Airstream";
+//                case "Ground": return "Max Quake";
+//                case "Fairy": return "Max Starfall";
+//                case "???": return "";
+//                default: return null;
+//        }
+    }
+
+    private static String[] MAX_MOVES = {"Max Guard", "Max Ooze", "Max Knuckle", "Max Darkness",
+            "Max Overgrowth", "Max Strike", "Max Rockfall", "Max Steelspike", "Max Wyrmwind",
+            "Max Lightning", "Max Geyser", "Max Flare", "Max Phantasm", "Max Flutterby", "Max Mindstorm",
+            "Max Hailstorm", "Max Airstream", "Max Quake", "Max Starfall"};
 
     @Override
     public String toString() {
@@ -68,10 +109,11 @@ public class Move {
         public final int pp;
         public final Target target;
         public final String zEffect;
+        public final int maxPower;
 
         public Details(String name, int accuracy, int priority, int basePower, int zPower,
                        String category, String desc, String type, int pp, String target,
-                       String zEffect) {
+                       String zEffect, int maxPower) {
             this.name = name;
             this.accuracy = accuracy;
             this.priority = priority;
@@ -82,11 +124,34 @@ public class Move {
             this.type = type;
             this.color = Colors.typeColor(toId(type));
             this.pp = pp;
-            this.target = parse(target);
+            this.target = Target.parse(target);
             this.zEffect = zEffect;
+            this.maxPower = maxPower;
         }
 
-        private Target parse(String target) {
+        @Override
+        public String toString() {
+            return "Details{" +
+                    "name='" + name + '\'' +
+                    ", accuracy=" + accuracy +
+                    ", priority=" + priority +
+                    ", basePower=" + basePower +
+                    ", zPower=" + zPower +
+                    ", color=" + color +
+                    ", category='" + category + '\'' +
+                    ", desc='" + desc + '\'' +
+                    ", type='" + type + '\'' +
+                    ", pp=" + pp +
+                    ", target=" + target +
+                    ", zEffect='" + zEffect + '\'' +
+                    '}';
+        }
+    }
+
+    public enum Target {
+        NORMAL, ALLYSIDE, SELF;
+
+        public static Target parse(String target) {
             if (target == null) return Target.NORMAL;
             target = target.toLowerCase().trim();
             switch (target) {
@@ -96,9 +161,5 @@ public class Move {
                 default: return Target.NORMAL;
             }
         }
-    }
-
-    public enum Target {
-        NORMAL, ALLYSIDE, SELF
     }
 }

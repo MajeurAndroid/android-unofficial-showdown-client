@@ -263,25 +263,25 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
         }
     }
 
-    public void updateMoveDetails(Move.Details[] details) {
-        for (int i = 0; i < details.length; i++) {
-            Button button = mMoveButtons.get(i);
+    public void notifyDetailsUpdated() {
+        for (Button button : mMoveButtons) {
             Move move = (Move) button.getTag(R.id.battle_data_tag);
-            move.details = details[i];
+            if (move.details == null) continue;
             button.getBackground().setColorFilter(move.details.color, PorterDuff.Mode.MULTIPLY);
         }
     }
 
-    public void updateMoveZDetails(Move.Details[] zDetails) {
-        for (int i = 0; i < zDetails.length; i++) {
-            Button button = mMoveButtons.get(i);
+    public void notifyMaxDetailsUpdated() {
+        for (Button button : mMoveButtons) {
             Move move = (Move) button.getTag(R.id.battle_data_tag);
-            move.zDetails = zDetails[i];
+            if (move.maxDetails == null) continue;
+            button.setText(move.maxDetails.name);
+            button.getBackground().setColorFilter(move.maxDetails.color, PorterDuff.Mode.MULTIPLY);
         }
     }
 
-    public void promptChoice(BattleTipPopup battleTipPopup, List<Move> moves, boolean canMega,
-                 List<SidePokemon> team, boolean chooseLead, OnChoiceListener listener) {
+    public void promptChoice(BattleTipPopup battleTipPopup, List<Move> moves, boolean canMega, boolean canDynamax,
+                             boolean isDynamaxed, List<SidePokemon> team, boolean chooseLead, OnChoiceListener listener) {
         boolean canZMove = false;
         for (int i = 0; i < 4; i++) {
             Button button = mMoveButtons.get(i);
@@ -300,6 +300,8 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
             }
         }
 
+        if (isDynamaxed) toggleMaxMoves(true);
+
         if (canMega) {
             mMovesCheckBox.setVisibility(VISIBLE);
             mMovesCheckBox.setText("Mega Evolution");
@@ -313,6 +315,16 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
                 @Override
                 public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
                     toggleZMoves(checked);
+                }
+            });
+        } else if (canDynamax) {
+            mMovesCheckBox.setVisibility(VISIBLE);
+            mMovesCheckBox.setText("Dynamax");
+            mMovesCheckBox.setChecked(false);
+            mMovesCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
+                    toggleMaxMoves(checked);
                 }
             });
         } else {
@@ -365,6 +377,36 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
         }
     }
 
+    private void toggleMaxMoves(boolean toggle) {
+        for (int i = 0; i < 4; i++) {
+            Button button = mMoveButtons.get(i);
+            if (button.getVisibility() == GONE) continue;
+            Move move = (Move) button.getTag(R.id.battle_data_tag);
+            if (toggle) {
+                if (move.maxMoveId != null) {
+                    String text = move.maxDetails != null ? move.maxDetails.name : move.maxMoveId;
+                    button.setText(text);
+                    if (move.maxDetails != null)
+                    button.getBackground().setColorFilter(move.maxDetails.color, PorterDuff.Mode.MULTIPLY);
+                    else button.getBackground().clearColorFilter();
+                    move.maxflag = true;
+                } else {
+                    button.setText("—");
+                    setMoveButtonEnabled(button, false);
+                }
+            } else {
+                button.setText(sp(move));
+                if (move.details != null)
+                    button.getBackground().setColorFilter(move.details.color, PorterDuff.Mode.MULTIPLY);
+                else button.getBackground().clearColorFilter();
+                setMoveButtonEnabled(button, true);
+                move.maxflag = false;
+            }
+            // battleTipPopup.addTippedView(button);
+
+        }
+    }
+
     private void setMoveButtonEnabled(Button button, boolean enabled) {
         if (enabled) {
             button.setEnabled(true);
@@ -393,9 +435,11 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
             Move move = (Move) data;
             int which = move.index + 1;
             boolean mega = mMovesCheckBox.getVisibility() == VISIBLE && mMovesCheckBox.isChecked();
-            boolean zmove = mega && move.canZMove();
-            if (zmove) mega = false;
-            mOnChoiceListener.onMoveChose(which, mega, zmove);
+            boolean zmove = mega && move.zflag;
+            boolean dynamax = mega && move.maxflag;
+            if (dynamax) mega = zmove = false;
+            else if (zmove) mega = false;
+            mOnChoiceListener.onMoveChose(which, mega, zmove, dynamax);
         } else if (data instanceof SidePokemon) {
             int who = ((SidePokemon) data).index + 1;
             mOnChoiceListener.onSwitchChose(who);
@@ -496,7 +540,7 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
     }
 
     public interface OnChoiceListener {
-        public void onMoveChose(int which, boolean mega, boolean zmove);
+        public void onMoveChose(int which, boolean mega, boolean zmove, boolean dynamax);
 
         public void onSwitchChose(int who);
     }

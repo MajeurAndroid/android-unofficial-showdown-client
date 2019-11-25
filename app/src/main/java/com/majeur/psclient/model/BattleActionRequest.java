@@ -18,6 +18,7 @@ public class BattleActionRequest {
     private boolean[] mForceSwitch;
     private boolean[] mTrapped;
     private boolean[] mCanMegaEvo;
+    private boolean[] mCanDynamax;
 
     private List<Move> mFirstPokemonMoves = null;
     private List<Move> mSecondPokemonMoves = null;
@@ -55,13 +56,23 @@ public class BattleActionRequest {
                     mCanMegaEvo[i] = true;
                 }
 
+                boolean canDynamax = movesContainer.optBoolean("canDynamax", false);
+                if (canDynamax) {
+                    if (mCanDynamax == null) mCanDynamax = new boolean[N];
+                    mCanDynamax[i] = true;
+                }
+
                 JSONArray movesJsonArray = movesContainer.getJSONArray("moves");
                 JSONArray zMovesJsonArray = movesContainer.optJSONArray("canZMove");
+                JSONObject maxMoveJsonObject = movesContainer.optJSONObject("maxMoves");
+                JSONArray maxMovesJsonArray = maxMoveJsonObject != null ? maxMoveJsonObject.optJSONArray("maxMoves")
+                        : null;
                 List<Move> moveList = new LinkedList<>();
 
                 for (int j = 0; j < movesJsonArray.length(); j++)
                     moveList.add(new Move(j, movesJsonArray.getJSONObject(j),
-                            zMovesJsonArray != null ? zMovesJsonArray.optJSONObject(j) : null));
+                            zMovesJsonArray != null ? zMovesJsonArray.optJSONObject(j) : null,
+                            maxMovesJsonArray != null ? maxMovesJsonArray.optJSONObject(j) : null));
 
                 if (i == 0)
                     mFirstPokemonMoves = moveList;
@@ -117,6 +128,10 @@ public class BattleActionRequest {
         return canMegaEvo(0);
     }
 
+    public boolean canDynamax() {
+        return canDynamax(0);
+    }
+
     public boolean forceSwitch(int which) {
         if (mForceSwitch == null)
             return false;
@@ -145,6 +160,28 @@ public class BattleActionRequest {
             return mCanMegaEvo[0];
         else
             return mCanMegaEvo[1];
+    }
+
+    public boolean canDynamax(int which) {
+        if (mCanDynamax == null)
+            return false;
+
+        if (which == 0)
+            return mCanDynamax[0];
+        else
+            return mCanDynamax[1];
+    }
+
+    public boolean isDynamaxed(int which) {
+        if (canDynamax(which)) return false;
+        boolean hasMaxMoves = false;
+        for (Move move : getMoves(which)) {
+            if (move.maxMoveId != null) {
+                hasMaxMoves = true;
+                break;
+            }
+        }
+        return hasMaxMoves;
     }
 
     @Override
