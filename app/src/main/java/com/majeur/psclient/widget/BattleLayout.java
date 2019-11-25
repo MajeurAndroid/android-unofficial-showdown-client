@@ -30,8 +30,6 @@ public class BattleLayout extends ViewGroup {
     public static final int MODE_BATTLE_TRIPLE = 3;
 
     private static final float ASPECT_RATIO = 16f/9f;
-    private static final int PLAYER_1 = 4;
-    private static final int PLAYER_2 = 5;
 
     private static final PointF[] REL_TEAMPREV_P1_LINE =
             {new PointF(0.125f, 0.728f), new PointF(0.820f, 0.806f)};
@@ -95,12 +93,15 @@ public class BattleLayout extends ViewGroup {
         mFxDrawable = getResources().getDrawable(R.drawable.ic_hit);
     }
 
-    public void setMode(int currentMode) {
-        mCurrentMode = currentMode;
+    public void setMode(int mode) {
+        if (mode < MODE_PREVIEW || mode > MODE_BATTLE_TRIPLE) return;
+        mCurrentMode = mode;
         for (int i = 0; i < mP1ImageViews.size(); i++)
             mP1ImageViews.get(i).setImageDrawable(null);
         for (int i = 0; i < mP2ImageViews.size(); i++)
             mP2ImageViews.get(i).setImageDrawable(null);
+        // This will ensure that next calls to getXXXView() returns proper view without waiting for a layout pass
+        prepareViews(false, 0, 0);
         requestLayout();
     }
 
@@ -187,19 +188,17 @@ public class BattleLayout extends ViewGroup {
 
     private void measureChildInLayout(View child, int parentWidth, int parentHeight) {
         LayoutParams layoutParams = (LayoutParams) child.getLayoutParams();
-        int widthMeasureSpec = getChildMeasureSpec(layoutParams.width, parentWidth, layoutParams.relWidth);
-        int heightMeasureSpec = getChildMeasureSpec(layoutParams.height, parentHeight, layoutParams.relHeight);
+        int widthMeasureSpec = getChildMeasureSpec(layoutParams.width, parentWidth);
+        int heightMeasureSpec = getChildMeasureSpec(layoutParams.height, parentHeight);
         child.measure(widthMeasureSpec, heightMeasureSpec);
     }
 
-    private int getChildMeasureSpec(int dim, int parentDim, float relDim) {
+    private int getChildMeasureSpec(int dim, int parentDim) {
         int spec;
         if (dim == LayoutParams.WRAP_CONTENT)
             spec = MeasureSpec.makeMeasureSpec(parentDim, MeasureSpec.AT_MOST);
         else if (dim == LayoutParams.MATCH_PARENT)
             spec = MeasureSpec.makeMeasureSpec(parentDim, MeasureSpec.EXACTLY);
-        else if (dim == LayoutParams.SIZE_RELATIVE)
-            spec = MeasureSpec.makeMeasureSpec((int) (parentDim*relDim), MeasureSpec.EXACTLY);
         else
             spec = MeasureSpec.makeMeasureSpec(dim, MeasureSpec.EXACTLY);
         return spec;
@@ -209,7 +208,7 @@ public class BattleLayout extends ViewGroup {
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         int width = right - left;
         int height = bottom - top;
-
+        prepareViews(true, width, height);
         switch (mCurrentMode) {
             case MODE_PREVIEW:
                 layoutPreviewMode(width, height);
@@ -263,9 +262,6 @@ public class BattleLayout extends ViewGroup {
 
     private void layoutPreviewMode(int width, int height) {
         int p1Count = mP1PreviewTeamSize;
-        fillNeededViews(mP1ImageViews, p1Count, width, height);
-        fillNeededStatusViews(mP1StatusViews, 0, width, height);
-        fillNeededToasterViews(mP1ToasterViews, 0, width, height);
         Point startPoint = new Point((int) (REL_TEAMPREV_P1_LINE[0].x * width),
                 (int) (REL_TEAMPREV_P1_LINE[0].y * height));
         Point endPoint = new Point((int) (REL_TEAMPREV_P1_LINE[1].x * width),
@@ -277,9 +273,6 @@ public class BattleLayout extends ViewGroup {
                     startPoint.y + i*yStep, Gravity.CENTER, false);
 
         int p2Count = mP2PreviewTeamSize;
-        fillNeededViews(mP2ImageViews, p2Count, width, height);
-        fillNeededStatusViews(mP2StatusViews, 0, width, height);
-        fillNeededToasterViews(mP2ToasterViews, 0, width, height);
         startPoint = new Point((int) (REL_TEAMPREV_P2_LINE[0].x * width),
                 (int) (REL_TEAMPREV_P2_LINE[0].y * height));
         endPoint = new Point((int) (REL_TEAMPREV_P2_LINE[1].x * width),
@@ -292,13 +285,6 @@ public class BattleLayout extends ViewGroup {
     }
 
     private void layoutBattleMode(int count, int width, int height) {
-        fillNeededViews(mP1ImageViews, count, width, height);
-        fillNeededStatusViews(mP1StatusViews, count, width, height);
-        fillNeededToasterViews(mP1ToasterViews, count, width, height);
-        fillNeededViews(mP2ImageViews, count, width, height);
-        fillNeededStatusViews(mP2StatusViews, count, width, height);
-        fillNeededToasterViews(mP2ToasterViews, count, width, height);
-
         Point point = new Point();
         int j;
         for (int i = 0; i < count; i++) {
@@ -323,19 +309,53 @@ public class BattleLayout extends ViewGroup {
         layoutChild(mP2SideView, width, 3 * height / 5, Gravity.CENTER_VERTICAL, true);
     }
 
-    private void fillNeededViews(SparseArray<ImageView> pXImageViews, int needed, int width, int height) {
+    private void prepareViews(boolean inLayout, int width, int height) {
+        int p1ImageViewCount, p1StatusViewCount, p1ToasterViewCount;
+        int p2ImageViewCount, p2StatusViewCount, p2ToasterViewCount;
+        if (mCurrentMode == MODE_BATTLE_SINGLE) {
+            p1ImageViewCount = p1StatusViewCount = p1ToasterViewCount = 1;
+            p2ImageViewCount = p2StatusViewCount = p2ToasterViewCount = 1;
+        } else if (mCurrentMode == MODE_BATTLE_DOUBLE) {
+            p1ImageViewCount = p1StatusViewCount = p1ToasterViewCount = 2;
+            p2ImageViewCount = p2StatusViewCount = p2ToasterViewCount = 2;
+        } else if (mCurrentMode == MODE_BATTLE_TRIPLE) {
+            p1ImageViewCount = p1StatusViewCount = p1ToasterViewCount = 3;
+            p2ImageViewCount = p2StatusViewCount = p2ToasterViewCount = 3;
+        } else { // MODE_BATTLE_PREVIEW
+            p1ImageViewCount = mP1PreviewTeamSize;
+            p1StatusViewCount = p1ToasterViewCount = 0;
+            p2ImageViewCount = mP2PreviewTeamSize;
+            p2StatusViewCount = p2ToasterViewCount = 0;
+        }
+        fillNeededViews(mP1ImageViews, p1ImageViewCount, inLayout, width, height);
+        fillNeededStatusViews(mP1StatusViews, p1StatusViewCount, inLayout, width, height);
+        fillNeededToasterViews(mP1ToasterViews, p1ToasterViewCount, inLayout, width, height);
+        fillNeededViews(mP2ImageViews, p2ImageViewCount, inLayout, width, height);
+        fillNeededStatusViews(mP2StatusViews, p2StatusViewCount, inLayout, width, height);
+        fillNeededToasterViews(mP2ToasterViews, p2ToasterViewCount, inLayout, width, height);
+    }
+
+    private void fillNeededViews(SparseArray<ImageView> pXImageViews, int needed, boolean inLayout, int width, int height) {
         final int current = pXImageViews.size();
         if (current < needed) {
             for (int i = current; i < needed; i++) {
                 ImageView child = obtainImageView();
                 pXImageViews.append(i, child);
-                addViewInLayout(child, -1, child.getLayoutParams());
-                measureChildInLayout(child, width, height);
+                if (inLayout) {
+                    addViewInLayout(child, -1, child.getLayoutParams());
+                    measureChildInLayout(child, width, height);
+                } else {
+                    addView(child, -1, child.getLayoutParams());
+                }
             }
         } else if (current > needed) {
             for (int i = needed; i < current; i++) {
                 ImageView child = pXImageViews.get(i);
-                removeViewInLayout(child);
+                if (inLayout) {
+                    removeViewInLayout(child);
+                } else {
+                    removeView(child);
+                }
                 pXImageViews.remove(i);
                 cacheImageView(child);
             }
@@ -359,40 +379,56 @@ public class BattleLayout extends ViewGroup {
         mImageViewCache.add(child);
     }
 
-    private void fillNeededStatusViews(SparseArray<StatusView> pXStatusViews, int needed, int width, int height) {
+    private void fillNeededStatusViews(SparseArray<StatusView> pXStatusViews, int needed, boolean inLayout, int width, int height) {
         final int current = pXStatusViews.size();
         if (current < needed) {
             for (int i = current; i < needed; i++) {
                 StatusView child = new StatusView(getContext());
                 child.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
                 pXStatusViews.append(i, child);
-                addViewInLayout(child, -1, child.getLayoutParams());
-                measureChildInLayout(child, width, height);
+                if (inLayout) {
+                    addViewInLayout(child, -1, child.getLayoutParams());
+                    measureChildInLayout(child, width, height);
+                } else {
+                    addView(child, -1, child.getLayoutParams());
+                }
             }
         } else if (current > needed) {
             for (int i = needed; i < current; i++) {
                 StatusView child = pXStatusViews.get(i);
                 pXStatusViews.remove(i);
-                removeViewInLayout(child);
+                if (inLayout) {
+                    removeViewInLayout(child);
+                } else {
+                    removeView(child);
+                }
             }
         }
     }
 
-    private void fillNeededToasterViews(SparseArray<ToasterView> pXToasterViews, int needed, int width, int height) {
+    private void fillNeededToasterViews(SparseArray<ToasterView> pXToasterViews, int needed, boolean inLayout, int width, int height) {
         final int current = pXToasterViews.size();
         if (current < needed) {
             for (int i = current; i < needed; i++) {
                 ToasterView child = new ToasterView(getContext());
                 child.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
                 pXToasterViews.append(i, child);
-                addViewInLayout(child, -1, child.getLayoutParams());
-                measureChildInLayout(child, width, height);
+                if (inLayout) {
+                    addViewInLayout(child, -1, child.getLayoutParams());
+                    measureChildInLayout(child, width, height);
+                } else {
+                    addView(child, -1, child.getLayoutParams());
+                }
             }
         } else if (current > needed) {
             for (int i = needed; i < current; i++) {
                 ToasterView child = pXToasterViews.get(i);
                 pXToasterViews.remove(i);
-                removeViewInLayout(child);
+                if (inLayout) {
+                    removeViewInLayout(child);
+                } else {
+                    removeView(child);
+                }
             }
         }
     }
@@ -407,17 +443,6 @@ public class BattleLayout extends ViewGroup {
     }
 
     private static class LayoutParams extends ViewGroup.LayoutParams {
-
-        public static final int SIZE_RELATIVE = -3;
-
-        private float relWidth;
-        private float relHeight;
-
-        public LayoutParams(float relWidth, float relHeight) {
-            super(SIZE_RELATIVE, SIZE_RELATIVE);
-            this.relWidth = relWidth;
-            this.relHeight = relHeight;
-        }
 
         public LayoutParams(int width, int height) {
             super(width, height);

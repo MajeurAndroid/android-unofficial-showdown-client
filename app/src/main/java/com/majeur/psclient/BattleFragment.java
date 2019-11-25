@@ -682,15 +682,9 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
 
         @Override
         protected void onAddPreviewPokemon(final PokemonId id, final BasePokemon pokemon, boolean hasItem) {
-            // Make sure BattleLayout has finished changing its layout
-            mBattleLayout.post(new Runnable() {
-                @Override
-                public void run() {
-                    ImageView imageView = mBattleLayout.getPokemonView(id);
-                    if (imageView != null) // Happens when joining a battle where the preview has already been done
-                        mSpritesLoader.loadPreviewSprite(id.player, pokemon, imageView);
-                }
-            });
+            ImageView imageView = mBattleLayout.getPokemonView(id);
+            if (imageView != null) // Happens when joining a battle where the preview has already been done
+                mSpritesLoader.loadPreviewSprite(id.player, pokemon, imageView);
 
             mDexIconLoader.load(array(toId(pokemon.species)), new DataLoader.Callback<Bitmap>() {
                 @Override
