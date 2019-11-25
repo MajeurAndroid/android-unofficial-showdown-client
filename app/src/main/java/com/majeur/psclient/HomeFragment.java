@@ -330,8 +330,10 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
         if (mService == null || !mService.isConnected()) return false;
         if (mCurrentBattleFormat.isTeamNeeded()) {
             Team team = (Team) mTeamsSpinner.getSelectedItem();
-            if (team == null) return false; // Happens sometimes if teams aren't loaded yet, let user retry later.
-            if (team.isEmpty()) {
+            if (team == null) {
+                Snackbar.make(getView(), "You have no team !", Snackbar.LENGTH_SHORT).show();
+                return false;
+            } else if (team.isEmpty()) {
                 Snackbar.make(getView(), "Your team is empty !", Snackbar.LENGTH_SHORT).show();
                 return false;
             }
@@ -560,8 +562,8 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
 
         @Override
         protected void onNetworkError() {
-            Snackbar.make(getView(), "No internet connection", Snackbar.LENGTH_INDEFINITE)
-                    .setAction("Try to reconnect", new View.OnClickListener() {
+            Snackbar.make(getView(), "Unable to reach Showdown server", Snackbar.LENGTH_INDEFINITE)
+                    .setAction("Retry", new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
                             Snackbar.make(getView(), "Reconnecting to Showdown server...",
