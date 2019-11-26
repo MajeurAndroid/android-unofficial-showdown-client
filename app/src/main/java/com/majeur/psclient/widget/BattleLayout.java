@@ -333,6 +333,20 @@ public class BattleLayout extends ViewGroup {
         fillNeededViews(mP2ImageViews, p2ImageViewCount, inLayout, width, height);
         fillNeededStatusViews(mP2StatusViews, p2StatusViewCount, inLayout, width, height);
         fillNeededToasterViews(mP2ToasterViews, p2ToasterViewCount, inLayout, width, height);
+        for (int i = 0; i < 6; i++) {
+            bringToFront(mP2ImageViews.get(i));
+            bringToFront(mP2ToasterViews.get(i));
+            bringToFront(mP2StatusViews.get(i));
+        }
+        for (int i = 0; i < 6; i++) {
+            bringToFront(mP1ImageViews.get(i));
+            bringToFront(mP1ToasterViews.get(i));
+            bringToFront(mP1StatusViews.get(i));
+        }
+    }
+
+    public void bringToFront(View view) {
+        if (view != null) view.bringToFront();
     }
 
     private void fillNeededViews(SparseArray<ImageView> pXImageViews, int needed, boolean inLayout, int width, int height) {
