@@ -1,12 +1,13 @@
 # <img alt="Unofficial PS client icon" src="https://github.com/MajeurAndroid/Android-Unoffical-Showdown-Client/blob/master/web_hi_res_512.png" width="48"></img>Android PS Client
 
 ## Content
-- [Introduction](#introduction)
-- [Technical overview](#technical-overview)
-- [Notes](#notes)
-- [Contributing](#contributing)
-- [Credits](#credits)
-- [Licence](#licence)
+* [Introduction](#introduction)
+* [Technical overview](#technical-overview)
+* [Notes](#notes)
+* [Contributing](#contributing)
+  * [**Report a bug**](#report-a-bug)
+* [Credits](#credits)
+* [Licence](#licence)
 
 ## Introduction
 This repo contains source code for **unofficial** **P**okemon**S**howdown Client app. 
@@ -86,10 +87,14 @@ Every single http connection established by this client is using secured http pr
 ~~I was a bit lazy on this one...~~ Most of UI strings are hard-coded and aren't placed in the regular `res/values/string.xml`. This because Showdown is only available in English and has no localization implementation planned for now. So a Showdown client with localization would be completely pointless, and would lead into a partially 'translated' application.
 ## Contributing
 Any help is very welcomed! Please make sure you are respecting the coding patterns and please strongly test your modifications before PR!
+### Report a bug
+ - Submit a bug report: [here](https://forms.gle/tqSeeZ9De3ik97CK8)
+ - Reported bugs tracking: [here](https://docs.google.com/spreadsheets/d/1oC0m5SJEqx9HMXOAIHcgoa92B2CP69SmSuwHKR7v-X0/edit?usp=sharing)
 ## Credits
  - [Zarel](https://github.com/Zarel): For PokemonShowdown itself.
  - [NamTThai](https://github.com/NamTThai): For some piece of java code translated from js I reuse here (such as team parser).
  - [http://pokemonshowdown.com/credits](http://pokemonshowdown.com/credits)
+ - Type icons: [DevianArt](https://www.deviantart.com/majeur01/art/Pokemon-Types-Icons-819866719)
 ## Licence
 > Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file or any in this project except in compliance with the License.
