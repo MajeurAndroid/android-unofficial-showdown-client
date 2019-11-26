@@ -29,6 +29,7 @@ import com.majeur.psclient.io.ItemLoader;
 import com.majeur.psclient.io.MoveDetailsLoader;
 import com.majeur.psclient.model.BasePokemon;
 import com.majeur.psclient.model.BattleActionRequest;
+import com.majeur.psclient.model.BattleDecision;
 import com.majeur.psclient.model.BattlingPokemon;
 import com.majeur.psclient.model.Colors;
 import com.majeur.psclient.model.Condition;
@@ -603,19 +604,8 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         mService.sendRoomCommand(mObservedRoomId, "team", teamOrder, reqId);
     }
 
-    public void sendSwitchDecision(int reqId, int who) {
-        mService.sendRoomCommand(mObservedRoomId, "switch", who, reqId);
-    }
-
-    public void sendMoveDecision(int reqId, int which, boolean mega, boolean zmove, boolean dynamax) {
-        if (mega)
-            mService.sendRoomCommand(mObservedRoomId, "move", which + " mega", reqId);
-        else if (zmove)
-            mService.sendRoomCommand(mObservedRoomId, "move", which + " zmove", reqId);
-        else if (dynamax)
-            mService.sendRoomCommand(mObservedRoomId, "move", which + " dynamax", reqId);
-        else
-            mService.sendRoomCommand(mObservedRoomId, "move", which, reqId);
+    public void sendDecision(int reqId, BattleDecision decision) {
+        mService.sendRoomCommand(mObservedRoomId, "choose", decision.build(), reqId);
     }
 
     public void sendTimerCommand(boolean on) {
@@ -810,72 +800,67 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         @Override
         protected void onRequestAsked(final BattleActionRequest request) {
             mLastActionRequest = request;
-            if (request.shouldWait())
-                return;
-
-            boolean hideMoves = request.forceSwitch();
-            boolean hideSwitch = request.trapped();
-            final List<Move> moves = hideMoves ? null : request.getMoves();
-            List<SidePokemon> team = hideSwitch ? null : request.getSide();
-
-            mActionWidget.promptChoice(mBattleTipPopup, moves, request.canMegaEvo(), request.canDynamax(),
-                    request.isDynamaxed(0), team, request.teamPreview(), new BattleActionWidget.OnChoiceListener() {
+            if (request.shouldWait()) return;
+            mActionWidget.promptDecision(this, mBattleTipPopup, request, new BattleActionWidget.OnDecisionListener() {
                 @Override
-                public void onMoveChose(int which, boolean mega, boolean zmove, boolean dynamax) {
-                    sendMoveDecision(request.getId(), which, mega, zmove, dynamax);
-                }
-
-                @Override
-                public void onSwitchChose(int who) {
-                    if (request.teamPreview())
-                        sendTeamDecision(request.getId(), who, request.getSide().size());
-                    else
-                        sendSwitchDecision(request.getId(), who);
+                public void onDecisionTook(BattleDecision decision) {
+                    sendDecision(request.getId(), decision);
                 }
             });
 
-            if (!hideMoves && moves != null && moves.size() > 0) {
-                String[] keys = new String[moves.size()];
-                for (int i = 0; i < keys.length; i++) keys[i] = moves.get(i).id;
+            boolean hideSwitch = true;
+            for (int which = 0; which < request.getCount(); which++) {
+                if (!request.trapped(which)) hideSwitch = false;
+
+                boolean hideMoves = request.forceSwitch(which);
+                final Move[] moves = hideMoves ? null : request.getMoves(which);
+                if (hideMoves || moves == null || moves.length == 0) continue;
+
+                String[] keys = new String[moves.length];
+                for (int i = 0; i < keys.length; i++) keys[i] = moves[i].id;
                 mMoveDetailsLoader.load(keys, new DataLoader.Callback<Move.Details>() {
                     @Override
                     public void onLoaded(Move.Details[] results) {
                         for (int i = 0; i < results.length; i++)
-                            moves.get(i).details = results[i];
+                            moves[i].details = results[i];
                         mActionWidget.notifyDetailsUpdated();
                     }
                 });
-                keys = new String[moves.size()];
-                for (int i = 0; i < keys.length; i++) keys[i] = toIdSafe(moves.get(i).zName);
-                if (notAllNull(keys)) mMoveDetailsLoader.load(keys, new DataLoader.Callback<Move.Details>() {
-                    @Override
-                    public void onLoaded(Move.Details[] results) {
-                        for (int i = 0; i < results.length; i++)
-                            moves.get(i).zDetails = results[i];
-                    }
-                });
-                keys = new String[moves.size()];
-                for (int i = 0; i < keys.length; i++) keys[i] = toIdSafe(moves.get(i).maxMoveId);
-                if (notAllNull(keys)) mMoveDetailsLoader.load(keys, new DataLoader.Callback<Move.Details>() {
-                    @Override
-                    public void onLoaded(Move.Details[] results) {
-                        for (int i = 0; i < results.length; i++)
-                            moves.get(i).maxDetails = results[i];
-                        mActionWidget.notifyMaxDetailsUpdated();
-                    }
-                });
+                keys = new String[moves.length];
+                for (int i = 0; i < keys.length; i++) keys[i] = toIdSafe(moves[i].zName);
+                if (notAllNull(keys))
+                    mMoveDetailsLoader.load(keys, new DataLoader.Callback<Move.Details>() {
+                        @Override
+                        public void onLoaded(Move.Details[] results) {
+                            for (int i = 0; i < results.length; i++)
+                                moves[i].zDetails = results[i];
+                        }
+                    });
+                keys = new String[moves.length];
+                for (int i = 0; i < keys.length; i++)
+                    keys[i] = toIdSafe(moves[i].maxMoveId);
+                if (notAllNull(keys))
+                    mMoveDetailsLoader.load(keys, new DataLoader.Callback<Move.Details>() {
+                        @Override
+                        public void onLoaded(Move.Details[] results) {
+                            for (int i = 0; i < results.length; i++)
+                                moves[i].maxDetails = results[i];
+                            mActionWidget.notifyMaxDetailsUpdated();
+                        }
+                    });
+
             }
 
+            final List<SidePokemon> team = hideSwitch ? null : request.getSide();
             if (!hideSwitch) {
                 String[] species = new String[team.size()];
                 for (int i = 0; i < species.length; i++) species[i] = toId(team.get(i).species);
                 mDexIconLoader.load(species, new DataLoader.Callback<Bitmap>() {
                     @Override
                     public void onLoaded(Bitmap[] results) {
-                        Drawable[] icons = new Drawable[results.length];
-                        for (int i = 0; i < icons.length; i++)
-                            icons[i] = new BitmapDrawable(results[i]);
-                        mActionWidget.updateDexIcons(icons);
+                        for (int i = 0; i < team.size(); i++)
+                            team.get(i).icon = results[i];
+                        mActionWidget.notifyDexIconsUpdated();
                     }
                 });
             }

@@ -274,8 +274,6 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
                 break;
             case 'd':
                 mGameType = Const.DOUBLE;
-                printErrorMessage("Double battles aren't fully implemented yet. " +
-                        "App crash is a matter of seconds from now!");
                 mTrainerPokemons = new BattlingPokemon[2];
                 mFoePokemons = new BattlingPokemon[2];
                 break;

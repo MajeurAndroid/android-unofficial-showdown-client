@@ -56,6 +56,10 @@ public class BattleTipPopup extends PopupWindow implements View.OnTouchListener 
         view.setOnTouchListener(this);
     }
 
+    public void removeTippedView(View view) {
+        view.setOnTouchListener(null);
+    }
+
     public void setOnBindPopupViewListener(OnBindPopupViewListener onBindPopupViewListener) {
         mOnBindPopupViewListener = onBindPopupViewListener;
     }

@@ -6,7 +6,6 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 
 public class BattleActionRequest {
@@ -19,28 +18,26 @@ public class BattleActionRequest {
     private boolean[] mTrapped;
     private boolean[] mCanMegaEvo;
     private boolean[] mCanDynamax;
-
-    private List<Move> mFirstPokemonMoves = null;
-    private List<Move> mSecondPokemonMoves = null;
-    private List<SidePokemon> side;
+    private Move[][] mMoves;
+    private List<SidePokemon> mSide;
 
     public BattleActionRequest(JSONObject jsonObject) throws JSONException {
         mShouldWait = jsonObject.optBoolean("wait", false);
         mTeamPreview = jsonObject.optBoolean("teamPreview", false);
         mReqId = jsonObject.getInt("rqid");
 
-        JSONArray waitJsonArray = jsonObject.optJSONArray("forceSwitch");
-        if (waitJsonArray != null) {
-            int N = Math.min(waitJsonArray.length(), 2);
+        JSONArray forceSwitchJsonArray = jsonObject.optJSONArray("forceSwitch");
+        if (forceSwitchJsonArray != null) {
+            int N = forceSwitchJsonArray.length();
             mForceSwitch = new boolean[N];
             for (int i = 0; i < N; i++) {
-                mForceSwitch[i] = waitJsonArray.getBoolean(i);
+                mForceSwitch[i] = forceSwitchJsonArray.getBoolean(i);
             }
         }
 
         JSONArray activeJsonArray = jsonObject.optJSONArray("active");
         if (activeJsonArray != null) {
-            int N = Math.min(activeJsonArray.length(), 2);
+            int N = activeJsonArray.length();
             for (int i = 0; i < N; i++) {
                 JSONObject movesContainer = activeJsonArray.getJSONObject(i);
 
@@ -67,109 +64,77 @@ public class BattleActionRequest {
                 JSONObject maxMoveJsonObject = movesContainer.optJSONObject("maxMoves");
                 JSONArray maxMovesJsonArray = maxMoveJsonObject != null ? maxMoveJsonObject.optJSONArray("maxMoves")
                         : null;
-                List<Move> moveList = new LinkedList<>();
 
+                if (mMoves == null) mMoves = new Move[N][0];
+
+                mMoves[i] = new Move[movesJsonArray.length()];
                 for (int j = 0; j < movesJsonArray.length(); j++)
-                    moveList.add(new Move(j, movesJsonArray.getJSONObject(j),
+                    mMoves[i][j] = new Move(j, movesJsonArray.getJSONObject(j),
                             zMovesJsonArray != null ? zMovesJsonArray.optJSONObject(j) : null,
-                            maxMovesJsonArray != null ? maxMovesJsonArray.optJSONObject(j) : null));
-
-                if (i == 0)
-                    mFirstPokemonMoves = moveList;
-                else
-                    mSecondPokemonMoves = moveList;
+                            maxMovesJsonArray != null ? maxMovesJsonArray.optJSONObject(j) : null);
             }
         }
 
         JSONObject sideJsonObject = jsonObject.getJSONObject("side");
         JSONArray pokemonArray = sideJsonObject.getJSONArray("pokemon");
         int N = pokemonArray.length();
-        side = new ArrayList<>(N);
+        mSide = new ArrayList<>(N);
         for (int i = 0; i < N; i++)
-            side.add(SidePokemon.fromJson(pokemonArray.getJSONObject(i), i));
+            mSide.add(SidePokemon.fromJson(pokemonArray.getJSONObject(i), i));
     }
 
-    public List<Move> getMoves() {
-        return getMoves(0);
-    }
-
-    public List<Move> getMoves(int which) {
-        if (which == 0)
-            return mFirstPokemonMoves;
-        else
-            return mSecondPokemonMoves;
+    public Move[] getMoves(int which) {
+        if (mMoves == null || which >= mMoves.length)
+            return null;
+        return mMoves[which];
     }
 
     public List<SidePokemon> getSide() {
-        return side;
+        return mSide;
     }
 
     public int getId() {
         return mReqId;
     }
 
-    public boolean teamPreview() {
-        return mTeamPreview;
+    public int getCount() {
+        return mMoves != null ? mMoves.length : mForceSwitch != null ? mForceSwitch.length : 0;
     }
 
     public boolean shouldWait() {
         return mShouldWait;
     }
 
-    public boolean forceSwitch() {
-        return forceSwitch(0);
+    public boolean teamPreview() {
+        return mTeamPreview;
     }
 
-    public boolean trapped() {
-        return trapped(0);
-    }
-
-    public boolean canMegaEvo() {
-        return canMegaEvo(0);
-    }
-
-    public boolean canDynamax() {
-        return canDynamax(0);
+    public boolean shouldPass(int which) {
+        return !forceSwitch(which) && getMoves(which) == null;
     }
 
     public boolean forceSwitch(int which) {
-        if (mForceSwitch == null)
+        if (mForceSwitch == null || which >= mForceSwitch.length)
             return false;
-
-        if (which == 0)
-            return mForceSwitch[0];
-        else
-            return mForceSwitch[1];
+        return mForceSwitch[which];
     }
 
     public boolean trapped(int which) {
-        if (mTrapped == null)
+        if (mTrapped == null || which >= mTrapped.length)
             return false;
-
-        if (which == 0)
-            return mTrapped[0];
-        else
-            return mTrapped[1];
+        return mTrapped[which];
     }
 
     public boolean canMegaEvo(int which) {
-        if (mCanMegaEvo == null)
+        if (mCanMegaEvo == null || which >= mCanMegaEvo.length)
             return false;
-
-        if (which == 0)
-            return mCanMegaEvo[0];
-        else
-            return mCanMegaEvo[1];
+        return mCanMegaEvo[which];
     }
 
     public boolean canDynamax(int which) {
-        if (mCanDynamax == null)
+        if (mCanDynamax == null || which >= mCanDynamax.length)
             return false;
-
-        if (which == 0)
-            return mCanDynamax[0];
-        else
-            return mCanDynamax[1];
+        return mCanDynamax[which];
     }
 
     public boolean isDynamaxed(int which) {
@@ -188,12 +153,14 @@ public class BattleActionRequest {
     public String toString() {
         return "BattleActionRequest{" +
                 "mReqId=" + mReqId +
+                ", mTeamPreview=" + mTeamPreview +
                 ", mShouldWait=" + mShouldWait +
                 ", mForceSwitch=" + Arrays.toString(mForceSwitch) +
                 ", mTrapped=" + Arrays.toString(mTrapped) +
-                ", mFirstPokemonMoves=" + mFirstPokemonMoves +
-                ", mSecondPokemonMoves=" + mSecondPokemonMoves +
-                ", side=" + side +
+                ", mCanMegaEvo=" + Arrays.toString(mCanMegaEvo) +
+                ", mCanDynamax=" + Arrays.toString(mCanDynamax) +
+                ", mMoves=" + Arrays.toString(mMoves) +
+                ", side=" + mSide +
                 '}';
     }
 }

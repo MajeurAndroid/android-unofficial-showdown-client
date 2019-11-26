@@ -14,7 +14,7 @@ public class Move {
     public final int index;
     public final int pp;
     public final int ppMax;
-    public final String target;
+    public final Target target;
     public final boolean disabled;
     public final String zName;
     public Details details;
@@ -35,7 +35,7 @@ public class Move {
         id = jsonObject.getString("id");
         pp = jsonObject.optInt("pp", -1);
         ppMax = jsonObject.optInt("maxpp", -1);
-        target = jsonObject.optString("target", null);
+        target = Target.parse(jsonObject.optString("target", null));
         disabled = jsonObject.optBoolean("disabled", false);
         zName = zJsonObject != null ? zJsonObject.optString("move", null) : null;
         maxMoveId = maxJsonObject != null ? maxJsonObject.optString("move", null) : null;
@@ -149,17 +149,47 @@ public class Move {
     }
 
     public enum Target {
-        NORMAL, ALLYSIDE, SELF;
+
+        NORMAL,
+        ALL_ADJACENT_FOES,
+        SELF,
+        ANY,
+        ADJACENT_ALLY_OR_SELF,
+        ALLY_TEAM,
+        ADJACENT_ALLY,
+        ALLY_SIDE,
+        ALL_ADJACENT,
+        SCRIPTED,
+        ALL,
+        ADJACENT_FOE,
+        RANDOM_NORMAL,
+        FOE_SIDE;
 
         public static Target parse(String target) {
             if (target == null) return Target.NORMAL;
             target = target.toLowerCase().trim();
             switch (target) {
                 case "normal": return Target.NORMAL;
-                case "allyside": return Target.ALLYSIDE;
+                case "alladjacentfoes": return Target.ALL_ADJACENT_FOES;
                 case "self": return Target.SELF;
+                case "any": return Target.ANY;
+                case "adjacentallyorself": return Target.ADJACENT_ALLY_OR_SELF;
+                case "allyteam": return Target.ALLY_TEAM;
+                case "adjacentally": return Target.ADJACENT_ALLY;
+                case "allyside": return Target.ALLY_SIDE;
+                case "alladjacent": return Target.ALL_ADJACENT;
+                case "scripted": return Target.SCRIPTED;
+                case "all": return Target.ALL;
+                case "adjacentfoe": return Target.ADJACENT_FOE;
+                case "randomnormal": return Target.RANDOM_NORMAL;
+                case "foeside": return Target.FOE_SIDE;
                 default: return Target.NORMAL;
             }
+        }
+
+        public boolean isChosable() {
+            return this == NORMAL || this == ANY || this == ADJACENT_ALLY
+                    || this == ADJACENT_ALLY_OR_SELF || this == ADJACENT_FOE;
         }
     }
 }

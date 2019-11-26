@@ -5,11 +5,12 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.content.res.ColorStateList;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
-import android.graphics.drawable.Drawable;
+import android.graphics.drawable.BitmapDrawable;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.style.RelativeSizeSpan;
@@ -27,8 +28,14 @@ import android.widget.CompoundButton;
 import android.widget.FrameLayout;
 
 import com.majeur.psclient.R;
+import com.majeur.psclient.model.BattleActionRequest;
+import com.majeur.psclient.model.BattleDecision;
+import com.majeur.psclient.model.BattlingPokemon;
 import com.majeur.psclient.model.Move;
+import com.majeur.psclient.model.Player;
+import com.majeur.psclient.model.PokemonId;
 import com.majeur.psclient.model.SidePokemon;
+import com.majeur.psclient.service.BattleMessageObserver;
 import com.majeur.psclient.util.Utils;
 
 import java.util.LinkedList;
@@ -63,7 +70,14 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
     private CheckBox mMovesCheckBox;
     private List<SwitchButton> mSwitchButtons;
 
-    private OnChoiceListener mOnChoiceListener;
+    private BattleMessageObserver mObserver;
+    private int mCurrentPrompt;
+    private BattleTipPopup mBattleTipPopup;
+    private BattleActionRequest mRequest;
+    private BattleDecision mDecision;
+    private boolean mNeedsTargetChoice;
+
+    private OnDecisionListener mOnDecisionListener;
 
     private Animator mCurrentReveal;
     private boolean mRevealingIn;
@@ -256,10 +270,14 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
         }
     }
 
-    public void updateDexIcons(Drawable[] dexIcons) {
-        for (int i = 0; i < dexIcons.length; i++) {
+    public void notifyDexIconsUpdated() {
+        for (int i = 0; i < 6; i++) {
             SwitchButton switchButton = mSwitchButtons.get(i);
-            switchButton.setDexIcon(dexIcons[i]);
+            Object tag = switchButton.getTag(R.id.battle_data_tag);
+            if (tag instanceof SidePokemon) {
+                Bitmap icon = ((SidePokemon) tag).icon;
+                if (icon != null) switchButton.setDexIcon(new BitmapDrawable(icon));
+            }
         }
     }
 
@@ -280,13 +298,95 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
         }
     }
 
-    public void promptChoice(BattleTipPopup battleTipPopup, List<Move> moves, boolean canMega, boolean canDynamax,
-                             boolean isDynamaxed, List<SidePokemon> team, boolean chooseLead, OnChoiceListener listener) {
+    public void promptDecision(BattleMessageObserver observer, BattleTipPopup battleTipPopup, BattleActionRequest request,
+                               OnDecisionListener listener) {
+        mObserver = observer;
+        mBattleTipPopup = battleTipPopup;
+        mRequest = request;
+        mCurrentPrompt = -1;
+        mOnDecisionListener = listener;
+        mDecision = new BattleDecision();
+        promptNext();
+        revealIn();
+    }
+
+    private void promptNext() {
+        if (mNeedsTargetChoice) {
+            List<BattlingPokemon> targets = new LinkedList<>();
+            targets.add(mObserver.getBattlingPokemon(PokemonId.fromPosition(Player.TRAINER, 0)));
+            targets.add(mObserver.getBattlingPokemon(PokemonId.fromPosition(Player.TRAINER, 1)));
+            List<BattlingPokemon> foeTargets = new LinkedList<>();
+            foeTargets.add(mObserver.getBattlingPokemon(PokemonId.fromPosition(Player.FOE, 0)));
+            foeTargets.add(mObserver.getBattlingPokemon(PokemonId.fromPosition(Player.FOE, 1)));
+            showChoice(mBattleTipPopup, targets, foeTargets);
+            mNeedsTargetChoice = false;
+        } else if (mCurrentPrompt + 1 >= mRequest.getCount()) {
+            mOnDecisionListener.onDecisionTook(mDecision);
+            revealOut();
+            mObserver = null;
+            mCurrentPrompt = 0;
+            mBattleTipPopup = null;
+            mRequest = null;
+            mDecision = null;
+        } else {
+            mCurrentPrompt += 1;
+            if (mRequest.shouldPass(mCurrentPrompt)) {
+                mDecision.addPassChoice();
+                promptNext();
+                return;
+            }
+            boolean hideMoves = mRequest.forceSwitch(mCurrentPrompt);
+            boolean hideSwitch = mRequest.trapped(mCurrentPrompt);
+            final Move[] moves = hideMoves ? null : mRequest.getMoves(mCurrentPrompt);
+            List<SidePokemon> team = hideSwitch ? null : mRequest.getSide();
+            showChoice(mBattleTipPopup,
+                    moves,
+                    mRequest.canMegaEvo(mCurrentPrompt),
+                    mRequest.canDynamax(mCurrentPrompt),
+                    mRequest.isDynamaxed(mCurrentPrompt),
+                    team,
+                    mRequest.teamPreview());
+        }
+    }
+
+    private void showChoice(BattleTipPopup battleTipPopup, List<BattlingPokemon> trainerTargets,
+                            List<BattlingPokemon> foeTargets) {
+        for (int i = 0; i < 4; i++) {
+            Button button = mMoveButtons.get(i);
+            button.setText(null);
+            button.setVisibility(GONE);
+        }
+        mMovesCheckBox.setVisibility(GONE);
+        mMovesCheckBox.setText(null);
+        mMovesCheckBox.setOnCheckedChangeListener(null);
+
+        for (int i = 0; i < 6; i++) {
+            SwitchButton button = mSwitchButtons.get(i);
+            List<BattlingPokemon> targets = i < 3 ? foeTargets : trainerTargets;
+            int offset = i < 3 ? 0 : 3;
+            if (targets != null && i - offset < targets.size()) {
+                BattlingPokemon pokemon = targets.get(i - offset);
+                button.setVisibility(VISIBLE);
+                button.setPokemonName(pokemon.name);
+                boolean enabled = pokemon.condition.health != 0f;
+                button.setEnabled(enabled);
+                button.setTag(R.id.battle_data_tag, pokemon);
+                battleTipPopup.removeTippedView(button);
+                button.setDexIcon(null);
+            } else {
+                button.setPokemonName(null);
+                button.setVisibility(GONE);
+            }
+        }
+    }
+
+    private void showChoice(BattleTipPopup battleTipPopup, Move[] moves, boolean canMega, boolean canDynamax,
+                             boolean isDynamaxed, List<SidePokemon> team, boolean chooseLead) {
         boolean canZMove = false;
         for (int i = 0; i < 4; i++) {
             Button button = mMoveButtons.get(i);
-            if (moves != null && i < moves.size()) {
-                Move move = moves.get(i);
+            if (moves != null && i < moves.length) {
+                Move move = moves[i];
                 button.setText(sp(move));
                 setMoveButtonEnabled(button, !move.disabled);
                 button.getBackground().clearColorFilter();
@@ -294,6 +394,8 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
                 button.setTag(R.id.battle_data_tag, move);
                 battleTipPopup.addTippedView(button);
                 if (move.canZMove()) canZMove = true;
+                if (move.details != null)
+                    button.getBackground().setColorFilter(move.details.color, PorterDuff.Mode.MULTIPLY);
             } else {
                 button.setText(null);
                 button.setVisibility(GONE);
@@ -339,19 +441,18 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
                 SidePokemon sidePokemon = team.get(i);
                 button.setVisibility(VISIBLE);
                 button.setPokemonName(sidePokemon.name);
-                boolean enabled = chooseLead || (i != 0 && sidePokemon.condition.health != 0f);
+                boolean enabled = chooseLead || (i >= mRequest.getCount() && sidePokemon.condition.health != 0f);
                 button.setEnabled(enabled);
                 button.setTag(R.id.battle_data_tag, sidePokemon);
                 battleTipPopup.addTippedView(button);
+                if (sidePokemon.icon != null)
+                    button.setDexIcon(new BitmapDrawable(sidePokemon.icon));
             } else {
                 button.setPokemonName(null);
                 button.setDexIcon(null);
                 button.setVisibility(GONE);
             }
         }
-
-        mOnChoiceListener = listener;
-        revealIn();
     }
 
     private void toggleZMoves(boolean toggle) {
@@ -427,9 +528,7 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
 
     @Override
     public void onClick(View view) {
-        if (mOnChoiceListener == null)
-            return;
-
+        if (mRevealingIn || mRevealingOut) return;
         Object data = view.getTag(R.id.battle_data_tag);
         if (data instanceof Move) {
             Move move = (Move) data;
@@ -439,13 +538,19 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
             boolean dynamax = mega && move.maxflag;
             if (dynamax) mega = zmove = false;
             else if (zmove) mega = false;
-            mOnChoiceListener.onMoveChose(which, mega, zmove, dynamax);
+            mDecision.addMoveChoice(which, mega, zmove, dynamax);
+            if (mRequest.getCount() > 1 && move.target.isChosable())
+                mNeedsTargetChoice = true;
+        } else if (data instanceof BattlingPokemon) {
+            PokemonId id = ((BattlingPokemon) data).id;
+            int index = id.position + 1;
+            if (!id.foe) index *= -1;
+            mDecision.setLastMoveTarget(index);
         } else if (data instanceof SidePokemon) {
             int who = ((SidePokemon) data).index + 1;
-            mOnChoiceListener.onSwitchChose(who);
+            mDecision.addSwitchChoice(who);
         }
-        mOnChoiceListener = null;
-        revealOut();
+        promptNext();
     }
 
     private void revealIn() {
@@ -539,9 +644,7 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
             mCurrentReveal.cancel();
     }
 
-    public interface OnChoiceListener {
-        public void onMoveChose(int which, boolean mega, boolean zmove, boolean dynamax);
-
-        public void onSwitchChose(int who);
+    public interface OnDecisionListener {
+        public void onDecisionTook(BattleDecision decision);
     }
 }

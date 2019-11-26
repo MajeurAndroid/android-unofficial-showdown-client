@@ -1,5 +1,7 @@
 package com.majeur.psclient.model;
 
+import android.graphics.Bitmap;
+
 import com.majeur.psclient.util.Utils;
 
 import org.json.JSONException;
@@ -47,21 +49,23 @@ public class SidePokemon extends BasePokemon {
                 moves, baseAbility, item, pokeBall, ability);
     }
 
-    public int index;
-    public String name;
-    public String gender;
-    public boolean shiny;
-    public int level;
-    public Condition condition;
-    public boolean active;
-    public Stats stats;
-    public List<String> moves;
-    public String baseAbility;
-    public String item;
-    public String pokeBall;
-    public String ability;
+    public final int index;
+    public final String name;
+    public final String gender;
+    public final boolean shiny;
+    public final int level;
+    public final Condition condition;
+    public final boolean active;
+    public final Stats stats;
+    public final List<String> moves;
+    public final String baseAbility;
+    public final String item;
+    public final String pokeBall;
+    public final String ability;
+    public Bitmap icon;
 
     private StatModifiers statsModifiers;
+
 
     public SidePokemon(String species, int index, String name, String gender, boolean shiny, int level,
                        Condition condition, boolean active, Stats stats, List<String> moves,
