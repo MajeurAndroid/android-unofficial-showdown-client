@@ -334,19 +334,27 @@ public class BattleLayout extends ViewGroup {
         fillNeededStatusViews(mP2StatusViews, p2StatusViewCount, inLayout, width, height);
         fillNeededToasterViews(mP2ToasterViews, p2ToasterViewCount, inLayout, width, height);
         for (int i = 0; i < 6; i++) {
-            bringToFront(mP2ImageViews.get(i));
-            bringToFront(mP2ToasterViews.get(i));
-            bringToFront(mP2StatusViews.get(i));
+            set(mP2ImageViews.get(i));
+            set(mP2ToasterViews.get(i));
+            set(mP2StatusViews.get(i));
         }
         for (int i = 0; i < 6; i++) {
-            bringToFront(mP1ImageViews.get(i));
-            bringToFront(mP1ToasterViews.get(i));
-            bringToFront(mP1StatusViews.get(i));
+            set(mP1ImageViews.get(i));
+            set(mP1ToasterViews.get(i));
+            set(mP1StatusViews.get(i));
         }
     }
 
-    public void bringToFront(View view) {
-        if (view != null) view.bringToFront();
+    public void set(View view) {
+        if (view == null) return;
+        view.bringToFront();
+        if (mCurrentMode == MODE_BATTLE_SINGLE) {
+            view.setScaleX(1f);
+            view.setScaleY(1f);
+        } else {
+            view.setScaleX(0.9f);
+            view.setScaleY(0.9f);
+        }
     }
 
     private void fillNeededViews(SparseArray<ImageView> pXImageViews, int needed, boolean inLayout, int width, int height) {
