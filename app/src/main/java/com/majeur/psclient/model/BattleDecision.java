@@ -48,6 +48,14 @@ public class BattleDecision {
         mChoices.add(c);
     }
 
+    public int switchChoicesCount() {
+        int count = 0;
+        for (Choice c : mChoices)
+            if (c.action.equals(ACTION_SWITCH))
+                count++;
+        return count;
+    }
+
     public boolean hasSwitchChoice(int which) {
         for (Choice c : mChoices)
             if (c.action.equals(ACTION_SWITCH) && c.index == which)

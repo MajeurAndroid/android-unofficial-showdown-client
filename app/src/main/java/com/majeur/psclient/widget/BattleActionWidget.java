@@ -336,11 +336,14 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
             mDecision = null;
         } else {
             mCurrentPrompt += 1;
-            int unfaintedCount = 0;
-            for (SidePokemon p : mRequest.getSide()) if (p.condition.health != 0f) unfaintedCount++;
             boolean activeFainted = mRequest.getSide().get(mCurrentPrompt).condition.health == 0f;
-            if (mRequest.shouldPass(mCurrentPrompt) || (activeFainted && unfaintedCount < mRequest.getCount())) {
-                mDecision.addPassChoice(); // Check this
+            int unfaintedCount = 0;
+            for (int i = mRequest.getCount(); i < mRequest.getSide().size(); i++)
+                if (mRequest.getSide().get(i).condition.health != 0f) unfaintedCount++;
+            int switchChoicesCount = mDecision.switchChoicesCount();
+            boolean pass = activeFainted && (unfaintedCount - switchChoicesCount) <= 0;
+            if (mRequest.shouldPass(mCurrentPrompt) || pass) {
+                mDecision.addPassChoice();
                 promptNext();
                 return;
             }
@@ -360,10 +363,6 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
 
     private void showChoice(final BattleTipPopup battleTipPopup, final List<BattlingPokemon> trainerTargets,
                             final List<BattlingPokemon> foeTargets, final boolean[][] availabilities) {
-        if (mCurrentPrompt == 0) {
-            setChoiceLayout(battleTipPopup, trainerTargets, foeTargets, availabilities);
-            return;
-        }
         mContentAlphaAnimator.setFloatValues(1f, 0f);
         mContentAlphaAnimator.setDuration(ANIM_NEXTCHOICE_FADE_DURATION);
         mContentAlphaAnimator.setStartDelay(0);
