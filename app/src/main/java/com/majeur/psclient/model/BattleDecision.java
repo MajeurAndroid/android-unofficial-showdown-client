@@ -5,6 +5,13 @@ import java.util.List;
 
 public class BattleDecision {
 
+    private static final String ACTION_MOVE = "move";
+    private static final String ACTION_SWITCH = "switch";
+    private static final String ACTION_PASS = "pass";
+    private static final String EXTRA_MEGA = "mega";
+    private static final String EXTRA_ZMOVE = "zmove";
+    private static final String EXTRA_DYNAMAX = "dynamax";
+
     private List<Choice> mChoices = new LinkedList<>();
 
     private static class Choice {
@@ -16,18 +23,18 @@ public class BattleDecision {
 
     public void addSwitchChoice(int who) {
         Choice c = new Choice();
-        c.action = "switch";
+        c.action = ACTION_SWITCH;
         c.index = who;
         mChoices.add(c);
     }
 
     public void addMoveChoice(int which, boolean mega, boolean zmove, boolean dynamax) {
         Choice c = new Choice();
-        c.action = "move";
+        c.action = ACTION_MOVE;
         c.index = which;
-        if (mega) c.extra = "mega";
-        else if (zmove) c.extra = "zmove";
-        else if (dynamax) c.extra = "dynamax";
+        if (mega) c.extra = EXTRA_MEGA;
+        else if (zmove) c.extra = EXTRA_ZMOVE;
+        else if (dynamax) c.extra = EXTRA_DYNAMAX;
         mChoices.add(c);
     }
 
@@ -37,8 +44,15 @@ public class BattleDecision {
 
     public void addPassChoice() {
         Choice c = new Choice();
-        c.action = "pass";
+        c.action = ACTION_PASS;
         mChoices.add(c);
+    }
+
+    public boolean hasSwitchChoice(int which) {
+        for (Choice c : mChoices)
+            if (c.action.equals(ACTION_SWITCH) && c.index == which)
+                return true;
+        return false;
     }
 
     public String build() {

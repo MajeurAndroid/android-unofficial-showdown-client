@@ -187,6 +187,34 @@ public class Move {
             }
         }
 
+
+        //  Triples       Doubles     Singles
+        //  3  2  1         2  1         1
+        // -1 -2 -3        -1 -2        -1
+        public static boolean[][] computeTargetAvailabilities(Target target, int position, int pokeCount) {
+            boolean[][] availabilities = new boolean[2][pokeCount];
+            for (int i = 0; i < 2; i++)
+                for (int j = 0; j < pokeCount; j++) availabilities[i][j] = true;
+
+            if (target == ADJACENT_FOE) {
+                for (int i = 0; i < pokeCount; i++) {
+                    if (position != i && position != i + 1 && position != i - 1) availabilities[0][i] = false;
+                    availabilities[1][i] = false;
+                }
+            }
+            if (target == ADJACENT_ALLY || target == ADJACENT_ALLY_OR_SELF) {
+                for (int i = 0; i < pokeCount; i++) {
+                    if (position != i && position != i + 1 && position != i - 1) availabilities[1][i] = false;
+                    availabilities[0][i] = false;
+                }
+                if (target == ADJACENT_ALLY) availabilities[1][position] = false;
+            }
+            if (target == NORMAL) {
+                availabilities[1][position] = false;
+            }
+            return availabilities;
+        }
+
         public boolean isChosable() {
             return this == NORMAL || this == ANY || this == ADJACENT_ALLY
                     || this == ADJACENT_ALLY_OR_SELF || this == ADJACENT_FOE;

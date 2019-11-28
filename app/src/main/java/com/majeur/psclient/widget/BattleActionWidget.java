@@ -36,10 +36,13 @@ import com.majeur.psclient.model.Player;
 import com.majeur.psclient.model.PokemonId;
 import com.majeur.psclient.model.SidePokemon;
 import com.majeur.psclient.service.BattleMessageObserver;
+import com.majeur.psclient.util.SimpleAnimatorListener;
 import com.majeur.psclient.util.Utils;
 
 import java.util.LinkedList;
 import java.util.List;
+
+import static com.majeur.psclient.util.Utils.addNullSafe;
 
 public class BattleActionWidget extends FrameLayout implements View.OnClickListener {
 
@@ -61,7 +64,8 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
     }
 
     private static final long ANIM_REVEAL_DURATION = 250;
-    private static final long ANIM_FADE_DURATION = 100;
+    private static final long ANIM_REVEAL_FADE_DURATION = 100;
+    private static final long ANIM_NEXTCHOICE_FADE_DURATION = 225;
 
     private float mContentAlpha;
     private Paint mPaint;
@@ -75,13 +79,14 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
     private BattleTipPopup mBattleTipPopup;
     private BattleActionRequest mRequest;
     private BattleDecision mDecision;
-    private boolean mNeedsTargetChoice;
+    private Move.Target mTargetToChoose;
 
     private OnDecisionListener mOnDecisionListener;
 
     private Animator mCurrentReveal;
     private boolean mRevealingIn;
     private boolean mRevealingOut;
+    private boolean mIsAnimatingContentAlpha;
     private OnRevealListener mOnRevealListener;
 
     public BattleActionWidget(Context context) {
@@ -306,21 +311,22 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
         mCurrentPrompt = -1;
         mOnDecisionListener = listener;
         mDecision = new BattleDecision();
+        mTargetToChoose = null;
         promptNext();
         revealIn();
     }
 
     private void promptNext() {
-        if (mNeedsTargetChoice) {
+        if (mTargetToChoose != null) { // Needs target selection
             List<BattlingPokemon> targets = new LinkedList<>();
-            targets.add(mObserver.getBattlingPokemon(PokemonId.fromPosition(Player.TRAINER, 0)));
-            targets.add(mObserver.getBattlingPokemon(PokemonId.fromPosition(Player.TRAINER, 1)));
             List<BattlingPokemon> foeTargets = new LinkedList<>();
-            foeTargets.add(mObserver.getBattlingPokemon(PokemonId.fromPosition(Player.FOE, 0)));
-            foeTargets.add(mObserver.getBattlingPokemon(PokemonId.fromPosition(Player.FOE, 1)));
-            showChoice(mBattleTipPopup, targets, foeTargets);
-            mNeedsTargetChoice = false;
-        } else if (mCurrentPrompt + 1 >= mRequest.getCount()) {
+            for (int i = 0; i < mRequest.getCount(); i++) {
+                addNullSafe(targets, mObserver.getBattlingPokemon(PokemonId.fromPosition(Player.TRAINER, i)));
+                addNullSafe(foeTargets, mObserver.getBattlingPokemon(PokemonId.fromPosition(Player.FOE, i)));
+            }
+            boolean[][] b = Move.Target.computeTargetAvailabilities(mTargetToChoose, mCurrentPrompt, mRequest.getCount());
+            showChoice(mBattleTipPopup, targets, foeTargets, b);
+        } else if (mCurrentPrompt + 1 >= mRequest.getCount()) { // Request completed
             mOnDecisionListener.onDecisionTook(mDecision);
             revealOut();
             mObserver = null;
@@ -330,8 +336,11 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
             mDecision = null;
         } else {
             mCurrentPrompt += 1;
-            if (mRequest.shouldPass(mCurrentPrompt)) {
-                mDecision.addPassChoice();
+            int unfaintedCount = 0;
+            for (SidePokemon p : mRequest.getSide()) if (p.condition.health != 0f) unfaintedCount++;
+            boolean activeFainted = mRequest.getSide().get(mCurrentPrompt).condition.health == 0f;
+            if (mRequest.shouldPass(mCurrentPrompt) || (activeFainted && unfaintedCount < mRequest.getCount())) {
+                mDecision.addPassChoice(); // Check this
                 promptNext();
                 return;
             }
@@ -349,8 +358,41 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
         }
     }
 
-    private void showChoice(BattleTipPopup battleTipPopup, List<BattlingPokemon> trainerTargets,
-                            List<BattlingPokemon> foeTargets) {
+    private void showChoice(final BattleTipPopup battleTipPopup, final List<BattlingPokemon> trainerTargets,
+                            final List<BattlingPokemon> foeTargets, final boolean[][] availabilities) {
+        if (mCurrentPrompt == 0) {
+            setChoiceLayout(battleTipPopup, trainerTargets, foeTargets, availabilities);
+            return;
+        }
+        mContentAlphaAnimator.setFloatValues(1f, 0f);
+        mContentAlphaAnimator.setDuration(ANIM_NEXTCHOICE_FADE_DURATION);
+        mContentAlphaAnimator.setStartDelay(0);
+        mContentAlphaAnimator.addListener(new SimpleAnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animator) {
+                mIsAnimatingContentAlpha = true;
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animator) {
+                setChoiceLayout(battleTipPopup, trainerTargets, foeTargets, availabilities);
+                mContentAlphaAnimator.setFloatValues(0f, 1f);
+                mContentAlphaAnimator.removeListener(this);
+                mContentAlphaAnimator.addListener(new SimpleAnimatorListener() {
+                    @Override
+                    public void onAnimationEnd(Animator animator) {
+                        mIsAnimatingContentAlpha = false;
+                        mContentAlphaAnimator.removeListener(this);
+                    }
+                });
+                mContentAlphaAnimator.start();
+            }
+        });
+        mContentAlphaAnimator.start();
+    }
+
+    private void setChoiceLayout(BattleTipPopup battleTipPopup, List<BattlingPokemon> trainerTargets,
+                                 List<BattlingPokemon> foeTargets, boolean[][] availabilities) {
         for (int i = 0; i < 4; i++) {
             Button button = mMoveButtons.get(i);
             button.setText(null);
@@ -368,7 +410,7 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
                 BattlingPokemon pokemon = targets.get(i - offset);
                 button.setVisibility(VISIBLE);
                 button.setPokemonName(pokemon.name);
-                boolean enabled = pokemon.condition.health != 0f;
+                boolean enabled = availabilities[i < 3 ? 0 : 1][i - offset] && pokemon.condition.health != 0f;
                 button.setEnabled(enabled);
                 button.setTag(R.id.battle_data_tag, pokemon);
                 battleTipPopup.removeTippedView(button);
@@ -380,8 +422,42 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
         }
     }
 
-    private void showChoice(BattleTipPopup battleTipPopup, Move[] moves, boolean canMega, boolean canDynamax,
-                             boolean isDynamaxed, List<SidePokemon> team, boolean chooseLead) {
+    private void showChoice(final BattleTipPopup battleTipPopup, final Move[] moves, final boolean canMega,
+                            final boolean canDynamax, final boolean isDynamaxed, final List<SidePokemon> team,
+                            final boolean chooseLead) {
+        if (mCurrentPrompt == 0) {
+            setChoiceLayout(battleTipPopup, moves, canMega, canDynamax, isDynamaxed, team, chooseLead);
+            return;
+        }
+        mContentAlphaAnimator.setFloatValues(1f, 0f);
+        mContentAlphaAnimator.setDuration(ANIM_NEXTCHOICE_FADE_DURATION);
+        mContentAlphaAnimator.setStartDelay(0);
+        mContentAlphaAnimator.addListener(new SimpleAnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animator) {
+                mIsAnimatingContentAlpha = true;
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animator) {
+                setChoiceLayout(battleTipPopup, moves, canMega, canDynamax, isDynamaxed, team, chooseLead);
+                mContentAlphaAnimator.setFloatValues(0f, 1f);
+                mContentAlphaAnimator.removeListener(this);
+                mContentAlphaAnimator.addListener(new SimpleAnimatorListener() {
+                    @Override
+                    public void onAnimationEnd(Animator animator) {
+                        mIsAnimatingContentAlpha = false;
+                        mContentAlphaAnimator.removeListener(this);
+                    }
+                });
+                mContentAlphaAnimator.start();
+            }
+        });
+        mContentAlphaAnimator.start();
+    }
+
+    private void setChoiceLayout(BattleTipPopup battleTipPopup, Move[] moves, boolean canMega, boolean canDynamax,
+                                 boolean isDynamaxed, List<SidePokemon> team, boolean chooseLead) {
         boolean canZMove = false;
         for (int i = 0; i < 4; i++) {
             Button button = mMoveButtons.get(i);
@@ -442,6 +518,8 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
                 button.setVisibility(VISIBLE);
                 button.setPokemonName(sidePokemon.name);
                 boolean enabled = chooseLead || (i >= mRequest.getCount() && sidePokemon.condition.health != 0f);
+                if (mCurrentPrompt > 0 && mRequest.getCount() > 1)
+                    if (mDecision.hasSwitchChoice(i+1)) enabled = false;
                 button.setEnabled(enabled);
                 button.setTag(R.id.battle_data_tag, sidePokemon);
                 battleTipPopup.addTippedView(button);
@@ -528,7 +606,7 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
 
     @Override
     public void onClick(View view) {
-        if (mRevealingIn || mRevealingOut) return;
+        if (mRevealingIn || mRevealingOut || mIsAnimatingContentAlpha) return;
         Object data = view.getTag(R.id.battle_data_tag);
         if (data instanceof Move) {
             Move move = (Move) data;
@@ -540,12 +618,13 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
             else if (zmove) mega = false;
             mDecision.addMoveChoice(which, mega, zmove, dynamax);
             if (mRequest.getCount() > 1 && move.target.isChosable())
-                mNeedsTargetChoice = true;
+                mTargetToChoose = move.target;
         } else if (data instanceof BattlingPokemon) {
             PokemonId id = ((BattlingPokemon) data).id;
             int index = id.position + 1;
             if (!id.foe) index *= -1;
             mDecision.setLastMoveTarget(index);
+            mTargetToChoose = null;
         } else if (data instanceof SidePokemon) {
             int who = ((SidePokemon) data).index + 1;
             mDecision.addSwitchChoice(who);
@@ -587,7 +666,7 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
         });
         mCurrentReveal.start();
         mContentAlphaAnimator.setFloatValues(0f, 1f);
-        mContentAlphaAnimator.setDuration(ANIM_FADE_DURATION);
+        mContentAlphaAnimator.setDuration(ANIM_REVEAL_FADE_DURATION);
         mContentAlphaAnimator.setStartDelay(ANIM_REVEAL_DURATION);
         mContentAlphaAnimator.start();
 
@@ -604,7 +683,7 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
 
         int viewDiagonal = (int) Math.hypot(getWidth(), getHeight());
         mCurrentReveal = ViewAnimationUtils.createCircularReveal(this, 0, 0, viewDiagonal, 0);
-        mCurrentReveal.setStartDelay(ANIM_FADE_DURATION);
+        mCurrentReveal.setStartDelay(ANIM_REVEAL_FADE_DURATION);
         mCurrentReveal.setDuration(ANIM_REVEAL_DURATION);
         mCurrentReveal.setInterpolator(new AccelerateInterpolator());
         mCurrentReveal.removeAllListeners();
@@ -622,7 +701,7 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
         });
         mCurrentReveal.start();
         mContentAlphaAnimator.setFloatValues(1f, 0f);
-        mContentAlphaAnimator.setDuration(ANIM_FADE_DURATION);
+        mContentAlphaAnimator.setDuration(ANIM_REVEAL_FADE_DURATION);
         mContentAlphaAnimator.setStartDelay(0);
         mContentAlphaAnimator.start();
 
