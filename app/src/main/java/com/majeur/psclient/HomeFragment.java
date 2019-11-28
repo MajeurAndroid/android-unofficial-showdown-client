@@ -1,11 +1,14 @@
 package com.majeur.psclient;
 
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
@@ -268,11 +271,28 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
                 editText.requestFocus();
             }
         });
-        view.findViewById(R.id.button_watchbattle).setOnClickListener(new View.OnClickListener() {
+//        view.findViewById(R.id.button_watchbattle).setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                if (mService == null || !mService.isConnected()) return;
+//                mService.sendGlobalCommand("cmd", "roomlist");
+//            }
+//        });
+        view.findViewById(R.id.button_reportbug).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (mService == null || !mService.isConnected()) return;
-                mService.sendGlobalCommand("cmd", "roomlist");
+                String formUrl = "https://docs.google.com/forms/d/e/1FAIpQLSfvaHpKtRhN-naHtmaIongBRzjU0rmPXu770tvjseWUNky48Q/viewform?usp=send_form";
+                try {
+                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(formUrl));
+                    intent.setPackage("com.android.chrome"); // Try to use chrome to autoconnect to GForms
+                    startActivity(intent);
+                } catch (ActivityNotFoundException e1) {
+                    try {
+                        startActivity( new Intent(Intent.ACTION_VIEW, Uri.parse(formUrl))); // Fallback to default browser
+                    } catch (ActivityNotFoundException e2) {
+                        Snackbar.make(getView(), "No web browser found.", Snackbar.LENGTH_SHORT).show();
+                    }
+                }
             }
         });
     }
