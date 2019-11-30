@@ -597,15 +597,8 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         mService.sendRoomCommand(mObservedRoomId, "forfeit");
     }
 
-    public void sendTeamDecision(int reqId, int first, int teamSize) {
-        String teamOrder = "";
-        for (int i = 1; i <= teamSize; i++) teamOrder += i;
-        teamOrder = teamOrder.substring(first - 1) + teamOrder.substring(0, first - 1);
-        mService.sendRoomCommand(mObservedRoomId, "team", teamOrder, reqId);
-    }
-
     public void sendDecision(int reqId, BattleDecision decision) {
-        mService.sendRoomCommand(mObservedRoomId, "choose", decision.build(), reqId);
+        mService.sendRoomCommand(mObservedRoomId, decision.getCommand(), decision.build(), reqId);
     }
 
     public void sendTimerCommand(boolean on) {
@@ -848,9 +841,9 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                             mActionWidget.notifyMaxDetailsUpdated();
                         }
                     });
-
             }
 
+            if (request.teamPreview()) hideSwitch = false;
             final List<SidePokemon> team = hideSwitch ? null : request.getSide();
             if (!hideSwitch) {
                 String[] species = new String[team.size()];

@@ -326,7 +326,7 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
             }
             boolean[][] b = Move.Target.computeTargetAvailabilities(mTargetToChoose, mCurrentPrompt, mRequest.getCount());
             showChoice(mBattleTipPopup, targets, foeTargets, b);
-        } else if (mCurrentPrompt + 1 >= mRequest.getCount()) { // Request completed
+        } else if (mRequest.teamPreview() ? mCurrentPrompt == 0 : mCurrentPrompt + 1 >= mRequest.getCount()) { // Request completed
             mOnDecisionListener.onDecisionTook(mDecision);
             revealOut();
             mObserver = null;
@@ -336,18 +336,20 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
             mDecision = null;
         } else {
             mCurrentPrompt += 1;
-            boolean activeFainted = mRequest.getSide().get(mCurrentPrompt).condition.health == 0f;
-            int unfaintedCount = 0;
-            for (int i = mRequest.getCount(); i < mRequest.getSide().size(); i++)
-                if (mRequest.getSide().get(i).condition.health != 0f) unfaintedCount++;
-            int switchChoicesCount = mDecision.switchChoicesCount();
-            boolean pass = activeFainted && (unfaintedCount - switchChoicesCount) <= 0;
-            if (mRequest.shouldPass(mCurrentPrompt) || pass) {
-                mDecision.addPassChoice();
-                promptNext();
-                return;
+            if (!mRequest.teamPreview()) {
+                boolean activeFainted = mRequest.getSide().get(mCurrentPrompt).condition.health == 0f;
+                int unfaintedCount = 0;
+                for (int i = mRequest.getCount(); i < mRequest.getSide().size(); i++)
+                    if (mRequest.getSide().get(i).condition.health != 0f) unfaintedCount++;
+                int switchChoicesCount = mDecision.switchChoicesCount();
+                boolean pass = activeFainted && (unfaintedCount - switchChoicesCount) <= 0;
+                if (mRequest.shouldPass(mCurrentPrompt) || pass) {
+                    mDecision.addPassChoice();
+                    promptNext();
+                    return;
+                }
             }
-            boolean hideMoves = mRequest.forceSwitch(mCurrentPrompt);
+            boolean hideMoves = mRequest.forceSwitch(mCurrentPrompt) || mRequest.teamPreview();
             boolean hideSwitch = mRequest.trapped(mCurrentPrompt);
             final Move[] moves = hideMoves ? null : mRequest.getMoves(mCurrentPrompt);
             List<SidePokemon> team = hideSwitch ? null : mRequest.getSide();
@@ -626,7 +628,10 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
             mTargetToChoose = null;
         } else if (data instanceof SidePokemon) {
             int who = ((SidePokemon) data).index + 1;
-            mDecision.addSwitchChoice(who);
+            if (mRequest.teamPreview())
+                mDecision.addTeamChoice(who, mRequest.getSide().size());
+            else
+                mDecision.addSwitchChoice(who);
         }
         promptNext();
     }
