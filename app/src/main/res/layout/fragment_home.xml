@@ -189,6 +189,7 @@
                     android:layout_marginTop="8dp"
                     android:minWidth="196dp"
                     android:text="[Report a bug]"
+                    android:textColor="#FFD90000"
                     style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
 
             </LinearLayout>
