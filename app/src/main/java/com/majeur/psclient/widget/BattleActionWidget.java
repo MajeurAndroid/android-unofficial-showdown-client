@@ -368,6 +368,8 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
         mContentAlphaAnimator.setFloatValues(1f, 0f);
         mContentAlphaAnimator.setDuration(ANIM_NEXTCHOICE_FADE_DURATION);
         mContentAlphaAnimator.setStartDelay(0);
+        mContentAlphaAnimator.setRepeatMode(ObjectAnimator.REVERSE);
+        mContentAlphaAnimator.setRepeatCount(1);
         mContentAlphaAnimator.addListener(new SimpleAnimatorListener() {
             @Override
             public void onAnimationStart(Animator animator) {
@@ -375,18 +377,14 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
             }
 
             @Override
-            public void onAnimationEnd(Animator animator) {
+            public void onAnimationRepeat(Animator animator) {
                 setChoiceLayout(battleTipPopup, trainerTargets, foeTargets, availabilities);
-                mContentAlphaAnimator.setFloatValues(0f, 1f);
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animator) {
+                mIsAnimatingContentAlpha = false;
                 mContentAlphaAnimator.removeListener(this);
-                mContentAlphaAnimator.addListener(new SimpleAnimatorListener() {
-                    @Override
-                    public void onAnimationEnd(Animator animator) {
-                        mIsAnimatingContentAlpha = false;
-                        mContentAlphaAnimator.removeListener(this);
-                    }
-                });
-                mContentAlphaAnimator.start();
             }
         });
         mContentAlphaAnimator.start();
@@ -433,6 +431,8 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
         mContentAlphaAnimator.setFloatValues(1f, 0f);
         mContentAlphaAnimator.setDuration(ANIM_NEXTCHOICE_FADE_DURATION);
         mContentAlphaAnimator.setStartDelay(0);
+        mContentAlphaAnimator.setRepeatMode(ObjectAnimator.REVERSE);
+        mContentAlphaAnimator.setRepeatCount(1);
         mContentAlphaAnimator.addListener(new SimpleAnimatorListener() {
             @Override
             public void onAnimationStart(Animator animator) {
@@ -440,18 +440,14 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
             }
 
             @Override
-            public void onAnimationEnd(Animator animator) {
+            public void onAnimationRepeat(Animator animator) {
                 setChoiceLayout(battleTipPopup, moves, canMega, canDynamax, isDynamaxed, team, chooseLead);
-                mContentAlphaAnimator.setFloatValues(0f, 1f);
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animator) {
+                mIsAnimatingContentAlpha = false;
                 mContentAlphaAnimator.removeListener(this);
-                mContentAlphaAnimator.addListener(new SimpleAnimatorListener() {
-                    @Override
-                    public void onAnimationEnd(Animator animator) {
-                        mIsAnimatingContentAlpha = false;
-                        mContentAlphaAnimator.removeListener(this);
-                    }
-                });
-                mContentAlphaAnimator.start();
             }
         });
         mContentAlphaAnimator.start();
@@ -672,6 +668,7 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
         mContentAlphaAnimator.setFloatValues(0f, 1f);
         mContentAlphaAnimator.setDuration(ANIM_REVEAL_FADE_DURATION);
         mContentAlphaAnimator.setStartDelay(ANIM_REVEAL_DURATION);
+        mContentAlphaAnimator.setRepeatCount(0);
         mContentAlphaAnimator.start();
 
         if (mOnRevealListener != null)
@@ -707,6 +704,7 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
         mContentAlphaAnimator.setFloatValues(1f, 0f);
         mContentAlphaAnimator.setDuration(ANIM_REVEAL_FADE_DURATION);
         mContentAlphaAnimator.setStartDelay(0);
+        mContentAlphaAnimator.setRepeatCount(0);
         mContentAlphaAnimator.start();
 
         // Setting the flag directly because reveal anim waits for fade anim to finish before running
