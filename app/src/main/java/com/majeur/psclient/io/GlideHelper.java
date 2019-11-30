@@ -44,13 +44,13 @@ public class GlideHelper {
 
     @SuppressWarnings("CheckResult")
     public void loadSprite(final BattlingPokemon pokemon, final ImageView imageView, final int fieldWidth) {
-        RequestBuilder<Drawable> request = mRequestManager.load(spriteUri(pokemon.spriteId, pokemon.foe, pokemon.shiny));
+        RequestBuilder<Drawable> request = mRequestManager.load(ani3dSpriteUri(pokemon.spriteId, pokemon.foe, pokemon.shiny));
         RequestOptions options = new RequestOptions().override(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL);
         request.apply(options);
         request.error(
-                mRequestManager.load(spriteUriAlt(pokemon.spriteId, pokemon.foe, pokemon.shiny))
+                mRequestManager.load(ani2dSpriteUri(pokemon.spriteId, pokemon.foe, pokemon.shiny))
                 .error(
-                        mRequestManager.load(spriteUriAltAlt(pokemon.spriteId, pokemon.foe, pokemon.shiny))
+                        mRequestManager.load(fixed2dSpriteUri(pokemon.spriteId, pokemon.foe, pokemon.shiny))
                         .apply(options.error(R.drawable.missingno))
                 )
         );
@@ -90,8 +90,16 @@ public class GlideHelper {
     }
 
     public void loadPreviewSprite(Player player, BasePokemon pokemon, ImageView imageView) {
-        RequestBuilder<Drawable> request = mRequestManager.load(spriteUri(pokemon.spriteId, player == FOE, false));
-        request.apply(new RequestOptions().error(R.drawable.missingno));
+        RequestBuilder<Drawable> request = mRequestManager.load(ani3dSpriteUri(pokemon.spriteId, player == FOE, false));
+        RequestOptions options = new RequestOptions().override(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL);
+        request.apply(options);
+        request.error(
+                mRequestManager.load(ani2dSpriteUri(pokemon.spriteId, player == FOE, false))
+                        .error(
+                                mRequestManager.load(fixed2dSpriteUri(pokemon.spriteId, player == FOE, false))
+                                        .apply(options.error(R.drawable.missingno))
+                        )
+        );
         ViewGroup.LayoutParams layoutParams = imageView.getLayoutParams();
         layoutParams.width = layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT;
         request.into(imageView);
@@ -99,7 +107,12 @@ public class GlideHelper {
 
     public void loadDexSprite(BasePokemon pokemon, boolean shiny, ImageView imageView) {
         RequestBuilder<Drawable> request = mRequestManager.load(dexSpriteUri(pokemon.spriteId, shiny));
-        request.apply(new RequestOptions().error(R.drawable.placeholder_pokeball));
+        RequestOptions options = new RequestOptions().override(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL);
+        request.apply(options);
+        request.error(
+                mRequestManager.load(fixed2dSpriteUri(pokemon.spriteId, true, false))
+                        .apply(options.error(R.drawable.placeholder_pokeball))
+        );
         request.into(imageView);
     }
 
@@ -113,7 +126,7 @@ public class GlideHelper {
                 .append("https://play.pokemonshowdown.com/sprites/");
     }
 
-    private String spriteUri(String spriteId, boolean foe, boolean shiny) {
+    private String ani3dSpriteUri(String spriteId, boolean foe, boolean shiny) {
         return baseUri()
                 .append(foe ? "ani" : "ani-back")
                 .append(shiny ? "-shiny/" : "/")
@@ -122,7 +135,7 @@ public class GlideHelper {
                 .toString();
     }
 
-    private String spriteUriAlt(String spriteId, boolean foe, boolean shiny) {
+    private String ani2dSpriteUri(String spriteId, boolean foe, boolean shiny) {
         return baseUri()
                 .append(foe ? "gen5ani" : "gen5ani-back")
                 .append(shiny ? "-shiny/" : "/")
@@ -131,7 +144,7 @@ public class GlideHelper {
                 .toString();
     }
 
-    private String spriteUriAltAlt(String spriteId, boolean foe, boolean shiny) {
+    private String fixed2dSpriteUri(String spriteId, boolean foe, boolean shiny) {
         return baseUri()
                 .append(foe ? "gen5" : "gen5-back")
                 .append(shiny ? "-shiny/" : "/")
