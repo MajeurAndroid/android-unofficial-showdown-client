@@ -42,7 +42,7 @@ public class ShowdownService extends Service {
     private static final int WS_CLOSE_NORMAL = 1000;
     private static final int WS_CLOSE_GOING_AWAY = 1001;
     private static final int WS_CLOSE_NETWORK_ERROR = 4001;
-    private static final String SHOWDOWN_SOCKET_URL = "wss://sim2.psim.us/showdown/websocket";
+    private static final String SHOWDOWN_SOCKET_URL = "wss://sim3.psim.us/showdown/websocket";
 
     private Binder mBinder;
 
