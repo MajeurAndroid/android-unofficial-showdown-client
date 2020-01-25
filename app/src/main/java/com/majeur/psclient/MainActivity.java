@@ -169,7 +169,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
         if (mCanUnbindService) {
-            notifyServiceWillUnbound();
+			if (mService != null) // We might not have had access to binder yet.
+				notifyServiceWillUnbound();
             unbindService(mServiceConnection);
             mService = null;
             mCanUnbindService = false;
