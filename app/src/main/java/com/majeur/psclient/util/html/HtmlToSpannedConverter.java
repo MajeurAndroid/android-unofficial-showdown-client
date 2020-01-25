@@ -5,7 +5,6 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.text.Editable;
 import android.text.Layout;
 import android.text.Spannable;
@@ -832,23 +831,23 @@ class HtmlToSpannedConverter implements ContentHandler {
     }
 
     private static Layout.Alignment compatLeftAlignment() {
-        if (Build.VERSION.SDK_INT >= 28) {
-            return Layout.Alignment.ALIGN_LEFT;
-        } else {
+//        if (Build.VERSION.SDK_INT >= 28) {
+//            return Layout.Alignment.ALIGN_LEFT;
+//        } else {
             boolean ltr = TextUtils.getLayoutDirectionFromLocale(Locale.getDefault())
                     == View.LAYOUT_DIRECTION_LTR;
             return ltr ? Layout.Alignment.ALIGN_NORMAL : Layout.Alignment.ALIGN_OPPOSITE;
-        }
+//        }
     }
 
     private static Layout.Alignment compatRightAlignment() {
-        if (Build.VERSION.SDK_INT >= 28) {
-            return Layout.Alignment.ALIGN_RIGHT;
-        } else {
+//        if (Build.VERSION.SDK_INT >= 28) {
+//            return Layout.Alignment.ALIGN_RIGHT;
+//        } else {
             boolean rtl = TextUtils.getLayoutDirectionFromLocale(Locale.getDefault())
                     == View.LAYOUT_DIRECTION_RTL;
             return rtl ? Layout.Alignment.ALIGN_NORMAL : Layout.Alignment.ALIGN_OPPOSITE;
-        }
+//        }
     }
 
     public void setDocumentLocator(Locator locator) {
