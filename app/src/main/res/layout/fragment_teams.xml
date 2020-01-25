@@ -1,62 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/primary_translucent">
+    android:background="?attr/colorBackground">
 
-    <LinearLayout
+    <TextView
+        android:id="@+id/text_view_title"
         android:layout_width="match_parent"
         android:layout_height="?android:actionBarSize"
         android:elevation="4dp"
-        android:paddingHorizontal="12dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:background="@color/primary_translucent">
-
-        <TextView
-            android:id="@+id/text_view_users"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"/>
-
-        <TextView
-            android:id="@+id/text_view_title"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="4"
-            android:textColor="@android:color/black"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:gravity="center"
-            android:text="Teams"/>
-
-        <ImageButton
-            android:id="@+id/button_new_team"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="?attr/selectableItemBackground"
-            android:src="@drawable/ic_new"/>
-
-    </LinearLayout>
+        android:background="?attr/colorSurface"
+        android:textColor="?attr/colorOnSurface"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:text="Teams"/>
 
     <ExpandableListView
         android:id="@+id/teams_list_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_below="@id/text_view_title"
         android:paddingHorizontal="12dp"
-        android:clipToPadding="false"/>
+        android:clipToPadding="false"
+        android:divider="@null"
+        android:childDivider="@null"/>
 
     <TextView
         android:id="@+id/empty_hint_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:gravity="center"
-        android:textColor="@android:color/black"
+        android:layout_centerInParent="true"
+        android:textColor="?attr/colorSecondary"
         android:textSize="16sp"
         android:text="Tap the add button to create\nor import a team"/>
 
-</LinearLayout>
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/button_new_team"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentBottom="true"
+        android:text="Create or import"
+        app:icon="@drawable/ic_new"/>
+
+</RelativeLayout>

@@ -22,7 +22,7 @@
         android:paddingEnd="4dp"
         android:background="@android:color/transparent"
         android:src="@drawable/ic_create_message"
-        android:tint="@color/primary"/>
+        android:tint="?attr/colorOnSurface"/>
 
     <ImageButton
         android:id="@+id/button_forfeit"
@@ -34,7 +34,7 @@
         android:paddingEnd="4dp"
         android:background="?selectableItemBackground"
         android:src="@drawable/ic_forfeit"
-        android:tint="@color/primary"/>
+        android:tint="?attr/colorOnSurface"/>
 
     <ImageButton
         android:id="@+id/button_timer"
@@ -46,6 +46,6 @@
         android:paddingEnd="4dp"
         android:background="?selectableItemBackground"
         android:src="@drawable/ic_timer"
-        android:tint="@color/primary"/>
+        android:tint="?attr/colorOnSurface"/>
 
 </LinearLayout>

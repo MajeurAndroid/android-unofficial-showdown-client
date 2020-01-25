@@ -42,7 +42,7 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="12dp"
             android:gravity="center"
-            android:textColor="@android:color/black"/>
+            android:textColor="?attr/colorOnBackground"/>
 
     </LinearLayout>
 
@@ -76,7 +76,7 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="12dp"
             android:gravity="center"
-            android:textColor="@android:color/black"/>
+            android:textColor="?attr/colorOnBackground"/>
 
     </LinearLayout>
 

@@ -486,7 +486,7 @@ public class PokemonEditFragment extends Fragment {
                 if (moves == null) return;
                 for (int i = 0; i < 4; i++) {
                     final AutoCompleteTextView textView = mMoveTextViews[i];
-                    int color = alphaColor(getResources().getColor(R.color.accent), 0.45f);
+                    int color = alphaColor(getResources().getColor(R.color.secondary), 0.45f);
                     MovesAdapter adapter = new MovesAdapter(mMoveDetailsLoader, moves, color);
                     textView.setAdapter(adapter);
                 }

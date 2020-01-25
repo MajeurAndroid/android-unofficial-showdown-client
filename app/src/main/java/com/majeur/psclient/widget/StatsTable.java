@@ -1,6 +1,7 @@
 package com.majeur.psclient.widget;
 
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.DashPathEffect;
@@ -13,6 +14,7 @@ import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
 
+import com.majeur.psclient.R;
 import com.majeur.psclient.model.Colors;
 import com.majeur.psclient.model.Nature;
 import com.majeur.psclient.model.Stats;
@@ -43,6 +45,7 @@ public class StatsTable extends View {
     private Rect mRect;
     private Paint mPaint;
     private Point mMeasurePoint;
+    private int mDefaultTextColor;
     private int mTextColor;
 
     private OnRowClickListener mRowClickListener;
@@ -77,7 +80,12 @@ public class StatsTable extends View {
         mPaint.setPathEffect(new DashPathEffect(new float[] {3, 3}, 0));
         mMeasurePoint = new Point();
         mRect = new Rect();
-        mTextColor = Color.BLACK;
+
+        int[] attrIds = {R.attr.colorOnBackground, R.attr.selectableItemBackground};
+        TypedArray typedArray = context.obtainStyledAttributes(attrIds);
+        mDefaultTextColor = typedArray.getColor(0, Color.RED);
+        setBackground(typedArray.getDrawable(1));
+        typedArray.recycle();
     }
 
     public void setLevel(int level) {
@@ -135,7 +143,7 @@ public class StatsTable extends View {
     @Override
     public void setEnabled(boolean enabled) {
         super.setEnabled(enabled);
-        mTextColor = enabled ? Color.BLACK : Color.GRAY;
+        mTextColor = enabled ? mDefaultTextColor : Color.GRAY;
         invalidate();
     }
 

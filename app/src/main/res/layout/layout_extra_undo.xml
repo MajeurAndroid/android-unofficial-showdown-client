@@ -16,7 +16,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textColor="@android:color/black"
+        android:textColor="?attr/colorOnSurface"
         android:textStyle="bold"
         android:text="Undo" />
 
@@ -30,7 +30,7 @@
         android:paddingEnd="4dp"
         android:background="?selectableItemBackground"
         android:src="@drawable/ic_undo"
-        android:tint="@color/primary"/>
+        android:tint="?attr/colorOnSurface"/>
 
 
 </LinearLayout>

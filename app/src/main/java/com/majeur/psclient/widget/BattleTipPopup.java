@@ -40,7 +40,7 @@ public class BattleTipPopup extends PopupWindow implements View.OnTouchListener 
     public BattleTipPopup(Context context) {
         super(context);
         setBackgroundDrawable(null);
-        setAnimationStyle(R.style.battle_popup_animation);
+        setAnimationStyle(R.style.Animation_PSClient_TipPopup);
 
         View contentView = LayoutInflater.from(context).inflate(R.layout.popup_battle_tips, null);
         mTitleView = contentView.findViewById(R.id.title_text_view);

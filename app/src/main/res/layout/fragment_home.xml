@@ -40,7 +40,8 @@
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="4dp"
                     android:padding="4dp"
-                    android:background="?selectableItemBackground"/>
+                    android:background="?selectableItemBackground"
+                    android:tint="?attr/colorOnSurface"/>
 
                 <TextView
                     android:id="@+id/username_text"
@@ -49,7 +50,7 @@
                     android:layout_marginStart="8dp"
                     android:layout_marginEnd="8dp"
                     android:gravity="center"
-                    android:textColor="@android:color/black"/>
+                    android:textColor="?attr/colorOnSurface"/>
 
                 <TextView
                     android:id="@+id/userCountTextView"
@@ -58,7 +59,7 @@
                     android:layout_marginStart="8dp"
                     android:layout_marginEnd="8dp"
                     android:gravity="center"
-                    android:textColor="@android:color/black"/>
+                    android:textColor="?attr/colorOnSurface"/>
 
                 <TextView
                     android:id="@+id/battleCountTextView"
@@ -66,7 +67,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
                     android:gravity="center"
-                    android:textColor="@android:color/black"/>
+                    android:textColor="?attr/colorOnSurface"/>
 
             </LinearLayout>
 
@@ -117,8 +118,7 @@
                     android:layout_centerHorizontal="true"
                     android:layout_marginTop="8dp"
                     android:minWidth="196dp"
-                    android:text="Battle !"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+                    android:text="Battle !"/>
 
                 <ImageButton
                     android:id="@+id/sound_button"
@@ -128,7 +128,8 @@
                     android:layout_alignTop="@id/button_battle"
                     android:layout_alignBottom="@id/button_battle"
                     android:src="@drawable/ic_sound_off"
-                    android:background="?selectableItemBackground"/>
+                    android:background="?attr/selectableItemBackground"
+                    android:tint="?attr/colorOnSurface"/>
 
             </RelativeLayout>
 
@@ -189,7 +190,6 @@
                     android:layout_marginTop="8dp"
                     android:minWidth="196dp"
                     android:text="[Report a bug]"
-                    android:textColor="#FFD90000"
                     style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
 
             </LinearLayout>

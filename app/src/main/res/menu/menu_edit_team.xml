@@ -7,6 +7,6 @@
         android:title="Done"
         android:icon="@drawable/ic_check"
         app:showAsAction="always"
-        app:iconTint="@color/primary_light"/>
+        app:iconTint="@android:color/white"/>
 
 </menu>

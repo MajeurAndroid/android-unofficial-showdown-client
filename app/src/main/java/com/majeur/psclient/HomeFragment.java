@@ -33,6 +33,7 @@ import com.majeur.psclient.model.RoomInfo;
 import com.majeur.psclient.model.Team;
 import com.majeur.psclient.service.GlobalMessageObserver;
 import com.majeur.psclient.service.ShowdownService;
+import com.majeur.psclient.util.BackgroundBitmapDrawable;
 import com.majeur.psclient.util.Preferences;
 import com.majeur.psclient.widget.CategoryAdapter;
 
@@ -91,6 +92,8 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        if (view.getBackground() == null)
+            view.setBackground(new BackgroundBitmapDrawable(getResources(), R.drawable.client_bg));
         mUserCountView = view.findViewById(R.id.userCountTextView);
         mBattleCountView = view.findViewById(R.id.battleCountTextView);
         mSearchBattleContainer = view.findViewById(R.id.searchBattleContainer);
@@ -458,7 +461,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
             }
             for (int i = 0; i < battleRoomIds.length; i++) {
                 final String roomId = battleRoomIds[i];
-                getLayoutInflater().inflate(R.layout.joined_battle_button, mBattleButtonsContainer);
+                getLayoutInflater().inflate(R.layout.button_joined_battle, mBattleButtonsContainer);
                 Button button = (Button) mBattleButtonsContainer
                         .getChildAt(mBattleButtonsContainer.getChildCount() - 1);
                 button.setText(battleRoomNames[i]);

@@ -3,8 +3,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@color/primary_translucent">
+    android:layout_height="match_parent">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -13,24 +12,25 @@
         android:paddingHorizontal="12dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:background="@color/primary_translucent">
+        android:background="?attr/colorSurface">
 
         <TextView
             android:id="@+id/text_view_users"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:gravity="center"/>
+            android:gravity="center"
+            android:textColor="?attr/colorOnSurface"/>
 
         <TextView
             android:id="@+id/text_view_title"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="4"
-            android:textColor="@android:color/black"
             android:textSize="20sp"
             android:textStyle="bold"
-            android:gravity="center"/>
+            android:gravity="center"
+            android:textColor="?attr/colorOnSurface"/>
 
         <ImageButton
             android:id="@+id/button_join_room"
@@ -38,7 +38,8 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:background="?attr/selectableItemBackground"
-            android:src="@drawable/ic_enter"/>
+            android:src="@drawable/ic_enter"
+            android:tint="?attr/colorOnSurface"/>
 
     </LinearLayout>
 
@@ -46,13 +47,14 @@
         android:id="@+id/scroll_view_chat"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:background="?attr/colorBackground">
 
         <TextView
             android:id="@+id/text_view_chat"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="@android:color/black"
+            android:textColor="?attr/colorOnBackground"
             android:textSize="16sp"
             android:lineSpacingExtra="2dp"
             android:paddingHorizontal="12dp"/>
@@ -66,7 +68,7 @@
         android:paddingStart="12dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:background="@color/primary_translucent">
+        android:background="?attr/colorSurface">
 
         <EditText
             android:id="@+id/edit_text_chat"
@@ -86,7 +88,7 @@
             android:src="@drawable/ic_send"
             android:scaleType="fitXY"
             android:padding="4dp"
-            android:tint="@color/accent"/>
+            android:tint="?attr/colorSecondary"/>
 
     </LinearLayout>
 

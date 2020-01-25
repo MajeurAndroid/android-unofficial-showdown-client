@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary">#ff9047</color>
+    <color name="primaryVariant">#000000</color>
+    <color name="secondary">#67c8ff</color>
+    <color name="onSecondary">#000000</color>
+    <color name="background">#121212</color>
+    <color name="onBackground">#ffffff</color>
+    <color name="surfaceBackground">#212121</color>
+    <color name="onSurfaceBackground">#ffffff</color>
+
+    <color name="battle_overlay">#C6000000</color>
+</resources>

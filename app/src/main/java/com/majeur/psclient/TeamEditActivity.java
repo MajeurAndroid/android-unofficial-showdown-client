@@ -150,7 +150,7 @@ public class TeamEditActivity extends AppCompatActivity {
         });
 
         PagerTabStrip pagerTabStrip = findViewById(R.id.teamViewPagerTabStrip);
-        pagerTabStrip.setTabIndicatorColor(getResources().getColor(R.color.accent));
+        pagerTabStrip.setTabIndicatorColor(getResources().getColor(R.color.secondary));
     }
 
     @Override

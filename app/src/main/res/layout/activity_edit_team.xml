@@ -1,27 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
+
+<androidx.viewpager.widget.ViewPager
     xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/teamViewPager"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-
-    <ImageView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:src="@drawable/client_bg"
-        android:scaleType="centerCrop"/>
-
-    <androidx.viewpager.widget.ViewPager
-        android:id="@+id/teamViewPager"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@color/primary_translucent">
 
         <androidx.viewpager.widget.PagerTabStrip
             android:id="@+id/teamViewPagerTabStrip"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:background="?attr/colorSurface"
+            android:elevation="4dp"/>
 
-    </androidx.viewpager.widget.ViewPager>
-
-
-</FrameLayout>
+</androidx.viewpager.widget.ViewPager>

@@ -109,7 +109,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void showBadge(int fragmentId) {
         BadgeDrawable badge = mNavigationView.getOrCreateBadge(fragmentId);
-        badge.setBackgroundColor(getResources().getColor(R.color.accent));
+        badge.setBackgroundColor(getResources().getColor(R.color.secondary));
     }
 
     public void clearBadge(int fragmentId) {

@@ -14,6 +14,7 @@ import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
 import android.widget.BaseExpandableListAdapter;
 import android.widget.EditText;
 import android.widget.ExpandableListView;
@@ -22,6 +23,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.majeur.psclient.io.DataLoader;
 import com.majeur.psclient.io.DexIconLoader;
 import com.majeur.psclient.model.BattleFormat;
@@ -126,11 +128,34 @@ public class TeamsFragment extends Fragment implements MainActivity.Callbacks {
             }
         });
 
-        view.findViewById(R.id.button_new_team).setOnClickListener(new View.OnClickListener() {
+        final ExtendedFloatingActionButton fab = view.findViewById(R.id.button_new_team);
+        fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 ImportTeamDialog.newInstance(TeamsFragment.this)
                         .show(getFragmentManager(), "");
+            }
+        });
+
+        final Runnable showFab = new Runnable() {
+            @Override
+            public void run() {
+                fab.show();
+            }
+        };
+        mExpandableListView.setOnScrollListener(new AbsListView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(AbsListView view, int scrollState) {
+                if (scrollState == AbsListView.OnScrollListener.SCROLL_STATE_IDLE) {
+                    fab.postDelayed(showFab, 750);
+                } else {
+                    fab.removeCallbacks(showFab);
+                    fab.hide();
+                }
+            }
+
+            @Override
+            public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
             }
         });
     }

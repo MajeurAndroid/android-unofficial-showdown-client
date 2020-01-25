@@ -620,8 +620,11 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         @Override
         protected void onTimerEnabled(boolean enabled) {
             mTimerEnabled = enabled;
-            int color = getResources().getColor(enabled ? R.color.accent : R.color.primary);
-            mTimerButton.getDrawable().setColorFilter(color, PorterDuff.Mode.SRC_IN);
+            int color = getResources().getColor(R.color.secondary);
+            if (enabled)
+                mTimerButton.getDrawable().setColorFilter(color, PorterDuff.Mode.SRC_IN);
+            else
+                mTimerButton.getDrawable().clearColorFilter();
         }
 
         @Override

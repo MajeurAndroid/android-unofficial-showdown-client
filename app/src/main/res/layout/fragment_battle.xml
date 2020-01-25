@@ -2,8 +2,7 @@
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@color/primary_translucent">
+    android:layout_height="match_parent">
 
     <com.majeur.psclient.widget.BattleActionWidget
         android:id="@+id/battle_action_widget"
@@ -11,7 +10,7 @@
         android:layout_height="wrap_content"
         android:layout_below="@id/player1_info_view"
         android:elevation="4dp"
-        android:background="@android:color/white"/>
+        android:background="?attr/colorSurface"/>
 
     <ImageView
         android:id="@+id/background_image_view"
@@ -69,7 +68,7 @@
         android:paddingEnd="8dp"
         android:elevation="4dp"
         android:background="@drawable/battle_message_bg"
-        android:textColor="@color/primary_light"
+        android:textColor="@android:color/white"
         android:alpha="0"/>
 
     <include layout="@layout/layout_extra_undo"/>
@@ -80,13 +79,15 @@
         android:id="@+id/scroll_view_log"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/player1_info_view">
+        android:layout_below="@id/player1_info_view"
+        android:background="?attr/colorBackground"
+        android:fillViewport="true">
 
         <TextView
             android:id="@+id/text_view_log"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="@android:color/black"
+            android:textColor="?attr/colorOnBackground"
             android:textSize="16sp"
             android:paddingStart="12dp"/>
 
