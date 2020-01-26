@@ -5,7 +5,7 @@ import static com.majeur.psclient.util.Utils.str;
 
 public class StatModifiers {
 
-    public static final String[] STAT_KEYS = {"atk", "def", "spa", "spd", "spe", "eva"};
+    public static final String[] STAT_KEYS = {"atk", "def", "spa", "spd", "spe", "evasion"};
 
     private static final float[] LEVELS = {1f / 4f, 2f / 7f, 1f / 3f, 2f / 5f, 1f / 2f, 2f / 3f, 1f, 3f / 2f, 2f, 5f / 2f, 3f, 7f / 2f, 4f};
     private static final float[] LEVELS_ALT = {3f / 9f, 3f / 8f, 3f / 7f, 3f / 6f, 3f / 5f, 3f / 4f, 3f / 3f, 4f / 3f, 5f / 3f, 6f / 3f, 7f / 3f, 8f / 3f, 9f / 3f};
@@ -52,8 +52,9 @@ public class StatModifiers {
             case "spe":
                 spe += val;
                 break;
-            default:
+            case "evasion":
                 eva += val;
+
         }
     }
 
@@ -74,8 +75,9 @@ public class StatModifiers {
             case "spe":
                 spe = val;
                 break;
-            default:
+            case "evasion":
                 eva = val;
+                break;
         }
     }
 
@@ -131,8 +133,10 @@ public class StatModifiers {
                 return LEVELS[spd + 6];
             case "spe":
                 return LEVELS[spe + 6];
-            default:
+            case "evasion":
                 return LEVELS_ALT[eva + 6];
+            default:
+                return 0;
         }
     }
 

@@ -220,6 +220,8 @@ public final class BattleTextBuilder {
     }
 
     private String stat(String stat) {
+        if ("evasion".equals(stat)) stat = "eva";
+        if ("accuracy".equals(stat)) stat = "acc";
         String name = resolve(stat != null ? stat : "stats", "statName");
         if (name == null) return "???stat:" + stat + "???";
         return name;
