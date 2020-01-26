@@ -345,17 +345,12 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         mActionQueue.enqueueAction(new Runnable() {
             @Override
             public void run() {
-                if (!pokemon.foe) {
-                    mTrainerPokemons[pokemon.position].species = pokemon.species;
-                    mTrainerPokemons[pokemon.position].baseSpecies = pokemon.baseSpecies;
-                    mTrainerPokemons[pokemon.position].forme = pokemon.forme;
-                    mTrainerPokemons[pokemon.position].spriteId = pokemon.spriteId;
-                } else {
-                    mFoePokemons[pokemon.position].species = pokemon.species;
-                    mFoePokemons[pokemon.position].baseSpecies = pokemon.baseSpecies;
-                    mFoePokemons[pokemon.position].forme = pokemon.forme;
-                    mFoePokemons[pokemon.position].spriteId = pokemon.spriteId;
-                }
+                BattlingPokemon battlingPokemon = getBattlingPokemon(pokemon.id);
+                battlingPokemon.species = pokemon.species;
+                battlingPokemon.baseSpecies = pokemon.baseSpecies;
+                battlingPokemon.forme = pokemon.forme;
+                battlingPokemon.spriteId = pokemon.spriteId;
+
                 onDetailsChanged(pokemon);
                 displayMajorActionMessage(text);
             }
@@ -934,7 +929,11 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
                     for (String vStatus : tpokemon.volatiles) onVolatileStatusChanged(pokemonId, vStatus, true);
                     onVolatileStatusChanged(pokemonId, "transform", true);
                     pokemon.statModifiers.set(tpokemon.statModifiers);
-                    onStatChanged(pokemonId, null, 0, false);//clearallboost
+                    onStatChanged(pokemonId, null, 0, false);//clearallboost todo
+                } else if (msg.command.contains("formechange") && arg2 != null) {
+                    BattlingPokemon pokemon = getBattlingPokemon(pokemonId);
+                    pokemon.spriteId = new BasePokemon(arg2).spriteId;
+                    onDetailsChanged(pokemon);
                 }
             }
         });
