@@ -31,7 +31,7 @@ public class AvailableBattleRoomsInfo {
         while ((key = iterator.next()) != null) {
             JSONObject roomJson = jsonObject.getJSONObject(key);
             RoomInfo roomInfo = new RoomInfo(key, roomJson.getString("p1"),
-                    roomJson.getString("p2"), roomJson.getInt("minElo"));
+                    roomJson.getString("p2"), roomJson.optInt("minElo", -1));
             mRooms.add(roomInfo);
         }
     }
