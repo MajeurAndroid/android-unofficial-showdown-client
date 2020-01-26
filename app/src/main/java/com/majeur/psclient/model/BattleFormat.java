@@ -11,7 +11,7 @@ public class BattleFormat implements Serializable {
     public static final BattleFormat FORMAT_OTHER = new BattleFormat("[Other]", -1);
 
     private static final int MASK_TEAM = 0x1;
-    private static final int MASK_SEARCH_SHOW_BIT = 0x2;
+    private static final int MASK_SEARCH_SHOW = 0x2;
     private static final int MASK_CHALLENGE_SHOW = 0x4;
     private static final int MASK_TOURNAMENT_SHOW = 0x8;
 
@@ -33,6 +33,10 @@ public class BattleFormat implements Serializable {
 
     public boolean isTeamNeeded() {
         return (mFormatInt & MASK_TEAM) == 0;
+    }
+
+    public boolean isSearchShow() {
+        return (mFormatInt & MASK_SEARCH_SHOW) == 0;
     }
 
     public String id() {
@@ -62,6 +66,13 @@ public class BattleFormat implements Serializable {
 
         public List<BattleFormat> getBattleFormats() {
             return mBattleFormats;
+        }
+
+        public List<BattleFormat> getSearchableBattleFormats() {
+            List<BattleFormat> list = new ArrayList<>();
+            for (BattleFormat format : mBattleFormats)
+                if (!format.isSearchShow()) list.add(format);
+            return list;
         }
     }
 }

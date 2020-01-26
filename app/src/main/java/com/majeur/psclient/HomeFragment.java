@@ -443,8 +443,10 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
             CategoryAdapter adapter = (CategoryAdapter) mFormatsSpinner.getAdapter();
             adapter.clearItems();
             for (BattleFormat.Category category : battleFormats) {
+                List<BattleFormat> formats = category.getSearchableBattleFormats();
+                if (formats.size() == 0) continue;
                 adapter.addItem(category);
-                adapter.addItems(category.getBattleFormats());
+                adapter.addItems(formats);
             }
             mFormatsSpinner.setSelection(1);
         }

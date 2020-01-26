@@ -233,7 +233,8 @@ public abstract class GlobalMessageObserver extends MessageObserver {
             } else {
                 int innerSeparator = rawText.indexOf(',');
                 String formatName = rawText.substring(0, innerSeparator);
-                int formatInt = Integer.valueOf(rawText.substring(innerSeparator + 1, innerSeparator + 2), 16);
+                int innerEnd = separator == -1 ? rawText.length() : separator;
+                int formatInt = Integer.valueOf(rawText.substring(innerSeparator + 1, innerEnd), 16);
                 BattleFormat battleFormat = new BattleFormat(formatName, formatInt);
                 currentCategory.addBattleFormat(battleFormat);
 
