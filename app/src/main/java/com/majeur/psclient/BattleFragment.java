@@ -352,7 +352,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         if (!pokemon.foe && mLastActionRequest != null) {
             final SidePokemon sidePokemon = mLastActionRequest.getSide().get(0); // TODO does not work in doubles
             ability = sidePokemon.ability;
-            if (pokemon.transformSpecies != null) { // Ditto case
+            if (pokemon.transformSpecies == null) { // Ditto case
                 descView.append(smallText("Atk:"));
                 descView.append(pokemon.statModifiers.calcReadableStat("atk", sidePokemon.stats.atk));
                 descView.append(smallText(" Def:"));
