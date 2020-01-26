@@ -789,7 +789,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         }
 
         @Override
-        protected void onStatChanged(PokemonId id, String stat, int amount, boolean set) {
+        protected void onStatChanged(PokemonId id) {
             StatModifiers statModifiers = getBattlingPokemon(id).statModifiers;
             StatusView statusView = mBattleLayout.getStatusView(id);
             statusView.updateModifier(statModifiers);

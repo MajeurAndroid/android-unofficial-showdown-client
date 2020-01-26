@@ -88,6 +88,10 @@ public class StatModifiers {
         eva = modifiers.eva;
     }
 
+    public void clear() {
+        atk = def = spa = spd = spe = eva = 0;
+    }
+
     public float modifier(String stat) {
         switch (stat) {
             case "atk":

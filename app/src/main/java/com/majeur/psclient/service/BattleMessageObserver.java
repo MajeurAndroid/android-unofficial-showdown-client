@@ -476,6 +476,9 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
             case "setboost":
                 handleSetBoost(message);
                 break;
+            case "clearallboost":
+                handleClearAllBoost(message);
+                break;
             case "weather":
                 handleWeather(message);
                 break;
@@ -694,7 +697,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
             public void run() {
                 StatModifiers statModifiers = getBattlingPokemon(id).statModifiers;
                 statModifiers.inc(stat, amountValue);
-                onStatChanged(id, stat, amountValue, false);
+                onStatChanged(id);
                 displayMinorActionMessage(text);
             }
         });
@@ -713,7 +716,25 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
             public void run() {
                 StatModifiers statModifiers = getBattlingPokemon(id).statModifiers;
                 statModifiers.set(stat, amount);
-                onStatChanged(id, stat, amount, true);
+                onStatChanged(id);
+                displayMinorActionMessage(text);
+            }
+        });
+    }
+
+    private void handleClearAllBoost(ServerMessage msg) {
+        final CharSequence text = mBattleTextBuilder.clearAllBoost(msg.kwarg("from"));
+        mActionQueue.enqueueMinorAction(new Runnable() {
+            @Override
+            public void run() {
+                for (BattlingPokemon pokemon : mTrainerPokemons) {
+                    pokemon.statModifiers.clear();
+                    onStatChanged(pokemon.id);
+                }
+                for (BattlingPokemon pokemon : mFoePokemons) {
+                    pokemon.statModifiers.clear();
+                    onStatChanged(pokemon.id);
+                }
                 displayMinorActionMessage(text);
             }
         });
@@ -929,7 +950,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
                     for (String vStatus : tpokemon.volatiles) onVolatileStatusChanged(pokemonId, vStatus, true);
                     onVolatileStatusChanged(pokemonId, "transform", true);
                     pokemon.statModifiers.set(tpokemon.statModifiers);
-                    onStatChanged(pokemonId, null, 0, false);//clearallboost todo
+                    onStatChanged(pokemonId);
                 } else if (msg.command.contains("formechange") && arg2 != null) {
                     BattlingPokemon pokemon = getBattlingPokemon(pokemonId);
                     pokemon.spriteId = new BasePokemon(arg2).spriteId;
@@ -1162,7 +1183,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
 
     protected abstract void onStatusChanged(PokemonId id, String status);
 
-    protected abstract void onStatChanged(PokemonId id, String stat, int amount, boolean set);
+    protected abstract void onStatChanged(PokemonId id);
 
     protected abstract void onDisplayBattleToast(PokemonId id, String text, int color);
 

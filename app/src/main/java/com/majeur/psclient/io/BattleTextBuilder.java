@@ -821,11 +821,11 @@ public final class BattleTextBuilder {
         const template = this.template('invertBoost', kwArgs.from);
         return line1 + template.replace('[POKEMON]', this.pokemon(pokemon));
     }
-
-    case '-clearallboost': {
-        return this.template('clearAllBoost', kwArgs.from);
-    }
     */
+
+    public CharSequence clearAllBoost(String from) {
+        return line(resolve("clearAllBoost"));
+    }
 
     public CharSequence moveeffect(String cmd, PokemonId pkmnId, String spread) {
         String templateId = cmd.substring(1);
