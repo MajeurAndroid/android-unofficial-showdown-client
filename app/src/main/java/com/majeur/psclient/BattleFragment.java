@@ -350,19 +350,21 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         descView.append("\n");
         final String ability;
         if (!pokemon.foe && mLastActionRequest != null) {
-            final SidePokemon sidePokemon = mLastActionRequest.getSide().get(0);
+            final SidePokemon sidePokemon = mLastActionRequest.getSide().get(0); // TODO does not work in doubles
             ability = sidePokemon.ability;
-            descView.append(smallText("Atk:"));
-            descView.append(pokemon.statModifiers.calcReadableStat("atk", sidePokemon.stats.atk));
-            descView.append(smallText(" Def:"));
-            descView.append(pokemon.statModifiers.calcReadableStat("def", sidePokemon.stats.def));
-            descView.append(smallText(" Spa:"));
-            descView.append(pokemon.statModifiers.calcReadableStat("spa", sidePokemon.stats.spa));
-            descView.append(smallText(" Spd:"));
-            descView.append(pokemon.statModifiers.calcReadableStat("spd", sidePokemon.stats.spd));
-            descView.append(smallText(" Spe:"));
-            descView.append(pokemon.statModifiers.calcReadableStat("spe", sidePokemon.stats.spe));
-            descView.append("\n");
+            if (pokemon.transformSpecies != null) { // Ditto case
+                descView.append(smallText("Atk:"));
+                descView.append(pokemon.statModifiers.calcReadableStat("atk", sidePokemon.stats.atk));
+                descView.append(smallText(" Def:"));
+                descView.append(pokemon.statModifiers.calcReadableStat("def", sidePokemon.stats.def));
+                descView.append(smallText(" Spa:"));
+                descView.append(pokemon.statModifiers.calcReadableStat("spa", sidePokemon.stats.spa));
+                descView.append(smallText(" Spd:"));
+                descView.append(pokemon.statModifiers.calcReadableStat("spd", sidePokemon.stats.spd));
+                descView.append(smallText(" Spe:"));
+                descView.append(pokemon.statModifiers.calcReadableStat("spe", sidePokemon.stats.spe));
+                descView.append("\n");
+            }
             descView.append(smallText("Ability: "));
             descView.append(sidePokemon.ability);
             descView.append("\n");

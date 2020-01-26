@@ -908,10 +908,10 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         });
     }
 
-    private void handleFormeChange(ServerMessage msg) {
+    private void handleFormeChange(final ServerMessage msg) {
         String rawId = msg.nextArg();
-        PokemonId pokemonId = PokemonId.fromRawId(getPlayer(rawId), rawId);
-        String arg2 = msg.hasNextArg() ? msg.nextArg() : null;
+        final PokemonId pokemonId = PokemonId.fromRawId(getPlayer(rawId), rawId);
+        final String arg2 = msg.hasNextArg() ? msg.nextArg() : null;
         String arg3 = msg.hasNextArg() ? msg.nextArg() : null;
 
         final CharSequence text = mBattleTextBuilder.pokemonChange(msg.command,
@@ -921,6 +921,21 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
             @Override
             public void run() {
                 displayMinorActionMessage(text);
+
+                if (msg.command.contains("transform") && arg2 != null) {
+                    PokemonId targetId = PokemonId.fromRawId(getPlayer(arg2), arg2);
+                    if (pokemonId.equals(targetId)) return;
+
+                    BattlingPokemon pokemon = getBattlingPokemon(pokemonId);
+                    BattlingPokemon tpokemon = getBattlingPokemon(targetId);
+                    pokemon.transformSpecies = tpokemon.spriteId;
+                    onDetailsChanged(pokemon);
+                    for (String vStatus : pokemon.volatiles) onVolatileStatusChanged(pokemonId, vStatus, false);
+                    for (String vStatus : tpokemon.volatiles) onVolatileStatusChanged(pokemonId, vStatus, true);
+                    onVolatileStatusChanged(pokemonId, "transform", true);
+                    pokemon.statModifiers.set(tpokemon.statModifiers);
+                    onStatChanged(pokemonId, null, 0, false);//clearallboost
+                }
             }
         });
     }
@@ -944,10 +959,14 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
-                if (effect.contains(":"))
-                    onVolatileStatusChanged(id, effect.substring(effect.indexOf(':') + 1).trim(), start);
-                else
-                    onVolatileStatusChanged(id, effect, start);
+                String trimmedEffect = effect.contains(":") ? effect.substring(effect.indexOf(':') + 1).trim() : effect;
+                onVolatileStatusChanged(id, trimmedEffect, start);
+
+                BattlingPokemon pokemon = getBattlingPokemon(id);
+                if (pokemon != null) {
+                    if (start) pokemon.volatiles.add(trimmedEffect);
+                    else pokemon.volatiles.remove(trimmedEffect);
+                }
 
                 displayMinorActionMessage(text);
             }

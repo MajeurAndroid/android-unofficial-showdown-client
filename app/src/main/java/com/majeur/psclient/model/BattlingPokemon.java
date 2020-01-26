@@ -1,5 +1,9 @@
 package com.majeur.psclient.model;
 
+import java.util.Set;
+
+import androidx.collection.ArraySet;
+
 public class BattlingPokemon extends BasePokemon {
 
     public static BattlingPokemon fromSwitchMessage(Player player, String message) {
@@ -55,6 +59,8 @@ public class BattlingPokemon extends BasePokemon {
     public boolean shiny;
     public Condition condition;
     public StatModifiers statModifiers;
+    public String transformSpecies;
+    public final Set<String> volatiles = new ArraySet<>();
 
     public BattlingPokemon(String rawSpecies, Player player, PokemonId id, int level, String gender, boolean shiny,
                            Condition condition) {

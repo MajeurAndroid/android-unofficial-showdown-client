@@ -10,12 +10,12 @@ public class StatModifiers {
     private static final float[] LEVELS = {1f / 4f, 2f / 7f, 1f / 3f, 2f / 5f, 1f / 2f, 2f / 3f, 1f, 3f / 2f, 2f, 5f / 2f, 3f, 7f / 2f, 4f};
     private static final float[] LEVELS_ALT = {3f / 9f, 3f / 8f, 3f / 7f, 3f / 6f, 3f / 5f, 3f / 4f, 3f / 3f, 4f / 3f, 5f / 3f, 6f / 3f, 7f / 3f, 8f / 3f, 9f / 3f};
 
-    int atk = 0;
-    int def = 0;
-    int spa = 0;
-    int spd = 0;
-    int spe = 0;
-    int eva = 0;
+    private int atk = 0;
+    private int def = 0;
+    private int spa = 0;
+    private int spd = 0;
+    private int spe = 0;
+    private int eva = 0;
 
 
     public int get(String stat) {
@@ -77,6 +77,15 @@ public class StatModifiers {
             default:
                 eva = val;
         }
+    }
+
+    public void set(StatModifiers modifiers) {
+        atk = modifiers.atk;
+        def = modifiers.def;
+        spa = modifiers.spa;
+        spd = modifiers.spd;
+        spe = modifiers.spe;
+        eva = modifiers.eva;
     }
 
     public float modifier(String stat) {

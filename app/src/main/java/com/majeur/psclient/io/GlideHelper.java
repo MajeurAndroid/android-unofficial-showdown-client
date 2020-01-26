@@ -44,13 +44,14 @@ public class GlideHelper {
 
     @SuppressWarnings("CheckResult")
     public void loadSprite(final BattlingPokemon pokemon, final ImageView imageView, final int fieldWidth) {
-        RequestBuilder<Drawable> request = mRequestManager.load(ani3dSpriteUri(pokemon.spriteId, pokemon.foe, pokemon.shiny));
+        String spriteId = pokemon.transformSpecies != null ? pokemon.transformSpecies : pokemon.spriteId;
+        RequestBuilder<Drawable> request = mRequestManager.load(ani3dSpriteUri(spriteId, pokemon.foe, pokemon.shiny));
         RequestOptions options = new RequestOptions().override(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL);
         request.apply(options);
         request.error(
-                mRequestManager.load(ani2dSpriteUri(pokemon.spriteId, pokemon.foe, pokemon.shiny))
+                mRequestManager.load(ani2dSpriteUri(spriteId, pokemon.foe, pokemon.shiny))
                 .error(
-                        mRequestManager.load(fixed2dSpriteUri(pokemon.spriteId, pokemon.foe, pokemon.shiny))
+                        mRequestManager.load(fixed2dSpriteUri(spriteId, pokemon.foe, pokemon.shiny))
                         .apply(options.error(R.drawable.missingno))
                 )
         );
