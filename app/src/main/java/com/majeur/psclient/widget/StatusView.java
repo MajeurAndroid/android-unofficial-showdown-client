@@ -17,6 +17,7 @@ import com.majeur.psclient.model.Colors;
 import com.majeur.psclient.model.StatModifiers;
 import com.majeur.psclient.util.Utils;
 
+import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -40,6 +41,7 @@ public class StatusView extends View {
             return statusView.mHealth;
         }
     };
+    private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("0.##");
 
     private Paint mPaint;
     private Rect mTempRect;
@@ -279,7 +281,7 @@ public class StatusView extends View {
 
     @SuppressWarnings("DefaultLocale")
     private void drawStatModifier(Canvas canvas, Rect measureRect, int y, Map.Entry<String, Float> entry) {
-        String text = String.format("%.1f", entry.getValue()) + Utils.firstCharUpperCase(entry.getKey());
+        String text = DECIMAL_FORMAT.format(entry.getValue()) + Utils.firstCharUpperCase(entry.getKey());
 
         int x = measureRect.right;
         drawTextWithBackground(canvas, measureRect, x + mExtraMargin, y + mHealthBarStrokeWidth,
