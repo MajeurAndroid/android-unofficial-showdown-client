@@ -805,23 +805,23 @@ public final class BattleTextBuilder {
         const template = this.template('copyBoost', kwArgs.from);
         return line1 + template.replace('[POKEMON]', this.pokemon(pokemon)).replace('[TARGET]', this.pokemon(target));
     }
-
-    case '-clearboost': case '-clearpositiveboost': case '-clearnegativeboost': {
-        const [, pokemon, source] = args;
-        const line1 = this.maybeAbility(kwArgs.from, kwArgs.of || pokemon);
-        let templateId = 'clearBoost';
-        if (kwArgs.zeffect) templateId = 'clearBoostFromZEffect';
-        const template = this.template(templateId, kwArgs.from);
-        return line1 + template.replace('[POKEMON]', this.pokemon(pokemon)).replace('[SOURCE]', this.pokemon(source));
-    }
-
-    case '-invertboost': {
-        const [, pokemon] = args;
-        const line1 = this.maybeAbility(kwArgs.from, kwArgs.of || pokemon);
-        const template = this.template('invertBoost', kwArgs.from);
-        return line1 + template.replace('[POKEMON]', this.pokemon(pokemon));
-    }
     */
+
+    public CharSequence clearBoost(PokemonId pkmnId, String source, String from, String of, String zEffect) {
+        CharSequence line1 = of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId);
+        String templateId = "clearBoost";
+        if (zEffect != null) templateId = "clearBoostFromZEffect";
+        String template = resolve(from, templateId);
+        CharSequence line2 = line(template, PH_POKEMON, pokemon(pkmnId), PH_SOURCE, pokemon(source));
+        return lines(line1, line2);
+    }
+
+    public CharSequence invertBoost(PokemonId pkmnId, String from, String of) {
+        CharSequence line1 = of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId);
+        String template = resolve(from, "invertBoost");
+        CharSequence line2 = line(template, PH_POKEMON, pokemon(pkmnId));
+        return lines(line1, line2);
+    }
 
     public CharSequence clearAllBoost(String from) {
         return line(resolve("clearAllBoost"));

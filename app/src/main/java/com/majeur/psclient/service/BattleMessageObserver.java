@@ -476,8 +476,16 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
             case "setboost":
                 handleSetBoost(message);
                 break;
+            case "clearboost":
+            case "clearpositiveboost":
+            case "clearnegativeboost":
+                handleClearBoost(message);
+                break;
             case "clearallboost":
                 handleClearAllBoost(message);
+                break;
+            case "invertboost":
+                handleInvertBoost(message);
                 break;
             case "weather":
                 handleWeather(message);
@@ -722,6 +730,30 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         });
     }
 
+    private void handleClearBoost(final ServerMessage msg) {
+        String rawId = msg.nextArg();
+        final PokemonId id = PokemonId.fromRawId(getPlayer(rawId), rawId);
+        String source = msg.hasNextArg() ? msg.nextArg() : null;
+
+        final CharSequence text = mBattleTextBuilder.clearBoost(id, source, msg.kwarg("from"),
+                msg.kwarg("of"), msg.kwarg("zeffect"));
+
+        mActionQueue.enqueueMinorAction(new Runnable() {
+            @Override
+            public void run() {
+                StatModifiers statModifiers = getBattlingPokemon(id).statModifiers;
+                if (msg.command.contains("positive"))
+                    statModifiers.clearPositive();
+                else if (msg.command.contains("negative"))
+                    statModifiers.clearNegative();
+                else
+                    statModifiers.clear();
+                onStatChanged(id);
+                displayMinorActionMessage(text);
+            }
+        });
+    }
+
     private void handleClearAllBoost(ServerMessage msg) {
         final CharSequence text = mBattleTextBuilder.clearAllBoost(msg.kwarg("from"));
         mActionQueue.enqueueMinorAction(new Runnable() {
@@ -735,6 +767,21 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
                     pokemon.statModifiers.clear();
                     onStatChanged(pokemon.id);
                 }
+                displayMinorActionMessage(text);
+            }
+        });
+    }
+
+    private void handleInvertBoost(ServerMessage msg) {
+        String rawId = msg.nextArg();
+        final PokemonId id = PokemonId.fromRawId(getPlayer(rawId), rawId);
+        final CharSequence text = mBattleTextBuilder.invertBoost(id, msg.kwarg("from"), msg.kwarg("of"));
+        mActionQueue.enqueueMinorAction(new Runnable() {
+            @Override
+            public void run() {
+                BattlingPokemon pokemon = getBattlingPokemon(id);
+                pokemon.statModifiers.invert();
+                onStatChanged(pokemon.id);
                 displayMinorActionMessage(text);
             }
         });

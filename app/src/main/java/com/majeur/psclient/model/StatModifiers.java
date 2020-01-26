@@ -88,8 +88,35 @@ public class StatModifiers {
         eva = modifiers.eva;
     }
 
+    public void invert() {
+        atk = -atk;
+        def = -def;
+        spa = -spa;
+        spd = -spd;
+        spe = -spe;
+        eva = -eva;
+    }
+
     public void clear() {
         atk = def = spa = spd = spe = eva = 0;
+    }
+
+    public void clearPositive() {
+        if (atk > 0) atk = 0;
+        if (def > 0) def = 0;
+        if (spa > 0) spa = 0;
+        if (spd > 0) spd = 0;
+        if (spe > 0) spe = 0;
+        if (eva > 0) eva = 0;
+    }
+
+    public void clearNegative() {
+        if (atk < 0) atk = 0;
+        if (def < 0) def = 0;
+        if (spa < 0) spa = 0;
+        if (spd < 0) spd = 0;
+        if (spe < 0) spe = 0;
+        if (eva < 0) eva = 0;
     }
 
     public float modifier(String stat) {
