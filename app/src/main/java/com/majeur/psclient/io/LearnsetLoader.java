@@ -12,8 +12,11 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
-public class LearnsetLoader extends DataLoader<String, List> {
+import androidx.collection.ArraySet;
+
+public class LearnsetLoader extends DataLoader<String, Set> {
 
     private Resources mResources;
 
@@ -22,16 +25,16 @@ public class LearnsetLoader extends DataLoader<String, List> {
     }
 
     @Override
-    protected List[] onCreateResultArray(int length) {
-        return new List[length];
+    protected Set[] onCreateResultArray(int length) {
+        return new Set[length];
     }
 
     @Override
-    protected LoadInterface<String, List> onCreateLoadInterface() {
+    protected LoadInterface<String, Set> onCreateLoadInterface() {
         return new LoadInterfaceImpl();
     }
 
-    private class LoadInterfaceImpl implements LoadInterface<String, List> {
+    private class LoadInterfaceImpl implements LoadInterface<String, Set> {
 
         private JsonReader mJsonReader;
 
@@ -42,7 +45,7 @@ public class LearnsetLoader extends DataLoader<String, List> {
         }
 
         @Override
-        public void onLoadData(String[] queries, List[] results) {
+        public void onLoadData(String[] queries, Set[] results) {
             try {
                 parseJson(queries, results);
             } catch (IOException e) {
@@ -56,7 +59,7 @@ public class LearnsetLoader extends DataLoader<String, List> {
             }
         }
 
-        private void parseJson(String[] queries, List[] results) throws IOException {
+        private void parseJson(String[] queries, Set[] results) throws IOException {
             List<String> desiredKeys = new ArrayList<>();
             for (int i = 0; i < queries.length; i++) {
                 if (results[i] == null)
@@ -66,43 +69,51 @@ public class LearnsetLoader extends DataLoader<String, List> {
             }
             mJsonReader.beginObject();
             while (mJsonReader.hasNext()) {
-                String name = mJsonReader.nextName();
-                if (desiredKeys.contains(name)) {
-                    results[desiredKeys.indexOf(name)] = parseLearnset();
+                String species = mJsonReader.nextName();
+                mJsonReader.beginObject();
+                boolean mergeMoves = desiredKeys.contains(species);
+                if (mJsonReader.nextName().equals("also")) {
+                    if (!mergeMoves) {
+                        String match = checkSpecies(desiredKeys);
+                        if (match != null) {
+                            mergeMoves = true;
+                            species = match;
+                        }
+                    } else {
+                        mJsonReader.skipValue();
+                    }
+                    mJsonReader.nextName(); // Make sure we skip the 'moves' key name
+                }
+                if (mergeMoves) {
+                    int resultIndex = desiredKeys.indexOf(species);
+                    if (results[resultIndex] == null) results[resultIndex] = new ArraySet();
+                    results[resultIndex].addAll(parseMoves());
                 } else {
                     mJsonReader.skipValue();
                 }
+                mJsonReader.endObject();
             }
             mJsonReader.endObject();
         }
 
-        private List<String> parseLearnset() throws IOException {
-            List<String> learnset = null;
-            mJsonReader.beginObject();
+        private String checkSpecies(List<String> desiredSpecies) throws IOException {
+            String result = null;
+            mJsonReader.beginArray();
             while (mJsonReader.hasNext()) {
-                final String name = mJsonReader.nextName();
-                switch (name) {
-                    case "learnset":
-                        learnset = parseMoves();
-                        break;
-                    default:
-                        mJsonReader.skipValue();
-                        break;
-                }
+                String species = mJsonReader.nextString();
+                if (desiredSpecies.contains(species))
+                    result = species;
             }
-            mJsonReader.endObject();
-            return learnset;
+            mJsonReader.endArray();
+            return result;
         }
 
         private List<String> parseMoves() throws IOException {
             List<String> moves = new LinkedList<>();
-            mJsonReader.beginObject();
-            while (mJsonReader.hasNext()) {
-                final String name = mJsonReader.nextName();
-                moves.add(name);
-                mJsonReader.skipValue();
-            }
-            mJsonReader.endObject();
+            mJsonReader.beginArray();
+            while (mJsonReader.hasNext())
+                moves.add(mJsonReader.nextString());
+            mJsonReader.endArray();
             return moves;
         }
     }

@@ -57,6 +57,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -479,10 +480,10 @@ public class PokemonEditFragment extends Fragment {
         }
 
         String[] query = {mCurrentSpecies.id};
-        mLearnsetLoader.load(query, new DataLoader.Callback<List>() {
+        mLearnsetLoader.load(query, new DataLoader.Callback<Set>() {
             @Override
-            public void onLoaded(List[] results) {
-                final List<String> moves = results[0];
+            public void onLoaded(Set[] results) {
+                final Set<String> moves = results[0];
                 if (moves == null) return;
                 for (int i = 0; i < 4; i++) {
                     final AutoCompleteTextView textView = mMoveTextViews[i];
@@ -671,9 +672,10 @@ public class PokemonEditFragment extends Fragment {
         private String mCurrentConstraint;
         private int mHighlightColor;
 
-        MovesAdapter(MoveDetailsLoader loader, List<String> moveIds, int highlightColor) {
+        MovesAdapter(MoveDetailsLoader loader, Collection<String> moveIds, int highlightColor) {
             mLoader = loader;
-            mMoveIds = moveIds;
+            mMoveIds = new ArrayList<>();
+            mMoveIds.addAll(moveIds);
             mAdapterList = new ArrayList<>();
             mAdapterList.addAll(moveIds);
             mHighlightColor = highlightColor;
