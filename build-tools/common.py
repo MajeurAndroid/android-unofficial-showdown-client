@@ -4,6 +4,8 @@ import requests
 import time
 
 def int_val(v):
+    if type(v) is bool:
+        return v
     try:
         if int(v) == v:
             return int(v)

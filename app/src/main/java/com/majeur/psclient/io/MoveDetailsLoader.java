@@ -112,9 +112,9 @@ public class MoveDetailsLoader extends DataLoader<String, Move.Details> {
                 switch (name) {
                     case "accuracy":
                         JsonToken token = mJsonReader.peek();
-                        if (token == JsonToken.BOOLEAN) {
-                            accuracy = mJsonReader.nextBoolean() ? Integer.MAX_VALUE : Integer.MIN_VALUE;
-                        } else
+                        if (token == JsonToken.BOOLEAN)
+                            accuracy = mJsonReader.nextBoolean() ? -1 : 0;
+                        else
                             accuracy = mJsonReader.nextInt();
                         break;
                     case "basePower":

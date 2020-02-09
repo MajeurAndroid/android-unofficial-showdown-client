@@ -461,7 +461,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         if (accuracy == -20) accuracy = move.details != null ? move.details.accuracy : 0;
         if (accuracy != 0) {
             descView.append("Accuracy: ");
-            if (accuracy == Integer.MAX_VALUE) descView.append("can't miss");
+            if (accuracy == -1) descView.append("can't miss");
             else descView.append(str(accuracy));
             descView.append("\n");
         }
