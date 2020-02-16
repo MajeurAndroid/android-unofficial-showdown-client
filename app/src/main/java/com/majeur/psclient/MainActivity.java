@@ -83,6 +83,9 @@ public class MainActivity extends AppCompatActivity {
                 .hide(getChatFragment())
                 .hide(getTeamsFragment())
                 .commit();
+
+        if (bindService(mShowdownServiceIntent, mServiceConnection, Context.BIND_AUTO_CREATE))
+            mCanUnbindService = true;
     }
 
     @Override
@@ -159,29 +162,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onStart() {
-        super.onStart();
-        if (bindService(mShowdownServiceIntent, mServiceConnection, Context.BIND_AUTO_CREATE))
-            mCanUnbindService = true;
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
+    protected void onDestroy() {
+        super.onDestroy();
         if (mCanUnbindService) {
-			if (mService != null) // We might not have had access to binder yet.
-				notifyServiceWillUnbound();
+            if (mService != null) // We might not have had access to binder yet.
+                notifyServiceWillUnbound();
             unbindService(mServiceConnection);
             mService = null;
             mCanUnbindService = false;
         }
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (!isChangingConfigurations())
-            stopService(mShowdownServiceIntent);
     }
 
     public void showHomeFragment() {
