@@ -671,8 +671,10 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
-                getBattlingPokemon(id).condition.status = status;
-                onStatusChanged(id, cure ? null : status);
+                if (id.isInBattle) {
+                    getBattlingPokemon(id).condition.status = status;
+                    onStatusChanged(id, cure ? null : status);
+                }
                 displayMinorActionMessage(text);
             }
         });
@@ -690,7 +692,6 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
 
 
     private void handleStatChange(ServerMessage msg, final boolean boost) {
-        // POKEMON|STAT|AMOUNT
         String rawId = msg.nextArg();
         final PokemonId id = PokemonId.fromRawId(getPlayer(rawId), rawId);
         final String stat = msg.hasNextArg() ? msg.nextArg() : null;
@@ -890,7 +891,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
-                displayMinorActionMessage(text);//texts[0]);
+                displayMinorActionMessage(text);
                 onDisplayBattleToast(pokemonId, toastText, Colors.RED);
             }
         });
@@ -906,7 +907,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
-                displayMinorActionMessage(text);//texts[0]);
+                displayMinorActionMessage(text);
                 onDisplayBattleToast(pokemonId, "Immune", Colors.GRAY);
             }
         });

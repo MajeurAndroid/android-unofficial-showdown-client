@@ -289,7 +289,7 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
     public void notifyDetailsUpdated() {
         for (Button button : mMoveButtons) {
             Move move = (Move) button.getTag(R.id.battle_data_tag);
-            if (move.maxflag || move.details == null) continue;
+            if (move == null || move.maxflag || move.details == null) continue;
             button.getBackground().setColorFilter(move.details.color, PorterDuff.Mode.MULTIPLY);
         }
     }
@@ -297,7 +297,7 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
     public void notifyMaxDetailsUpdated() {
         for (Button button : mMoveButtons) {
             Move move = (Move) button.getTag(R.id.battle_data_tag);
-            if (!move.maxflag || move.maxDetails == null) continue;
+            if (move == null || !move.maxflag || move.maxDetails == null) continue;
             button.setText(move.maxDetails.name);
             button.getBackground().setColorFilter(move.maxDetails.color, PorterDuff.Mode.MULTIPLY);
         }
