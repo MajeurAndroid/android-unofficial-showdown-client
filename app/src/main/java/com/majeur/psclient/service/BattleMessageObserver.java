@@ -1130,11 +1130,16 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
     }
 
     private void handleSetHp(ServerMessage msg) {
-        //TODO
+        String rawId = msg.nextArg();
+        final PokemonId id = PokemonId.fromRawId(getPlayer(rawId), rawId);
+        String rawCondition = msg.nextArg();
+        final Condition condition = new Condition(rawCondition);
+
         final CharSequence text = mBattleTextBuilder.sethp(msg.kwarg("from"));
         mActionQueue.enqueueMinorAction(new Runnable() {
             @Override
             public void run() {
+                if (id.isInBattle) onHealthChanged(id, condition);
                 displayMinorActionMessage(text);
             }
         });
