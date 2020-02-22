@@ -109,6 +109,7 @@ public class PokemonEditFragment extends Fragment {
     private StatsTable mStatsTable;
     private Spinner mNatureSpinner;
     private Spinner mHpTypeSpinner;
+    private View mExportButton;
 
     // Data
     private int mSlotIndex;
@@ -354,7 +355,8 @@ public class PokemonEditFragment extends Fragment {
             }
         });
 
-        view.findViewById(R.id.export).setOnClickListener(new View.OnClickListener() {
+        mExportButton = view.findViewById(R.id.export);
+        mExportButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if (!mHasPokemonData) return;
@@ -604,6 +606,7 @@ public class PokemonEditFragment extends Fragment {
         mStatsTable.setEnabled(enabled);
         mNatureSpinner.setEnabled(enabled);
         mHpTypeSpinner.setEnabled(enabled);
+        mExportButton.setEnabled(enabled);
     }
 
     public void onStatModified(String stat, int ev, int iv) {
@@ -770,8 +773,8 @@ public class PokemonEditFragment extends Fragment {
         }
 
         private String buildDetailsText(int pp, int bp, int acc) {
-            return "PP: " + (pp >= 0 ? pp : "–") + ", BP: " + (bp >= 0 ? bp : "–")
-                    + ", AC: " + (acc >= 0 ? acc : "–");
+            return "PP: " + (pp >= 0 ? pp : "–") + ", BP: " + (bp > 0 ? bp : "–")
+                    + ", AC: " + (acc > 0 ? acc : "–");
         }
 
         @NonNull

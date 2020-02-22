@@ -67,7 +67,7 @@
             android:gravity="center_horizontal"
             android:inputType="number"
             android:selectAllOnFocus="true"
-            android:text="255"
+            android:text="100"
             app:layout_constraintStart_toEndOf="@+id/textView"
             app:layout_constraintTop_toBottomOf="@+id/nameEditText"/>
 
@@ -108,7 +108,7 @@
             android:gravity="center_horizontal"
             android:inputType="number"
             android:selectAllOnFocus="true"
-            android:text="100"
+            android:text="255"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/nameEditText"/>
 
