@@ -5,7 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     app:cardUseCompatPadding="true"
-    app:contentPadding="8dp">
+    app:contentPadding="8dp"
+    app:cardElevation="2dp">
 
     <include layout="@layout/dropdown_item_team"/>
 
