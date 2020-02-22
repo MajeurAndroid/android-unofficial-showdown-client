@@ -3,6 +3,8 @@ package com.majeur.psclient.model;
 import android.text.TextUtils;
 
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -36,13 +38,22 @@ public class Team implements Serializable {
 
     public static class Group {
 
+        public final String format;
+        public final List<Team> teams;
+
         public Group(String format) {
             this.format = format;
             this.teams = new LinkedList<>();
         }
 
-        public final String format;
-        public final List<Team> teams;
+        public void sort() {
+            Collections.sort(teams, new Comparator<Team>() {
+                @Override
+                public int compare(Team t1, Team t2) {
+                    return t1.label.toLowerCase().compareTo(t2.label.toLowerCase());
+                }
+            });
+        }
     }
 
     public static Team dummyTeam(String label) {

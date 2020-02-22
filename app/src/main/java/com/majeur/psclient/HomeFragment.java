@@ -300,6 +300,24 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
         });
     }
 
+    public int compareBattleFormats(String f1, String f2) {
+        if (f1.equals(f2)) return 0;
+        if (f1.contains("other")) return 1;
+        if (f2.contains("other")) return -1;
+        if (mBattleFormats == null) return f1.compareTo(f2);
+        int f1Index = -1, f2Index = -1;
+        int index = 0;
+        loop : for (BattleFormat.Category category : mBattleFormats)
+            for (BattleFormat format : category.getBattleFormats()) {
+                String id = format.id();
+                if (id.equals(f1)) f1Index = index;
+                if (id.equals(f2)) f2Index = index;
+                if (f1Index >= 0 && f2Index >= 0) break loop;
+                index++;
+            }
+        return Integer.compare(f1Index, f2Index);
+    }
+
     public String resolveBattleFormatName(String formatId) {
         if (mBattleFormats == null) return formatId;
         if ("other".equals(formatId)) return "Other";
@@ -449,6 +467,8 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
                 adapter.addItems(formats);
             }
             mFormatsSpinner.setSelection(1);
+            MainActivity activity = (MainActivity) getActivity();
+            if (activity != null) activity.getTeamsFragment().onBattleFormatsChanged();
         }
 
         @Override

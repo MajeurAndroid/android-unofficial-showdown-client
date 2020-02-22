@@ -86,7 +86,7 @@ public class TeamsFragment extends Fragment implements MainActivity.Callbacks {
             public void callback(List<Team.Group> teamGroups) {
                 mTeamGroups.clear();
                 mTeamGroups.addAll(teamGroups);
-                mTeamListAdapter.notifyDataSetChanged();
+                notifyGroupChanged();
             }
         });
     }
@@ -229,6 +229,10 @@ public class TeamsFragment extends Fragment implements MainActivity.Callbacks {
         }
     }
 
+    public void onBattleFormatsChanged() {
+        notifyGroupChanged(); // Update order and readable names
+    }
+
     private void persistUserTeams() {
         mUserTeamsStore.write(mTeamGroups, new Callback<Boolean>() {
             @Override
@@ -302,15 +306,20 @@ public class TeamsFragment extends Fragment implements MainActivity.Callbacks {
     }
 
     private void notifyGroupChanged() {
+        MainActivity activity = (MainActivity) getContext();
+        final HomeFragment homeFragment = activity != null ? activity.getHomeFragment() : null;
         Collections.sort(mTeamGroups, new Comparator<Team.Group>() {
             @Override
             public int compare(Team.Group group1, Team.Group group2) {
+                if (homeFragment != null)
+                    return homeFragment.compareBattleFormats(group1.format, group2.format);
                 return group1.format.compareTo(group2.format);
             }
         });
+        for (Team.Group group : mTeamGroups) group.sort();
         mTeamListAdapter.notifyDataSetChanged();
-        MainActivity activity = (MainActivity) getContext();
-        activity.getHomeFragment().updateTeamSpinner();
+        if (homeFragment != null)
+            homeFragment.updateTeamSpinner();
     }
 
     public List<Team.Group> getTeamGroups() {
