@@ -177,10 +177,10 @@ public class UserTeamsStore {
                 File jsonFile = (File) objects[0];
                 JSONArray jsonArray = (JSONArray) objects[1];
                 OutputStream outputStream = new FileOutputStream(jsonFile);
-                outputStream.write(jsonArray.toString(0).getBytes());
+                outputStream.write(jsonArray.toString().getBytes());
                 outputStream.close();
                 return Boolean.TRUE;
-            } catch (JSONException | IOException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
                 return Boolean.FALSE;
             }
