@@ -144,18 +144,21 @@ public class TeamsFragment extends Fragment implements MainActivity.Callbacks {
             }
         };
         mExpandableListView.setOnScrollListener(new AbsListView.OnScrollListener() {
+
+            int state = SCROLL_STATE_IDLE;
+
             @Override
             public void onScrollStateChanged(AbsListView view, int scrollState) {
-                if (scrollState == AbsListView.OnScrollListener.SCROLL_STATE_IDLE) {
-                    fab.postDelayed(showFab, 750);
-                } else {
-                    fab.removeCallbacks(showFab);
-                    fab.hide();
-                }
+                state = scrollState;
+                if (scrollState == SCROLL_STATE_IDLE) fab.postDelayed(showFab, 500);
             }
 
             @Override
             public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+                if (state == SCROLL_STATE_TOUCH_SCROLL && totalItemCount > visibleItemCount
+                        && (firstVisibleItem + visibleItemCount) < totalItemCount)
+                    if (fab.isShown()) fab.hide();
+                    else fab.removeCallbacks(showFab);
             }
         });
     }

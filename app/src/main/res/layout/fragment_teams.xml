@@ -26,7 +26,8 @@
         android:paddingHorizontal="12dp"
         android:clipToPadding="false"
         android:divider="@null"
-        android:childDivider="@null"/>
+        android:childDivider="@null"
+        android:paddingBottom="74dp"/>
 
     <TextView
         android:id="@+id/empty_hint_view"
