@@ -195,6 +195,11 @@ public class TeamsFragment extends Fragment implements MainActivity.Callbacks {
                         .show();
                 editText.requestFocus();
                 return true;
+            case R.id.action_duplicate:
+                Team copy = new Team(team);
+                addTeam(copy);
+                persistUserTeams();
+                return true;
             case R.id.action_delete:
                 new MaterialAlertDialogBuilder(getContext())
                         .setTitle("Are you sure you want to delete this team ?")

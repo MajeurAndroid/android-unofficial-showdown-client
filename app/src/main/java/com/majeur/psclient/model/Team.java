@@ -14,6 +14,26 @@ public class Team implements Serializable {
 
     private static int sUniqueIdInc = 1;
 
+    private static String copiedTeamLabel(String label) {
+        return label + " (Copy)";
+//        TODO: Take in account other labels of the same group that could match
+//        String newLabel = label;
+//        Pattern pattern = Pattern.compile("\\((Copy)(\\d*)\\)$");
+//        Matcher matcher = pattern.matcher(newLabel);
+//        if (matcher.find()) {
+//            String group2 = matcher.group(2);
+//            if (TextUtils.isEmpty(group2)) {
+//                newLabel = newLabel.substring(0, newLabel.length() - 1) + "2)";
+//            } else {
+//                int n = Integer.parseInt(group2);
+//                newLabel = newLabel.substring(0, newLabel.lastIndexOf(str(n))) + ++n + ")";
+//            }
+//        } else {
+//            newLabel = newLabel + " (Copy)";
+//        }
+//        return newLabel;
+    }
+
     public static class Group {
 
         public Group(String format) {
@@ -36,7 +56,7 @@ public class Team implements Serializable {
     public String format;
     public final List<TeamPokemon> pokemons;
 
-    public Team(int uniqueId, String label, List<TeamPokemon> pokemons, String format) {
+    private Team(int uniqueId, String label, List<TeamPokemon> pokemons, String format) {
         this.uniqueId = uniqueId;
         this.label = label;
         this.pokemons = pokemons;
@@ -45,6 +65,10 @@ public class Team implements Serializable {
 
     public Team(String label, List<TeamPokemon> pokemons, String format) {
         this(sUniqueIdInc++, label, pokemons, format);
+    }
+
+    public Team(Team source) {
+        this(copiedTeamLabel(source.label), source.pokemons, source.format);
     }
 
     public boolean isEmpty() {
