@@ -1,7 +1,6 @@
 package com.majeur.psclient.util;
 
 import android.os.AsyncTask;
-import android.util.Log;
 
 import com.majeur.psclient.model.BattleFormat;
 import com.majeur.psclient.model.DexPokemon;
@@ -9,7 +8,6 @@ import com.majeur.psclient.model.Stats;
 import com.majeur.psclient.model.Team;
 import com.majeur.psclient.model.TeamPokemon;
 
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -116,7 +114,7 @@ public class ShowdownTeamParser {
             return null;
         }
 
-        Log.e("PSP curr", Arrays.toString(pokemonStrings));
+        //Log.e("PSP curr", Arrays.toString(pokemonStrings));
         String pokemonMainData = pokemonStrings[0]; // split 0 is Name @ Item or Name or nickname (Name) or  nickname (Name) @ Item
         String pokemonName = "", pokemonNickname = null, pokemonItem = null, pokemonGender = null;
         TeamPokemon p = null;
@@ -294,8 +292,8 @@ public class ShowdownTeamParser {
             }
         }
 
-        Log.e("PSP", "Parsed " + pokemonName);
-        Log.e("PSP", p.toString());
+        //Log.e("PSP", "Parsed " + pokemonName);
+        //Log.e("PSP", p.toString());
         // If p.moves is null, the pokemon parsed is probably broken.
         return p.moves != null ? p : null;
     }

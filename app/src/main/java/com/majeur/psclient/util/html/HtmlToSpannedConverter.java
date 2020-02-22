@@ -24,7 +24,6 @@ import android.text.style.SubscriptSpan;
 import android.text.style.SuperscriptSpan;
 import android.text.style.TypefaceSpan;
 import android.text.style.UnderlineSpan;
-import android.util.Log;
 import android.view.View;
 
 import com.majeur.psclient.util.Utils;
@@ -608,7 +607,7 @@ class HtmlToSpannedConverter implements ContentHandler {
         int len = text.length();
         if (where != len) {
             for (Object span : spans) {
-                Log.e("HtmlToSpannedConverter", "Set " + span + " from " + where + " to " + len);
+                //Log.e("HtmlToSpannedConverter", "Set " + span + " from " + where + " to " + len);
                 text.setSpan(span, where, len, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             }
         }
