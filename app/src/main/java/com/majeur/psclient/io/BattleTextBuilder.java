@@ -130,7 +130,7 @@ public final class BattleTextBuilder {
 
     private CharSequence line(String lineContent) {
         if (lineContent == null) return null;
-        return parseBoldTags(firstCharUpperCase(lineContent));
+        return parseBoldTags(firstCharUpperCase(lineContent.trim()));
     }
 
     private CharSequence lines(CharSequence line1, CharSequence line2) {
@@ -327,7 +327,7 @@ public final class BattleTextBuilder {
             id = "transform";
         }
         String template = resolve(id, templateName);
-        CharSequence line1 = of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId);
+        CharSequence line1 = line(of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId));
         CharSequence line2 = line(template, PH_POKEMON, pokemon(pkmnId), PH_SPECIES, newSpecies);
         return lines(line1, line2);
     }
@@ -344,7 +344,7 @@ public final class BattleTextBuilder {
     // |move|p2a: salamencemega|Outrage|p1a: Wobbuffet|[from]lockedmove
     public CharSequence move(PokemonId pkmnId, String move, String from, String of, String zMove) {
         String pokemon = pokemon(pkmnId);
-        CharSequence line1 = of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId);
+        CharSequence line1 = line(of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId));
         if (zMove != null)
             line1 = line(resolve("zEffect"), PH_POKEMON, pokemon);
         CharSequence line2 = line(resolve(from, "move"), PH_POKEMON, pokemon,
@@ -355,7 +355,7 @@ public final class BattleTextBuilder {
     public CharSequence cant(PokemonId pkmnId, String effect, String move, String of) {
         String template = resolve("cant", effect, false);
         if (template == null) template = resolve(move == null ? "cantNoMove" : "cant");
-        CharSequence line1 = of != null ? maybeAbility(effect, of) : maybeAbility(effect, pkmnId);
+        CharSequence line1 = line(of != null ? maybeAbility(effect, of) : maybeAbility(effect, pkmnId));
         CharSequence line2 = line(template, PH_POKEMON, pokemon(pkmnId),
                 PH_MOVE, move);
         return lines(line1, line2);
@@ -364,9 +364,9 @@ public final class BattleTextBuilder {
     public CharSequence start(PokemonId pkmnId, String effect, String arg3, String from, String of,
                               String already, String fatigue, String zeffect, String damage, String block,
                               String upkeep) {
-        CharSequence line1 = maybeAbility(effect, pkmnId);
+        CharSequence line1 = line(maybeAbility(effect, pkmnId));
         if (line1 == null)
-            line1 = of != null ? maybeAbility(from, of) : maybeAbility(effect, pkmnId);
+            line1 = line(of != null ? maybeAbility(from, of) : maybeAbility(effect, pkmnId));
         CharSequence line2;
         String effectId = toId(effect(effect));
         if (effectId.equals("typechange")) {
@@ -407,9 +407,9 @@ public final class BattleTextBuilder {
     }
 
     public CharSequence end(PokemonId pkmnId, String effect, String from, String of) {
-        CharSequence line1 = maybeAbility(effect, pkmnId);
+        CharSequence line1 = line(maybeAbility(effect, pkmnId));
         if (line1 == null)
-            line1 = of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId);
+            line1 = line(of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId));
         CharSequence line2;
         String id = toId(effect(effect));
         if (id.equals("doomdesire") || id.equals("futuresight")) {
@@ -433,15 +433,15 @@ public final class BattleTextBuilder {
             arg4 = oldAbility;
             oldAbility = null;
         }
-        if (oldAbility != null) line1 = ability(oldAbility, pkmnId);
-        line1 = lines(line1, ability(ability, pkmnId));
+        if (oldAbility != null) line1 = line(ability(oldAbility, pkmnId));
+        line1 = lines(line1, line(ability(ability, pkmnId)));
         if (fail != null) {
             String template = resolve(from, "block");
             line2 = line(template);
             return lines(line1, line2);
         }
         if (from != null) {
-            line1 = lines(maybeAbility(from, pkmnId), line1);
+            line1 = lines(line(maybeAbility(from, pkmnId)), line1);
             String template = resolve(from, "changeAbility");
             line2 = line(template, PH_POKEMON, pokemon(pkmnId), PH_ABILITY, effect(ability), PH_SOURCE, pokemon(of));
             return lines(line1, line2);
@@ -461,7 +461,7 @@ public final class BattleTextBuilder {
 
     public CharSequence endability(PokemonId pkmnId, String ability, String from, String of) {
         if (ability != null) return line(ability(ability, pkmnId));
-        CharSequence line1 = of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId);
+        CharSequence line1 = line(of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId));
         String template = resolve("Gastro Acid", "start");
         CharSequence line2 = line(template, PH_POKEMON, pokemon(pkmnId));
         return lines(line1, line2);
@@ -474,7 +474,7 @@ public final class BattleTextBuilder {
             target = of;
             of = null;
         }
-        CharSequence line1 = of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId);
+        CharSequence line1 = line(of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId));
         CharSequence line2;
         String[] excludes = {"thief", "covet", "bestow", "magician", "pickpocket"};
         if (contains(id, excludes)) {
@@ -501,7 +501,7 @@ public final class BattleTextBuilder {
 
     public CharSequence enditem(PokemonId pkmnId, String item, String from, String of, String eat,
                                 String move, String weaken) {
-        CharSequence line1 = of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId);
+        CharSequence line1 = line(of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId));
         CharSequence line2;
         if (eat != null) {
             String template = resolve(from, "eatItem");
@@ -537,7 +537,7 @@ public final class BattleTextBuilder {
     }
 
     public CharSequence status(PokemonId pkmnId, String status, String from, String of) {
-        CharSequence line1 = of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId);
+        CharSequence line1 = line(of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId));
         CharSequence line2;
         String id = toId(effect(from), null);
         if ("rest".equals(id)) {
@@ -557,7 +557,7 @@ public final class BattleTextBuilder {
             String template = resolve(from, "activate");
             return line(template, PH_POKEMON, pokemon(pkmnId));
         }
-        CharSequence line1 = of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId);
+        CharSequence line1 = line(of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId));
         CharSequence line2;
         if (from != null && from.startsWith("item:")) {
             String template = resolve(status, "endFromItem");
@@ -580,9 +580,9 @@ public final class BattleTextBuilder {
     }
 
     public CharSequence single(PokemonId pkmnId, String effect, String from, String of) {
-        CharSequence line1 = of != null ? maybeAbility(effect, of) : maybeAbility(effect, pkmnId);
+        CharSequence line1 = line(of != null ? maybeAbility(effect, of) : maybeAbility(effect, pkmnId));
         CharSequence line2;
-        if (line1 == null) line1 = of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId);
+        if (line1 == null) line1 = line(of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId));
         String id = toId(effect(effect));
         if (id.equals("instruct")) {
             String template = resolve(effect, "activate");
@@ -619,7 +619,7 @@ public final class BattleTextBuilder {
         if (upkeep != null) {
             return line(resolve(weather, "upkeep", false));
         }
-        CharSequence line1 = maybeAbility(from, of);
+        CharSequence line1 = line(maybeAbility(from, of));
         String template = resolve(weather, "start", false);
         if (template == null) template = formatPlaceHolders(resolve("startFieldEffect"), PH_EFFECT, effect(weather));
         return lines(line1, line(template));
@@ -627,7 +627,7 @@ public final class BattleTextBuilder {
 
     // case '-fieldstart': case '-fieldactivate': {
     public CharSequence field(String cmd, String effect, String from, String of) {
-        CharSequence line1 = maybeAbility(from, of);
+        CharSequence line1 = line(maybeAbility(from, of));
         String templateId = cmd.substring(6);
         String id = toId(effect(effect));
         if ("perishsong".equals(id)) templateId = "start";
@@ -664,7 +664,7 @@ public final class BattleTextBuilder {
             if (pkmnId == null) pkmnId = targetId;
         }
         if (targetId != null) targetId = of != null ? getPokemonId(of) : pkmnId;
-        CharSequence line1 = maybeAbility(effect, pkmnId);
+        CharSequence line1 = line(maybeAbility(effect, pkmnId));
         CharSequence line2;
         if (id.equals("lockon") || id.equals("mindreader")) {
             String template = resolve(effect, "start");
@@ -714,7 +714,7 @@ public final class BattleTextBuilder {
     public CharSequence damage(PokemonId pkmnId, String percentage, String from, String of,
                                String partiallytrapped) {
         String template = resolve(from, "damage", false);
-        CharSequence line1 = of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId);
+        CharSequence line1 = line(of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId));
         CharSequence line2;
         String id = toId(effect(from), null);
         if (template != null) {
@@ -745,7 +745,7 @@ public final class BattleTextBuilder {
 
     public CharSequence heal(PokemonId pkmnId, String from, String of, String wisher) {
         String template = resolve(from, "heal", false);
-        CharSequence line1 = maybeAbility(from, pkmnId);
+        CharSequence line1 = line(maybeAbility(from, pkmnId));
         CharSequence line2;
         if (template != null) {
             line2 = line(template, PH_POKEMON, pokemon(pkmnId), PH_SOURCE, pokemon(of), PH_NICKNAME, pokemon(wisher));
@@ -765,7 +765,7 @@ public final class BattleTextBuilder {
 
     public CharSequence boost(String cmd, PokemonId pkmnId, String stat, String num, String from, String of,
                               String multiple, String zeffect) {
-        CharSequence line1 = of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId);
+        CharSequence line1 = line(of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId));
         CharSequence line2;
         int amount = Utils.parseWithDefault(num, -1);
         String templateId = cmd.substring(1);
@@ -783,7 +783,7 @@ public final class BattleTextBuilder {
     }
 
     public CharSequence setboost(PokemonId pkmnId, String from, String of) {
-        CharSequence line1 = of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId);
+        CharSequence line1 = line(of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId));
         String template = resolve(from, "boost");
         CharSequence line2 = line(template, PH_POKEMON, pokemon(pkmnId));
         return lines(line1, line2);
@@ -810,7 +810,7 @@ public final class BattleTextBuilder {
     */
 
     public CharSequence clearBoost(PokemonId pkmnId, String source, String from, String of, String zEffect) {
-        CharSequence line1 = of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId);
+        CharSequence line1 = line(of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId));
         String templateId = "clearBoost";
         if (zEffect != null) templateId = "clearBoostFromZEffect";
         String template = resolve(from, templateId);
@@ -819,7 +819,7 @@ public final class BattleTextBuilder {
     }
 
     public CharSequence invertBoost(PokemonId pkmnId, String from, String of) {
-        CharSequence line1 = of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId);
+        CharSequence line1 = line(of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId));
         String template = resolve(from, "invertBoost");
         CharSequence line2 = line(template, PH_POKEMON, pokemon(pkmnId));
         return lines(line1, line2);
@@ -838,7 +838,7 @@ public final class BattleTextBuilder {
     }
 
     public CharSequence block(PokemonId pkmnId, String effect, String move, String attacker, String from, String of) {
-        CharSequence line1 = of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId);
+        CharSequence line1 = line(of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId));
         String template = resolve(effect, "block");
         CharSequence line2 = line(template, PH_POKEMON, pokemon(pkmnId), PH_SOURCE, pokemon(attacker != null ? attacker : of),
                 PH_MOVE, move);
@@ -849,7 +849,7 @@ public final class BattleTextBuilder {
                              String msg, String heavy, String weak, String forme) {
         String id = toId(effect(effect), null);
         String blocker = toId(effect(from), null);
-        CharSequence line1 = of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId);
+        CharSequence line1 = line(of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId));
         CharSequence line2;
         String templateId = "block";
         String[] includes = {"desolateland", "primordialsea"};
@@ -889,7 +889,7 @@ public final class BattleTextBuilder {
     }
 
     public CharSequence immune(PokemonId pkmnId, String from, String of, String ohko) {
-        CharSequence line1 = of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId);
+        CharSequence line1 = line(of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId));
         CharSequence line2;
         String template = resolve(from, "block");
         if (template == null) {
@@ -901,7 +901,7 @@ public final class BattleTextBuilder {
     }
 
     public CharSequence miss(PokemonId sourceId, PokemonId targetId, String from, String of) {
-        CharSequence line1 = of != null ? maybeAbility(from, of) : maybeAbility(from, targetId);
+        CharSequence line1 = line(of != null ? maybeAbility(from, of) : maybeAbility(from, targetId));
         CharSequence line2;
         if (targetId == null) {
             String template = resolve("missNoPokemon");
