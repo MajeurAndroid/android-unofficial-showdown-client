@@ -2,6 +2,7 @@ package com.majeur.psclient;
 
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.text.Editable;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.style.RelativeSizeSpan;
@@ -11,19 +12,20 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
+import android.widget.EditText;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.majeur.psclient.model.RoomInfo;
+import com.majeur.psclient.util.SimpleTextWatcher;
 
 import java.util.Arrays;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.DialogFragment;
-
-import static com.majeur.psclient.model.Id.toId;
 
 public class JoinRoomDialog extends DialogFragment {
 
@@ -68,13 +70,38 @@ public class JoinRoomDialog extends DialogFragment {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 RoomInfo roomInfo = (RoomInfo) mListAdapter.getItem(i);
-                String roomId = toId(roomInfo.name);
-                MainActivity activity = (MainActivity) getActivity();
-                activity.getService().sendGlobalCommand("join", roomId);
-                dismiss();
+                joinRoom(roomInfo.name);
+
             }
         });
+        View footerView = getLayoutInflater().inflate(R.layout.list_footer_other_room, listView, false);
+        listView.addFooterView(footerView);
+        final View joinButton = footerView.findViewById(R.id.button_join_room);
+        final EditText editText = footerView.findViewById(R.id.other_room_input);
+        joinButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String input = editText.getText().toString();
+                if (input.startsWith("battle-")) {
+                    Toast.makeText(getContext(), "You cannot join a battle from here", Toast.LENGTH_LONG).show();
+                    return;
+                }
+                joinRoom(input);
+            }
+        });
+        editText.addTextChangedListener(new SimpleTextWatcher() {
+            @Override
+            public void afterTextChanged(Editable editable) {
+                joinButton.setEnabled(editable.length() > 0);
+            }
+        });
+    }
 
+    private void joinRoom(String roomId) {
+        roomId = roomId.toLowerCase().replaceAll("[^a-z0-9-]", "").trim();
+        MainActivity activity = (MainActivity) getActivity();
+        activity.getService().sendGlobalCommand("join", roomId);
+        dismiss();
     }
 
     private final ListAdapter mListAdapter = new BaseAdapter() {

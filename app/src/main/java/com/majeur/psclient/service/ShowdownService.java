@@ -197,6 +197,8 @@ public class ShowdownService extends Service {
                     dispatchMessage(message);
                     if (mGlobalMessageObserver != null) mGlobalMessageObserver.postMessage(message);
                     break;
+                case "noinit":
+                    if (mGlobalMessageObserver != null) mGlobalMessageObserver.postMessage(message);
                 default:
                     dispatchMessage(message);
                     break;

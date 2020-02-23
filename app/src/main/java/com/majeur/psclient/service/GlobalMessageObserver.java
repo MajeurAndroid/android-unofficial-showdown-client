@@ -81,6 +81,10 @@ public abstract class GlobalMessageObserver extends MessageObserver {
             case "deinit":
                 onRoomDeinit(message.roomId);
                 return false; // Must not consume init/deinit commands !
+            case "noinit":
+                if (message.hasNextArg() && "nonexistent".equals(message.nextArg()) && message.hasNextArg())
+                    onShowPopup(message.nextArg());
+                return true;
             default:
                 return false;
         }
