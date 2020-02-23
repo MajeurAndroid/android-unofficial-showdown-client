@@ -254,7 +254,9 @@ public final class BattleTextBuilder {
         return line(resolve("drag"), PH_FULLNAME, pokemonFull(pokemon));
     }
 
-    public CharSequence switchOut(PokemonId pkmnId, String username, String from) {
+    public CharSequence switchOut(BattlingPokemon pokemon, String username, String from) {
+        if (pokemon == null) return null;
+        PokemonId pkmnId = pokemon.id;
         String pokemonName = pokemon(pkmnId);
         String template = resolveOwn(from, "switchOut", !pkmnId.foe);
         return line(template, PH_TRAINER, username, PH_POKEMON, pokemonName,

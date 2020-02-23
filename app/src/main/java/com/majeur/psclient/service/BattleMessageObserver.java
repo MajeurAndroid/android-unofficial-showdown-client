@@ -105,10 +105,9 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
     }
 
     public BattlingPokemon getBattlingPokemon(PokemonId id) {
-        if (id.foe)
-           return mFoePokemons[id.position];
-        else
-            return mTrainerPokemons[id.position];
+        BattlingPokemon[] arr = id.foe ? mFoePokemons : mTrainerPokemons;
+        if (id.position >= 0 && id.position < arr.length) return arr[id.position];
+        return null;
     }
 
     @Override
@@ -291,21 +290,21 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         String raw = msg.rawArgs();
         Player player = getPlayer(raw);
         final BattlingPokemon pokemon = BattlingPokemon.fromSwitchMessage(player, raw);
+        BattlingPokemon prevPoke = getBattlingPokemon(pokemon.id);
 
-        //TODO Handle switch out
         String username = player.username(mP1Username, mP2Username, myUsername());
-        //final Spanned text1 = mBattleTextBuilder.switcOut(player, username, "PREV PKMN");
+        final CharSequence text1 = mBattleTextBuilder.switchOut(prevPoke, username, msg.kwarg("from"));
         final CharSequence text2 = mBattleTextBuilder.switchIn(pokemon, username);
 
         mActionQueue.enqueueMajorAction(new Runnable() {
             @Override
             public void run() {
-                if (pokemon.position >= 0) {
+                if (pokemon.id.isInBattle) {
                     if (pokemon.foe) mFoePokemons[pokemon.position] = pokemon;
                     else mTrainerPokemons[pokemon.position] = pokemon;
                 }
                 onSwitch(pokemon);
-                //displayMajorActionMessage(text1);
+                if (text1 != null) displayMajorActionMessage(text1);
                 displayMajorActionMessage(text2);
             }
         });
@@ -316,17 +315,13 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         Player player = getPlayer(raw);
         final BattlingPokemon pokemon = BattlingPokemon.fromSwitchMessage(player, raw);
 
-        //TODO Handle switch out
-        String username = player.username(mP1Username, mP2Username, myUsername());
-        //final Spanned text1 = mBattleTextBuilder.drag("PREV PKMN");
-        final CharSequence text2 = mBattleTextBuilder.drag(pokemon);
+        final CharSequence text = mBattleTextBuilder.drag(pokemon);
 
         mActionQueue.enqueueMajorAction(new Runnable() {
             @Override
             public void run() {
                 onSwitch(pokemon);
-                //displayMajorActionMessage(text1);
-                displayMajorActionMessage(text2);
+                displayMajorActionMessage(text);
             }
         });
     }
