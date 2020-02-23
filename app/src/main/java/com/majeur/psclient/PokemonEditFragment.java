@@ -86,6 +86,8 @@ public class PokemonEditFragment extends Fragment {
         return fragment;
     }
 
+    private boolean mAttachedToContext;
+
     // Helpers
     private AllSpeciesLoader mSpeciesLoader;
     private AllItemsLoader mItemsLoader;
@@ -137,6 +139,7 @@ public class PokemonEditFragment extends Fragment {
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
+        mAttachedToContext = true;
         mSlotIndex = getArguments().getInt(ARG_SLOT_INDEX);
         TeamEditActivity activity = (TeamEditActivity) context;
         mSpeciesLoader = activity.getSpeciesLoader();
@@ -186,6 +189,7 @@ public class PokemonEditFragment extends Fragment {
         mSpeciesLoader.load(array(""), new DataLoader.Callback<List>() {
             @Override
             public void onLoaded(List[] results) {
+                if (!mAttachedToContext) return;
                 mSpeciesTextView.setAdapter(new ArrayAdapter<>(getContext(),
                         android.R.layout.simple_dropdown_item_1line,
                         results[0]));
@@ -266,6 +270,7 @@ public class PokemonEditFragment extends Fragment {
         mItemsLoader.load(array(""), new DataLoader.Callback<List>() {
             @Override
             public void onLoaded(List[] results) {
+                if (!mAttachedToContext) return;
                 mItemTextView.setAdapter(new ArrayAdapter<>(getContext(),
                         android.R.layout.simple_dropdown_item_1line,
                         results[0]));
@@ -389,6 +394,7 @@ public class PokemonEditFragment extends Fragment {
                         mDexPokemonLoader.load(array(toId(pokemon.species)), new DataLoader.Callback<DexPokemon>() {
                             @Override
                             public void onLoaded(DexPokemon[] results) {
+                                if (!mAttachedToContext) return;
                                 DexPokemon dexPokemon = results[0];
                                 if (dexPokemon == null) { // This pokemon does not have an entry in our dex.json
                                     Toast.makeText(getContext(), "The Pokemon you imported does not exist in current pokedex.",
@@ -423,6 +429,7 @@ public class PokemonEditFragment extends Fragment {
             mDexPokemonLoader.load(array(toId(pokemon.species)), new DataLoader.Callback<DexPokemon>() {
                 @Override
                 public void onLoaded(DexPokemon[] results) {
+                    if (!mAttachedToContext) return;
                     DexPokemon dexPokemon = results[0];
                     if (dexPokemon == null) return; // This pokemon does not have an entry in our dex.json
                     bindExistingPokemon(pokemon); // Binding our data
@@ -434,11 +441,18 @@ public class PokemonEditFragment extends Fragment {
         }
     }
 
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        mAttachedToContext = false;
+    }
+
     private void trySpecies(final String species) {
         String[] query = {toId(species)};
         mDexPokemonLoader.load(query, new DataLoader.Callback<DexPokemon>() {
             @Override
             public void onLoaded(DexPokemon[] results) {
+                if (!mAttachedToContext) return;
                 DexPokemon dexPokemon = results[0];
                 if (dexPokemon == null) {
                     mSpeciesTextView.setText(mCurrentSpecies != null ? mCurrentSpecies.name : null);
@@ -485,6 +499,7 @@ public class PokemonEditFragment extends Fragment {
         mLearnsetLoader.load(query, new DataLoader.Callback<Set>() {
             @Override
             public void onLoaded(Set[] results) {
+                if (!mAttachedToContext) return;
                 final Set<String> moves = results[0];
                 if (moves == null) return;
                 for (int i = 0; i < 4; i++) {
@@ -528,6 +543,7 @@ public class PokemonEditFragment extends Fragment {
                 mMoveDetailsLoader.load(mCurrentMoves, new DataLoader.Callback<Move.Details>() {
                     @Override
                     public void onLoaded(Move.Details[] results) {
+                        if (!mAttachedToContext) return;
                         for (int i = 0; i < results.length; i++) {
                             if (results[i] != null)
                                 mMoveTextViews[i].setText(results[i].name);
