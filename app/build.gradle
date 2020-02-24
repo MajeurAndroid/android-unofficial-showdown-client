@@ -6,8 +6,8 @@ android {
         applicationId "com.majeur.psclient"
         minSdkVersion 21
         targetSdkVersion 29
-        versionCode 7
-        versionName "1.0-alpha05c"
+        versionCode 8
+        versionName "1.0-alpha06"
     }
     buildTypes {
         release {
@@ -21,7 +21,7 @@ dependencies {
     implementation 'com.squareup.okhttp3:okhttp:3.12.1'
     implementation 'com.github.bumptech.glide:glide:4.8.0'
     implementation 'androidx.appcompat:appcompat:1.1.0'
-    implementation 'com.google.android.material:material:1.2.0-alpha04'
+    implementation 'com.google.android.material:material:1.2.0-alpha05'
     implementation 'org.ccil.cowan.tagsoup:tagsoup:1.2'
     implementation 'com.android.support.constraint:constraint-layout:1.1.3'
 }
