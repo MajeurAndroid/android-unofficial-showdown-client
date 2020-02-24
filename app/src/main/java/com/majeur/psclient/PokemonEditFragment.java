@@ -865,7 +865,7 @@ public class PokemonEditFragment extends Fragment {
         private float mNatureModifier;
         private int mEvSum;
 
-        private TextView mEVsValueView;
+        private EditText mEVsValueView;
         private TextView mIVsValueView;
 
         @Override
@@ -893,14 +893,23 @@ public class PokemonEditFragment extends Fragment {
             mIVsValueView = view.findViewById(R.id.ivs_text_view);
             TextView titleView = view.findViewById(R.id.title_text_view);
             titleView.setText(mStatName);
-            SeekBar seekBar = view.findViewById(R.id.seek_bar_evs);
+            final SeekBar seekBar = view.findViewById(R.id.seek_bar_evs);
             seekBar.setOnSeekBarChangeListener(this);
             seekBar.setProgress(mEv);
             mEVsValueView.setText(Integer.toString(mEv));
-            seekBar = view.findViewById(R.id.seek_bar_ivs);
-            seekBar.setOnSeekBarChangeListener(this);
-            seekBar.setProgress(mIv);
+            SeekBar seekBar2 = view.findViewById(R.id.seek_bar_ivs);
+            seekBar2.setOnSeekBarChangeListener(this);
+            seekBar2.setProgress(mIv);
             mIVsValueView.setText(Integer.toString(mIv));
+
+            mEVsValueView.addTextChangedListener(new RangeNumberTextWatcher(0, 252));
+            mEVsValueView.addTextChangedListener(new SimpleTextWatcher() {
+                @Override
+                public void afterTextChanged(Editable editable) {
+                    Integer val = parseInt(editable.toString());
+                    if (val != null) seekBar.setProgress(val);
+                }
+            });
 
             view.findViewById(R.id.ok_button).setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -915,7 +924,9 @@ public class PokemonEditFragment extends Fragment {
         @Override
         public void onProgressChanged(SeekBar seekBar, int progress, boolean b) {
             if (seekBar.getId() == R.id.seek_bar_evs) {
-                mEVsValueView.setText(Integer.toString(progress));
+                Integer currentVal = parseInt(mEVsValueView.getText().toString());
+                if (currentVal == null || currentVal != progress)
+                    mEVsValueView.setText(Integer.toString(progress));
                 mEv = progress;
             } else {
                 mIVsValueView.setText(Integer.toString(progress));
