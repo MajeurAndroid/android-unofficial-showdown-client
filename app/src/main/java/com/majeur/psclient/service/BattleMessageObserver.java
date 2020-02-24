@@ -542,10 +542,10 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
             case "center":
                 break;
             case "start":
-                handleVolatileStatusStart(message, true);
+                handleVolatileStatus(message, true);
                 break;
             case "end":
-                handleVolatileStatusStart(message, false);
+                handleVolatileStatus(message, false);
                 break;
             case "block":
                 handleBlock(message);
@@ -1003,7 +1003,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         });
     }
 
-    private void handleVolatileStatusStart(ServerMessage msg, final boolean start) {
+    private void handleVolatileStatus(ServerMessage msg, final boolean start) {
         boolean silent = msg.hasKwarg("silent");
         if (silent) return;
         String rawId = msg.nextArg();
