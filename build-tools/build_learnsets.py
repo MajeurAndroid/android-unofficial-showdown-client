@@ -20,16 +20,28 @@ set_log_p()
 for poke_entry in properties:
    species = poke_entry['key']['name']
    learnset_entry = poke_entry['value']['properties'][0]
-   move_entries = learnset_entry['value']['properties']
-   moves = []
-   for move_entry in move_entries:    
-       log_p()
-       key_entry = move_entry['key']
-       if 'raw' in key_entry.keys():
-           moves.append(move_entry['key']['raw']) # 'return' move case
+   has_learnset = learnset_entry['value']['type'] == 'ObjectExpression'
+   if has_learnset:
+       move_entries = learnset_entry['value']['properties']
+       moves = []
+       for move_entry in move_entries:    
+           log_p()
+           key_entry = move_entry['key']
+           if 'raw' in key_entry.keys():
+               moves.append(move_entry['key']['raw']) # 'return' move case
+           else:
+               moves.append(move_entry['key']['name'])           
+       learnsets[species] = moves
+   else:
+       base_species = ''
+       for s in learnsets.keys():
+           if species.startswith(s) and species != s:
+               base_species = s
+       if len(base_species) > 0:
+           learnsets[species] = learnsets[base_species]
+           log("No learnset for {}, using {}'s learnset.".format(species, base_species))
        else:
-           moves.append(move_entry['key']['name'])           
-   learnsets[species] = moves
+           log("No learnset for {}. No other related species found. Passing.".format(species))
 log("\nDone")
 
 data = get_remote_data(url_js_file2)

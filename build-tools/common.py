@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
+import os
 import requests
 import time
+import hashlib
 
 def int_val(v):
     if type(v) is bool:
@@ -41,6 +43,13 @@ def get_remote_data(url, utf8=True):
         return data.content
 	
 def write_into_file(path, data, binary=False):
+    print("Hashing...")
+    local_md5 = fmd5(path)
+    new_md5 = md5(data)
+    if local_md5 == new_md5:
+        print("Local data is up to date. (md5: {})".format(local_md5))
+        return False
+    print("Local data isn't up to date. (local md5: {}, new md5: {})".format(local_md5, new_md5))
     if (input("Override {} ? [y/n]".format(path)).strip() != "y"):
         return False
     print("Writing data into " + path + "...")
@@ -61,6 +70,22 @@ def safe_key_name(key_element):
         return key_element['name']
     else:
         return key_element['value']
+    
+def fmd5(path):
+    if os.path.exists(path) == False:
+        return ''
+    hash_md5 = hashlib.md5()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
+
+def md5(data):
+    hash_md5 = hashlib.md5()
+    if isinstance(data, str):
+        data = data.encode('utf-8')
+    hash_md5.update(data)
+    return hash_md5.hexdigest()
 	
 def finish():
 	print("")
