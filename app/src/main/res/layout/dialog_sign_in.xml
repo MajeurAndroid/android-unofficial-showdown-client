@@ -14,31 +14,43 @@
         android:textAppearance="@style/TextAppearance.MaterialComponents.Headline5"
         android:text="Pick a user name"/>
 
-    <EditText
-        android:id="@+id/edit_text_username"
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="240dp"
+        android:layout_height="wrap_content">
+
+        <EditText
+            android:id="@+id/edit_text_username"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textVisiblePassword"
+            android:singleLine="true"
+            android:imeOptions="actionGo"
+            android:hint="Username"/>
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
         android:layout_width="240dp"
         android:layout_height="wrap_content"
-        android:inputType="textVisiblePassword"
-        android:singleLine="true"
-        android:imeOptions="actionGo"
-        android:hint="Username"/>
+        android:layout_marginTop="8dp"
+        android:enabled="false">
+
+        <EditText
+            android:id="@+id/edit_text_password"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:singleLine="true"
+            android:imeOptions="actionGo"
+            android:inputType="textPassword"
+            android:hint="Password"/>
+
+    </com.google.android.material.textfield.TextInputLayout>
 
     <TextView
         android:id="@+id/text_view_message"
         android:layout_width="240dp"
         android:layout_height="wrap_content"
         android:textColor="#c70000"/>
-
-    <EditText
-        android:id="@+id/edit_text_password"
-        android:layout_width="240dp"
-        android:layout_height="wrap_content"
-        android:minWidth="240dp"
-        android:singleLine="true"
-        android:imeOptions="actionGo"
-        android:enabled="false"
-        android:inputType="textPassword"
-        android:hint="Password"/>
 
     <Button
         android:id="@+id/button_signin"

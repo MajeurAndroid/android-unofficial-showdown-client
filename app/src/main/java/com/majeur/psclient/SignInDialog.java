@@ -1,6 +1,7 @@
 package com.majeur.psclient;
 
 import android.os.Bundle;
+import android.text.Editable;
 import android.text.InputFilter;
 import android.text.Spanned;
 import android.view.KeyEvent;
@@ -12,7 +13,9 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.google.android.material.textfield.TextInputLayout;
 import com.majeur.psclient.service.ShowdownService;
+import com.majeur.psclient.util.SimpleTextWatcher;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -25,6 +28,7 @@ public class SignInDialog extends DialogFragment implements View.OnClickListener
     }
 
     private EditText mUsernameEditText;
+    private TextInputLayout mUsernameInputLayout;
     private TextView mMessageTextView;
     private EditText mPasswordEditText;
     private Button mSignInButton;
@@ -41,9 +45,20 @@ public class SignInDialog extends DialogFragment implements View.OnClickListener
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         mUsernameEditText = view.findViewById(R.id.edit_text_username);
-        mUsernameEditText.setFilters(new InputFilter[] {new UserNameFilter(), new InputFilter.LengthFilter(18)});
+        //mUsernameEditText.setFilters(new InputFilter[] {new UserNameFilter(), new InputFilter.LengthFilter(18)});
+        mUsernameEditText.addTextChangedListener(new SimpleTextWatcher() {
+            @Override
+            public void afterTextChanged(Editable editable) {
+                if (!editable.toString().matches("[a-zA-Z0-9 _]*"))
+                    mUsernameInputLayout.setError("Must only contain letters, spaces and _ character.");
+                else
+                    mUsernameInputLayout.setErrorEnabled(false);
+
+            }
+        });
         mUsernameEditText.requestFocus();
         mUsernameEditText.setOnEditorActionListener(mEnterPressListener);
+        mUsernameInputLayout = (TextInputLayout) mUsernameEditText.getParent().getParent(); // TextInputLayout wraps its child in a FrameLayout
 
         mMessageTextView = view.findViewById(R.id.text_view_message);
 
@@ -71,7 +86,7 @@ public class SignInDialog extends DialogFragment implements View.OnClickListener
             if (mUsernameEditText.getText().length() < 2)
                 return;
 
-            mUsernameEditText.setEnabled(false);
+            mUsernameInputLayout.setEnabled(false);
             mSignInButton.setText("Loading...");
             mSignInButton.setEnabled(false);
             ((MainActivity) getActivity()).getService()
@@ -103,7 +118,7 @@ public class SignInDialog extends DialogFragment implements View.OnClickListener
                     mPromptUserPassword = true;
                 } else {
                     mMessageTextView.setText(reason);
-                    mUsernameEditText.setEnabled(true);
+                    mUsernameInputLayout.setEnabled(true);
                     mSignInButton.setText("Sign in");
                     mSignInButton.setEnabled(true);
                 }
