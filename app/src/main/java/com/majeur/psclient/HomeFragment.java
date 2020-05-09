@@ -54,6 +54,9 @@ import static com.majeur.psclient.util.Utils.truncate;
 
 public class HomeFragment extends Fragment implements MainActivity.Callbacks {
 
+    private static final String URL_BUG_REPORT_GFORM = "https://docs.google.com/forms/d/e/1FAIpQLSfvaHpKtRhN-naHtmaIongBRzjU0rmPXu770tvjseWUNky48Q/viewform?usp=send_form";
+    private static final String URL_SMOGON_THREAD = "https://www.smogon.com/forums/threads/02-23-alpha06-unofficial-showdown-android-client.3654298/";
+
     private ShowdownService mService;
     private DexIconLoader mDexIconLoader;
 
@@ -287,23 +290,27 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
 //                mService.sendGlobalCommand("cmd", "roomlist");
 //            }
 //        });
-        view.findViewById(R.id.button_reportbug).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                String formUrl = "https://docs.google.com/forms/d/e/1FAIpQLSfvaHpKtRhN-naHtmaIongBRzjU0rmPXu770tvjseWUNky48Q/viewform?usp=send_form";
-                try {
-                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(formUrl));
-                    intent.setPackage("com.android.chrome"); // Try to use chrome to autoconnect to GForms
-                    startActivity(intent);
-                } catch (ActivityNotFoundException e1) {
-                    try {
-                        startActivity( new Intent(Intent.ACTION_VIEW, Uri.parse(formUrl))); // Fallback to default browser
-                    } catch (ActivityNotFoundException e2) {
-                        Snackbar.make(getView(), "No web browser found.", Snackbar.LENGTH_SHORT).show();
-                    }
-                }
+        view.findViewById(R.id.button_reportbug).setOnClickListener(view1 -> new AlertDialog.Builder(getContext())
+                .setTitle("Wait a minute !")
+                .setMessage("If the bug you want to report needs a detailed description to be clearly understood, please consider posting on the Smogon forum thread.\nIf not, you can continue to the form.\nThanks !")
+                .setPositiveButton("Continue", (dialog, which) -> openUrl(URL_BUG_REPORT_GFORM, true))
+                .setNeutralButton("Go to smogon thread", (dialog, which) -> openUrl(URL_SMOGON_THREAD, false))
+                .setNegativeButton("Cancel", null)
+                .show());
+    }
+
+    private void openUrl(String url, boolean useChrome) {
+        try {
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            if (useChrome) intent.setPackage("com.android.chrome"); // Try to use chrome to autoconnect to GForms
+            startActivity(intent);
+        } catch (ActivityNotFoundException e1) {
+            try {
+                startActivity( new Intent(Intent.ACTION_VIEW, Uri.parse(url))); // Fallback to default browser
+            } catch (ActivityNotFoundException e2) {
+                Snackbar.make(getView(), "No web browser found.", Snackbar.LENGTH_SHORT).show();
             }
-        });
+        }
     }
 
     public int compareBattleFormats(String f1, String f2) {
@@ -624,13 +631,10 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
         @Override
         protected void onNetworkError() {
             Snackbar.make(getView(), "Unable to reach Showdown server", Snackbar.LENGTH_INDEFINITE)
-                    .setAction("Retry", new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            Snackbar.make(getView(), "Reconnecting to Showdown server...",
-                                    Snackbar.LENGTH_INDEFINITE).show();
-                            getService().reconnectToServer();
-                        }
+                    .setAction("Retry", view -> {
+                        Snackbar.make(getView(), "Reconnecting to Showdown server...",
+                                Snackbar.LENGTH_INDEFINITE).show();
+                        getService().reconnectToServer();
                     })
                     .show();
         }
