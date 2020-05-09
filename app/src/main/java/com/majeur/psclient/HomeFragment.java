@@ -15,7 +15,13 @@ import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.*;
+import android.widget.AdapterView;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.Spinner;
+import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
@@ -39,7 +45,12 @@ import java.util.List;
 
 import static com.majeur.psclient.model.Id.toId;
 import static com.majeur.psclient.model.Id.toIdSafe;
-import static com.majeur.psclient.util.Utils.*;
+import static com.majeur.psclient.util.Utils.boldText;
+import static com.majeur.psclient.util.Utils.coloredText;
+import static com.majeur.psclient.util.Utils.italicText;
+import static com.majeur.psclient.util.Utils.smallText;
+import static com.majeur.psclient.util.Utils.str;
+import static com.majeur.psclient.util.Utils.truncate;
 
 public class HomeFragment extends Fragment implements MainActivity.Callbacks {
 
