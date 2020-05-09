@@ -9,6 +9,7 @@ import android.os.Looper;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.majeur.psclient.util.S;
 import okhttp3.Call;
@@ -215,52 +216,46 @@ public class ShowdownService extends Service {
     private final WebSocketListener mWebSocketListener = new WebSocketListener() {
 
         @Override
-        public void onOpen(WebSocket webSocket, Response response) {
+        public void onOpen(@NonNull WebSocket webSocket, @NonNull Response response) {
             mConnected.set(true);
             Log.w(TAG + "[OPEN]", "");
         }
 
         @Override
-        public void onMessage(WebSocket webSocket, final String data) {
+        public void onMessage(@NonNull WebSocket webSocket, @NonNull final String data) {
             Log.w(TAG + "[RECEIVE]", data);
-            mUiHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    if (mGlobalMessageObserver == null && mMessageObservers.isEmpty()) {
-                        mMessageCache.add(data);
-                    } else {
-                        while (!mMessageCache.isEmpty())
-                            processServerData(mMessageCache.remove());
-                        processServerData(data);
-                    }
+            mUiHandler.post(() -> {
+                if (mGlobalMessageObserver == null && mMessageObservers.isEmpty()) {
+                    mMessageCache.add(data);
+                } else {
+                    while (!mMessageCache.isEmpty())
+                        processServerData(mMessageCache.remove());
+                    processServerData(data);
                 }
             });
         }
 
 
         @Override
-        public void onClosing(WebSocket webSocket, int code, String reason) {
+        public void onClosing(@NonNull WebSocket webSocket, int code, @NonNull String reason) {
             Log.w(TAG + "[CLOSING]", reason);
         }
 
         @Override
-        public void onFailure(WebSocket webSocket, Throwable t, Response response) {
+        public void onFailure(@NonNull WebSocket webSocket, Throwable t, Response response) {
             Log.w(TAG + "[ERR]", t.toString());
             mConnected.set(false);
             mWebSocket = null;
 
-            mUiHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (mGlobalMessageObserver != null)
-                            mGlobalMessageObserver.postMessage(new ServerMessage(null, "|error|network"));
-                    }
-                });
+            mUiHandler.post(() -> {
+                if (mGlobalMessageObserver != null)
+                    mGlobalMessageObserver.postMessage(new ServerMessage(null, "|error|network"));
+            });
 
         }
 
         @Override
-        public void onClosed(WebSocket webSocket, int code, String reason) {
+        public void onClosed(@NonNull WebSocket webSocket, int code, @NonNull String reason) {
             Log.w(TAG + "[CLOSED]", reason);
             mConnected.set(false);
             mWebSocket = null;
@@ -283,7 +278,8 @@ public class ShowdownService extends Service {
 
         mOkHttpClient.newCall(request).enqueue(new Callback() {
             @Override
-            public void onResponse(Call call, Response response) throws IOException {
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (response.body() == null) return;
                 String rawResponse = response.body().string();
                 if (rawResponse.charAt(0) != ']')
                     return;
@@ -300,7 +296,7 @@ public class ShowdownService extends Service {
             }
 
             @Override
-            public void onFailure(Call call, IOException e) {
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
 
             }
         });
@@ -318,7 +314,8 @@ public class ShowdownService extends Service {
 
         mOkHttpClient.newCall(request).enqueue(new Callback() {
             @Override
-            public void onResponse(Call call, Response response) throws IOException {
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (response.body() == null) return;
                 final String rawResponse = response.body().string();
 
                 final boolean errorInUsername = rawResponse.startsWith(";;");
@@ -328,22 +325,19 @@ public class ShowdownService extends Service {
                     storeAuthCookieIfAny(response.headers("Set-Cookie"));
                 }
 
-                mUiHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (errorInUsername) {
-                            callback.onSignInAttempted(false, false, rawResponse.substring(2));
-                        } else if (userRegistered) {
-                            callback.onSignInAttempted(false, true, "This name is registered");
-                        } else {
-                            callback.onSignInAttempted(true, false, null);
-                        }
+                mUiHandler.post(() -> {
+                    if (errorInUsername) {
+                        callback.onSignInAttempted(false, false, rawResponse.substring(2));
+                    } else if (userRegistered) {
+                        callback.onSignInAttempted(false, true, "This name is registered");
+                    } else {
+                        callback.onSignInAttempted(true, false, null);
                     }
                 });
             }
 
             @Override
-            public void onFailure(Call call, IOException e) {
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
 
             }
         });
@@ -367,7 +361,8 @@ public class ShowdownService extends Service {
 
         mOkHttpClient.newCall(request).enqueue(new Callback() {
             @Override
-            public void onResponse(Call call, Response response) throws IOException {
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (response.body() == null) return;
                 final String rawResponse = response.body().string();
                 if (rawResponse.charAt(0) != ']')
                     return;
@@ -379,23 +374,14 @@ public class ShowdownService extends Service {
                         storeAuthCookieIfAny(response.headers("Set-Cookie"));
                         sendTrnMessage(username, assertion);
                     }
-                    mUiHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (success) {
-                                callback.onSignInAttempted(success, true, null);
-                            } else {
-                                callback.onSignInAttempted(false, true, null);
-                            }
-                        }
-                    });
+                    mUiHandler.post(() -> callback.onSignInAttempted(success, true, null));
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
             }
 
             @Override
-            public void onFailure(Call call, IOException e) {
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
 
             }
         });
@@ -462,6 +448,6 @@ public class ShowdownService extends Service {
     }
 
     public interface AttemptSignInCallback {
-        public void onSignInAttempted(boolean success, boolean registeredUsername, String reason);
+        void onSignInAttempted(boolean success, boolean registeredUsername, String reason);
     }
 }
