@@ -88,17 +88,17 @@ public abstract class GlobalMessageObserver extends AbsMessageObserver {
         }
     }
 
-    private void processChallengeString(ServerMessage args) {
-        getService().setChallengeString(args.rawArgs());
+    private void processChallengeString(ServerMessage msg) {
+        getService().setChallengeString(msg.rawArgs());
         getService().tryCookieSignIn();
     }
 
-    private void processUpdateUser(ServerMessage args) {
-        String username = args.nextArg().trim();
-        if (username.charAt(0) == '!' || username.charAt(0) == '@')
-            username = username.substring(1);
-        boolean isGuest = "0".equals(args.nextArg());
-        String avatar = args.nextArg();
+    private void processUpdateUser(ServerMessage msg) {
+        String username = msg.nextArg();
+        String userType = username.substring(0, 1);
+        username = username.substring(1);
+        boolean isGuest = "0".equals(msg.nextArg());
+        String avatar = msg.nextArg();
         avatar = ("000" + avatar).substring(avatar.length());
 
         mUserName = username;
@@ -106,16 +106,16 @@ public abstract class GlobalMessageObserver extends AbsMessageObserver {
         getService().putSharedData("username", username);
         onUserChanged(username, isGuest, avatar);
 
-        // Update server counts
+        // Update server counts (active battle and active users)
         mRequestServerCountsOnly = true;
         getService().sendGlobalCommand("cmd", "rooms");
 
         // onSearchBattlesChanged(new String[0], new String[0], new String[0]); TODO Wtf was this call ?
     }
 
-    private void processQueryResponse(ServerMessage args) {
-        String query = args.nextArg();
-        String queryContent = args.nextArg();
+    private void processQueryResponse(ServerMessage msg) {
+        String query = msg.nextArg();
+        String queryContent = msg.nextArg();
         switch (query) {
             case "rooms":
                 processRoomsQueryResponse(queryContent);
@@ -217,8 +217,8 @@ public abstract class GlobalMessageObserver extends AbsMessageObserver {
         }
     }
 
-    private void processAvailableFormats(ServerMessage args) {
-        String rawText = args.rawArgs();
+    private void processAvailableFormats(ServerMessage msg) {
+        String rawText = msg.rawArgs();
         List<BattleFormat.Category> battleFormatCategories = new LinkedList<>(); // /!\ needs to impl Serializable
         BattleFormat.Category currentCategory = null;
         int separator;
@@ -250,10 +250,10 @@ public abstract class GlobalMessageObserver extends AbsMessageObserver {
         onBattleFormatsChanged(battleFormatCategories);
     }
 
-    private void handlePopup(ServerMessage args) {
-        StringBuilder text = new StringBuilder(args.nextArg());
-        while (args.hasNextArg()) {
-            String next = args.nextArg();
+    private void handlePopup(ServerMessage msg) {
+        StringBuilder text = new StringBuilder(msg.nextArg());
+        while (msg.hasNextArg()) {
+            String next = msg.nextArg();
             if (!TextUtils.isEmpty(next))
                 text.append("\n").append(next);
         }

@@ -99,7 +99,7 @@ public class ServerMessage {
                 String value = next.substring(key.length() + 2).trim();
                 kwargs.put(key, value);
             } else {
-                args.add(next.trim());
+                args.add(next);
             }
         }
         mArgsIterator = args.iterator();
