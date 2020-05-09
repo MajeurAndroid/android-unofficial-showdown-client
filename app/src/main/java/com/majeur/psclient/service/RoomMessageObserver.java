@@ -8,7 +8,6 @@ import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
-
 import com.majeur.psclient.model.User;
 import com.majeur.psclient.util.TextTagSpan;
 import com.majeur.psclient.util.Utils;
@@ -20,7 +19,7 @@ import java.util.Map;
 
 import static com.majeur.psclient.model.Id.toId;
 
-public abstract class RoomMessageObserver extends MessageObserver {
+public abstract class RoomMessageObserver extends AbsMessageObserver {
 
     private static final String TAG = RoomMessageObserver.class.getSimpleName();
 

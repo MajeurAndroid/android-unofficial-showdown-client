@@ -2,7 +2,7 @@ package com.majeur.psclient.service;
 
 import android.text.TextUtils;
 
-public abstract class MessageObserver {
+public abstract class AbsMessageObserver {
 
     private ShowdownService mService;
     private String mObservedRoomId;

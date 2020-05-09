@@ -9,9 +9,18 @@ import android.os.Looper;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
-
+import androidx.annotation.Nullable;
 import com.majeur.psclient.util.S;
-
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.HttpUrl;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+import okhttp3.WebSocket;
+import okhttp3.WebSocketListener;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -23,18 +32,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import androidx.annotation.Nullable;
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.HttpUrl;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
-import okhttp3.WebSocket;
-import okhttp3.WebSocketListener;
 
 public class ShowdownService extends Service {
 
@@ -53,8 +50,8 @@ public class ShowdownService extends Service {
 
     private AtomicBoolean mConnected;
 
-    private MessageObserver mGlobalMessageObserver;
-    private List<MessageObserver> mMessageObservers;
+    private AbsMessageObserver mGlobalMessageObserver;
+    private List<AbsMessageObserver> mMessageObservers;
     private Map<String, Object> mHandlersSharedData;
     private String mChallengeString;
 
@@ -140,7 +137,7 @@ public class ShowdownService extends Service {
         }
     }
 
-    public void registerMessageObserver(MessageObserver observer, boolean asGlobal) {
+    public void registerMessageObserver(AbsMessageObserver observer, boolean asGlobal) {
         if (asGlobal) {
             if (mGlobalMessageObserver != null)
                 unregisterMessageObserver(mGlobalMessageObserver);
@@ -151,7 +148,7 @@ public class ShowdownService extends Service {
         observer.attachService(this);
     }
 
-    public void unregisterMessageObserver(MessageObserver observer) {
+    public void unregisterMessageObserver(AbsMessageObserver observer) {
         if (observer == mGlobalMessageObserver)
             mGlobalMessageObserver = null;
         else
@@ -207,7 +204,7 @@ public class ShowdownService extends Service {
     }
 
     private void dispatchMessage(ServerMessage message) {
-        for (MessageObserver observer : mMessageObservers)
+        for (AbsMessageObserver observer : mMessageObservers)
             observer.postMessage(message);
     }
 

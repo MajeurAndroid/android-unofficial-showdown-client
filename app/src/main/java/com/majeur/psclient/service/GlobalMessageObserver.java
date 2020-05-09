@@ -15,7 +15,7 @@ import java.util.List;
 
 import static com.majeur.psclient.util.Utils.jsonObject;
 
-public abstract class GlobalMessageObserver extends MessageObserver {
+public abstract class GlobalMessageObserver extends AbsMessageObserver {
 
     private static final String TAG = GlobalMessageObserver.class.getSimpleName();
 
