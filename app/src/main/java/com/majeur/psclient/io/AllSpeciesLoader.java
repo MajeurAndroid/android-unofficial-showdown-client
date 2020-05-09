@@ -3,7 +3,6 @@ package com.majeur.psclient.io;
 import android.content.Context;
 import android.content.res.Resources;
 import android.util.JsonReader;
-
 import com.majeur.psclient.R;
 import com.majeur.psclient.model.Species;
 
@@ -84,7 +83,7 @@ public class AllSpeciesLoader extends DataLoader<String, List> {
             while (mJsonReader.hasNext()) {
                 final String name = mJsonReader.nextName();
                 switch (name) {
-                    case "species":
+                    case "name":
                         species.name = mJsonReader.nextString();
                         break;
                     case "forme":
