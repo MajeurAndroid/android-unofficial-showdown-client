@@ -1,4 +1,4 @@
-# <img alt="Unofficial PS client icon" src="https://github.com/MajeurAndroid/Android-Unoffical-Showdown-Client/blob/master/web_hi_res_512.png" width="48"></img>Android PS Client
+# <img alt="Unofficial PS client icon" src="https://github.com/MajeurAndroid/Android-Unoffical-Showdown-Client/blob/master/web/ic_launcher-web.png" width="48"></img>Android PS Client
 
 ## Content
 * [Introduction](#introduction)
