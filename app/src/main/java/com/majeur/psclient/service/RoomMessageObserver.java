@@ -185,9 +185,9 @@ public abstract class RoomMessageObserver extends AbsMessageObserver {
         applyStylingTags(spannable);
         if (announce) {
             spannable.setSpan(new BackgroundColorSpan(parseColor("#678CB1")),
-                    user.length()+1, spannable.length(), Spannable.SPAN_INCLUSIVE_EXCLUSIVE);
+                    user.length()+2, spannable.length(), Spannable.SPAN_INCLUSIVE_EXCLUSIVE);
             spannable.setSpan(new ForegroundColorSpan(Color.WHITE),
-                    user.length()+1, spannable.length(), Spannable.SPAN_INCLUSIVE_EXCLUSIVE);
+                    user.length()+2, spannable.length(), Spannable.SPAN_INCLUSIVE_EXCLUSIVE);
         }
         printMessage(spannable);
         if (html != null) printHtml(prepareForHtml(html));
