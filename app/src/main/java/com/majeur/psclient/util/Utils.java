@@ -304,13 +304,15 @@ public class Utils {
             tokenOpen = MD_TOKENS_OP[i];
             tokenClose = MD_TOKENS_CL[i];
             closeIndex = -1;
+            boolean urlToken = tokenOpen.contains("http");
             while ((openIndex = builder.indexOf(tokenOpen, closeIndex + 1)) != -1) {
-                if ((closeIndex = builder.indexOf(tokenClose, openIndex + 1)) == -1) break;
-                if (!tokenOpen.contains("http")) {
+                if ((closeIndex = builder.indexOf(tokenClose, openIndex + 1)) == -1 && !urlToken) break; // Leave a chance to close an url span
+                if (!urlToken) {
                     builder.delete(openIndex, openIndex + tokenOpen.length());
                     closeIndex -= tokenOpen.length();
                     builder.delete(closeIndex, closeIndex + tokenClose.length());
                 }
+                if (closeIndex == -1) closeIndex = builder.length(); // Url end token not found, so we are at the end of our string
                 span = MD_SPANS[i].get(builder.substring(openIndex, closeIndex));
                 builder.setSpan(span, openIndex, closeIndex, Spannable.SPAN_INCLUSIVE_EXCLUSIVE);
             }
