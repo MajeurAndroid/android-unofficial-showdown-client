@@ -2,11 +2,9 @@ package com.majeur.psclient.service;
 
 import android.text.TextUtils;
 import android.util.Log;
-
 import com.majeur.psclient.model.AvailableBattleRoomsInfo;
 import com.majeur.psclient.model.BattleFormat;
 import com.majeur.psclient.model.RoomInfo;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -112,7 +110,7 @@ public abstract class GlobalMessageObserver extends MessageObserver {
         mRequestServerCountsOnly = true;
         getService().sendGlobalCommand("cmd", "rooms");
 
-        onSearchBattlesChanged(new String[0], new String[0]);
+        // onSearchBattlesChanged(new String[0], new String[0], new String[0]); TODO Wtf was this call ?
     }
 
     private void processQueryResponse(ServerMessage args) {
@@ -265,6 +263,15 @@ public abstract class GlobalMessageObserver extends MessageObserver {
     private void handleUpdateSearch(ServerMessage msg) {
         JSONObject jsonObject = jsonObject(msg.rawArgs());
         if (jsonObject == null) return;
+        String[] searching;
+        JSONArray jsonArray = jsonObject.optJSONArray("searching");
+        if (jsonArray == null) {
+            searching = new String[0];
+        } else {
+            searching = new String[jsonArray.length()];
+            for (int i = 0; i < searching.length; i++)
+                searching[i] = jsonArray.optString(i);
+        }
         JSONObject games = jsonObject.optJSONObject("games");
         String[] battleRoomIds;
         String[] battleRoomNames;
@@ -281,7 +288,7 @@ public abstract class GlobalMessageObserver extends MessageObserver {
                 battleRoomNames[i] = games.optString(key);
             }
         }
-        onSearchBattlesChanged(battleRoomIds, battleRoomNames);
+        onSearchBattlesChanged(searching, battleRoomIds, battleRoomNames);
     }
 
     protected abstract void onUserChanged(String userName, boolean isGuest, String avatarId);
@@ -290,7 +297,7 @@ public abstract class GlobalMessageObserver extends MessageObserver {
 
     protected abstract void onBattleFormatsChanged(List<BattleFormat.Category> battleFormats);
 
-    protected abstract void onSearchBattlesChanged(String[] battleRoomIds, String[] battleRoomNames);
+    protected abstract void onSearchBattlesChanged(String[] searching, String[] battleRoomIds, String[] battleRoomNames);
 
     protected abstract void onUserDetails(String id, String name, boolean online, String group, List<String> rooms, List<String> battles);
 

@@ -15,14 +15,11 @@ import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ImageButton;
-import android.widget.ImageView;
-import android.widget.Spinner;
-import android.widget.TextView;
-
+import android.widget.*;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.fragment.app.Fragment;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
 import com.majeur.psclient.io.DataLoader;
@@ -40,19 +37,9 @@ import com.majeur.psclient.widget.CategoryAdapter;
 import java.util.Collections;
 import java.util.List;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
-import androidx.fragment.app.Fragment;
-
 import static com.majeur.psclient.model.Id.toId;
 import static com.majeur.psclient.model.Id.toIdSafe;
-import static com.majeur.psclient.util.Utils.boldText;
-import static com.majeur.psclient.util.Utils.coloredText;
-import static com.majeur.psclient.util.Utils.italicText;
-import static com.majeur.psclient.util.Utils.smallText;
-import static com.majeur.psclient.util.Utils.str;
-import static com.majeur.psclient.util.Utils.truncate;
+import static com.majeur.psclient.util.Utils.*;
 
 public class HomeFragment extends Fragment implements MainActivity.Callbacks {
 
@@ -67,6 +54,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
     private View mCurrentBattlesContainer;
     private ViewGroup mBattleButtonsContainer;
     private Button mBattleButton;
+    private Button mCancelSearchButton;
     private ImageButton mSoundButton;
     private Spinner mFormatsSpinner;
     private Spinner mTeamsSpinner;
@@ -230,8 +218,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
                     } else {
                         boolean searchRequested = searchForBattle();
                         if (searchRequested) {
-                            mBattleButton.setText("Searching...");
-                            mBattleButton.setEnabled(false);
+                            //
                         }
                     }
                 }
@@ -247,6 +234,14 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
                 int resId = mSoundEnabled ? R.drawable.ic_sound_on : R.drawable.ic_sound_off;
                 mSoundButton.setImageResource(resId);
                 Preferences.setPreference(getContext(), "sound", mSoundEnabled);
+            }
+        });
+        mCancelSearchButton = view.findViewById(R.id.button_cancel_search);
+        mCancelSearchButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mService == null || !mService.isConnected()) return;
+                mService.sendGlobalCommand("cancelsearch");
             }
         });
         mBattleButtonsContainer = view.findViewById(R.id.joinedBattleContainer);
@@ -472,7 +467,24 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
         }
 
         @Override
-        protected void onSearchBattlesChanged(String[] battleRoomIds, String[] battleRoomNames) {
+        protected void onSearchBattlesChanged(String[] searching, String[] battleRoomIds, String[] battleRoomNames) {
+            if (searching.length > 0) {
+                mBattleButton.setText("Searching...");
+                mBattleButton.setEnabled(false);
+                mCancelSearchButton.setVisibility(View.VISIBLE);
+                mCancelSearchButton.setAlpha(0f);
+                mCancelSearchButton.animate().alpha(1f).setDuration(250).withEndAction(null).start();
+            } else {
+                mBattleButton.setText("Battle !");
+                mBattleButton.setEnabled(true);
+                mCancelSearchButton.animate().alpha(0f).setDuration(250).withEndAction(new Runnable() {
+                    @Override
+                    public void run() {
+                        mCancelSearchButton.setVisibility(View.GONE);
+                    }
+                }).start();
+            }
+
             mBattleButtonsContainer.removeAllViews();
             if (battleRoomIds.length == 0) {
                 mCurrentBattlesContainer.setVisibility(View.GONE);
@@ -542,11 +554,6 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
                 }
             });
             snackbar.show();
-
-            if (!mBattleButton.isEnabled()) { // Possible team reject when searching for battle
-                mBattleButton.setText("Battle !");
-                mBattleButton.setEnabled(true);
-            }
         }
 
         @Override
@@ -575,8 +582,6 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
                         // be able to do that from the "you're currently in" menu.
                         mService.sendRoomCommand(roomId, "leave");
                     }
-                    mBattleButton.setText("Battle !");
-                    mBattleButton.setEnabled(true);
                     break;
                 case "chat":
                     ChatFragment chatFragment = activity.getChatFragment();
