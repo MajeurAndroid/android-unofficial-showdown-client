@@ -4,20 +4,20 @@ import android.app.Activity;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.os.Build;
 import android.os.IBinder;
 import android.text.Editable;
 import android.text.Spannable;
 import android.text.SpannableString;
-import android.text.SpannableStringBuilder;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
+import android.text.style.TypefaceSpan;
+import android.text.style.URLSpan;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ScrollView;
-
 import com.majeur.psclient.model.Colors;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -37,6 +37,10 @@ public class Utils {
     public static int dpToPx(float dp) {
         if (sScreenDensity == 0f) sScreenDensity = Resources.getSystem().getDisplayMetrics().density;
         return (int) (sScreenDensity * dp);
+    }
+
+    public static boolean isApi28() {
+        return Build.VERSION.SDK_INT >= 28;
     }
 
     public static boolean fullScrolled(ScrollView scrollView) {
@@ -279,6 +283,49 @@ public class Utils {
             spannable.setSpan(new StyleSpan(Typeface.BOLD), openIndex, closeIndex, Spannable.SPAN_INCLUSIVE_EXCLUSIVE);
         }
         return spannable;
+    }
+
+    private static final String[] MD_TOKENS_OP = {"**", "__", "~~", "``", "[[", "http", "https"};
+    private static final String[] MD_TOKENS_CL = {"**", "__", "~~", "``", "]]", " ", " "};
+    private static final Factory[] MD_SPANS = {(p) -> new StyleSpan(Typeface.BOLD), (p) -> new StyleSpan(Typeface.ITALIC),
+            (p) -> new StyleSpan(Typeface.BOLD_ITALIC), (p) -> isApi28() ? new TypefaceSpan(Typeface.MONOSPACE) : new Object(), (p) -> new URLSpan((String) p),
+            (p) -> new URLSpan((String) p), (p) -> new URLSpan((String) p)};
+
+
+    private interface Factory {
+        Object get(Object param);
+    }
+
+    public static void applyStylingTags(SpannableStringBuilder builder) {
+        int openIndex, closeIndex;
+        String tokenOpen, tokenClose;
+        Object span;
+        for (int i = 0; i < MD_TOKENS_OP.length; i++) {
+            tokenOpen = MD_TOKENS_OP[i];
+            tokenClose = MD_TOKENS_CL[i];
+            closeIndex = -1;
+            while ((openIndex = builder.indexOf(tokenOpen, closeIndex + 1)) != -1) {
+                if ((closeIndex = builder.indexOf(tokenClose, openIndex + 1)) == -1) break;
+                if (!tokenOpen.contains("http")) {
+                    builder.delete(openIndex, openIndex + tokenOpen.length());
+                    closeIndex -= tokenOpen.length();
+                    builder.delete(closeIndex, closeIndex + tokenClose.length());
+                }
+                span = MD_SPANS[i].get(builder.substring(openIndex, closeIndex));
+                builder.setSpan(span, openIndex, closeIndex, Spannable.SPAN_INCLUSIVE_EXCLUSIVE);
+            }
+        }
+    }
+
+    public static String specChars(String string) {
+        return string
+                .replace("<<", "«")
+                .replace(">>", "»");
+    }
+
+    public static String prepareForHtml(String string) {
+        return string
+                .replace("&ThickSpace;", "  ");
     }
 
     public static JSONObject jsonObject(String string) {

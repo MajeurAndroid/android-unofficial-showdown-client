@@ -5,10 +5,12 @@ import android.graphics.Typeface;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.Spanned;
+import android.text.style.BackgroundColorSpan;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
 import com.majeur.psclient.model.User;
+import com.majeur.psclient.util.SpannableStringBuilder;
 import com.majeur.psclient.util.TextTagSpan;
 import com.majeur.psclient.util.Utils;
 
@@ -17,7 +19,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static android.graphics.Color.parseColor;
 import static com.majeur.psclient.model.Id.toId;
+import static com.majeur.psclient.util.Utils.applyStylingTags;
+import static com.majeur.psclient.util.Utils.prepareForHtml;
+import static com.majeur.psclient.util.Utils.specChars;
 
 public abstract class RoomMessageObserver extends AbsMessageObserver {
 
@@ -118,8 +124,8 @@ public abstract class RoomMessageObserver extends AbsMessageObserver {
                 printErrorMessage(message.nextArg());
                 return true;
             case "raw":
-                String html = message.rawArgs().replace("&ThickSpace;", "  ");
-                printHtml(html);
+                String html = message.rawArgs();
+                printHtml(prepareForHtml(html));
                 return true;
             case "deinit":
                 mRoomJoined = false;
@@ -159,12 +165,32 @@ public abstract class RoomMessageObserver extends AbsMessageObserver {
     private void handleChatMessage(ServerMessage args) {
         String user = args.nextArg().trim();
         String userMessage = args.rawArgs();
+        String html = null;
+        boolean announce = false;
+        if (userMessage.startsWith("/raw")) { // Todo: support more commands and enhance code.
+            html = userMessage.substring(5);
+            userMessage = "";
+        } else if (userMessage.startsWith("/uhtml")) {
+            html = userMessage.substring(userMessage.indexOf(',')+1);
+            userMessage = "";
+        } else if (userMessage.startsWith("/announce")) {
+            userMessage = userMessage.substring(10);
+            announce = true;
+        }
 
-        Spannable spannable = new SpannableString(user + ": " + userMessage);
+        SpannableStringBuilder spannable = new SpannableStringBuilder(user + ": " + specChars(userMessage));
         int textColor = obtainUsernameColor(user);
         Object span = new TextTagSpan(Utils.getTagColor(textColor), textColor);
         spannable.setSpan(span, 0, user.length() + 1, Spannable.SPAN_INCLUSIVE_EXCLUSIVE);
+        applyStylingTags(spannable);
+        if (announce) {
+            spannable.setSpan(new BackgroundColorSpan(parseColor("#678CB1")),
+                    user.length()+1, spannable.length(), Spannable.SPAN_INCLUSIVE_EXCLUSIVE);
+            spannable.setSpan(new ForegroundColorSpan(Color.WHITE),
+                    user.length()+1, spannable.length(), Spannable.SPAN_INCLUSIVE_EXCLUSIVE);
+        }
         printMessage(spannable);
+        if (html != null) printHtml(prepareForHtml(html));
     }
 
     private int obtainUsernameColor(String username) {
