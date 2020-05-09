@@ -1,13 +1,13 @@
 package com.majeur.psclient.model;
 
 import android.graphics.Bitmap;
-
 import com.majeur.psclient.util.Utils;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.List;
+
+import static android.text.TextUtils.isEmpty;
 
 public class SidePokemon extends BasePokemon {
 
@@ -21,7 +21,8 @@ public class SidePokemon extends BasePokemon {
         String baseAbility = jsonObject.getString("baseAbility");
         String item = jsonObject.getString("item");
         String pokeBall = jsonObject.getString("pokeball");
-        String ability = jsonObject.getString("ability");
+        String ability = jsonObject.optString("ability");
+        if (isEmpty(ability)) ability = jsonObject.optString("baseAbility");
 
         String[] detailsArray = jsonObject.getString("details").toLowerCase().split(", ");
         String species = detailsArray[0];

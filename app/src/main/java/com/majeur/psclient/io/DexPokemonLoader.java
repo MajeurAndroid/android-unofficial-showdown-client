@@ -3,7 +3,7 @@ package com.majeur.psclient.io;
 import android.content.Context;
 import android.content.res.Resources;
 import android.util.JsonReader;
-
+import androidx.core.util.Pair;
 import com.majeur.psclient.R;
 import com.majeur.psclient.model.DexPokemon;
 import com.majeur.psclient.model.Stats;
@@ -15,8 +15,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-
-import androidx.core.util.Pair;
 
 public class DexPokemonLoader extends DataLoader<String, DexPokemon> {
 
@@ -103,7 +101,7 @@ public class DexPokemonLoader extends DataLoader<String, DexPokemon> {
                     case "num":
                         num = mJsonReader.nextInt();
                         break;
-                    case "species":
+                    case "name":
                         species = mJsonReader.nextString();
                         break;
                     case "types":
