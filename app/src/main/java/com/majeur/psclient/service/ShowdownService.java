@@ -52,8 +52,7 @@ public class ShowdownService extends Service {
 
     private AbsMessageObserver mGlobalMessageObserver;
     private List<AbsMessageObserver> mMessageObservers;
-    private Map<String, Object> mHandlersSharedData;
-    private String mChallengeString;
+    private Map<String, Object> mSharedData;
 
     @Override
     public void onCreate() {
@@ -63,7 +62,7 @@ public class ShowdownService extends Service {
         mMessageCache = new LinkedList<>();
         mConnected = new AtomicBoolean(false);
         mMessageObservers = new LinkedList<>();
-        mHandlersSharedData = new HashMap<>();
+        mSharedData = new HashMap<>();
 
         mOkHttpClient = new OkHttpClient();
     }
@@ -268,10 +267,6 @@ public class ShowdownService extends Service {
         }
     };
 
-    public void setChallengeString(String challengeString) {
-        mChallengeString = challengeString;
-    }
-
     public void tryCookieSignIn() {
         String cookie = retrieveAuthCookieIfAny();
         if (cookie == null)
@@ -359,7 +354,7 @@ public class ShowdownService extends Service {
                 .addQueryParameter("act", "login")
                 .addQueryParameter("name", username)
                 .addQueryParameter("pass", password)
-                .addQueryParameter("challstr", mChallengeString)
+                .addQueryParameter("challstr", getSharedData("challenge"))
                 .build();
         MediaType mediaType = MediaType.parse("application/x-www-form-urlencoded;");
         RequestBody requestBody = RequestBody.create(mediaType, dummyUrl.query());
@@ -415,7 +410,7 @@ public class ShowdownService extends Service {
 
     private HttpUrl.Builder getActionServerUrlWithChallenge() {
         return getActionServerUrl()
-                .addQueryParameter("challstr", mChallengeString);
+                .addQueryParameter("challstr", getSharedData("challenge"));
     }
 
     private void storeAuthCookieIfAny(List<String> cookies) {
@@ -447,12 +442,12 @@ public class ShowdownService extends Service {
     }
 
     /* package */ void putSharedData(String key, Object data) {
-        mHandlersSharedData.put(key, data);
+        mSharedData.put(key, data);
     }
 
     @SuppressWarnings("unchecked")
     /* package */ <T> T getSharedData(String key) {
-        return (T) mHandlersSharedData.get(key);
+        return (T) mSharedData.get(key);
     }
 
 

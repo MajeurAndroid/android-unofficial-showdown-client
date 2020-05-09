@@ -89,7 +89,7 @@ public abstract class GlobalMessageObserver extends AbsMessageObserver {
     }
 
     private void processChallengeString(ServerMessage msg) {
-        getService().setChallengeString(msg.rawArgs());
+        getService().putSharedData("challenge", msg.rawArgs());
         getService().tryCookieSignIn();
     }
 
