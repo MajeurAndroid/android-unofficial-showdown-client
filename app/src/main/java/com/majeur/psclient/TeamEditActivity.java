@@ -1,6 +1,5 @@
 package com.majeur.psclient;
 
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -11,10 +10,18 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.Spinner;
-
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentPagerAdapter;
+import androidx.viewpager.widget.PagerTabStrip;
+import androidx.viewpager.widget.ViewPager;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.majeur.psclient.io.AllItemsLoader;
 import com.majeur.psclient.io.AllSpeciesLoader;
+import com.majeur.psclient.io.DexIconLoader;
 import com.majeur.psclient.io.DexPokemonLoader;
 import com.majeur.psclient.io.GlideHelper;
 import com.majeur.psclient.io.LearnsetLoader;
@@ -26,15 +33,6 @@ import com.majeur.psclient.widget.CategoryAdapter;
 
 import java.util.LinkedList;
 import java.util.List;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentPagerAdapter;
-import androidx.viewpager.widget.PagerTabStrip;
-import androidx.viewpager.widget.ViewPager;
 
 import static com.majeur.psclient.util.Utils.addNullSafe;
 
@@ -50,6 +48,7 @@ public class TeamEditActivity extends AppCompatActivity {
     private LearnsetLoader mLearnsetLoader;
     private MoveDetailsLoader mMoveDetailsLoader;
     private GlideHelper mGlideHelper;
+    private DexIconLoader mDexIconLoader;
 
     private List<BattleFormat.Category> mBattleFormats;
     private Team mTeam;
@@ -69,11 +68,12 @@ public class TeamEditActivity extends AppCompatActivity {
         mLearnsetLoader = new LearnsetLoader(this);
         mMoveDetailsLoader = new MoveDetailsLoader(this);
         mGlideHelper = new GlideHelper(this);
+        mDexIconLoader = new DexIconLoader(this);
 
         mBattleFormats = (List<BattleFormat.Category>) getIntent().getSerializableExtra(INTENT_EXTRA_FORMATS);
         mTeam = (Team) getIntent().getSerializableExtra(INTENT_EXTRA_TEAM);
         if (mTeam == null) {
-            mTeam = new Team("Unnamed team", new LinkedList<TeamPokemon>(), BattleFormat.FORMAT_OTHER.id());
+            mTeam = new Team("Unnamed team", new LinkedList<>(), BattleFormat.FORMAT_OTHER.id());
             mTeamNeedsName = true;
         }
 
@@ -185,16 +185,13 @@ public class TeamEditActivity extends AppCompatActivity {
             final EditText editText = dialogView.findViewById(R.id.edit_text_team_name);
             new MaterialAlertDialogBuilder(this)
                     .setTitle("Team name")
-                    .setPositiveButton("Done", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            String input = editText.getText().toString();
-                            String regex = "[{}:\",|\\[\\]]";
-                            if (input.matches(".*" + regex + ".*")) input = input.replaceAll(regex, "");
-                            if (TextUtils.isEmpty(input)) input = "Unnamed team";
-                            mTeam.label = input;
-                            mTeamNeedsName = false;
-                        }
+                    .setPositiveButton("Done", (dialogInterface, i) -> {
+                        String input = editText.getText().toString();
+                        String regex = "[{}:\",|\\[\\]]";
+                        if (input.matches(".*" + regex + ".*")) input = input.replaceAll(regex, "");
+                        if (TextUtils.isEmpty(input)) input = "Unnamed team";
+                        mTeam.label = input;
+                        mTeamNeedsName = false;
                     })
                     .setCancelable(false)
                     .setView(dialogView)
@@ -208,12 +205,7 @@ public class TeamEditActivity extends AppCompatActivity {
         new MaterialAlertDialogBuilder(this)
                 .setTitle("Changes will be lost")
                 .setMessage("Are you sure you want to quit without applying changes ?")
-                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        finish();
-                    }
-                })
+                .setPositiveButton("Yes", (dialogInterface, i) -> finish())
                 .setNegativeButton("No", null)
                 .show();
     }
@@ -240,6 +232,10 @@ public class TeamEditActivity extends AppCompatActivity {
 
     public GlideHelper getGlideHelper() {
         return mGlideHelper;
+    }
+
+    public DexIconLoader getDexIconLoader() {
+        return mDexIconLoader;
     }
 
     public void onPokemonUpdated(int slotIndex, TeamPokemon pokemon) {

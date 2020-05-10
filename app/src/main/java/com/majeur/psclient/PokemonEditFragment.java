@@ -3,6 +3,8 @@ package com.majeur.psclient;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.Spannable;
@@ -15,12 +17,8 @@ import android.widget.Adapter;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
-import android.widget.BaseAdapter;
 import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.EditText;
-import android.widget.Filter;
-import android.widget.Filterable;
 import android.widget.ImageView;
 import android.widget.ScrollView;
 import android.widget.SeekBar;
@@ -32,9 +30,9 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
 import com.google.android.material.button.MaterialButton;
-import com.majeur.psclient.io.AbsDataLoader;
 import com.majeur.psclient.io.AllItemsLoader;
 import com.majeur.psclient.io.AllSpeciesLoader;
+import com.majeur.psclient.io.DexIconLoader;
 import com.majeur.psclient.io.DexPokemonLoader;
 import com.majeur.psclient.io.GlideHelper;
 import com.majeur.psclient.io.LearnsetLoader;
@@ -49,6 +47,7 @@ import com.majeur.psclient.model.Stats;
 import com.majeur.psclient.model.TeamPokemon;
 import com.majeur.psclient.model.Type;
 import com.majeur.psclient.util.CategoryDrawable;
+import com.majeur.psclient.util.FilterableAdapter;
 import com.majeur.psclient.util.RangeNumberTextWatcher;
 import com.majeur.psclient.util.ShowdownTeamParser;
 import com.majeur.psclient.util.SimpleOnItemSelectedListener;
@@ -56,7 +55,6 @@ import com.majeur.psclient.util.SimpleTextWatcher;
 import com.majeur.psclient.util.Utils;
 import com.majeur.psclient.widget.StatsTable;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -67,9 +65,11 @@ import static android.content.Context.CLIPBOARD_SERVICE;
 import static com.majeur.psclient.model.Id.toId;
 import static com.majeur.psclient.util.Utils.alphaColor;
 import static com.majeur.psclient.util.Utils.array;
+import static com.majeur.psclient.util.Utils.dpToPx;
 import static com.majeur.psclient.util.Utils.parseInt;
 import static com.majeur.psclient.util.Utils.str;
 
+@SuppressWarnings({"unchecked", "rawtypes"})
 public class PokemonEditFragment extends Fragment {
 
     private static final String ARG_SLOT_INDEX = "arg-slot-index";
@@ -85,6 +85,7 @@ public class PokemonEditFragment extends Fragment {
     }
 
     private boolean mAttachedToContext;
+    private int mTextHighlightColor;
 
     // Helpers
     private AllSpeciesLoader mSpeciesLoader;
@@ -93,6 +94,7 @@ public class PokemonEditFragment extends Fragment {
     private LearnsetLoader mLearnsetLoader;
     private MoveDetailsLoader mMoveDetailsLoader;
     private GlideHelper mGlideHelper;
+    private DexIconLoader mDexIconLoader;
 
     // Views
     private AutoCompleteTextView mSpeciesTextView;
@@ -124,20 +126,18 @@ public class PokemonEditFragment extends Fragment {
 
     private boolean mHasPokemonData;
 
-    private final View.OnFocusChangeListener mACETFocusListener = new View.OnFocusChangeListener() {
-        @Override
-        public void onFocusChange(View view, boolean hasFocus) {
-            AutoCompleteTextView textView = (AutoCompleteTextView) view;
-            if (hasFocus && textView.length() == 0) textView.showDropDown();
-            if (!hasFocus && getActivity() != null)
-                Utils.hideSoftInputMethod(getActivity());
-        }
+    private final View.OnFocusChangeListener mACETFocusListener = (view, hasFocus) -> {
+        AutoCompleteTextView textView = (AutoCompleteTextView) view;
+        if (hasFocus && textView.length() == 0) textView.showDropDown();
+        if (!hasFocus && getActivity() != null)
+            Utils.hideSoftInputMethod(getActivity());
     };
 
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         mAttachedToContext = true;
+        mTextHighlightColor = alphaColor(getResources().getColor(R.color.secondary), 0.45f);
         mSlotIndex = getArguments().getInt(ARG_SLOT_INDEX);
         TeamEditActivity activity = (TeamEditActivity) context;
         mSpeciesLoader = activity.getSpeciesLoader();
@@ -146,6 +146,7 @@ public class PokemonEditFragment extends Fragment {
         mLearnsetLoader = activity.getLearnsetLoader();
         mMoveDetailsLoader = activity.getMoveDetailsLoader();
         mGlideHelper = activity.getGlideHelper();
+        mDexIconLoader = activity.getDexIconLoader();
     }
 
     @Override
@@ -184,22 +185,16 @@ public class PokemonEditFragment extends Fragment {
         mHpTypeSpinner = view.findViewById(R.id.hpTypeSpinner);
         mClearButton = view.findViewById(R.id.clearPokemon);
 
-        mSpeciesLoader.load(array(""), new AbsDataLoader.Callback<List>() {
-            @Override
-            public void onLoaded(List[] results) {
-                if (!mAttachedToContext) return;
-                mSpeciesTextView.setAdapter(new ArrayAdapter<>(getContext(),
-                        android.R.layout.simple_dropdown_item_1line,
-                        results[0]));
-            }
+        mSpeciesLoader.load(array(""), results -> {
+            if (!mAttachedToContext) return;
+            mSpeciesTextView.setAdapter(new SpeciesAdapter(mDexIconLoader, results[0], mTextHighlightColor));
         });
-        mSpeciesTextView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                Adapter adapter = adapterView.getAdapter();
-                Species newSpecies = (Species) adapter.getItem(i);
-                trySpecies(newSpecies.id);
-            }
+        mSpeciesTextView.setThreshold(1);
+        mSpeciesTextView.setDropDownWidth(dpToPx(196));
+        mSpeciesTextView.setOnItemClickListener((adapterView, view1, i, l) -> {
+            Adapter adapter = adapterView.getAdapter();
+            Species newSpecies = (Species) adapter.getItem(i);
+            trySpecies(newSpecies.id);
         });
 
         mNameTextView.addTextChangedListener(new SimpleTextWatcher() {
@@ -224,20 +219,14 @@ public class PokemonEditFragment extends Fragment {
                 notifyPokemonDataChanged();
             }
         });
-        mLevelTextView.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-            @Override
-            public void onFocusChange(View view, boolean hasFocus) {
-                if (!hasFocus && mLevelTextView.length() == 0)
-                    mLevelTextView.setText("100");
-            }
+        mLevelTextView.setOnFocusChangeListener((view12, hasFocus) -> {
+            if (!hasFocus && mLevelTextView.length() == 0)
+                mLevelTextView.setText("100");
         });
 
-        mShinyCheckbox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                updatePokemonSprite();
-                notifyPokemonDataChanged();
-            }
+        mShinyCheckbox.setOnCheckedChangeListener((compoundButton, b) -> {
+            updatePokemonSprite();
+            notifyPokemonDataChanged();
         });
 
         mHappinessTextView.addTextChangedListener(new RangeNumberTextWatcher(0, 255));
@@ -247,12 +236,9 @@ public class PokemonEditFragment extends Fragment {
                 notifyPokemonDataChanged();
             }
         });
-        mHappinessTextView.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-            @Override
-            public void onFocusChange(View view, boolean hasFocus) {
-                if (!hasFocus && mHappinessTextView.length() == 0)
-                    mHappinessTextView.setText("255");
-            }
+        mHappinessTextView.setOnFocusChangeListener((view13, hasFocus) -> {
+            if (!hasFocus && mHappinessTextView.length() == 0)
+                mHappinessTextView.setText("255");
         });
 
         mAbilitySpinner.setOnItemSelectedListener(new SimpleOnItemSelectedListener() {
@@ -265,22 +251,16 @@ public class PokemonEditFragment extends Fragment {
             }
         });
 
-        mItemsLoader.load(array(""), new AbsDataLoader.Callback<List>() {
-            @Override
-            public void onLoaded(List[] results) {
-                if (!mAttachedToContext) return;
-                mItemTextView.setAdapter(new ArrayAdapter<>(getContext(),
-                        android.R.layout.simple_dropdown_item_1line,
-                        results[0]));
-            }
+        mItemsLoader.load(array(""), results -> {
+            if (!mAttachedToContext) return;
+            mItemTextView.setAdapter(new ArrayAdapter<>(getContext(),
+                    android.R.layout.simple_dropdown_item_1line,
+                    results[0]));
         });
-        mItemTextView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                Adapter adapter = adapterView.getAdapter();
-                mCurrentItem = (Item) adapter.getItem(i);
-                notifyPokemonDataChanged();
-            }
+        mItemTextView.setOnItemClickListener((adapterView, view14, i, l) -> {
+            Adapter adapter = adapterView.getAdapter();
+            mCurrentItem = (Item) adapter.getItem(i);
+            notifyPokemonDataChanged();
         });
         mItemTextView.setOnFocusChangeListener(mACETFocusListener);
 
@@ -289,39 +269,33 @@ public class PokemonEditFragment extends Fragment {
             final AutoCompleteTextView textView = mMoveTextViews[i];
             textView.setThreshold(1);
             textView.setOnFocusChangeListener(mACETFocusListener);
-            textView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                    Adapter adapter = adapterView.getAdapter();
-                    mCurrentMoves[index] = (String) adapter.getItem(i);
-                    notifyPokemonDataChanged();
-                    /* Check if we have the full name to display to user */
-                    if (view.getTag() instanceof MovesAdapter.ViewHolder) {
-                        CharSequence text = ((MovesAdapter.ViewHolder) view.getTag()).mNameView.getText();
-                        if (text.length() > 0 && Character.isUpperCase(text.charAt(0)))
-                            textView.setText(text.toString()); // Prevents highlight spans
-                    }
-                    if (index < 3) {
-                        if (mMoveTextViews[index+1].length() == 0)
-                            mMoveTextViews[index+1].requestFocus();
-                        else
-                            textView.clearFocus();
-                    } else {
+            textView.setOnItemClickListener((adapterView, view15, i1, l) -> {
+                Adapter adapter = adapterView.getAdapter();
+                mCurrentMoves[index] = (String) adapter.getItem(i1);
+                notifyPokemonDataChanged();
+                /* Check if we have the full name to display to user */
+                if (view15.getTag() instanceof MovesAdapter.ViewHolder) {
+                    CharSequence text = ((MovesAdapter.ViewHolder) view15.getTag()).mNameView.getText();
+                    if (text.length() > 0 && Character.isUpperCase(text.charAt(0)))
+                        textView.setText(text.toString()); // Prevents highlight spans
+                }
+                if (index < 3) {
+                    if (mMoveTextViews[index+1].length() == 0)
+                        mMoveTextViews[index+1].requestFocus();
+                    else
                         textView.clearFocus();
-                    }
+                } else {
+                    textView.clearFocus();
                 }
             });
         }
 
-        mStatsTable.setRowClickListener(new StatsTable.OnRowClickListener() {
-            @Override
-            public void onRowClicked(StatsTable statsTable, String rowName, int index) {
-                EditStatDialog dialog = EditStatDialog.newInstance(rowName, mCurrentBaseStats.get(index),
-                        mCurrentEvs.get(index), mCurrentIvs.get(index), getCurrentLevel(),
-                        mCurrentNature.getStatModifier(index), mCurrentEvs.sum());
-                dialog.setTargetFragment(PokemonEditFragment.this, 0);
-                dialog.show(getFragmentManager(), "");
-            }
+        mStatsTable.setRowClickListener((statsTable, rowName, index) -> {
+            EditStatDialog dialog = EditStatDialog.newInstance(rowName, mCurrentBaseStats.get(index),
+                    mCurrentEvs.get(index), mCurrentIvs.get(index), getCurrentLevel(),
+                    mCurrentNature.getStatModifier(index), mCurrentEvs.sum());
+            dialog.setTargetFragment(PokemonEditFragment.this, 0);
+            dialog.show(getFragmentManager(), "");
         });
 
         mCurrentNature = Nature.DEFAULT;
@@ -351,69 +325,51 @@ public class PokemonEditFragment extends Fragment {
             }
         });
 
-        mClearButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                clearSelectedSpecies();
-            }
-        });
+        mClearButton.setOnClickListener(view16 -> clearSelectedSpecies());
 
         mExportButton = view.findViewById(R.id.export);
-        mExportButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (!mHasPokemonData) return;
-                TeamPokemon pokemon = buildPokemon();
-                String text = ShowdownTeamParser.fromPokemon(pokemon);
-                Toast.makeText(getContext(), "Pokemon exported to clipboard", Toast.LENGTH_LONG).show();
-                ClipboardManager clipboard = (ClipboardManager) getContext().getSystemService(CLIPBOARD_SERVICE);
-                ClipData clip = ClipData.newPlainText("Exported Pokemon", text);
-                clipboard.setPrimaryClip(clip);
-            }
+        mExportButton.setOnClickListener(view17 -> {
+            if (!mHasPokemonData) return;
+            TeamPokemon pokemon = buildPokemon();
+            String text = ShowdownTeamParser.fromPokemon(pokemon);
+            Toast.makeText(getContext(), "Pokemon exported to clipboard", Toast.LENGTH_LONG).show();
+            ClipboardManager clipboard = (ClipboardManager) getContext().getSystemService(CLIPBOARD_SERVICE);
+            ClipData clip = ClipData.newPlainText("Exported Pokemon", text);
+            clipboard.setPrimaryClip(clip);
         });
 
-        view.findViewById(R.id.importButton).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                ClipboardManager clipboard = (ClipboardManager) getContext().getSystemService(CLIPBOARD_SERVICE);
-                ClipData clip = clipboard.getPrimaryClip();
-                if (clip == null) {
-                    Toast.makeText(getContext(), "There is nothing in clipboard.",
-                            Toast.LENGTH_LONG).show();
-                } else if (clip.getDescription().hasMimeType(MIMETYPE_TEXT_PLAIN) && clip.getItemCount() > 0) {
-                    final TeamPokemon pokemon = ShowdownTeamParser.parsePokemon(clip.getItemAt(0).getText().toString(),
-                            new ShowdownTeamParser.DexPokemonFactory() {
-                                @Override
-                                public DexPokemon loadDexPokemon(String name) {
-                                    return mDexPokemonLoader.load(array(name))[0];
-                                }
-                            });
-                    if (pokemon != null) {
-                        mDexPokemonLoader.load(array(toId(pokemon.species)), new AbsDataLoader.Callback<DexPokemon>() {
-                            @Override
-                            public void onLoaded(DexPokemon[] results) {
-                                if (!mAttachedToContext) return;
-                                DexPokemon dexPokemon = results[0];
-                                if (dexPokemon == null) { // This pokemon does not have an entry in our dex.json
-                                    Toast.makeText(getContext(), "The Pokemon you imported does not exist in current pokedex.",
-                                            Toast.LENGTH_LONG).show();
-                                    return;
-                                }
-                                if (mHasPokemonData) clearSelectedSpecies();
-                                bindExistingPokemon(pokemon); // Binding our data
-                                bindDexPokemon(dexPokemon); // Setting data from dex
-                                mHasPokemonData = true;
-                                toggleInputViewsEnabled(true);
-                            }
-                        });
-                    } else {
-                        Toast.makeText(getContext(), "No Pokemon found in clipboard.",
-                                Toast.LENGTH_LONG).show();
-                    }
+        view.findViewById(R.id.importButton).setOnClickListener(view18 -> {
+            ClipboardManager clipboard = (ClipboardManager) getContext().getSystemService(CLIPBOARD_SERVICE);
+            ClipData clip = clipboard.getPrimaryClip();
+            if (clip == null) {
+                Toast.makeText(getContext(), "There is nothing in clipboard.",
+                        Toast.LENGTH_LONG).show();
+            } else if (clip.getDescription().hasMimeType(MIMETYPE_TEXT_PLAIN) && clip.getItemCount() > 0) {
+                final TeamPokemon pokemon = ShowdownTeamParser.parsePokemon(
+                        clip.getItemAt(0).getText().toString(),
+                        name -> mDexPokemonLoader.load(array(name))[0]);
+                if (pokemon != null) {
+                    mDexPokemonLoader.load(array(toId(pokemon.species)), results -> {
+                        if (!mAttachedToContext) return;
+                        DexPokemon dexPokemon = results[0];
+                        if (dexPokemon == null) { // This pokemon does not have an entry in our dex.json
+                            Toast.makeText(getContext(), "The Pokemon you imported does not exist in current pokedex.",
+                                    Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                        if (mHasPokemonData) clearSelectedSpecies();
+                        bindExistingPokemon(pokemon); // Binding our data
+                        bindDexPokemon(dexPokemon); // Setting data from dex
+                        mHasPokemonData = true;
+                        toggleInputViewsEnabled(true);
+                    });
                 } else {
-                    Toast.makeText(getContext(), "There is nothing that looks like a Pokemon in clipboard.",
+                    Toast.makeText(getContext(), "No Pokemon found in clipboard.",
                             Toast.LENGTH_LONG).show();
                 }
+            } else {
+                Toast.makeText(getContext(), "There is nothing that looks like a Pokemon in clipboard.",
+                        Toast.LENGTH_LONG).show();
             }
         });
     }
@@ -424,17 +380,14 @@ public class PokemonEditFragment extends Fragment {
         toggleInputViewsEnabled(false);
         final TeamPokemon pokemon = (TeamPokemon) getArguments().getSerializable(ARG_PKMN);
         if (pokemon != null) {
-            mDexPokemonLoader.load(array(toId(pokemon.species)), new AbsDataLoader.Callback<DexPokemon>() {
-                @Override
-                public void onLoaded(DexPokemon[] results) {
-                    if (!mAttachedToContext) return;
-                    DexPokemon dexPokemon = results[0];
-                    if (dexPokemon == null) return; // This pokemon does not have an entry in our dex.json
-                    bindExistingPokemon(pokemon); // Binding our data
-                    bindDexPokemon(dexPokemon); // Setting data from dex
-                    mHasPokemonData = true;
-                    toggleInputViewsEnabled(true);
-                }
+            mDexPokemonLoader.load(array(toId(pokemon.species)), results -> {
+                if (!mAttachedToContext) return;
+                DexPokemon dexPokemon = results[0];
+                if (dexPokemon == null) return; // This pokemon does not have an entry in our dex.json
+                bindExistingPokemon(pokemon); // Binding our data
+                bindDexPokemon(dexPokemon); // Setting data from dex
+                mHasPokemonData = true;
+                toggleInputViewsEnabled(true);
             });
         }
     }
@@ -447,18 +400,15 @@ public class PokemonEditFragment extends Fragment {
 
     private void trySpecies(final String species) {
         String[] query = {toId(species)};
-        mDexPokemonLoader.load(query, new AbsDataLoader.Callback<DexPokemon>() {
-            @Override
-            public void onLoaded(DexPokemon[] results) {
-                if (!mAttachedToContext) return;
-                DexPokemon dexPokemon = results[0];
-                if (dexPokemon == null) {
-                    mSpeciesTextView.setText(mCurrentSpecies != null ? mCurrentSpecies.name : null);
-                } else {
-                    bindDexPokemon(dexPokemon);
-                    mHasPokemonData = true;
-                    toggleInputViewsEnabled(true);
-                }
+        mDexPokemonLoader.load(query, results -> {
+            if (!mAttachedToContext) return;
+            DexPokemon dexPokemon = results[0];
+            if (dexPokemon == null) {
+                mSpeciesTextView.setText(mCurrentSpecies != null ? mCurrentSpecies.name : null);
+            } else {
+                bindDexPokemon(dexPokemon);
+                mHasPokemonData = true;
+                toggleInputViewsEnabled(true);
             }
         });
     }
@@ -494,18 +444,14 @@ public class PokemonEditFragment extends Fragment {
         }
 
         String[] query = {mCurrentSpecies.id};
-        mLearnsetLoader.load(query, new AbsDataLoader.Callback<Set>() {
-            @Override
-            public void onLoaded(Set[] results) {
-                if (!mAttachedToContext) return;
-                final Set<String> moves = results[0];
-                if (moves == null) return;
-                for (int i = 0; i < 4; i++) {
-                    final AutoCompleteTextView textView = mMoveTextViews[i];
-                    int color = alphaColor(getResources().getColor(R.color.secondary), 0.45f);
-                    MovesAdapter adapter = new MovesAdapter(mMoveDetailsLoader, moves, color);
-                    textView.setAdapter(adapter);
-                }
+        mLearnsetLoader.load(query, results -> {
+            if (!mAttachedToContext) return;
+            final Set<String> moves = results[0];
+            if (moves == null) return;
+            for (int i = 0; i < 4; i++) {
+                final AutoCompleteTextView textView = mMoveTextViews[i];
+                MovesAdapter adapter = new MovesAdapter(mMoveDetailsLoader, moves, mTextHighlightColor);
+                textView.setAdapter(adapter);
             }
         });
 
@@ -525,7 +471,8 @@ public class PokemonEditFragment extends Fragment {
             if (itemAdapter != null) {
                 for (int i = 0; i < itemAdapter.getCount(); i++) {
                     Item item = itemAdapter.getItem(i);
-                    if (item.id.equals(pokemon.item)) {
+                    if (item == null) continue;
+                    if (pokemon.item.equals(item.id)) {
                         mCurrentItem = item;
                         mItemTextView.setText(item.name);
                     }
@@ -538,14 +485,11 @@ public class PokemonEditFragment extends Fragment {
                 if (i < pokemon.moves.length) mCurrentMoves[i] = pokemon.moves[i];
             if (mCurrentMoves.length > 0) {
                 // Retrieve full name for moves
-                mMoveDetailsLoader.load(mCurrentMoves, new AbsDataLoader.Callback<Move.Details>() {
-                    @Override
-                    public void onLoaded(Move.Details[] results) {
-                        if (!mAttachedToContext) return;
-                        for (int i = 0; i < results.length; i++) {
-                            if (results[i] != null)
-                                mMoveTextViews[i].setText(results[i].name);
-                        }
+                mMoveDetailsLoader.load(mCurrentMoves, results -> {
+                    if (!mAttachedToContext) return;
+                    for (int i = 0; i < results.length; i++) {
+                        if (results[i] != null)
+                            mMoveTextViews[i].setText(results[i].name);
                     }
                 });
             }
@@ -679,46 +623,64 @@ public class PokemonEditFragment extends Fragment {
         return moves.toArray(new String[0]);
     }
 
-    private static class MovesAdapter extends BaseAdapter implements Filterable {
+    private static class SpeciesAdapter extends FilterableAdapter<Species> {
 
         private LayoutInflater mInflater;
-        private MoveDetailsLoader mLoader;
+        private final DexIconLoader mIconLoader;
+        private final int mIconWidth, mIconHeight;
 
-        private List<String> mMoveIds;
-        private List<String> mAdapterList;
-        private String mCurrentConstraint;
-        private int mHighlightColor;
+        public SpeciesAdapter(DexIconLoader iconLoader, @NonNull List<Species> objects, int highlightColor) {
+            super(objects, highlightColor);
+            mIconLoader = iconLoader;
+            int size = 32;
+            mIconWidth = dpToPx(size);
+            mIconHeight = dpToPx(size * 3f/4f);
+        }
+
+        @Override
+        public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+            if (convertView == null) {
+                if (mInflater == null) mInflater = LayoutInflater.from(parent.getContext());
+                convertView = mInflater.inflate(android.R.layout.simple_dropdown_item_1line, parent, false);
+            }
+
+            Species species = getItem(position);
+            TextView textView = (TextView) convertView;
+            textView.setText(species.name);
+            highlightMatch(textView);
+            mIconLoader.load(array(species.id), (results) -> {
+                if (results[0] != null && species.name.contentEquals(textView.getText())) {
+                    Drawable drawable = new BitmapDrawable(results[0]);
+                    drawable.setBounds(0, 0, mIconWidth, mIconHeight);
+                    textView.setCompoundDrawables(drawable, null, null, null);
+                }
+            });
+
+            return convertView;
+        }
+
+        @Override
+        protected boolean matchConstraint(String constraint, Species candidate) {
+            return candidate.name.toLowerCase().contains(constraint.toLowerCase());
+        }
+    }
+
+    private static class MovesAdapter extends FilterableAdapter<String> {
+
+        private final MoveDetailsLoader mLoader;
+        private LayoutInflater mInflater;
 
         MovesAdapter(MoveDetailsLoader loader, Collection<String> moveIds, int highlightColor) {
+            super(moveIds, highlightColor);
             mLoader = loader;
-            mMoveIds = new ArrayList<>();
-            mMoveIds.addAll(moveIds);
-            mAdapterList = new ArrayList<>();
-            mAdapterList.addAll(moveIds);
-            mHighlightColor = highlightColor;
-        }
-
-        @Override
-        public int getCount() {
-            return mAdapterList.size();
-        }
-
-        @Override
-        public String getItem(int i) {
-            return mAdapterList.get(i);
-        }
-
-        @Override
-        public long getItemId(int i) {
-            return getItem(i).hashCode();
         }
 
         private static class ViewHolder {
             String moveId;
-            private TextView mNameView;
-            private TextView mDetailsView;
-            private ImageView mTypeView;
-            private ImageView mCategoryView;
+            private final TextView mNameView;
+            private final TextView mDetailsView;
+            private final ImageView mTypeView;
+            private final ImageView mCategoryView;
 
             ViewHolder(View parent) {
                 mNameView = parent.findViewById(R.id.name_view);
@@ -743,7 +705,7 @@ public class PokemonEditFragment extends Fragment {
             final String moveId = getItem(position);
             holder.moveId = moveId;
             holder.mNameView.setText(moveId, TextView.BufferType.SPANNABLE);
-            showMatch(holder.mNameView);
+            highlightMatch(holder.mNameView);
             holder.mDetailsView.setText(buildDetailsText(-1, -1, -1));
             holder.mTypeView.setImageDrawable(null);
             holder.mTypeView.animate().cancel();
@@ -752,37 +714,36 @@ public class PokemonEditFragment extends Fragment {
             holder.mCategoryView.animate().cancel();
             holder.mCategoryView.setAlpha(0f);
 
-            mLoader.load(array(moveId), new AbsDataLoader.Callback<Move.Details>() {
-                @Override
-                public void onLoaded(Move.Details[] results) {
-                    // Check if callback arrives in time
-                    if (!holder.moveId.equals(moveId)) return;
-                    Move.Details info = results[0];
-                    holder.mNameView.setText(info.name, TextView.BufferType.SPANNABLE);
-                    showMatch(holder.mNameView);
-                    holder.mDetailsView.setText(buildDetailsText(info.pp, info.basePower, info.accuracy));
-                    holder.mTypeView.setImageResource(Type.getResId(info.type));
-                    holder.mTypeView.animate().alpha(1f).start();
-                    holder.mCategoryView.setImageDrawable(new CategoryDrawable(info.category));
-                    holder.mCategoryView.animate().alpha(1f).start();
-                }
+            mLoader.load(array(moveId), results -> {
+                // Check if callback arrives in time
+                if (!holder.moveId.equals(moveId)) return;
+                Move.Details info = results[0];
+                holder.mNameView.setText(info.name, TextView.BufferType.SPANNABLE);
+                highlightMatch(holder.mNameView);
+                holder.mDetailsView.setText(buildDetailsText(info.pp, info.basePower, info.accuracy));
+                holder.mTypeView.setImageResource(Type.getResId(info.type));
+                holder.mTypeView.animate().alpha(1f).start();
+                holder.mCategoryView.setImageDrawable(new CategoryDrawable(info.category));
+                holder.mCategoryView.animate().alpha(1f).start();
             });
 
             return convertView;
         }
 
-        private void showMatch(TextView textView) {
-            if (mCurrentConstraint == null) return;
+        @Override
+        protected void highlightMatch(TextView textView) {
+            String constraint = getCurrentConstraint();
+            if (constraint == null) return;
             String text = textView.getText().toString().toLowerCase();
             int spaceIndex = text.indexOf(' ');
             text = text.replace(" ", "");
-            if (!text.contains(mCurrentConstraint)) return;
-            int startIndex = text.indexOf(mCurrentConstraint);
+            if (!text.contains(constraint)) return;
+            int startIndex = text.indexOf(constraint);
             if (spaceIndex > 0 && startIndex >= spaceIndex) startIndex++;
-            int endIndex = startIndex + mCurrentConstraint.length();
+            int endIndex = startIndex + constraint.length();
             if (spaceIndex > 0 && startIndex < spaceIndex && endIndex > spaceIndex) endIndex++;
             Spannable spannable = (Spannable) textView.getText();
-            spannable.setSpan(new BackgroundColorSpan(mHighlightColor), startIndex, endIndex,
+            spannable.setSpan(new BackgroundColorSpan(getHighlightColor()), startIndex, endIndex,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
 
@@ -791,44 +752,15 @@ public class PokemonEditFragment extends Fragment {
                     + ", AC: " + (acc > 0 ? acc : "–");
         }
 
-        @NonNull
         @Override
-        public Filter getFilter() {
-            return mFilter;
+        protected String prepareConstraint(CharSequence constraint) {
+            return constraint.toString().toLowerCase().replace(" ", "");
         }
 
-        private final Filter mFilter = new Filter() {
-
-            @Override
-            protected FilterResults performFiltering(CharSequence constraint) {
-                if (constraint != null) {
-                    String constraintString = constraint.toString().toLowerCase().replace(" ", "");
-                    List<String> list = new LinkedList<>();
-                    for (String id : mMoveIds) {
-                        if (id.contains(constraintString))
-                            list.add(id);
-                    }
-                    FilterResults filterResults = new FilterResults();
-                    filterResults.values = list;
-                    filterResults.count = list.size();
-                    return filterResults;
-                } else {
-                    return new FilterResults();
-                }
-            }
-
-            @Override
-            @SuppressWarnings("unchecked")
-            protected void publishResults(CharSequence constraint, FilterResults results) {
-                mCurrentConstraint = constraint != null ?
-                        constraint.toString().toLowerCase().replace(" ", "") : null;
-                if (results != null && results.count > 0 && results.values != null) {
-                    mAdapterList.clear();
-                    mAdapterList.addAll((Collection<? extends String>) results.values);
-                    notifyDataSetChanged();
-                }
-            }
-        };
+        @Override
+        protected boolean matchConstraint(String constraint, String candidate) {
+            return candidate.contains(constraint);
+        }
     }
 
     public static class EditStatDialog extends DialogFragment implements SeekBar.OnSeekBarChangeListener {
@@ -909,13 +841,10 @@ public class PokemonEditFragment extends Fragment {
                 }
             });
 
-            view.findViewById(R.id.ok_button).setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    PokemonEditFragment fragment = (PokemonEditFragment) getTargetFragment();
-                    fragment.onStatModified(mStatName, mEv, mIv);
-                    dismiss();
-                }
+            view.findViewById(R.id.ok_button).setOnClickListener(view1 -> {
+                PokemonEditFragment fragment = (PokemonEditFragment) getTargetFragment();
+                fragment.onStatModified(mStatName, mEv, mIv);
+                dismiss();
             });
         }
 
