@@ -22,7 +22,7 @@ public abstract class AbsDataLoader<Q, R> {
     private final Map<Q, R> mCache;
 
     public AbsDataLoader() {
-        this(Integer.MAX_VALUE);
+        this(128);
     }
 
     public AbsDataLoader(int maxCacheSize) {
