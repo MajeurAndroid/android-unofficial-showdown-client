@@ -3,7 +3,6 @@ package com.majeur.psclient.io;
 import android.content.Context;
 import android.content.res.Resources;
 import android.util.JsonReader;
-
 import com.majeur.psclient.R;
 import com.majeur.psclient.model.Item;
 
@@ -13,7 +12,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ItemLoader extends DataLoader<String, Item> {
+public class ItemLoader extends AbsDataLoader<String, Item> {
 
     private Resources mResources;
 

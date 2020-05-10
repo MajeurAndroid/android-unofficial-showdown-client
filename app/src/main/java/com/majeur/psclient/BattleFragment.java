@@ -2,8 +2,6 @@ package com.majeur.psclient;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.graphics.Bitmap;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -19,9 +17,11 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ScrollView;
 import android.widget.TextView;
-
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.fragment.app.Fragment;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.majeur.psclient.io.DataLoader;
 import com.majeur.psclient.io.DexIconLoader;
 import com.majeur.psclient.io.DexPokemonLoader;
 import com.majeur.psclient.io.GlideHelper;
@@ -34,7 +34,6 @@ import com.majeur.psclient.model.BattlingPokemon;
 import com.majeur.psclient.model.Colors;
 import com.majeur.psclient.model.Condition;
 import com.majeur.psclient.model.DexPokemon;
-import com.majeur.psclient.model.Item;
 import com.majeur.psclient.model.Move;
 import com.majeur.psclient.model.Player;
 import com.majeur.psclient.model.PokemonId;
@@ -46,7 +45,6 @@ import com.majeur.psclient.model.Weather;
 import com.majeur.psclient.service.BattleMessageObserver;
 import com.majeur.psclient.service.ShowdownService;
 import com.majeur.psclient.util.AudioBattleManager;
-import com.majeur.psclient.util.Callback;
 import com.majeur.psclient.util.CategoryDrawable;
 import com.majeur.psclient.util.InactiveBattleOverlayDrawable;
 import com.majeur.psclient.util.Preferences;
@@ -61,11 +59,6 @@ import com.majeur.psclient.widget.StatusView;
 import com.majeur.psclient.widget.ToasterView;
 
 import java.util.List;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
-import androidx.fragment.app.Fragment;
 
 import static com.majeur.psclient.model.Id.toId;
 import static com.majeur.psclient.model.Id.toIdSafe;
@@ -165,25 +158,22 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         mInactiveBattleOverlayDrawable = new InactiveBattleOverlayDrawable(getResources());
         mOverlayImageView.setImageDrawable(mInactiveBattleOverlayDrawable);
 
-        mActionWidget.setOnRevealListener(new BattleActionWidget.OnRevealListener() {
-            @Override
-            public void onReveal(boolean in) {
-                mExtraActionsContainer.animate()
-                        .setStartDelay(in ? 0 : 350)
-                        .translationY(in ? 3 * mLogScrollView.getHeight() / 5 : 0)
-                        .start();
+        mActionWidget.setOnRevealListener(in -> {
+            mExtraActionsContainer.animate()
+                    .setStartDelay(in ? 0 : 350)
+                    .translationY(in ? 3 * mLogScrollView.getHeight() / 5f : 0)
+                    .start();
 
-                if (in) {
-                    mExtraUndoContainer.setTranslationX(mExtraActionsContainer.getWidth());
-                    mExtraUndoContainer.setAlpha(0);
-                } else {
-                    mUndoButton.setEnabled(true);
-                    mExtraUndoContainer.animate()
-                            .setStartDelay(350)
-                            .translationX(0)
-                            .alpha(1f)
-                            .start();
-                }
+            if (in) {
+                mExtraUndoContainer.setTranslationX(mExtraActionsContainer.getWidth());
+                mExtraUndoContainer.setAlpha(0);
+            } else {
+                mUndoButton.setEnabled(true);
+                mExtraUndoContainer.animate()
+                        .setStartDelay(350)
+                        .translationX(0)
+                        .alpha(1f)
+                        .start();
             }
         });
 
@@ -194,12 +184,9 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         mUndoButton = view.findViewById(R.id.button_undo);
         mUndoButton.setOnClickListener(mExtraClickListener);
 
-        mExtraUndoContainer.post(new Runnable() {
-            @Override
-            public void run() {
-                mExtraUndoContainer.setTranslationX(mExtraActionsContainer.getWidth());
-                mExtraUndoContainer.setAlpha(0);
-            }
+        mExtraUndoContainer.post(() -> {
+            mExtraUndoContainer.setTranslationX(mExtraActionsContainer.getWidth());
+            mExtraUndoContainer.setAlpha(0);
         });
     }
 
@@ -240,20 +227,17 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
     }
 
     private void clearBattleFieldUi() {
-        mBattleLayout.animate().alpha(0f).withEndAction(new Runnable() {
-            @Override
-            public void run() {
-                mBattleLayout.getSideView(Player.TRAINER).clearAllSides();
-                mBattleLayout.getSideView(Player.FOE).clearAllSides();
-                mOverlayImageView.setImageDrawable(null);
+        mBattleLayout.animate().alpha(0f).withEndAction(() -> {
+            mBattleLayout.getSideView(Player.TRAINER).clearAllSides();
+            mBattleLayout.getSideView(Player.FOE).clearAllSides();
+            mOverlayImageView.setImageDrawable(null);
 
-                mTrainerInfoView.clear();
-                mFoeInfoView.clear();
+            mTrainerInfoView.clear();
+            mFoeInfoView.clear();
 
-                mOverlayImageView.setAlpha(0f);
-                mOverlayImageView.setImageDrawable(mInactiveBattleOverlayDrawable);
-                mOverlayImageView.animate().alpha(1f);
-            }
+            mOverlayImageView.setAlpha(0f);
+            mOverlayImageView.setImageDrawable(mInactiveBattleOverlayDrawable);
+            mOverlayImageView.animate().alpha(1f);
         }).start();
     }
 
@@ -266,12 +250,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                     if (!battleRunning()) break;
                     new AlertDialog.Builder(getContext())
                             .setMessage("Do you really want to forfeit this battle ?")
-                            .setPositiveButton("Forfeit", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialogInterface, int i) {
-                                    forfeit();
-                                }
-                            })
+                            .setPositiveButton("Forfeit", (dialogInterface, i) -> forfeit())
                             .setNegativeButton("Cancel", null)
                             .show();
                     break;
@@ -280,22 +259,14 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                     View dialogView = getLayoutInflater().inflate(R.layout.dialog_battle_message, null);
                     final EditText editText = dialogView.findViewById(R.id.edit_text_team_name);
                     new MaterialAlertDialogBuilder(getContext())
-                            .setPositiveButton("Send", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialogInterface, int i) {
-                                    String input = editText.getText().toString();
-                                    String regex = "[{}:\",|\\[\\]]";
-                                    if (input.matches(".*" + regex + ".*")) input = input.replaceAll(regex, "");
-                                    mService.sendRoomMessage(mObservedRoomId, input);
-                                }
+                            .setPositiveButton("Send", (dialogInterface, i) -> {
+                                String input = editText.getText().toString();
+                                String regex = "[{}:\",|\\[\\]]";
+                                if (input.matches(".*" + regex + ".*")) input = input.replaceAll(regex, "");
+                                mService.sendRoomMessage(mObservedRoomId, input);
                             })
                             .setNegativeButton("Cancel", null)
-                            .setNeutralButton("\"gg\"", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialogInterface, int i) {
-                                    mService.sendRoomMessage(mObservedRoomId, "gg");
-                                }
-                            })
+                            .setNeutralButton("\"gg\"", (dialogInterface, i) -> mService.sendRoomMessage(mObservedRoomId, "gg"))
                             .setView(dialogView)
                             .show();
                     editText.requestFocus();
@@ -313,18 +284,14 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         }
     };
 
-    private final BattleTipPopup.OnBindPopupViewListener mOnBindPopupViewListener = new BattleTipPopup.OnBindPopupViewListener() {
-        @Override
-        public void onBindPopupView(View anchorView, TextView titleView, TextView descView,
-                                    ImageView placeHolderTop, ImageView placeHolderBottom) {
-            Object data = anchorView.getTag(R.id.battle_data_tag);
-            if (data instanceof BattlingPokemon)
-                bindBattlingPokemonTipPopup((BattlingPokemon) data, titleView, descView, placeHolderTop, placeHolderBottom);
-            else if (data instanceof Move)
-                bindMoveTipPopup((Move) data, titleView, descView, placeHolderTop, placeHolderBottom);
-            else if (data instanceof SidePokemon)
-                bindSidePokemonPopup((SidePokemon) data, titleView, descView, placeHolderTop, placeHolderBottom);
-        }
+    private final BattleTipPopup.OnBindPopupViewListener mOnBindPopupViewListener = (anchorView, titleView, descView, placeHolderTop, placeHolderBottom) -> {
+        Object data = anchorView.getTag(R.id.battle_data_tag);
+        if (data instanceof BattlingPokemon)
+            bindBattlingPokemonTipPopup((BattlingPokemon) data, titleView, descView, placeHolderTop, placeHolderBottom);
+        else if (data instanceof Move)
+            bindMoveTipPopup((Move) data, titleView, descView, placeHolderTop, placeHolderBottom);
+        else if (data instanceof SidePokemon)
+            bindSidePokemonPopup((SidePokemon) data, titleView, descView, placeHolderTop, placeHolderBottom);
     };
 
     private void bindBattlingPokemonTipPopup(final BattlingPokemon pokemon, final TextView titleView,
@@ -370,56 +337,50 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
             descView.append("\n");
             descView.append(smallText("Item: "));
             descView.append(sidePokemon.item);
-            mItemLoader.load(array(toId(sidePokemon.item)), new DataLoader.Callback<Item>() {
-                @Override
-                public void onLoaded(Item[] results) {
-                    if (results[0] != null)
-                        replace(descView.getEditableText(), sidePokemon.item, results[0].name);
-                }
+            mItemLoader.load(array(toId(sidePokemon.item)), results -> {
+                if (results[0] != null)
+                    replace(descView.getEditableText(), sidePokemon.item, results[0].name);
             });
 
         } else ability = null;
         placeHolderTop.setImageDrawable(null);
         placeHolderBottom.setImageDrawable(null);
-        mDexPokemonLoader.load(array(toId(pokemon.species)), new DataLoader.Callback<DexPokemon>() {
-            @Override
-            public void onLoaded(DexPokemon[] results) {
-                DexPokemon dexPokemon = results[0];
-                if (dexPokemon == null) {
-                    descView.append("No dex entry for " + pokemon.species);
-                    return;
-                }
-                placeHolderTop.setImageResource(Type.getResId(dexPokemon.firstType));
-                if (dexPokemon.secondType != null)
-                    placeHolderBottom.setImageResource(Type.getResId(dexPokemon.secondType));
-                if (!pokemon.foe) {
-                    if (ability == null) return;
-                    String abilityName = null;
-                    if (ability.equals(toIdSafe(dexPokemon.hiddenAbility)))
-                        abilityName = dexPokemon.hiddenAbility;
-                    else for (String ab : dexPokemon.abilities)
-                        if (toId(ab).equals(ability))
-                            abilityName = ab;
-                    if (abilityName != null)
-                        replace(descView.getEditableText(), ability, abilityName);
-                    return;
-                }
-                if (dexPokemon.abilities.size() > 1 || dexPokemon.hiddenAbility != null) {
-                    descView.append(smallText("Possible abilities: "));
-                    for (String ability : dexPokemon.abilities)
-                        descView.append(ability + ", ");
-                    descView.append(dexPokemon.hiddenAbility);
-                    descView.append("\n");
-                } else if (dexPokemon.abilities.size() > 0) {
-                    descView.append(smallText("Ability: "));
-                    descView.append(dexPokemon.abilities.get(0));
-                    descView.append("\n");
-                }
-                int[] speedRange = Stats.calculateSpeedRange(pokemon.level, dexPokemon.baseStats.spe, "Random Battle", 7);
-                descView.append(smallText("Speed: "));
-                descView.append(speedRange[0] + " to " + speedRange[1]);
-                descView.append(smallText(" (before items/abilities/modifiers)"));
+        mDexPokemonLoader.load(array(toId(pokemon.species)), results -> {
+            DexPokemon dexPokemon = results[0];
+            if (dexPokemon == null) {
+                descView.append("No dex entry for " + pokemon.species);
+                return;
             }
+            placeHolderTop.setImageResource(Type.getResId(dexPokemon.firstType));
+            if (dexPokemon.secondType != null)
+                placeHolderBottom.setImageResource(Type.getResId(dexPokemon.secondType));
+            if (!pokemon.foe) {
+                if (ability == null) return;
+                String abilityName = null;
+                if (ability.equals(toIdSafe(dexPokemon.hiddenAbility)))
+                    abilityName = dexPokemon.hiddenAbility;
+                else for (String ab : dexPokemon.abilities)
+                    if (toId(ab).equals(ability))
+                        abilityName = ab;
+                if (abilityName != null)
+                    replace(descView.getEditableText(), ability, abilityName);
+                return;
+            }
+            if (dexPokemon.abilities.size() > 1 || dexPokemon.hiddenAbility != null) {
+                descView.append(smallText("Possible abilities: "));
+                for (String ability1 : dexPokemon.abilities)
+                    descView.append(ability1 + ", ");
+                descView.append(dexPokemon.hiddenAbility);
+                descView.append("\n");
+            } else if (dexPokemon.abilities.size() > 0) {
+                descView.append(smallText("Ability: "));
+                descView.append(dexPokemon.abilities.get(0));
+                descView.append("\n");
+            }
+            int[] speedRange = Stats.calculateSpeedRange(pokemon.level, dexPokemon.baseStats.spe, "Random Battle", 7);
+            descView.append(smallText("Speed: "));
+            descView.append(speedRange[0] + " to " + speedRange[1]);
+            descView.append(smallText(" (before items/abilities/modifiers)"));
         });
     }
 
@@ -547,12 +508,9 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         descView.append("\n");
         descView.append(smallText("Item: "));
         descView.append(pokemon.item);
-        mItemLoader.load(array(toId(pokemon.item)), new DataLoader.Callback<Item>() {
-            @Override
-            public void onLoaded(Item[] results) {
-                if (results[0] != null)
-                    replace(descView.getEditableText(), pokemon.item, results[0].name);
-            }
+        mItemLoader.load(array(toId(pokemon.item)), results -> {
+            if (results[0] != null)
+                replace(descView.getEditableText(), pokemon.item, results[0].name);
         });
         descView.append("\n");
 
@@ -560,38 +518,32 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         String[] query = new String[pokemon.moves.size()];
         for (int i = 0; i < query.length; i++)
             query[i] = toId(pokemon.moves.get(i));
-        mMoveDetailsLoader.load(query, new DataLoader.Callback<Move.Details>() {
-            @Override
-            public void onLoaded(Move.Details[] results) {
-                for (int i = 0; i < results.length; i++) {
-                    descView.append("\n\t");
-                    descView.append(results[i] != null ?
-                            results[i].name : pokemon.moves.get(i));
-                }
+        mMoveDetailsLoader.load(query, results -> {
+            for (int i = 0; i < results.length; i++) {
+                descView.append("\n\t");
+                descView.append(results[i] != null ?
+                        results[i].name : pokemon.moves.get(i));
             }
         });
 
         placeHolderTop.setImageDrawable(null);
         placeHolderBottom.setImageDrawable(null);
-        mDexPokemonLoader.load(array(toId(pokemon.species)), new DataLoader.Callback<DexPokemon>() {
-            @Override
-            public void onLoaded(DexPokemon[] results) {
-                DexPokemon dexPokemon = results[0];
-                if (dexPokemon == null) return;
-                placeHolderTop.setImageResource(Type.getResId(dexPokemon.firstType));
-                if (dexPokemon.secondType != null)
-                    placeHolderBottom.setImageResource(Type.getResId(dexPokemon.secondType));
+        mDexPokemonLoader.load(array(toId(pokemon.species)), results -> {
+            DexPokemon dexPokemon = results[0];
+            if (dexPokemon == null) return;
+            placeHolderTop.setImageResource(Type.getResId(dexPokemon.firstType));
+            if (dexPokemon.secondType != null)
+                placeHolderBottom.setImageResource(Type.getResId(dexPokemon.secondType));
 
-                if (pokemon.ability == null) return;
-                String abilityName = null;
-                if (pokemon.ability.equals(toIdSafe(dexPokemon.hiddenAbility)))
-                    abilityName = dexPokemon.hiddenAbility;
-                else for (String ab : dexPokemon.abilities)
-                    if (toId(ab).equals(pokemon.ability))
-                        abilityName = ab;
-                if (abilityName != null)
-                    replace(descView.getEditableText(), pokemon.ability, abilityName);
-            }
+            if (pokemon.ability == null) return;
+            String abilityName = null;
+            if (pokemon.ability.equals(toIdSafe(dexPokemon.hiddenAbility)))
+                abilityName = dexPokemon.hiddenAbility;
+            else for (String ab : dexPokemon.abilities)
+                if (toId(ab).equals(pokemon.ability))
+                    abilityName = ab;
+            if (abilityName != null)
+                replace(descView.getEditableText(), pokemon.ability, abilityName);
         });
     }
 
@@ -617,7 +569,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
             activity.showBadge(getId());
     }
 
-    private BattleMessageObserver mObserver = new BattleMessageObserver() {
+    private final BattleMessageObserver mObserver = new BattleMessageObserver() {
 
         @Override
         protected void onTimerEnabled(boolean enabled) {
@@ -674,13 +626,10 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
             if (imageView != null) // Happens when joining a battle where the preview has already been done
                 mSpritesLoader.loadPreviewSprite(id.player, pokemon, imageView);
 
-            mDexIconLoader.load(array(toId(pokemon.species)), new DataLoader.Callback<Bitmap>() {
-                @Override
-                public void onLoaded(Bitmap[] results) {
-                    Drawable icon = new BitmapDrawable(results[0]);
-                    PlayerInfoView infoView = !id.foe ? mTrainerInfoView : mFoeInfoView;
-                    infoView.appendPokemon(pokemon, icon);
-                }
+            mDexIconLoader.load(array(toId(pokemon.species)), results -> {
+                Drawable icon = new BitmapDrawable(results[0]);
+                PlayerInfoView infoView = !id.foe ? mTrainerInfoView : mFoeInfoView;
+                infoView.appendPokemon(pokemon, icon);
             });
         }
 
@@ -697,14 +646,9 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
             pokemonView.animate()
                     .setDuration(250)
                     .setInterpolator(new AccelerateDecelerateInterpolator())
-                    .translationY(pokemonView.getHeight()/2)
+                    .translationY(pokemonView.getHeight()/2f)
                     .alpha(0f)
-                    .withEndAction(new Runnable() {
-                        @Override
-                        public void run() {
-                            pokemonView.setTranslationY(0);
-                        }
-                    })
+                    .withEndAction(() -> pokemonView.setTranslationY(0))
                     .start();
 
             View statusView = mBattleLayout.getStatusView(id);
@@ -719,15 +663,12 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         @Override
         protected void onMove(final PokemonId sourceId, final PokemonId targetId, String moveName, boolean shouldAnim) {
             if (!shouldAnim || targetId == null) return;
-            mMoveDetailsLoader.load(array(moveName), new DataLoader.Callback<Move.Details>() {
-                @Override
-                public void onLoaded(Move.Details[] results) {
-                    if (results[0] == null) return;
-                    String category = toId(results[0].category);
-                    if ("status".equals(category)) return;
-                    mBattleLayout.displayHitIndicator(targetId);
-                    //if (mSoundEnabled) mAudioManager.playMoveHitSound();
-                }
+            mMoveDetailsLoader.load(array(moveName), results -> {
+                if (results[0] == null) return;
+                String category = toId(results[0].category);
+                if ("status".equals(category)) return;
+                mBattleLayout.displayHitIndicator(targetId);
+                //if (mSoundEnabled) mAudioManager.playMoveHitSound();
             });
         }
 
@@ -748,13 +689,10 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
             mBattleTipPopup.addTippedView(imageView);
             mSpritesLoader.loadSprite(pokemon, imageView, mBattleLayout.getWidth());
 
-            mDexIconLoader.load(array(toId(pokemon.species)), new DataLoader.Callback<Bitmap>() {
-                @Override
-                public void onLoaded(Bitmap[] results) {
-                    Drawable icon = new BitmapDrawable(results[0]);
-                    PlayerInfoView infoView = !pokemon.foe ? mTrainerInfoView : mFoeInfoView;
-                    infoView.updatePokemon(pokemon, icon);
-                }
+            mDexIconLoader.load(array(toId(pokemon.species)), results -> {
+                Drawable icon = new BitmapDrawable(results[0]);
+                PlayerInfoView infoView = !pokemon.foe ? mTrainerInfoView : mFoeInfoView;
+                infoView.updatePokemon(pokemon, icon);
             });
             if (mSoundEnabled) mAudioManager.playPokemonCry(pokemon, false);
         }
@@ -764,13 +702,10 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
             ImageView imageView = mBattleLayout.getPokemonView(pokemon.id);
             mSpritesLoader.loadSprite(pokemon, imageView, mBattleLayout.getWidth());
 
-            mDexIconLoader.load(array(toId(pokemon.species)), new DataLoader.Callback<Bitmap>() {
-                @Override
-                public void onLoaded(Bitmap[] results) {
-                    Drawable icon = new BitmapDrawable(results[0]);
-                    PlayerInfoView infoView = !pokemon.foe ? mTrainerInfoView : mFoeInfoView;
-                    infoView.updatePokemon(pokemon, icon);
-                }
+            mDexIconLoader.load(array(toId(pokemon.species)), results -> {
+                Drawable icon = new BitmapDrawable(results[0]);
+                PlayerInfoView infoView = !pokemon.foe ? mTrainerInfoView : mFoeInfoView;
+                infoView.updatePokemon(pokemon, icon);
             });
 
             if (mSoundEnabled && "mega".equals(pokemon.forme)) mAudioManager.playPokemonCry(pokemon, false);
@@ -799,12 +734,8 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         protected void onRequestAsked(final BattleActionRequest request) {
             mLastActionRequest = request;
             if (request.shouldWait()) return;
-            mActionWidget.promptDecision(this, mBattleTipPopup, request, new BattleActionWidget.OnDecisionListener() {
-                @Override
-                public void onDecisionTook(BattleDecision decision) {
-                    sendDecision(request.getId(), decision);
-                }
-            });
+            mActionWidget.promptDecision(this, mBattleTipPopup, request,
+                    decision -> sendDecision(request.getId(), decision));
 
             boolean hideSwitch = true;
             for (int which = 0; which < request.getCount(); which++) {
@@ -816,35 +747,26 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
 
                 String[] keys = new String[moves.length];
                 for (int i = 0; i < keys.length; i++) keys[i] = moves[i].id;
-                mMoveDetailsLoader.load(keys, new DataLoader.Callback<Move.Details>() {
-                    @Override
-                    public void onLoaded(Move.Details[] results) {
-                        for (int i = 0; i < results.length; i++)
-                            moves[i].details = results[i];
-                        mActionWidget.notifyDetailsUpdated();
-                    }
+                mMoveDetailsLoader.load(keys, results -> {
+                    for (int i = 0; i < results.length; i++)
+                        moves[i].details = results[i];
+                    mActionWidget.notifyDetailsUpdated();
                 });
                 keys = new String[moves.length];
                 for (int i = 0; i < keys.length; i++) keys[i] = toIdSafe(moves[i].zName);
                 if (notAllNull(keys))
-                    mMoveDetailsLoader.load(keys, new DataLoader.Callback<Move.Details>() {
-                        @Override
-                        public void onLoaded(Move.Details[] results) {
-                            for (int i = 0; i < results.length; i++)
-                                moves[i].zDetails = results[i];
-                        }
+                    mMoveDetailsLoader.load(keys, results -> {
+                        for (int i = 0; i < results.length; i++)
+                            moves[i].zDetails = results[i];
                     });
                 keys = new String[moves.length];
                 for (int i = 0; i < keys.length; i++)
                     keys[i] = toIdSafe(moves[i].maxMoveId);
                 if (notAllNull(keys))
-                    mMoveDetailsLoader.load(keys, new DataLoader.Callback<Move.Details>() {
-                        @Override
-                        public void onLoaded(Move.Details[] results) {
-                            for (int i = 0; i < results.length; i++)
-                                moves[i].maxDetails = results[i];
-                            mActionWidget.notifyMaxDetailsUpdated();
-                        }
+                    mMoveDetailsLoader.load(keys, results -> {
+                        for (int i = 0; i < results.length; i++)
+                            moves[i].maxDetails = results[i];
+                        mActionWidget.notifyMaxDetailsUpdated();
                     });
             }
 
@@ -853,13 +775,10 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
             if (!hideSwitch) {
                 String[] species = new String[team.size()];
                 for (int i = 0; i < species.length; i++) species[i] = toId(team.get(i).species);
-                mDexIconLoader.load(species, new DataLoader.Callback<Bitmap>() {
-                    @Override
-                    public void onLoaded(Bitmap[] results) {
-                        for (int i = 0; i < team.size(); i++)
-                            team.get(i).icon = results[i];
-                        mActionWidget.notifyDexIconsUpdated();
-                    }
+                mDexIconLoader.load(species, results -> {
+                    for (int i = 0; i < team.size(); i++)
+                        team.get(i).icon = results[i];
+                    mActionWidget.notifyDexIconsUpdated();
                 });
             }
         }
@@ -887,12 +806,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                 mOverlayImageView.animate()
                         .alpha(0f)
                         .setDuration(250)
-                        .withEndAction(new Runnable() {
-                            @Override
-                            public void run() {
-                                mOverlayImageView.setImageDrawable(null);
-                            }
-                        })
+                        .withEndAction(() -> mOverlayImageView.setImageDrawable(null))
                         .start();
             }
         }
@@ -956,28 +870,20 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
             Html.fromHtml(html,
                     Html.FROM_HTML_MODE_COMPACT,
                     mSpritesLoader.getHtmlImageGetter(mDexIconLoader, mLogTextView.getWidth()),
-                    new Callback<Spanned>() {
-                        @Override
-                        public void callback(Spanned spanned) {
-                            int at = mLogTextView.getEditableText().getSpanStart(mark);
-                            if (at == -1) return; // Check if text has been cleared
-                            boolean fullScrolled = Utils.fullScrolled(mLogScrollView);
-                            mLogTextView.getEditableText()
-                                    .insert(at, "\n")
-                                    .insert(at + 1, spanned);
-                            notifyNewMessageReceived();
-                            if (fullScrolled) postFullScroll();
-                        }
+                    spanned -> {
+                        int at = mLogTextView.getEditableText().getSpanStart(mark);
+                        if (at == -1) return; // Check if text has been cleared
+                        boolean fullScrolled = Utils.fullScrolled(mLogScrollView);
+                        mLogTextView.getEditableText()
+                                .insert(at, "\n")
+                                .insert(at + 1, spanned);
+                        notifyNewMessageReceived();
+                        if (fullScrolled) postFullScroll();
                     });
         }
 
         private void postFullScroll() {
-            mLogScrollView.post(new Runnable() {
-                @Override
-                public void run() {
-                    mLogScrollView.fullScroll(View.FOCUS_DOWN);
-                }
-            });
+            mLogScrollView.post(() -> mLogScrollView.fullScroll(View.FOCUS_DOWN));
         }
 
         @Override
@@ -1001,18 +907,15 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
             mBackgroundImageView.animate()
                     .setDuration(100)
                     .alpha(0)
-                    .withEndAction(new Runnable() {
-                        @Override
-                        public void run() {
-                            int resId = Math.random() > 0.5 ? R.drawable.battle_bg_1
-                                    : R.drawable.battle_bg_2;
-                            mBackgroundImageView.setImageResource(resId);
-                            mBackgroundImageView.animate()
-                                    .setDuration(100)
-                                    .alpha(1)
-                                    .withEndAction(null)
-                                    .start();
-                        }
+                    .withEndAction(() -> {
+                        int resId = Math.random() > 0.5 ? R.drawable.battle_bg_1
+                                : R.drawable.battle_bg_2;
+                        mBackgroundImageView.setImageResource(resId);
+                        mBackgroundImageView.animate()
+                                .setDuration(100)
+                                .alpha(1)
+                                .withEndAction(null)
+                                .start();
                     })
                     .start();
             // In case of corrupted battle stream make sure we stop music at the next one

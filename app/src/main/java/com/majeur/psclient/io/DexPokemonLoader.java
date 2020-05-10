@@ -16,7 +16,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-public class DexPokemonLoader extends DataLoader<String, DexPokemon> {
+public class DexPokemonLoader extends AbsDataLoader<String, DexPokemon> {
 
     private Resources mResources;
 

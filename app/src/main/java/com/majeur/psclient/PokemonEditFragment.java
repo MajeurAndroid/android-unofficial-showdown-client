@@ -27,11 +27,14 @@ import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
-
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.DialogFragment;
+import androidx.fragment.app.Fragment;
 import com.google.android.material.button.MaterialButton;
+import com.majeur.psclient.io.AbsDataLoader;
 import com.majeur.psclient.io.AllItemsLoader;
 import com.majeur.psclient.io.AllSpeciesLoader;
-import com.majeur.psclient.io.DataLoader;
 import com.majeur.psclient.io.DexPokemonLoader;
 import com.majeur.psclient.io.GlideHelper;
 import com.majeur.psclient.io.LearnsetLoader;
@@ -58,11 +61,6 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.DialogFragment;
-import androidx.fragment.app.Fragment;
 
 import static android.content.ClipDescription.MIMETYPE_TEXT_PLAIN;
 import static android.content.Context.CLIPBOARD_SERVICE;
@@ -186,7 +184,7 @@ public class PokemonEditFragment extends Fragment {
         mHpTypeSpinner = view.findViewById(R.id.hpTypeSpinner);
         mClearButton = view.findViewById(R.id.clearPokemon);
 
-        mSpeciesLoader.load(array(""), new DataLoader.Callback<List>() {
+        mSpeciesLoader.load(array(""), new AbsDataLoader.Callback<List>() {
             @Override
             public void onLoaded(List[] results) {
                 if (!mAttachedToContext) return;
@@ -267,7 +265,7 @@ public class PokemonEditFragment extends Fragment {
             }
         });
 
-        mItemsLoader.load(array(""), new DataLoader.Callback<List>() {
+        mItemsLoader.load(array(""), new AbsDataLoader.Callback<List>() {
             @Override
             public void onLoaded(List[] results) {
                 if (!mAttachedToContext) return;
@@ -391,7 +389,7 @@ public class PokemonEditFragment extends Fragment {
                                 }
                             });
                     if (pokemon != null) {
-                        mDexPokemonLoader.load(array(toId(pokemon.species)), new DataLoader.Callback<DexPokemon>() {
+                        mDexPokemonLoader.load(array(toId(pokemon.species)), new AbsDataLoader.Callback<DexPokemon>() {
                             @Override
                             public void onLoaded(DexPokemon[] results) {
                                 if (!mAttachedToContext) return;
@@ -426,7 +424,7 @@ public class PokemonEditFragment extends Fragment {
         toggleInputViewsEnabled(false);
         final TeamPokemon pokemon = (TeamPokemon) getArguments().getSerializable(ARG_PKMN);
         if (pokemon != null) {
-            mDexPokemonLoader.load(array(toId(pokemon.species)), new DataLoader.Callback<DexPokemon>() {
+            mDexPokemonLoader.load(array(toId(pokemon.species)), new AbsDataLoader.Callback<DexPokemon>() {
                 @Override
                 public void onLoaded(DexPokemon[] results) {
                     if (!mAttachedToContext) return;
@@ -449,7 +447,7 @@ public class PokemonEditFragment extends Fragment {
 
     private void trySpecies(final String species) {
         String[] query = {toId(species)};
-        mDexPokemonLoader.load(query, new DataLoader.Callback<DexPokemon>() {
+        mDexPokemonLoader.load(query, new AbsDataLoader.Callback<DexPokemon>() {
             @Override
             public void onLoaded(DexPokemon[] results) {
                 if (!mAttachedToContext) return;
@@ -496,7 +494,7 @@ public class PokemonEditFragment extends Fragment {
         }
 
         String[] query = {mCurrentSpecies.id};
-        mLearnsetLoader.load(query, new DataLoader.Callback<Set>() {
+        mLearnsetLoader.load(query, new AbsDataLoader.Callback<Set>() {
             @Override
             public void onLoaded(Set[] results) {
                 if (!mAttachedToContext) return;
@@ -540,7 +538,7 @@ public class PokemonEditFragment extends Fragment {
                 if (i < pokemon.moves.length) mCurrentMoves[i] = pokemon.moves[i];
             if (mCurrentMoves.length > 0) {
                 // Retrieve full name for moves
-                mMoveDetailsLoader.load(mCurrentMoves, new DataLoader.Callback<Move.Details>() {
+                mMoveDetailsLoader.load(mCurrentMoves, new AbsDataLoader.Callback<Move.Details>() {
                     @Override
                     public void onLoaded(Move.Details[] results) {
                         if (!mAttachedToContext) return;
@@ -754,7 +752,7 @@ public class PokemonEditFragment extends Fragment {
             holder.mCategoryView.animate().cancel();
             holder.mCategoryView.setAlpha(0f);
 
-            mLoader.load(array(moveId), new DataLoader.Callback<Move.Details>() {
+            mLoader.load(array(moveId), new AbsDataLoader.Callback<Move.Details>() {
                 @Override
                 public void onLoaded(Move.Details[] results) {
                     // Check if callback arrives in time

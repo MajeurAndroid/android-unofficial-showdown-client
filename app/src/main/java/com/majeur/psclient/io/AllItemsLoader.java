@@ -3,7 +3,6 @@ package com.majeur.psclient.io;
 import android.content.Context;
 import android.content.res.Resources;
 import android.util.JsonReader;
-
 import com.majeur.psclient.R;
 import com.majeur.psclient.model.Item;
 
@@ -15,7 +14,7 @@ import java.util.List;
 
 import static com.majeur.psclient.util.Utils.addNullSafe;
 
-public class AllItemsLoader extends DataLoader<String, List> {
+public class AllItemsLoader extends AbsDataLoader<String, List> {
 
     private Resources mResources;
 

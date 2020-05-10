@@ -6,7 +6,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapRegionDecoder;
 import android.graphics.Rect;
 import android.util.JsonReader;
-
 import com.majeur.psclient.R;
 
 import java.io.IOException;
@@ -15,7 +14,7 @@ import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.List;
 
-public class DexIconLoader extends DataLoader<String, Bitmap> {
+public class DexIconLoader extends AbsDataLoader<String, Bitmap> {
 
     private static final int SHEET_WIDTH = 480;
     private static final int SHEET_HEIGHT = 3030;
@@ -25,6 +24,7 @@ public class DexIconLoader extends DataLoader<String, Bitmap> {
     private Resources mResources;
 
     public DexIconLoader(Context resources) {
+        super(64);
         mResources = resources.getResources();
     }
 

@@ -21,10 +21,12 @@ import android.widget.ExpandableListView;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
-import com.majeur.psclient.io.DataLoader;
+import com.majeur.psclient.io.AbsDataLoader;
 import com.majeur.psclient.io.DexIconLoader;
 import com.majeur.psclient.model.BattleFormat;
 import com.majeur.psclient.model.Team;
@@ -38,10 +40,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
 
 import static com.majeur.psclient.model.Id.toId;
 
@@ -404,7 +402,7 @@ public class TeamsFragment extends Fragment implements MainActivity.Callbacks {
             String[] queries = new String[team.pokemons.size()];
             for (int k = 0; k < queries.length; k++)
                 queries[k] = toId(team.pokemons.get(k).species);
-            mDexIconLoader.load(queries, new DataLoader.Callback<Bitmap>() {
+            mDexIconLoader.load(queries, new AbsDataLoader.Callback<Bitmap>() {
                 @Override
                 public void onLoaded(Bitmap[] results) {
                     for (int k = 0; k < results.length; k++) {

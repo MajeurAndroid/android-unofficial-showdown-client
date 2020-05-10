@@ -28,7 +28,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
-import com.majeur.psclient.io.DataLoader;
+import com.majeur.psclient.io.AbsDataLoader;
 import com.majeur.psclient.io.DexIconLoader;
 import com.majeur.psclient.model.AvailableBattleRoomsInfo;
 import com.majeur.psclient.model.BattleFormat;
@@ -202,7 +202,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks {
                 for (int k = 0; k < queries.length; k++) {
                     queries[k] = toId(team.pokemons.get(k).species);
                 }
-                mDexIconLoader.load(queries, new DataLoader.Callback<Bitmap>() {
+                mDexIconLoader.load(queries, new AbsDataLoader.Callback<Bitmap>() {
                     @Override
                     public void onLoaded(Bitmap[] results) {
                         for (int k = 0; k < results.length; k++) {

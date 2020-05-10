@@ -14,7 +14,7 @@ import java.util.List;
 
 import static com.majeur.psclient.util.Utils.addNullSafe;
 
-public class AllSpeciesLoader extends DataLoader<String, List> {
+public class AllSpeciesLoader extends AbsDataLoader<String, List> {
 
     private Resources mResources;
 

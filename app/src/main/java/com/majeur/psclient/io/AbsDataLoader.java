@@ -3,10 +3,10 @@ package com.majeur.psclient.io;
 import android.annotation.SuppressLint;
 import android.os.AsyncTask;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
-public abstract class DataLoader<Q, R> {
+public abstract class AbsDataLoader<Q, R> {
 
     public interface Callback<R> {
         void onLoaded(R[] results);
@@ -19,7 +19,19 @@ public abstract class DataLoader<Q, R> {
         void onLoadData(Q[] queries, R[] results);
     }
 
-    private Map<Q, R> mCache = new HashMap<>();
+    private final Map<Q, R> mCache;
+
+    public AbsDataLoader() {
+        this(Integer.MAX_VALUE);
+    }
+
+    public AbsDataLoader(int maxCacheSize) {
+        mCache = new LinkedHashMap<Q, R>() {
+            @Override protected boolean removeEldestEntry(Entry<Q, R> entry) {
+                return size() > maxCacheSize;
+            }
+        };
+    }
 
     @SuppressLint("StaticFieldLeak")
     @SuppressWarnings("Unchecked")

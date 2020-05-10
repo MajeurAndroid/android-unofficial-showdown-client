@@ -3,7 +3,7 @@ package com.majeur.psclient.io;
 import android.content.Context;
 import android.content.res.Resources;
 import android.util.JsonReader;
-
+import androidx.collection.ArraySet;
 import com.majeur.psclient.R;
 
 import java.io.IOException;
@@ -14,11 +14,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import androidx.collection.ArraySet;
+@SuppressWarnings({"unchecked", "rawtypes"})
+public class LearnsetLoader extends AbsDataLoader<String, Set> {
 
-public class LearnsetLoader extends DataLoader<String, Set> {
-
-    private Resources mResources;
+    private final Resources mResources;
 
     public LearnsetLoader(Context context) {
         mResources = context.getResources();
