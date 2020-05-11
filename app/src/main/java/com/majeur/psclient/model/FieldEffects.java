@@ -4,10 +4,10 @@ import com.majeur.psclient.R;
 
 import static com.majeur.psclient.model.Id.toIdSafe;
 
-public class Weather {
+public class FieldEffects {
 
-    public static int weatherResId(String weather) {
-        String id = toIdSafe(weather);
+    public static int getDrawableResourceId(String name) {
+        String id = toIdSafe(name);
         switch (id) {
             case "electricterrain": return R.drawable.weather_electricterrain;
             case "grassyterrain": return R.drawable.weather_grassyterrain;

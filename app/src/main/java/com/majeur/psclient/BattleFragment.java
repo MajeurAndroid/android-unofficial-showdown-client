@@ -34,6 +34,7 @@ import com.majeur.psclient.model.BattlingPokemon;
 import com.majeur.psclient.model.Colors;
 import com.majeur.psclient.model.Condition;
 import com.majeur.psclient.model.DexPokemon;
+import com.majeur.psclient.model.FieldEffects;
 import com.majeur.psclient.model.Move;
 import com.majeur.psclient.model.Player;
 import com.majeur.psclient.model.PokemonId;
@@ -41,7 +42,6 @@ import com.majeur.psclient.model.SidePokemon;
 import com.majeur.psclient.model.StatModifiers;
 import com.majeur.psclient.model.Stats;
 import com.majeur.psclient.model.Type;
-import com.majeur.psclient.model.Weather;
 import com.majeur.psclient.service.BattleMessageObserver;
 import com.majeur.psclient.service.ShowdownService;
 import com.majeur.psclient.util.AudioBattleManager;
@@ -790,8 +790,8 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         }
 
         @Override
-        protected void onWeatherChanged(String weather) {
-            final int resId = Weather.weatherResId(weather);
+        protected void onFieldEffectChanged(String name) {
+            final int resId = FieldEffects.getDrawableResourceId(name);
             if (Integer.valueOf(resId).equals(mOverlayImageView.getTag())) return;
             if (resId > 0) {
                 mOverlayImageView.setAlpha(0f);
