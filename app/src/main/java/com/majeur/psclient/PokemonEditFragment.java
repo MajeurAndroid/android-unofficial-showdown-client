@@ -252,10 +252,10 @@ public class PokemonEditFragment extends Fragment {
         });
 
         mItemsLoader.load(array(""), results -> {
+            List<Item> list = results[0];
+            list.size();
             if (!mAttachedToContext) return;
-            mItemTextView.setAdapter(new ArrayAdapter<>(getContext(),
-                    android.R.layout.simple_dropdown_item_1line,
-                    results[0]));
+            mItemTextView.setAdapter(new FilterableAdapter<>(results[0], mTextHighlightColor));
         });
         mItemTextView.setOnItemClickListener((adapterView, view14, i, l) -> {
             Adapter adapter = adapterView.getAdapter();
@@ -467,11 +467,11 @@ public class PokemonEditFragment extends Fragment {
             mShinyCheckbox.setChecked(pokemon.shiny);
             mHappinessTextView.setText(str(pokemon.happiness));
             mCurrentAbility = pokemon.ability;
-            ArrayAdapter<Item> itemAdapter = (ArrayAdapter<Item>) mItemTextView.getAdapter();
+            FilterableAdapter<Item> itemAdapter = (FilterableAdapter<Item>) mItemTextView.getAdapter();
             if (itemAdapter != null) {
                 for (int i = 0; i < itemAdapter.getCount(); i++) {
                     Item item = itemAdapter.getItem(i);
-                    if (item == null) continue;
+                    if (item == null || pokemon.item == null) continue;
                     if (pokemon.item.equals(item.id)) {
                         mCurrentItem = item;
                         mItemTextView.setText(item.name);

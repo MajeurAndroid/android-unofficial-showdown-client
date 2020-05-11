@@ -4,6 +4,7 @@ import android.text.Spannable;
 import android.text.Spanned;
 import android.text.style.BackgroundColorSpan;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -19,22 +20,27 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-public abstract class FilterableAdapter<T> extends BaseAdapter implements Filterable {
+public class FilterableAdapter<T> extends BaseAdapter implements Filterable {
+
+    private LayoutInflater mInflater;
 
     private final List<T> mData;
     private final List<T> mAdapterData;
     private String mCurrentConstraint;
     private final int mHighlightColor;
 
+    public FilterableAdapter(T[] data, int highlightColor) {
+        mData = Collections.synchronizedList(new ArrayList<>());
+        Collections.addAll(mData, data);
+        mAdapterData = Collections.synchronizedList(new ArrayList<>());
+        Collections.addAll(mAdapterData, data);
+        mHighlightColor = highlightColor;
+    }
+
     public FilterableAdapter(Collection<T> data, int highlightColor) {
         mData = Collections.synchronizedList(new ArrayList<>(data));
         mAdapterData = Collections.synchronizedList(new ArrayList<>(data));
         mHighlightColor = highlightColor;
-    }
-
-    @Override
-    public View getDropDownView(int position, View convertView, ViewGroup parent) {
-        return super.getDropDownView(position, convertView, parent);
     }
 
     @Override
@@ -50,6 +56,20 @@ public abstract class FilterableAdapter<T> extends BaseAdapter implements Filter
     @Override
     public long getItemId(int position) {
         return getItem(position).hashCode();
+    }
+
+    @Override
+    public View getView(int position, View convertView, ViewGroup parent) {
+        if (convertView == null) {
+            if (mInflater == null) mInflater = LayoutInflater.from(parent.getContext());
+            convertView = mInflater.inflate(android.R.layout.simple_dropdown_item_1line, parent, false);
+        }
+
+        TextView textView = (TextView) convertView;
+        textView.setText(getItem(position).toString());
+        highlightMatch(textView);
+
+        return convertView;
     }
 
     public int getHighlightColor() {
@@ -76,7 +96,9 @@ public abstract class FilterableAdapter<T> extends BaseAdapter implements Filter
                 Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
     }
 
-    protected abstract boolean matchConstraint(String constraint, T candidate);
+    protected boolean matchConstraint(String constraint, T candidate) {
+        return candidate.toString().toLowerCase().contains(constraint.toLowerCase());
+    }
 
     @NonNull
     @Override
