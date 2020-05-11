@@ -648,6 +648,7 @@ public class PokemonEditFragment extends Fragment {
             TextView textView = (TextView) convertView;
             textView.setText(species.name);
             highlightMatch(textView);
+            textView.setCompoundDrawables(null, null, null, null); // Remove eventual previous icon
             mIconLoader.load(array(species.id), (results) -> {
                 if (results[0] != null && species.name.contentEquals(textView.getText())) {
                     Drawable drawable = new BitmapDrawable(results[0]);
