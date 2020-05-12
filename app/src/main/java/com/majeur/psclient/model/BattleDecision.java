@@ -79,6 +79,13 @@ public class BattleDecision {
         return false;
     }
 
+    public boolean hasOnlyPassChoice() {
+        for (Choice c : mChoices)
+            if (!c.action.equals(ACTION_PASS))
+                return false;
+        return true;
+    }
+
     public String getCommand() {
         return mCommand;
     }

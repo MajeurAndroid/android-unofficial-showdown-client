@@ -26,7 +26,6 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.FrameLayout;
-
 import com.majeur.psclient.R;
 import com.majeur.psclient.model.BattleActionRequest;
 import com.majeur.psclient.model.BattleDecision;
@@ -325,7 +324,7 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
                 addNullSafe(foeTargets, mObserver.getBattlingPokemon(PokemonId.fromPosition(Player.FOE, i)));
             }
             boolean[][] b = Move.Target.computeTargetAvailabilities(mTargetToChoose, mCurrentPrompt, mRequest.getCount());
-            showChoice(mBattleTipPopup, targets, foeTargets, b);
+            showTargetChoice(mBattleTipPopup, targets, foeTargets, b);
         } else if (mRequest.teamPreview() ? mCurrentPrompt == 0 : mCurrentPrompt + 1 >= mRequest.getCount()) { // Request completed
             mOnDecisionListener.onDecisionTook(mDecision);
             revealOut();
@@ -334,6 +333,7 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
             mBattleTipPopup = null;
             mRequest = null;
             mDecision = null;
+            mTargetToChoose = null;
         } else {
             mCurrentPrompt += 1;
             if (!mRequest.teamPreview()) {
@@ -363,8 +363,8 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
         }
     }
 
-    private void showChoice(final BattleTipPopup battleTipPopup, final List<BattlingPokemon> trainerTargets,
-                            final List<BattlingPokemon> foeTargets, final boolean[][] availabilities) {
+    private void showTargetChoice(final BattleTipPopup battleTipPopup, final List<BattlingPokemon> trainerTargets,
+                                  final List<BattlingPokemon> foeTargets, final boolean[][] availabilities) {
         mContentAlphaAnimator.setFloatValues(1f, 0f);
         mContentAlphaAnimator.setDuration(ANIM_NEXTCHOICE_FADE_DURATION);
         mContentAlphaAnimator.setStartDelay(0);
@@ -378,7 +378,7 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
 
             @Override
             public void onAnimationRepeat(Animator animator) {
-                setChoiceLayout(battleTipPopup, trainerTargets, foeTargets, availabilities);
+                setTargetChoiceLayout(battleTipPopup, trainerTargets, foeTargets, availabilities);
             }
 
             @Override
@@ -390,8 +390,8 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
         mContentAlphaAnimator.start();
     }
 
-    private void setChoiceLayout(BattleTipPopup battleTipPopup, List<BattlingPokemon> trainerTargets,
-                                 List<BattlingPokemon> foeTargets, boolean[][] availabilities) {
+    private void setTargetChoiceLayout(BattleTipPopup battleTipPopup, List<BattlingPokemon> trainerTargets,
+                                       List<BattlingPokemon> foeTargets, boolean[][] availabilities) {
         for (int i = 0; i < 4; i++) {
             Button button = mMoveButtons.get(i);
             button.setText(null);
@@ -424,7 +424,7 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
     private void showChoice(final BattleTipPopup battleTipPopup, final Move[] moves, final boolean canMega,
                             final boolean canDynamax, final boolean isDynamaxed, final List<SidePokemon> team,
                             final boolean chooseLead) {
-        if (mCurrentPrompt == 0) {
+        if (mCurrentPrompt == 0 || mDecision.hasOnlyPassChoice()) {
             setChoiceLayout(battleTipPopup, moves, canMega, canDynamax, isDynamaxed, team, chooseLead);
             return;
         }
