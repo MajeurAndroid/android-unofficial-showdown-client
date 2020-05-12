@@ -14,9 +14,10 @@ import java.util.List;
 
 import static com.majeur.psclient.util.Utils.addNullSafe;
 
+@SuppressWarnings("rawtypes")
 public class AllItemsLoader extends AbsDataLoader<String, List> {
 
-    private Resources mResources;
+    private final Resources mResources;
 
     public AllItemsLoader(Context context) {
         mResources = context.getResources();
@@ -66,7 +67,7 @@ public class AllItemsLoader extends AbsDataLoader<String, List> {
             while (mJsonReader.hasNext()) {
                 String name = mJsonReader.nextName();
                 if (name.contains(constraint))
-                    addNullSafe(species, parseSpecies());
+                    addNullSafe(species, parseItem(name));
                 else
                     mJsonReader.skipValue();
             }
@@ -75,8 +76,9 @@ public class AllItemsLoader extends AbsDataLoader<String, List> {
             results[0] = species;
         }
 
-        private Item parseSpecies() throws IOException {
+        private Item parseItem(String itemId) throws IOException {
             Item item = new Item();
+            item.id = itemId;
             mJsonReader.beginObject();
             while (mJsonReader.hasNext()) {
                 final String name = mJsonReader.nextName();
@@ -84,8 +86,9 @@ public class AllItemsLoader extends AbsDataLoader<String, List> {
                     case "name":
                         item.name = mJsonReader.nextString();
                         break;
-                    case "id":
-                        item.id = mJsonReader.nextString();
+                    case "desc":
+                        // Ignored for now
+                        mJsonReader.skipValue();
                         break;
                     default:
                         mJsonReader.skipValue();
