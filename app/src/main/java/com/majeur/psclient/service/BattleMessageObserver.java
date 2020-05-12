@@ -774,7 +774,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
 
         final CharSequence text = mBattleTextBuilder.activate(id, effect, target, msg.kwarg("of"),
                 msg.kwarg("ability"), msg.kwarg("ability2"), msg.kwarg("move"), msg.kwarg("number"),
-                msg.kwarg("item"));
+                msg.kwarg("item"), msg.kwarg("name"));
 
         mActionQueue.enqueueMinorAction(() -> displayMinorActionMessage(text));
     }

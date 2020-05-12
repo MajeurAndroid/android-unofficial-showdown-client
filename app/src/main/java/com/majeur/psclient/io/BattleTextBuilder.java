@@ -3,13 +3,11 @@ package com.majeur.psclient.io;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.text.TextUtils;
-
 import com.majeur.psclient.R;
 import com.majeur.psclient.model.BattlingPokemon;
 import com.majeur.psclient.model.Player;
 import com.majeur.psclient.model.PokemonId;
 import com.majeur.psclient.util.Utils;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -24,6 +22,12 @@ import static com.majeur.psclient.util.Utils.firstCharUpperCase;
 import static com.majeur.psclient.util.Utils.parseBoldTags;
 import static com.majeur.psclient.util.Utils.str;
 
+/**
+ * This class is a java replica of https://github.com/smogon/pokemon-showdown-client/blob/master/src/battle-text-parser.ts
+ * Last updated on 8 may of 2020
+ * More and less corresponding to this commit:
+ * https://github.com/smogon/pokemon-showdown-client/commit/0c19bb3c82d39c9b01cdf44723af945b7622fc4a#diff-73c45fc8dbf03d7d5353d2ad39123f96
+ */
 public final class BattleTextBuilder {
 
     private static final String TAG = BattleTextBuilder.class.getSimpleName();
@@ -44,6 +48,8 @@ public final class BattleTextBuilder {
     private static final String PH_SOURCE = "[SOURCE]";
     private static final String PH_PERCENTAGE = "[PERCENTAGE]";
     private static final String PH_STAT = "[STAT]";
+    private static final String PH_PARTY = "[PARTY]";
+    private static final String PH_NAME = "[NAME]";
 
     private JSONObject mJSONObject;
     private JsonReadTask mJsonReadTask;
@@ -51,12 +57,9 @@ public final class BattleTextBuilder {
 
     public BattleTextBuilder(Context context) {
         InputStream inputStream = context.getResources().openRawResource(R.raw.battle_texts);
-        mJsonReadTask = new JsonReadTask(new JsonReadTask.Callback() {
-            @Override
-            public void onFileRead(JSONObject jsonObject) {
-                mJSONObject = jsonObject;
-                mJsonReadTask = null;
-            }
+        mJsonReadTask = new JsonReadTask(jsonObject -> {
+            mJSONObject = jsonObject;
+            mJsonReadTask = null;
         });
         mJsonReadTask.execute(inputStream);
     }
@@ -189,6 +192,10 @@ public final class BattleTextBuilder {
         return resolve(player == Player.FOE ? "opposingTeam" : "team");
     }
 
+    private String party(Player player) {
+        return resolve(player == Player.FOE ? "opposingParty" : "party");
+    }
+
     private String trainer(PokemonId pokemonId) {
         if (pokemonId == null) return null;
         return resolve(pokemonId.foe ? "opposingTeam" : "team");
@@ -301,6 +308,13 @@ public final class BattleTextBuilder {
                     id = "zenmode";
                     templateName = "transformEnd";
                     break;
+                case "darmanitangalarzen":
+                    id = "zenmode";
+                    break;
+                case "darmanitangalar":
+                    id = "zenmode";
+                    templateName = "transformEnd";
+                    break;
                 case "aegislashblade":
                     id = "stancechange";
                     break;
@@ -320,6 +334,13 @@ public final class BattleTextBuilder {
                     break;
                 case "minior":
                     id = "shieldsdown";
+                    templateName = "transformEnd";
+                    break;
+                case "eiscuenoice":
+                    id = "iceface";
+                    break;
+                case "eiscue":
+                    id = "iceface";
                     templateName = "transformEnd";
                     break;
             }
@@ -600,14 +621,14 @@ public final class BattleTextBuilder {
         String template = resolve(effect, "start", false);
         if (template == null)
             template = formatPlaceHolders(resolve("startTeamEffect"), PH_EFFECT, effect(effect));
-        return line(template, PH_TEAM, team(player));
+        return line(template, PH_TEAM, team(player), PH_PARTY, party(player));
     }
 
     public CharSequence sideend(Player player, String effect) {
         String template = resolve(effect, "end", false);
         if (template == null)
             template = formatPlaceHolders(resolve("endTeamEffect"), PH_EFFECT, effect(effect));
-        return line(template, PH_TEAM, team(player));
+        return line(template, PH_TEAM, team(player), PH_PARTY, party(player));
     }
 
     public CharSequence weather(String weather, String previousWeather, String from, String of, String upkeep) {
@@ -651,7 +672,7 @@ public final class BattleTextBuilder {
 
     public CharSequence activate(PokemonId pkmnId, String effect, String target, String of,
                                  String ability, String ability2, String move, String number,
-                                 String item) {
+                                 String item, String name) {
         String id = toId(effect(effect));
         PokemonId targetId = getPokemonId(target);
         if (id.equals("celebrate")) {
@@ -698,8 +719,9 @@ public final class BattleTextBuilder {
         if (ability2 != null) {
             line1 = lines(line1, ability(ability2, targetId));
         }
-        if (move != null || number != null || item != null) {
-            template = formatPlaceHolders(PH_MOVE, move, PH_NUMBER, number, PH_ITEM, item);
+
+        if (move != null || number != null || item != null || name != null) {
+            template = formatPlaceHolders(PH_MOVE, move, PH_NUMBER, number, PH_ITEM, item, PH_NAME, name);
         }
         line2 = line(template, PH_POKEMON, pokemon(pkmnId), PH_TARGET, pokemon(targetId),
                 PH_SOURCE, pokemon(of));
@@ -775,7 +797,8 @@ public final class BattleTextBuilder {
         if (amount != -1 && zeffect != null) {
             templateId += (multiple != null ? "MultipleFromZEffect" : "FromZEffect");
         } else if (amount != -1 && from != null && from.startsWith("item:")) {
-            templateId += "FromItem";
+            String template = resolve(from, templateId + "FromItem");
+            return lines(line1, line(template, PH_POKEMON, pokemon(pkmnId), PH_STAT, stat(stat), PH_ITEM, effect(from)));
         }
 		String template = resolve(from, templateId);
         line2 = line(template, PH_POKEMON, pokemon(pkmnId), PH_STAT, stat(stat));
