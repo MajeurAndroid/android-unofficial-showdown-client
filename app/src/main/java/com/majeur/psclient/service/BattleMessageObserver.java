@@ -358,8 +358,8 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
             mLastActionRequest = request;
             mActionQueue.setLastAction(() -> onRequestAsked(request));
         } catch (JSONException e) {
-            Log.e(getClass().getSimpleName(), "Error while parsing request json");
-            e.printStackTrace();
+            Log.e(getClass().getSimpleName(), "Error while parsing request json", e);
+            printErrorMessage("An error has occurred while receiving choices.");
         }
     }
 
