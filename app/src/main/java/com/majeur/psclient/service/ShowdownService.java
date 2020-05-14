@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ShowdownService extends Service {
@@ -65,7 +66,9 @@ public class ShowdownService extends Service {
         mMessageObservers = new LinkedList<>();
         mSharedData = new HashMap<>();
 
-        mOkHttpClient = new OkHttpClient();
+        mOkHttpClient = new OkHttpClient.Builder()
+                .connectTimeout(10, TimeUnit.SECONDS)
+                .build();
     }
 
     @Override
@@ -81,7 +84,7 @@ public class ShowdownService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Log.e(TAG, "Service onDestroy()");
+        Log.d(TAG, "Service onDestroy()");
         if (isConnected())
             mWebSocket.close(WS_CLOSE_GOING_AWAY, null);
     }
@@ -93,6 +96,7 @@ public class ShowdownService extends Service {
     public void connectToServer() {
         if (isConnected())
             return;
+        Log.d(TAG, "Attempting to open WS connection.");
         Request request = new Request.Builder().url(SHOWDOWN_SOCKET_URL).build();
         mWebSocket = mOkHttpClient.newWebSocket(request, mWebSocketListener);
     }
@@ -130,10 +134,10 @@ public class ShowdownService extends Service {
 
     private void sendMessage(String message) {
         if (isConnected()) {
-            Log.w(TAG + "[SEND]", message);
+            Log.i(TAG + "[SEND]", message);
             mWebSocket.send(message);
         } else {
-            Log.e(TAG + "[SEND]", "Error: WebSocket not connected. Ignoring message: " + message);
+            Log.e(TAG, "Error: WebSocket not connected. Ignoring message: " + message);
         }
     }
 
@@ -176,7 +180,7 @@ public class ShowdownService extends Service {
 
             ServerMessage message = new ServerMessage(roomId, line);
 
-            Log.e(message.command, message.args.toString());
+            //Log.i(message.command, message.args.toString());
             if (roomId == null) {
                 if (!message.command.equals("init") && !message.command.equals("deinit")) {
                     boolean consumed = mGlobalMessageObserver != null && mGlobalMessageObserver.postMessage(message);
@@ -218,12 +222,12 @@ public class ShowdownService extends Service {
         @Override
         public void onOpen(@NonNull WebSocket webSocket, @NonNull Response response) {
             mConnected.set(true);
-            Log.w(TAG + "[OPEN]", "");
+            Log.i(TAG + "[OPEN]", "");
         }
 
         @Override
         public void onMessage(@NonNull WebSocket webSocket, @NonNull final String data) {
-            Log.w(TAG + "[RECEIVE]", data);
+            Log.i(TAG + "[RECEIVE]", data);
             mUiHandler.post(() -> {
                 if (mGlobalMessageObserver == null && mMessageObservers.isEmpty()) {
                     mMessageCache.add(data);
@@ -238,12 +242,12 @@ public class ShowdownService extends Service {
 
         @Override
         public void onClosing(@NonNull WebSocket webSocket, int code, @NonNull String reason) {
-            Log.w(TAG + "[CLOSING]", reason);
+            Log.i(TAG + "[CLOSING]", reason);
         }
 
         @Override
         public void onFailure(@NonNull WebSocket webSocket, Throwable t, Response response) {
-            Log.w(TAG + "[ERR]", t.toString());
+            Log.i(TAG + "[ERR]", t.toString());
             mConnected.set(false);
             mWebSocket = null;
 
@@ -256,7 +260,7 @@ public class ShowdownService extends Service {
 
         @Override
         public void onClosed(@NonNull WebSocket webSocket, int code, @NonNull String reason) {
-            Log.w(TAG + "[CLOSED]", reason);
+            Log.i(TAG + "[CLOSED]", reason);
             mConnected.set(false);
             mWebSocket = null;
         }
@@ -291,13 +295,13 @@ public class ShowdownService extends Service {
                                 resultJson.getString("assertion"));
 
                 } catch (JSONException e) {
-                    e.printStackTrace();
+                    Log.e(TAG, "Error while parsing assertion json.", e);
                 }
             }
 
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
-
+                Log.e(TAG, "Call failed.", e);
             }
         });
     }
@@ -338,7 +342,7 @@ public class ShowdownService extends Service {
 
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
-
+                Log.e(TAG, "Call failed.", e);
             }
         });
     }
@@ -376,13 +380,13 @@ public class ShowdownService extends Service {
                     }
                     mUiHandler.post(() -> callback.onSignInAttempted(success, true, null));
                 } catch (JSONException e) {
-                    e.printStackTrace();
+                    Log.e(TAG, "Error while parsing connection result json.", e);
                 }
             }
 
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
-
+                Log.e(TAG, "Call failed.", e);
             }
         });
     }
