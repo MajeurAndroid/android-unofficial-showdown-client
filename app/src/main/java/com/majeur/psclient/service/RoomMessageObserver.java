@@ -15,7 +15,9 @@ import com.majeur.psclient.util.TextTagSpan;
 import com.majeur.psclient.util.Utils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -30,7 +32,7 @@ public abstract class RoomMessageObserver extends AbsMessageObserver {
     private static final String TAG = RoomMessageObserver.class.getSimpleName();
 
     private List<String> mCurrentUsers;
-    private Map<String, Integer> mUsernameColorCache;
+    private final Map<String, Integer> mUsernameColorCache;
     private boolean mRoomJoined;
 
     public RoomMessageObserver() {
@@ -51,6 +53,12 @@ public abstract class RoomMessageObserver extends AbsMessageObserver {
 
     public boolean roomJoined() {
         return mRoomJoined;
+    }
+
+    public List<String> getUsers() {
+        List<String> users = mCurrentUsers.size() > 5 ? new ArrayList<>() : new LinkedList<>();
+        users.addAll(mCurrentUsers);
+        return Collections.unmodifiableList(users);
     }
 
     @Override

@@ -1,36 +1,36 @@
 package com.majeur.psclient;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import android.os.Bundle;
 import android.text.Spanned;
 import android.text.TextUtils;
 import android.text.method.LinkMovementMethod;
 import android.view.Gravity;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ScrollView;
 import android.widget.TextView;
-
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
 import com.majeur.psclient.io.DexIconLoader;
 import com.majeur.psclient.io.GlideHelper;
 import com.majeur.psclient.model.RoomInfo;
 import com.majeur.psclient.service.RoomMessageObserver;
 import com.majeur.psclient.service.ShowdownService;
-import com.majeur.psclient.util.Callback;
 import com.majeur.psclient.util.Utils;
 import com.majeur.psclient.util.html.Html;
 
 import java.util.List;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
+import static com.majeur.psclient.model.Id.toIdSafe;
 
 public class ChatFragment extends Fragment implements MainActivity.Callbacks {
 
@@ -90,34 +90,37 @@ public class ChatFragment extends Fragment implements MainActivity.Callbacks {
         mMessageView = view.findViewById(R.id.edit_text_chat);
         mSendMessageView = view.findViewById(R.id.button_send);
 
-        mTitleButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (!mShowdownService.isConnected()) return;
+        mTitleButton.setOnClickListener(v -> {
+            if (!mShowdownService.isConnected()) return;
 
-                if (mObserver.roomJoined())
-                    mShowdownService.sendRoomCommand(mObservedRoomId, "leave");
-                else
-                    mShowdownService.sendGlobalCommand("cmd", "rooms");
-            }
+            if (mObserver.roomJoined())
+                mShowdownService.sendRoomCommand(mObservedRoomId, "leave");
+            else
+                mShowdownService.sendGlobalCommand("cmd", "rooms");
         });
 
-        mSendMessageView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
+        mUserCountView.setOnClickListener(v -> {
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(v.getContext(),
+                    android.R.layout.simple_list_item_1,
+                    mObserver.getUsers());
+            new AlertDialog.Builder(v.getContext())
+                    .setTitle("Users")
+                    .setAdapter(adapter, (dialog, pos) -> {
+                        mShowdownService.sendGlobalCommand("cmd userdetails", toIdSafe(adapter.getItem(pos)));
+                        dialog.dismiss();
+                    })
+                    .setNegativeButton("Close", null)
+                    .show();
+        });
+
+        mSendMessageView.setOnClickListener(v -> sendMessageIfAny());
+
+        mMessageView.setOnEditorActionListener((textView, actionId, keyEvent) -> {
+            if (actionId == EditorInfo.IME_ACTION_SEND) {
                 sendMessageIfAny();
+                return true;
             }
-        });
-
-        mMessageView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView textView, int actionId, KeyEvent keyEvent) {
-                if (actionId == EditorInfo.IME_ACTION_SEND) {
-                    sendMessageIfAny();
-                    return true;
-                }
-                return false;
-            }
+            return false;
         });
 
         setDefaultUiState();
@@ -126,13 +129,10 @@ public class ChatFragment extends Fragment implements MainActivity.Callbacks {
     private void setDefaultUiState() {
         mTitleView.setText("—");
         mUserCountView.setText("-\nusers");
-        mChatTextView.animate().alpha(0f).withEndAction(new Runnable() {
-            @Override
-            public void run() {
-                mChatTextView.setText("\n\n\n\n\n\n\n\n\n\nTap the join button to join a room");
-                mChatTextView.setGravity(Gravity.CENTER_HORIZONTAL);
-                mChatTextView.animate().alpha(1f).withEndAction(null).start();
-            }
+        mChatTextView.animate().alpha(0f).withEndAction(() -> {
+            mChatTextView.setText("\n\n\n\n\n\n\n\n\n\nTap the join button to join a room");
+            mChatTextView.setGravity(Gravity.CENTER_HORIZONTAL);
+            mChatTextView.animate().alpha(1f).withEndAction(null).start();
         }).start();
         mMessageView.getText().clear();
         mMessageView.clearFocus();
@@ -175,7 +175,7 @@ public class ChatFragment extends Fragment implements MainActivity.Callbacks {
             activity.showBadge(getId());
     }
 
-    private RoomMessageObserver mObserver = new RoomMessageObserver() {
+    private final RoomMessageObserver mObserver = new RoomMessageObserver() {
 
         @Override
         public void onRoomInit() {
@@ -208,28 +208,20 @@ public class ChatFragment extends Fragment implements MainActivity.Callbacks {
             Html.fromHtml(html,
                     Html.FROM_HTML_MODE_COMPACT,
                     mSpritesLoader.getHtmlImageGetter(mDexIconLoader, mChatTextView.getWidth()),
-                    new Callback<Spanned>() {
-                        @Override
-                        public void callback(Spanned spanned) {
-                            int at = mChatTextView.getEditableText().getSpanStart(mark);
-                            if (at == -1) return; // Check if text has been cleared
-                            boolean fullScrolled = Utils.fullScrolled(mChatScrollView);
-                            mChatTextView.getEditableText()
-                                    .insert(at, "\n")
-                                    .insert(at + 1, spanned);
-                            notifyNewMessageReceived();
-                            if (fullScrolled) postFullScroll();
-                        }
+                    spanned -> {
+                        int at = mChatTextView.getEditableText().getSpanStart(mark);
+                        if (at == -1) return; // Check if text has been cleared
+                        boolean fullScrolled = Utils.fullScrolled(mChatScrollView);
+                        mChatTextView.getEditableText()
+                                .insert(at, "\n")
+                                .insert(at + 1, spanned);
+                        notifyNewMessageReceived();
+                        if (fullScrolled) postFullScroll();
                     });
         }
 
         private void postFullScroll() {
-            mChatScrollView.post(new Runnable() {
-                @Override
-                public void run() {
-                    mChatScrollView.fullScroll(View.FOCUS_DOWN);
-                }
-            });
+            mChatScrollView.post(() -> mChatScrollView.fullScroll(View.FOCUS_DOWN));
         }
 
         @Override
