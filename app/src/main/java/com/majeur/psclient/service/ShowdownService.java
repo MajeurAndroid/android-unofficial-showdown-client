@@ -112,11 +112,20 @@ public class ShowdownService extends Service {
     }
 
     public void sendTrnMessage(String userName, String assertion) {
-        sendGlobalCommand("trn", userName + ",0," + assertion);
+        sendGlobalCommand("trn", userName, "0", assertion);
+    }
+
+    public void sendPrivateMessage(String to, String content) {
+        sendGlobalCommand("pm", to, content);
     }
 
     public void sendGlobalCommand(String command, Object... args) {
-        sendRoomCommand(null, command, args);
+        StringBuilder argsBuilder = new StringBuilder();
+        if (args.length > 0) argsBuilder.append(args[0]);
+        for (int i = 1; i < args.length; i++)
+            argsBuilder.append(',').append(args[i]);
+
+        sendRoomMessage(null, "/" + command + " " + argsBuilder.toString());
     }
 
     public void sendRoomCommand(@Nullable String roomId, String command, Object... args) {

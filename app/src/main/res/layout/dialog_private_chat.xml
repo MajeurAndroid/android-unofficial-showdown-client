@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="12dp"
+        android:minWidth="324dp"
+        android:minHeight="324dp">
+
+    <TextView
+            android:id="@+id/title_text_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="32dp"
+            android:layout_marginStart="10dp"
+            android:textAppearance="@style/TextAppearance.MaterialComponents.Headline5"/>
+
+    <ScrollView
+            android:id="@+id/scroll_view_chat"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+        <TextView
+                android:id="@+id/chat_log"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="?attr/colorOnBackground"
+                android:textSize="16sp"
+                android:lineSpacingExtra="2dp"
+                android:paddingHorizontal="12dp"/>
+
+    </ScrollView>
+
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:elevation="4dp"
+            android:paddingStart="12dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="?attr/colorSurface">
+
+        <EditText
+                android:id="@+id/edit_text_chat"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:inputType="textShortMessage"
+                android:imeOptions="actionSend"
+                android:maxLines="1"
+                android:hint="Message..."/>
+
+        <ImageButton
+                android:id="@+id/button_send"
+                android:layout_width="52dp"
+                android:layout_height="match_parent"
+                android:background="?attr/selectableItemBackground"
+                android:src="@drawable/ic_send"
+                android:scaleType="fitXY"
+                android:padding="4dp"
+                android:tint="?attr/colorSecondary"/>
+
+    </LinearLayout>
+
+</LinearLayout>

@@ -3,8 +3,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:fillViewport="true">
+    android:layout_height="match_parent">
 <!--
     <TextView
         android:layout_width="wrap_content"
@@ -17,7 +16,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
+        android:layout_gravity="center_horizontal"
         android:orientation="vertical"
         android:gravity="center_horizontal">
 
@@ -171,6 +170,22 @@
                     android:orientation="vertical"/>
 
             </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="12dp"
+                android:layout_gravity="center"
+                app:contentPadding="16dp"
+                android:id="@+id/pmsOverviewContainer"
+                android:visibility="gone">
+
+            <com.majeur.psclient.widget.PrivateMessagesOverviewWidget
+                    android:id="@+id/pmsOverviewWidget"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
 
         </com.google.android.material.card.MaterialCardView>
 

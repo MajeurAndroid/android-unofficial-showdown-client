@@ -1,6 +1,5 @@
 package com.majeur.psclient.service;
 
-import android.text.TextUtils;
 import android.util.Log;
 import com.majeur.psclient.model.AvailableBattleRoomsInfo;
 import com.majeur.psclient.model.BattleFormat;
@@ -9,10 +8,14 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
+import static android.text.TextUtils.isEmpty;
 import static com.majeur.psclient.util.Utils.jsonObject;
 
 public abstract class GlobalMessageObserver extends AbsMessageObserver {
@@ -23,13 +26,11 @@ public abstract class GlobalMessageObserver extends AbsMessageObserver {
     private boolean mIsUserGuest;
     private boolean mRequestServerCountsOnly;
 
+    private final Map<String, List<String>> mPrivateMessages = new HashMap<>();
+
     public GlobalMessageObserver() {
         setObserveAll(true);
         mIsUserGuest = true;
-    }
-
-    private String getUserId() {
-        return mUserName.toLowerCase().replace("[^a-z0-9]", "");
     }
 
     public boolean isUserGuest() {
@@ -61,13 +62,13 @@ public abstract class GlobalMessageObserver extends AbsMessageObserver {
             case "updatesearch":
                 handleUpdateSearch(message);
                 return true;
-
             case "pm":
+                handlePm(message);
+                return true;
             case "usercount":
+                return true;
             case "updatechallenges":
-                //final String challengesStatus = messageDetail.substring(messageDetail.indexOf('|') + 1);
-                //BroadcastSender.get(this).sendBroadcastFromMyApplication(
-                //        BroadcastSender.EXTRA_UPDATE_CHALLENGE, challengesStatus);
+                handleChallenges(message);
                 return true;
             case "error":
                 if (message.nextArg().equals("network"))
@@ -156,7 +157,6 @@ public abstract class GlobalMessageObserver extends AbsMessageObserver {
             RoomInfo[] officialRooms = new RoomInfo[N];
             for (int i = 0; i < N; i++) {
                 JSONObject roomJson = jsonArray.getJSONObject(i);
-                Log.e("s", roomJson.getString("title"));
                 officialRooms[i] = new RoomInfo(roomJson.getString("title"),
                         roomJson.getString("desc"), roomJson.getInt("userCount"));
             }
@@ -193,7 +193,7 @@ public abstract class GlobalMessageObserver extends AbsMessageObserver {
         try {
             JSONObject jsonObject = new JSONObject(queryContent);
             String userId = jsonObject.optString("userid");
-            if (userId == null) return;
+            if (isEmpty(userId)) return;
 
             String name = jsonObject.optString("name");
             boolean online = jsonObject.has("status");
@@ -254,7 +254,7 @@ public abstract class GlobalMessageObserver extends AbsMessageObserver {
         StringBuilder text = new StringBuilder(msg.nextArg());
         while (msg.hasNextArg()) {
             String next = msg.nextArg();
-            if (!TextUtils.isEmpty(next))
+            if (!isEmpty(next))
                 text.append("\n").append(next);
         }
         onShowPopup(text.toString());
@@ -291,6 +291,61 @@ public abstract class GlobalMessageObserver extends AbsMessageObserver {
         onSearchBattlesChanged(searching, battleRoomIds, battleRoomNames);
     }
 
+    private void handlePm(ServerMessage serverMessage) {
+        String from = serverMessage.nextArg().substring(1);
+        String to = serverMessage.nextArg().substring(1);
+        String with = mUserName.equals(from) ? to : from;
+        String content = serverMessage.hasNextArg() ? serverMessage.nextArg() : null;
+
+        if (content != null && (content.startsWith("/raw") || content.startsWith("/html") || content.startsWith("/uhtml")))
+            content = "Html messages not supported in pm.";
+        String message = from + ": " + content;
+
+        List<String> messages;
+        if (mPrivateMessages.containsKey(with)) {
+            messages = mPrivateMessages.get(with);
+        } else {
+            messages = new LinkedList<>();
+            mPrivateMessages.put(with, messages);
+        }
+        messages.add(message);
+        onNewPrivateMessage(with, message);
+    }
+
+    private void handleChallenges(ServerMessage message) {
+        String rawJson = message.rawArgs();
+        String to = null, format = null;
+        String[] usersFrom = null;
+        String[] formatsFrom = null;
+        try {
+            JSONObject jsonObject = new JSONObject(rawJson);
+            if (!jsonObject.isNull("challengeTo")) {
+                JSONObject challengeTo = jsonObject.getJSONObject("challengeTo");
+                to = challengeTo.getString("to");
+                format = challengeTo.getString("format");
+            }
+            JSONObject challengesFrom = jsonObject.getJSONObject("challengesFrom");
+            int len = challengesFrom.length();
+            usersFrom = new String[len];
+            formatsFrom = new String[len];
+            Iterator<String> it = challengesFrom.keys();
+            for (int i = 0; i < len; i++) {
+                usersFrom[i] = it.next();
+                formatsFrom[i] = challengesFrom.getString(usersFrom[i]);
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        if (usersFrom == null) usersFrom = formatsFrom = new String[0];
+        onChallengesChange(to, format, usersFrom, formatsFrom);
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    public List<String> getPrivateMessages(String with) {
+        if (!mPrivateMessages.containsKey(with)) return null;
+        return Collections.unmodifiableList(mPrivateMessages.get(with));
+    }
+
     protected abstract void onUserChanged(String userName, boolean isGuest, String avatarId);
 
     protected abstract void onUpdateCounts(int userCount, int battleCount);
@@ -306,6 +361,10 @@ public abstract class GlobalMessageObserver extends AbsMessageObserver {
     protected abstract void onAvailableRoomsChanged(RoomInfo[] officialRooms, RoomInfo[] chatRooms);
 
     protected abstract void onAvailableBattleRoomsChanged(AvailableBattleRoomsInfo availableRoomsInfo);
+
+    protected abstract void onNewPrivateMessage(String with, String message);
+
+    protected abstract void onChallengesChange(String to, String format, String[] usersFrom, String[] formatsFrom);
 
     protected abstract void onRoomInit(String roomId, String type);
 
