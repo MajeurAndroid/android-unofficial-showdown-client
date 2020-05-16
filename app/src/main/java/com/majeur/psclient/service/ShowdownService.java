@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ShowdownService extends Service {
@@ -59,6 +58,7 @@ public class ShowdownService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        Log.d(TAG, "Lifecycle: onCreate()");
         mUiHandler = new Handler(Looper.getMainLooper());
         mBinder = new Binder();
         mMessageCache = new LinkedList<>();
@@ -67,24 +67,26 @@ public class ShowdownService extends Service {
         mSharedData = new HashMap<>();
 
         mOkHttpClient = new OkHttpClient.Builder()
-                .connectTimeout(10, TimeUnit.SECONDS)
                 .build();
     }
 
     @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        return START_NOT_STICKY;
+    public IBinder onBind(Intent intent) {
+        Log.d(TAG, "Lifecycle: onBind()");
+        return mBinder;
     }
 
     @Override
-    public IBinder onBind(Intent intent) {
-        return mBinder;
+    public boolean onUnbind(Intent intent) {
+        Log.d(TAG, "Lifecycle: onUnbind()");
+        disconnectFromServer();
+        return true;
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Log.d(TAG, "Service onDestroy()");
+        Log.d(TAG, "Lifecycle: onDestroy()");
         if (isConnected())
             mWebSocket.close(WS_CLOSE_GOING_AWAY, null);
     }
@@ -94,8 +96,7 @@ public class ShowdownService extends Service {
     }
 
     public void connectToServer() {
-        if (isConnected())
-            return;
+        if (isConnected()) return;
         Log.d(TAG, "Attempting to open WS connection.");
         Request request = new Request.Builder().url(SHOWDOWN_SOCKET_URL).build();
         mWebSocket = mOkHttpClient.newWebSocket(request, mWebSocketListener);
@@ -107,8 +108,10 @@ public class ShowdownService extends Service {
     }
 
     public void disconnectFromServer() {
-        if (isConnected())
-            mWebSocket.close(WS_CLOSE_NORMAL, null);
+        if (!isConnected()) return;
+        Log.d(TAG, "Attempting to close WS connection.");
+        mWebSocket.close(WS_CLOSE_NORMAL, "Normal closure");
+        mSharedData.clear();
     }
 
     public void sendTrnMessage(String userName, String assertion) {
@@ -146,7 +149,7 @@ public class ShowdownService extends Service {
             Log.i(TAG + "[SEND]", message);
             mWebSocket.send(message);
         } else {
-            Log.e(TAG, "Error: WebSocket not connected. Ignoring message: " + message);
+            Log.w(TAG, "WebSocket not opened. Ignoring message: " + message);
         }
     }
 
@@ -231,7 +234,7 @@ public class ShowdownService extends Service {
         @Override
         public void onOpen(@NonNull WebSocket webSocket, @NonNull Response response) {
             mConnected.set(true);
-            Log.i(TAG + "[OPEN]", "");
+            Log.i(TAG + "[OPEN]", response.request().url().host());
         }
 
         @Override
@@ -248,7 +251,6 @@ public class ShowdownService extends Service {
             });
         }
 
-
         @Override
         public void onClosing(@NonNull WebSocket webSocket, int code, @NonNull String reason) {
             Log.i(TAG + "[CLOSING]", reason);
@@ -256,7 +258,7 @@ public class ShowdownService extends Service {
 
         @Override
         public void onFailure(@NonNull WebSocket webSocket, Throwable t, Response response) {
-            Log.i(TAG + "[ERR]", t.toString());
+            Log.w(TAG + "[ERR]", t);
             mConnected.set(false);
             mWebSocket = null;
 

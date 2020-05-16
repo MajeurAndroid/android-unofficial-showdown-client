@@ -2,14 +2,15 @@ package com.majeur.psclient;
 
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.view.MenuItem;
+import android.util.Log;
 import android.view.WindowManager;
-
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 import com.google.android.material.badge.BadgeDrawable;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -17,22 +18,19 @@ import com.majeur.psclient.io.DexIconLoader;
 import com.majeur.psclient.io.GlideHelper;
 import com.majeur.psclient.service.ShowdownService;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentTransaction;
-
 public class MainActivity extends AppCompatActivity {
 
-    private Intent mShowdownServiceIntent;
+    private static final String TAG = MainActivity.class.getSimpleName();
+
     private ShowdownService mService;
     boolean mCanUnbindService = false;
 
     private BottomNavigationView mNavigationView;
 
-    private ServiceConnection mServiceConnection = new ServiceConnection() {
+    private final ServiceConnection mServiceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+            Log.d(TAG, "ShowdownService bounded.");
             ShowdownService.Binder binder = (ShowdownService.Binder) iBinder;
             mService = binder.getService();
             notifyServiceBound();
@@ -55,28 +53,25 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         mNavigationView = findViewById(R.id.bottom_navigation);
-        mNavigationView.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
-            @Override
-            public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
-                final int fragmentId = menuItem.getItemId();
-                if (fragmentId == mNavigationView.getSelectedItemId()) return false;
-                clearBadge(fragmentId);
-                FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-                transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
-                for (Fragment fragment : new Fragment[]{getHomeFragment(), getBattleFragment(),
-                        getChatFragment(), getTeamsFragment()}) {
-                    if (fragment.getId() == fragmentId)
-                       transaction.show(fragment);
-                    else
-                        transaction.hide(fragment);
-                }
-                transaction.commit();
-                return true;
+        mNavigationView.setOnNavigationItemSelectedListener(menuItem -> {
+            final int fragmentId = menuItem.getItemId();
+            if (fragmentId == mNavigationView.getSelectedItemId()) return false;
+            clearBadge(fragmentId);
+            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+            transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
+            for (Fragment fragment : new Fragment[]{getHomeFragment(), getBattleFragment(),
+                    getChatFragment(), getTeamsFragment()}) {
+                if (fragment.getId() == fragmentId)
+                   transaction.show(fragment);
+                else
+                    transaction.hide(fragment);
             }
+            transaction.commit();
+            return true;
         });
 
-        mShowdownServiceIntent = new Intent(this, ShowdownService.class);
-        startService(mShowdownServiceIntent);
+        Intent showdownServiceIntent = new Intent(this, ShowdownService.class);
+        startService(showdownServiceIntent);
 
         getSupportFragmentManager().beginTransaction()
                 .hide(getBattleFragment())
@@ -84,8 +79,8 @@ public class MainActivity extends AppCompatActivity {
                 .hide(getTeamsFragment())
                 .commit();
 
-        if (bindService(mShowdownServiceIntent, mServiceConnection, Context.BIND_AUTO_CREATE))
-            mCanUnbindService = true;
+        mCanUnbindService = bindService(showdownServiceIntent, mServiceConnection,
+                Context.BIND_AUTO_CREATE);
     }
 
     @Override
@@ -96,12 +91,7 @@ public class MainActivity extends AppCompatActivity {
             new MaterialAlertDialogBuilder(this)
                     .setTitle("Are you sure you want to quit ?")
                     .setMessage("Connection to Showdown server will be closed.")
-                    .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            finish();
-                        }
-                    })
+                    .setPositiveButton("Yes", (dialogInterface, i) -> finish())
                     .setNegativeButton("No", null)
                     .show();
     }
@@ -189,9 +179,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public interface Callbacks {
-
-        public void onServiceBound(ShowdownService service);
-
-        public void onServiceWillUnbound(ShowdownService service);
+        void onServiceBound(ShowdownService service);
+        void onServiceWillUnbound(ShowdownService service);
     }
 }
