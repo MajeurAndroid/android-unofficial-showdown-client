@@ -3,8 +3,10 @@ package com.majeur.psclient.model;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static com.majeur.psclient.model.Id.toId;
+import static com.majeur.psclient.model.Id.toIdSafe;
 
 public class BattleFormat implements Serializable {
 
@@ -15,8 +17,8 @@ public class BattleFormat implements Serializable {
     private static final int MASK_CHALLENGE_SHOW = 0x4;
     private static final int MASK_TOURNAMENT_SHOW = 0x8;
 
-    private String mLabel;
-    private int mFormatInt;
+    private final String mLabel;
+    private final int mFormatInt;
 
     public BattleFormat(String label, int type) {
         mLabel = label;
@@ -41,6 +43,14 @@ public class BattleFormat implements Serializable {
 
     public String id() {
         return toId(mLabel);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        BattleFormat that = (BattleFormat) o;
+        return Objects.equals(toIdSafe(mLabel), toIdSafe(that.mLabel));
     }
 
     public static class Category implements Serializable {
