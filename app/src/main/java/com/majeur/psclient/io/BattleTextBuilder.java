@@ -3,6 +3,7 @@ package com.majeur.psclient.io;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.text.TextUtils;
+import android.util.Log;
 import androidx.annotation.Nullable;
 import com.majeur.psclient.R;
 import com.majeur.psclient.model.BattlingPokemon;
@@ -16,6 +17,7 @@ import java.io.InputStream;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 
+import static android.text.TextUtils.isEmpty;
 import static com.majeur.psclient.model.Id.toId;
 import static com.majeur.psclient.model.Id.toIdSafe;
 import static com.majeur.psclient.util.Utils.contains;
@@ -82,17 +84,22 @@ public final class BattleTextBuilder {
 
     private String resolve(String objectKey, String key, boolean useDefault) {
         if (key == null) return null;
-        if (objectKey == null && useDefault) objectKey = "default";
-        if (objectKey == null) return null;
+        if (objectKey == null) {
+            if (!useDefault) return null;
+            objectKey = "default";
+        }
         objectKey = toId(effect(objectKey));
         JSONObject object = mJSONObject.optJSONObject(objectKey);
-        if (object == null) return null;
+        if (object == null) {
+            if (!useDefault) return null;
+            objectKey = "default";
+            object = mJSONObject.optJSONObject(objectKey);
+        }
         String template = object.optString(key);
-        if (template == null || TextUtils.isEmpty(template)) {
+        if (isEmpty(template)) {
             if (!useDefault || objectKey.equals("default")) return null;
             template = mJSONObject.optJSONObject("default").optString(key);
-            if (template == null || TextUtils.isEmpty(template))
-                return null;
+            if (isEmpty(template)) return null;
         }
         if (template.charAt(0) == '#')
             return resolve(template.substring(1), key);
@@ -133,7 +140,7 @@ public final class BattleTextBuilder {
     }
 
     private CharSequence line(String lineContent) {
-        if (lineContent == null) return null;
+        if (lineContent == null || lineContent.trim().equals("null")) return null;
         return parseBoldTags(firstCharUpperCase(lineContent.trim()));
     }
 
@@ -171,7 +178,7 @@ public final class BattleTextBuilder {
     private String pokemon(String rawPoke) {
         if (rawPoke == null) return null;
         PokemonId id = getPokemonId(rawPoke);
-        if (id == null) return "???" + rawPoke + "???";
+        if (id == null) return "???poke:" + rawPoke + "???";
         return pokemon(id);
     }
 
@@ -222,8 +229,9 @@ public final class BattleTextBuilder {
     }
 
     private String maybeAbility(String effect, String rawPoke) {
+        if (rawPoke == null) return null;
         PokemonId id = getPokemonId(rawPoke);
-        if (id == null) return "???" + rawPoke + "???";
+        if (id == null) return "???poke:" + rawPoke + "???";
         return maybeAbility(effect, id);
     }
 
@@ -368,16 +376,23 @@ public final class BattleTextBuilder {
     // |move|p2a: salamencemega|Outrage|p1a: Wobbuffet|[from]lockedmove
     public CharSequence move(PokemonId pkmnId, String move, String from, String of, String zMove) {
         String pokemon = pokemon(pkmnId);
+        Log.w(TAG, "poke=" + pokemon + " move=" + move + " from=" + from);
+
         CharSequence line1 = line(of != null ? maybeAbility(from, of) : maybeAbility(from, pkmnId));
+        Log.w(TAG, "line1=" + line1  + " null=" + (line1 == null));
+
         if (zMove != null)
             line1 = line(resolve("zEffect"), PH_POKEMON, pokemon);
+
         CharSequence line2 = line(resolve(from, "move"), PH_POKEMON, pokemon,
                 PH_MOVE, move);
+        Log.w(TAG, "line2=" + line2 + " null=" + (line2 == null));
+
         return lines(line1, line2);
     }
 
     public CharSequence cant(PokemonId pkmnId, String effect, String move, String of) {
-        String template = resolve("cant", effect, false);
+        String template = resolve(effect, "cant", false);
         if (template == null) template = resolve(move == null ? "cantNoMove" : "cant");
         CharSequence line1 = line(of != null ? maybeAbility(effect, of) : maybeAbility(effect, pkmnId));
         CharSequence line2 = line(template, PH_POKEMON, pokemon(pkmnId),
@@ -747,7 +762,7 @@ public final class BattleTextBuilder {
             return lines(line1, line2);
         }
 
-        if (TextUtils.isEmpty(from)) {
+        if (isEmpty(from)) {
             template = resolve(percentage != null ? "damagePercentage" : "damage");
             line2 = line(template, PH_POKEMON, pokemon(pkmnId), PH_PERCENTAGE, percentage);
             return lines(line1, line2);
