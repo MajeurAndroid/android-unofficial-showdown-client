@@ -27,7 +27,11 @@ import org.json.JSONObject;
 import java.util.LinkedList;
 
 import static com.majeur.psclient.model.Id.toId;
+import static com.majeur.psclient.util.Utils.indexOf;
+import static com.majeur.psclient.util.Utils.isInteger;
 import static com.majeur.psclient.util.Utils.parseWithDefault;
+import static com.majeur.psclient.util.Utils.swap;
+import static java.lang.Integer.parseInt;
 
 public abstract class BattleMessageObserver extends RoomMessageObserver {
 
@@ -105,6 +109,12 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
     public BattlingPokemon getBattlingPokemon(PokemonId id) {
         BattlingPokemon[] arr = id.foe ? mFoePokemons : mTrainerPokemons;
         if (id.position >= 0 && id.position < arr.length) return arr[id.position];
+        return null;
+    }
+
+    private BattlingPokemon getBattlingPokemon(Player player, int position) {
+        BattlingPokemon[] arr = player == Player.FOE ? mFoePokemons : mTrainerPokemons;
+        if (position >= 0 && position < arr.length) return arr[position];
         return null;
     }
 
@@ -199,6 +209,9 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
             case "cant":
                 handleCant(message);
                 break;
+            case "swap":
+                handleSwap(message);
+                break;
         } // TODO: replace: [p2a: Zoroark, Zoroark, L78, M]
     }
 
@@ -253,7 +266,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
     private void handleTeamSize(ServerMessage msg) {
         String rawId = msg.nextArg();
         Player player = getPlayer(rawId);
-        int count = Integer.parseInt(msg.nextArg());
+        int count = parseInt(msg.nextArg());
         onTeamSize(player, count);
     }
 
@@ -403,6 +416,31 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
         final CharSequence text = mBattleTextBuilder.cant(pokemonId, reason, move, msg.kwarg("of"));
 
         mActionQueue.enqueueMajorAction(() -> displayMajorActionMessage(text));
+    }
+
+    // |swap|p2a: Dugtrio|1|[from] move: Ally Switch
+    private void handleSwap(ServerMessage msg) {
+        String rawId = msg.nextArg();
+        PokemonId sourceId = PokemonId.fromRawId(getPlayer(rawId), rawId);
+        int sourceIndex = indexOf(getBattlingPokemon(sourceId),
+                sourceId.foe ? mFoePokemons : mTrainerPokemons);
+        String with = msg.hasNextArg() ? msg.nextArg() : "-1";
+        int targetIndex;
+        if (isInteger(with)) {
+            targetIndex = parseInt(with);
+        } else { // Not tested, old showdown feature
+            PokemonId otherId = PokemonId.fromRawId(getPlayer(with), with);
+            targetIndex = indexOf(getBattlingPokemon(otherId),
+                    otherId.foe ? mFoePokemons : mTrainerPokemons);
+        }
+        if (targetIndex == sourceIndex || targetIndex < 0) return;
+
+        mActionQueue.enqueueMajorAction(() -> {
+            onSwap(sourceId, targetIndex);
+            BattlingPokemon targetPoke = getBattlingPokemon(sourceId.player, targetIndex);
+            displayMajorActionMessage(mBattleTextBuilder.swap(sourceId, targetPoke != null ? targetPoke.id : null));
+            swap(sourceId.foe ? mFoePokemons : mTrainerPokemons, sourceIndex, targetIndex);
+        });
     }
 
     private void handleMinorActionCommand(final ServerMessage message) {
@@ -884,6 +922,9 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
 
     private void handleFormeChange(final ServerMessage msg) {
         String rawId = msg.nextArg();
+        // TODO: If a pokemon swap occurs in the action queue after this,
+        //  we might display an incorrect target when calling onDetailsChanged().
+        //  This should be called on the action queue callback.
         final PokemonId pokemonId = PokemonId.fromRawId(getPlayer(rawId), rawId);
         final String arg2 = msg.hasNextArg() ? msg.nextArg() : null;
         String arg3 = msg.hasNextArg() ? msg.nextArg() : null;
@@ -1079,6 +1120,8 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
     protected abstract void onDetailsChanged(BattlingPokemon newPokemon);
 
     protected abstract void onMove(PokemonId sourceId, PokemonId targetId, String moveName, boolean shouldAnim);
+
+    protected abstract void onSwap(PokemonId id, int targetIndex);
 
     protected abstract void onRequestAsked(BattleActionRequest request);
 

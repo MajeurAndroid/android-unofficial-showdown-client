@@ -3,6 +3,7 @@ package com.majeur.psclient.io;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.text.TextUtils;
+import androidx.annotation.Nullable;
 import com.majeur.psclient.R;
 import com.majeur.psclient.model.BattlingPokemon;
 import com.majeur.psclient.model.Player;
@@ -357,7 +358,9 @@ public final class BattleTextBuilder {
         return line(resolve("faint"), PH_POKEMON, pokemon(pokemonId));
     }
 
-    public CharSequence swap(PokemonId pokemonId, PokemonId target) {
+    public CharSequence swap(PokemonId pokemonId, @Nullable PokemonId target) {
+        if (target == null)
+            return line(resolve("swapCenter"), PH_POKEMON, pokemon(pokemonId));
         return line(resolve("swap"), PH_POKEMON, pokemon(pokemonId),
                 PH_TARGET, pokemon(target));
     }

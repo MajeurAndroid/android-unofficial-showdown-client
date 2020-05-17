@@ -175,6 +175,12 @@ public class Utils {
         return array;
     }
 
+    public static <T> void swap(T[] arr, int i, int j) {
+        T t = arr[i];
+        arr[i] = arr[j];
+        arr[j] = t;
+    }
+
     public static boolean contains(String string, String... ss) {
         if (string == null) return false;
         for (String s : ss)
@@ -226,6 +232,15 @@ public class Utils {
     public static <T> T getOobSafe(List<T> list, int index) {
         if (index >= 0 && index < list.size()) return list.get(index);
         return null;
+    }
+
+    public static boolean isInteger(String s) {
+        try {
+            Integer.parseInt(s);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 
     public static Spannable boldText(String s) {

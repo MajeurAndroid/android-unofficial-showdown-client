@@ -13,7 +13,6 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-
 import com.majeur.psclient.R;
 import com.majeur.psclient.model.Player;
 import com.majeur.psclient.model.PokemonId;
@@ -135,6 +134,27 @@ public class BattleLayout extends ViewGroup {
         SideView sideView = player == Player.TRAINER ? mP1SideView : mP2SideView;
         sideView.bringToFront();
         return sideView;
+    }
+
+    public void swap(PokemonId id, int targetIndex) {
+        if (id.position < 0 || targetIndex < 0)
+            return;
+        SparseArray<ImageView> imageViews = id.player == Player.TRAINER ? mP1ImageViews : mP2ImageViews;
+        ImageView imageView1 = imageViews.get(id.position);
+        ImageView imageView2 = imageViews.get(targetIndex);
+        imageViews.remove(id.position);
+        imageViews.remove(targetIndex);
+        imageViews.put(id.position, imageView2);
+        imageViews.put(targetIndex, imageView1);
+
+        SparseArray<StatusView> statusViews = id.player == Player.TRAINER ? mP1StatusViews : mP2StatusViews;
+        StatusView statusView1 = statusViews.get(id.position);
+        StatusView statusView2 = statusViews.get(targetIndex);
+        statusViews.remove(id.position);
+        statusViews.remove(targetIndex);
+        statusViews.put(id.position, statusView2);
+        statusViews.put(targetIndex, statusView1);
+        requestLayout();
     }
 
     public void displayHitIndicator(PokemonId id) {

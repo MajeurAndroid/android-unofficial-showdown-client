@@ -712,6 +712,11 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         }
 
         @Override
+        protected void onSwap(PokemonId id, int targetIndex) {
+            mBattleLayout.swap(id, targetIndex);
+        }
+
+        @Override
         protected void onHealthChanged(PokemonId id, Condition condition) {
             StatusView statusView = mBattleLayout.getStatusView(id);
             statusView.setHealth(condition.health);
