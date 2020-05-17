@@ -10,18 +10,20 @@ import java.util.List;
 
 public class BattleActionRequest {
 
-    private int mReqId;
+    private final int mReqId;
+    private Const mGameType;
 
-    private boolean mTeamPreview;
-    private boolean mShouldWait;
+    private final boolean mTeamPreview;
+    private final boolean mShouldWait;
     private boolean[] mForceSwitch;
     private boolean[] mTrapped;
     private boolean[] mCanMegaEvo;
     private boolean[] mCanDynamax;
     private Move[][] mMoves;
-    private List<SidePokemon> mSide;
+    private final List<SidePokemon> mSide;
 
-    public BattleActionRequest(JSONObject jsonObject) throws JSONException {
+    public BattleActionRequest(JSONObject jsonObject, Const gameType) throws JSONException {
+        mGameType = gameType;
         mShouldWait = jsonObject.optBoolean("wait", false);
         mTeamPreview = jsonObject.optBoolean("teamPreview", false);
         mReqId = jsonObject.getInt("rqid");
@@ -98,7 +100,24 @@ public class BattleActionRequest {
     }
 
     public int getCount() {
-        return mMoves != null ? mMoves.length : mForceSwitch != null ? mForceSwitch.length : 0;
+        switch (mGameType) {
+            case SINGLE:
+                return 1;
+            case DOUBLE:
+                return 2;
+            case TRIPLE:
+                return 3;
+            default:
+                return 1;
+        }
+    }
+
+    public boolean hasGameTypeSet() {
+        return mGameType != null;
+    }
+
+    public void setGameType(Const gameType) {
+        mGameType = gameType;
     }
 
     public boolean shouldWait() {

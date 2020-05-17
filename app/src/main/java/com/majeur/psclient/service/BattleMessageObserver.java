@@ -277,6 +277,8 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
                 mFoePokemons = new BattlingPokemon[3];
                 break;
         }
+        if (mLastActionRequest != null && !mLastActionRequest.hasGameTypeSet())
+            mLastActionRequest.setGameType(mGameType);
     }
 
     private void handleSwitch(ServerMessage msg) {
@@ -354,7 +356,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
             return;
         try {
             JSONObject jsonObject = new JSONObject(rawJson);
-            final BattleActionRequest request = new BattleActionRequest(jsonObject);
+            final BattleActionRequest request = new BattleActionRequest(jsonObject, mGameType);
             mLastActionRequest = request;
             mActionQueue.setLastAction(() -> onRequestAsked(request));
         } catch (JSONException e) {

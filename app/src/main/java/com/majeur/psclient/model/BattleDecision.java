@@ -3,6 +3,8 @@ package com.majeur.psclient.model;
 import java.util.LinkedList;
 import java.util.List;
 
+import static com.majeur.psclient.util.Utils.str;
+
 public class BattleDecision {
 
     private static final String CMD_CHOOSE = "choose";
@@ -15,7 +17,7 @@ public class BattleDecision {
     private static final String EXTRA_DYNAMAX = "dynamax";
 
     private String mCommand;
-    private List<Choice> mChoices = new LinkedList<>();
+    private final List<Choice> mChoices = new LinkedList<>();
 
     private static class Choice {
         String action;
@@ -54,14 +56,20 @@ public class BattleDecision {
         mChoices.add(c);
     }
 
-    public void addTeamChoice(int first, int teamSize) {
+    public void addLeadChoice(int first, int teamSize) {
         mCommand = CMD_TEAM;
-        String teamOrder = "";
-        for (int i = 1; i <= teamSize; i++) teamOrder += i;
-        teamOrder = teamOrder.substring(first - 1) + teamOrder.substring(0, first - 1);
         Choice c = new Choice();
-        c.action = teamOrder;
+        c.index = first;
+        c.target = teamSize;
         mChoices.add(c);
+    }
+
+    public int leadChoicesCount() {
+        int count = 0;
+        for (Choice c : mChoices)
+            if (c.action == null)
+                count++;
+        return count;
     }
 
     public int switchChoicesCount() {
@@ -91,6 +99,7 @@ public class BattleDecision {
     }
 
     public String build() {
+        if (mCommand.equals(CMD_TEAM)) return buildLeadString();
         StringBuilder builder = new StringBuilder();
         int N = mChoices.size();
         for (int i = 0; i < N; i++) {
@@ -101,6 +110,18 @@ public class BattleDecision {
             if (c.target != 0) builder.append(" ").append(c.target);
             if (i < N -1) builder.append(",");
         }
+        return builder.toString();
+    }
+
+    private String buildLeadString() {
+        StringBuilder builder = new StringBuilder();
+        int teamSize = 0;
+        for (Choice c : mChoices) {
+            builder.append(c.index);
+            teamSize = c.target;
+        }
+        for (int i = 1; i <= teamSize; i++)
+            if (builder.indexOf(str(i)) < 0) builder.append(i);
         return builder.toString();
     }
 }

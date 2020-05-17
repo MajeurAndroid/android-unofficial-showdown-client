@@ -24,7 +24,6 @@ import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.FrameLayout;
 import com.majeur.psclient.R;
 import com.majeur.psclient.model.BattleActionRequest;
@@ -486,22 +485,12 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
             mMovesCheckBox.setVisibility(VISIBLE);
             mMovesCheckBox.setText("Z-Move");
             mMovesCheckBox.setChecked(false);
-            mMovesCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-                @Override
-                public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
-                    toggleZMoves(checked);
-                }
-            });
+            mMovesCheckBox.setOnCheckedChangeListener((compoundButton, checked) -> toggleZMoves(checked));
         } else if (canDynamax) {
             mMovesCheckBox.setVisibility(VISIBLE);
             mMovesCheckBox.setText("Dynamax");
             mMovesCheckBox.setChecked(false);
-            mMovesCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-                @Override
-                public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
-                    toggleMaxMoves(checked);
-                }
-            });
+            mMovesCheckBox.setOnCheckedChangeListener((compoundButton, checked) -> toggleMaxMoves(checked));
         } else {
             mMovesCheckBox.setVisibility(GONE);
             mMovesCheckBox.setText(null);
@@ -624,10 +613,14 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
             mTargetToChoose = null;
         } else if (data instanceof SidePokemon) {
             int who = ((SidePokemon) data).index + 1;
-            if (mRequest.teamPreview())
-                mDecision.addTeamChoice(who, mRequest.getSide().size());
-            else
+            if (mRequest.teamPreview()) {
+                mDecision.addLeadChoice(who, mRequest.getSide().size());
+                view.setEnabled(false);
+                if (mDecision.leadChoicesCount() < mRequest.getCount())
+                    return; // Avoid going to next prompt;
+            } else {
                 mDecision.addSwitchChoice(who);
+            }
         }
         promptNext();
     }
