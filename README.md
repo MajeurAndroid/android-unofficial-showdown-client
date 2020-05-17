@@ -26,43 +26,43 @@ Here I will briefly describe packages along with their main components to help y
 
 #### Tree:
 `com.majeur.psclient`
- - *`(root)`*
-	- `.MainActivity.java`
+ - [*`(root)`*](app/src/main/java/com/majeur/psclient)
+	- [`.MainActivity.java`](app/src/main/java/com/majeur/psclient/MainActivity.java)
 	*In charge of setting up fragments and managing connection with ShowdownService.*
-	- `.*Fragment.java`
-	*Responsible of UI management by implementing their associate `.*MessageObserver.java` callbacks.*
-	- `.*Dialog.java`
+	- [`.*Fragment.java`](app/src/main/java/com/majeur/psclient)
+	*Responsible of UI management by implementing their associate [`.*MessageObserver.java`](app/src/main/java/com/majeur/psclient/service) callbacks.*
+	- [`.*Dialog.java`](app/src/main/java/com/majeur/psclient)
 	*Self explanatory name.*
 	- *[...]*
- - `.service`
+ - [`.service`](app/src/main/java/com/majeur/psclient/service)
 	*Everything related to Showdown's protocol will be found in this package. From shodown server communication to handling and processing of incoming data.*
-	 - `.ShowdownService.java`
+	- [`.ShowdownService.java`](app/src/main/java/com/majeur/psclient/service/ShowdownService.java)
 		*Responsible of all interactions with showdown server, including authentication.*
-	- `.MessageObserver.java`
+	- [`.AbsMessageObserver.java`](app/src/main/java/com/majeur/psclient/service/AbsMessageObserver.java)
 		*Base definition for a component that would handle messages from showdown server.*
-	- `.GlobalMessageObserver.java`
+	- [`.GlobalMessageObserver.java`](app/src/main/java/com/majeur/psclient/service/GlobalMessageObserver.java)
 		*In charge of handling global server messages such as '|challstr|', '|popup|', '|formats|' etc... and rooms initialization.*
-	- `.RoomMessageObserver.java`
+	- [`.RoomMessageObserver.java`](app/src/main/java/com/majeur/psclient/service/RoomMessageObserver.java)
 		*Handles everything for a chat room to work.*
-	- `.BattleMessageObserver.java`
+	- [`.BattleMessageObserver.java`](app/src/main/java/com/majeur/psclient/service/BattleMessageObserver.java)
 		*Extends from `.RoomMessageObserver.java` and adds support for battle commands.*
 	- *[...]*
- - `.io`
+ - [`.io`](app/src/main/java/com/majeur/psclient/io)
 	*Contains everything involving loading content (eg. from disk for dex/move/poke details and dex icons or from web for sprites).*
-	- `.BattleTextBuilder.java`
+	- [`.BattleTextBuilder.java`](app/src/main/java/com/majeur/psclient/io/BattleTextBuilder.java)
 		*Provides formatted text according to an action and its effect (and/or its origin).*
-	- `.DataLoader.java`
+	- [`.AbsDataLoader.java`](app/src/main/java/com/majeur/psclient/io/AbsDataLoader.java)
 		*Base helper class for loading content easily, with caching etc...*
 	- *[...]*
- - `.model`
+ - [`.model`](app/src/main/java/com/majeur/psclient/model)
 	*Contains every class representing data.*
 	- *[...]*
- - `.widget`
+ - [`.widget`](app/src/main/java/com/majeur/psclient/widget)
 	*Contains every custom android UI components.*
 	- *[...]*
-- `.util`
+- [`.util`](app/src/main/java/com/majeur/psclient/util)
 	*Contains various utility classes.*
-	- `.ShowdownTeamParser.java`
+	- [`.ShowdownTeamParser.java`](app/src/main/java/com/majeur/psclient/util/ShowdownTeamParser.java)
 		*Responsible for parsing raw text teams formatted with Smogon standards.*
 	- *[...]*
 ### Core mechanisms
@@ -77,20 +77,21 @@ I'll describe here some of the core mechanisms through quick flow graphs.
 For now, this client is designed to handle only one battle at a time. This because I think it makes more sense in app's UI design :), but mainly because I think it's not that relevant on a mobile device to run multiple battle like you would do on desktop. 
 Anyway, I wrote code in a way that leaves the option to implement such feature in the future.
 #### Doubles, Triples and other types
-For now, only single battles are implemented. The code is kept flexible enough to allow easy double/triple implementation. If double battles are implemented at the time you're reading this, it means I underestimated my motivation.
+For now, only single and double battles are implemented. The code allows triple battle but no testing has been done, so it works 'as is'.
 ### Data files
 For maintainability reasons and to keep app binary file size as low as possible, I tried to retrieve data from showdown server as much as possible. But, for heavily/recurrent accessed data, such as poke/move details, json files are kept locally to ensure a very low loading time. Dex icons are also stored locally to allow region only icon decoding, avoiding us to load the entire icon sheet.
 A download of these files at first launch might be implemented in the future.
 ### Web protocols
-Every single http connection established by this client is using secured http protocol (`https:`). For WebSocket, I tried to use `wss:` protocol but it didn't worked right away. In the future switching to `wss:` would be nice, but for now unsecured `ws:` is ok.
+Every single http connection established by this client is using secured http protocol (`https:`). For WebSocket, `wss:` is now used since alpha3.
 ### Android string resources
-~~I was a bit lazy on this one...~~ Most of UI strings are hard-coded and aren't placed in the regular `res/values/string.xml`. This because Showdown is only available in English and has no localization implementation planned for now. So a Showdown client with localization would be completely pointless, and would lead into a partially 'translated' application.
+~~I was a bit lazy on this one...~~ Most UI strings are hard-coded and aren't placed in the regular `res/values/string.xml`. This because Showdown is only available in English and has no localization implementation planned for now. So a Showdown client with localization would be completely pointless, and would lead into a partially 'translated' application.
 ## Contributing
 Any help is very welcomed! Please make sure you are respecting the coding patterns and please strongly test your modifications before PR!
 ### Report a bug
  - Submit a bug report: [here](https://forms.gle/tqSeeZ9De3ik97CK8)
  - Reported bugs tracking: [here](https://docs.google.com/spreadsheets/d/1oC0m5SJEqx9HMXOAIHcgoa92B2CP69SmSuwHKR7v-X0/edit?usp=sharing)
 ## Credits
+ - Everybody on our [Somogon thread](https://www.smogon.com/forums/threads/alpha02-need-testers-unofficial-showdown-android-client.3654298): For the huge help with bug reporting
  - [Zarel](https://github.com/Zarel): For PokemonShowdown itself.
  - [NamTThai](https://github.com/NamTThai): For some piece of java code translated from js I reuse here (such as team parser).
  - [http://pokemonshowdown.com/credits](http://pokemonshowdown.com/credits)
