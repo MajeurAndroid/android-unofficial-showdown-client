@@ -317,7 +317,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         descView.append("\n");
         final String ability;
         if (!pokemon.foe && mLastActionRequest != null) {
-            final SidePokemon sidePokemon = mLastActionRequest.getSide().get(0); // TODO does not work in doubles
+            final SidePokemon sidePokemon = mLastActionRequest.getSide().get(pokemon.position);
             ability = sidePokemon.ability;
             if (pokemon.transformSpecies == null) { // Ditto case
                 descView.append(smallText("Atk:"));
