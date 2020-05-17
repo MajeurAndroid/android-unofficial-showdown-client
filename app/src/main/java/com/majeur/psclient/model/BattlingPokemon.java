@@ -1,19 +1,19 @@
 package com.majeur.psclient.model;
 
-import java.util.Set;
-
 import androidx.collection.ArraySet;
+
+import java.util.Set;
 
 public class BattlingPokemon extends BasePokemon {
 
     public static BattlingPokemon fromSwitchMessage(Player player, String message) {
         int separator = message.indexOf('|');
-        int nextSeparator = message.indexOf('|', separator+1);
+        int nextSeparator = message.indexOf('|', separator + 1);
 
         PokemonId id = new PokemonId(player, message.substring(0, separator));
 
-        String details = nextSeparator == -1 ? message.substring(separator+1)
-                : message.substring(separator+1, nextSeparator);
+        String details = nextSeparator == -1 ? message.substring(separator + 1)
+                : message.substring(separator + 1, nextSeparator);
         String[] detailsArray = details.split(", ");
         String species = detailsArray[0];
         boolean shiny = false;
@@ -21,7 +21,7 @@ public class BattlingPokemon extends BasePokemon {
         int level = 100;
         for (int i = 1; i < detailsArray.length; i++) {
             char c = detailsArray[i].toLowerCase().charAt(0);
-            switch (c){
+            switch (c) {
                 case 's':
                     shiny = true;
                     break;
@@ -75,5 +75,39 @@ public class BattlingPokemon extends BasePokemon {
         this.shiny = shiny;
         this.condition = condition;
         this.statModifiers = new StatModifiers();
+    }
+
+
+    /*
+    copyAll = false means Baton Pass,
+    copyAll = true means Illusion breaking
+    TODO: check use for illusion breaking
+     */
+    public void copyVolatiles(BattlingPokemon pokemon, boolean copyAll) {
+        statModifiers.set(pokemon.statModifiers);
+        volatiles.addAll(pokemon.volatiles);
+        if (!copyAll) {
+            volatiles.remove("airballoon");
+            volatiles.remove("attract");
+            volatiles.remove("autotomize");
+            volatiles.remove("disable");
+            volatiles.remove("encore");
+            volatiles.remove("foresight");
+            volatiles.remove("imprison");
+            volatiles.remove("laserfocus");
+            volatiles.remove("mimic");
+            volatiles.remove("miracleeye");
+            volatiles.remove("nightmare");
+            volatiles.remove("smackdown");
+            volatiles.remove("stockpile1");
+            volatiles.remove("stockpile2");
+            volatiles.remove("stockpile3");
+            volatiles.remove("torment");
+            volatiles.remove("typeadd");
+            volatiles.remove("typechange");
+            volatiles.remove("yawn");
+        }
+        volatiles.remove("transform");
+        volatiles.remove("formechange");
     }
 }

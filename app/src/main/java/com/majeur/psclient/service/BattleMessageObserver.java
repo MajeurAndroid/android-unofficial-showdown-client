@@ -27,6 +27,7 @@ import org.json.JSONObject;
 import java.util.LinkedList;
 
 import static com.majeur.psclient.model.Id.toId;
+import static com.majeur.psclient.model.Id.toIdSafe;
 import static com.majeur.psclient.util.Utils.indexOf;
 import static com.majeur.psclient.util.Utils.isInteger;
 import static com.majeur.psclient.util.Utils.parseWithDefault;
@@ -48,6 +49,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
     private BattlingPokemon[] mFoePokemons;
     private String mActiveWeather;
     private final LinkedList<String> mActiveFieldEffects = new LinkedList<>(); // We use LinkedList specific methods.
+    private String mLastMove;
 
     public void gotContext(Context context) {
         mBattleTextBuilder = new BattleTextBuilder(context);
@@ -233,6 +235,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
 
         // Major action's duration would be too long here
         mActionQueue.enqueueMinorAction(() -> {
+            mLastMove = moveName;
             onMove(sourcePoke, targetPoke, moveName, shouldAnim);
             displayMajorActionMessage(text);
         });
@@ -306,6 +309,8 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
 
         mActionQueue.enqueueMajorAction(() -> {
             if (pokemon.id.isInBattle) {
+                if (toIdSafe(mLastMove).equals("batonpass") || toIdSafe(mLastMove).equals("zbatonpass"))
+                    pokemon.copyVolatiles(prevPoke, false);
                 if (pokemon.foe) mFoePokemons[pokemon.position] = pokemon;
                 else mTrainerPokemons[pokemon.position] = pokemon;
             }
