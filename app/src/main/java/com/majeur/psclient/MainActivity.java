@@ -66,7 +66,7 @@ public class MainActivity extends AppCompatActivity {
                 else
                     transaction.hide(fragment);
             }
-            transaction.commit();
+            transaction.commitAllowingStateLoss();
             return true;
         });
 
