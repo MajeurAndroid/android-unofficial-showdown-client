@@ -664,7 +664,7 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
 
         mActionQueue.enqueueMinorAction(() -> {
             if (id.isInBattle) {
-                getBattlingPokemon(id).condition.status = status;
+                getBattlingPokemon(id).condition.status = cure ? null : status;
                 onStatusChanged(id, cure ? null : status);
             }
             displayMinorActionMessage(text);
