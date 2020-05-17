@@ -6,12 +6,15 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
+import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
 
 public class BackgroundBitmapDrawable extends BitmapDrawable {
-    private Matrix mMatrix = new Matrix();
+
+    private final Paint mPaint;
+    private final Matrix mMatrix;
     private int moldHeight;
     boolean simpleMapping = false;
     boolean dimBitmap = false;
@@ -20,6 +23,8 @@ public class BackgroundBitmapDrawable extends BitmapDrawable {
         super(res, BitmapFactory.decodeResource(res, resId));
         int nightModeFlags = res.getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
         if (nightModeFlags == Configuration.UI_MODE_NIGHT_YES) dimBitmap = true;
+        mPaint = new Paint(Paint.FILTER_BITMAP_FLAG);
+        mMatrix = new Matrix();
     }
 
     @Override
@@ -61,7 +66,7 @@ public class BackgroundBitmapDrawable extends BitmapDrawable {
 
     @Override
     public void draw(Canvas canvas) {
-        canvas.drawBitmap(getBitmap(), mMatrix, null);
+        canvas.drawBitmap(getBitmap(), mMatrix, mPaint);
         if (dimBitmap) canvas.drawColor(0xC6000000);
     }
 }
