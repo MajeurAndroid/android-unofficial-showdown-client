@@ -691,9 +691,9 @@ public final class BattleTextBuilder {
     public CharSequence activate(PokemonId pkmnId, String effect, String target, String of,
                                  String ability, String ability2, String move, String number,
                                  String item, String name) {
-        String id = toId(effect(effect));
+        String id = toIdSafe(effect(effect));
         PokemonId targetId = getPokemonId(target);
-        if (id.equals("celebrate")) {
+        if ("celebrate".equals(id)) {
             return line(resolve("celebrate", "activate"), PH_TRAINER, trainer(pkmnId));
         }
         String[] includes = {"hyperspacefury", "hyperspacehole", "phantomforce", "shadowforce", "feint"};
@@ -705,12 +705,12 @@ public final class BattleTextBuilder {
         if (targetId != null) targetId = of != null ? getPokemonId(of) : pkmnId;
         CharSequence line1 = line(maybeAbility(effect, pkmnId));
         CharSequence line2;
-        if (id.equals("lockon") || id.equals("mindreader")) {
+        if ("lockon".equals(id) || "mindreader".equals(id)) {
             String template = resolve(effect, "start");
             line2 = line(template, PH_POKEMON, pokemon(of), PH_SOURCE, pokemon(pkmnId));
             return lines(line1, line2);
         }
-        if (id.equals("mummy")) {
+        if ("mummy".equals(id)) {
             line1 = lines(line1, line(ability(ability, targetId)));
             line1 = lines(line1, ability("Mummy", targetId));
             String template = resolve("mummy", "changeAbility");
@@ -718,7 +718,7 @@ public final class BattleTextBuilder {
             return lines(line1, line2);
         }
         String templateId = "activate";
-        if (id.equals("forewarn") && pkmnId == targetId) {
+        if ("forewarn".equals(id) && pkmnId == targetId) {
             templateId = "activateNoTarget";
         }
         String template = resolve(effect, templateId, false);
@@ -728,7 +728,7 @@ public final class BattleTextBuilder {
             line2 = line(template, PH_EFFECT, effect(effect));
             return lines(line1, line2);
         }
-        if (id.equals("brickbreak")) {
+        if ("brickbreak".equals(id)) {
             template = formatPlaceHolders(template, PH_TEAM, team(targetId != null ? targetId.player : null));
         }
         if (ability != null) {
