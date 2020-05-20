@@ -1,6 +1,5 @@
-# <img alt="Unofficial PS client icon" src="https://github.com/MajeurAndroid/Android-Unoffical-Showdown-Client/blob/master/web/ic_launcher-web.png" width="48"></img>Android PS Client
-
-[![Actions Status](https://github.com/MajeurAndroid/Android-Unoffical-Showdown-Client/workflows/Android%20CI/badge.svg)](https://github.com/MajeurAndroid/Android-Unoffical-Showdown-Client/actions)
+# <img alt="Unofficial PS client icon" src="web/ic_launcher-web.png" width="48"></img>Android PS Client
+[![Actions Status](https://github.com/MajeurAndroid/Android-Unofficial-Showdown-Client/workflows/Build/badge.svg)](https://github.com/MajeurAndroid/Android-Unofficial-Showdown-Client/actions)
 
 ## Content
 * [Introduction](#introduction)
