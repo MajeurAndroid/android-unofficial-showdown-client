@@ -153,7 +153,6 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
         if (mCanUnbindService) {
             if (mService != null) // We might not have had access to binder yet.
                 notifyServiceWillUnbound();
@@ -161,6 +160,8 @@ public class MainActivity extends AppCompatActivity {
             mService = null;
             mCanUnbindService = false;
         }
+        // Let fragments remove their message observers from service before they are destroyed
+        super.onDestroy();
     }
 
     public void showHomeFragment() {
