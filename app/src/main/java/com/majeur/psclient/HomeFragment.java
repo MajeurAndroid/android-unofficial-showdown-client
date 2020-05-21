@@ -24,6 +24,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -54,7 +55,6 @@ import static com.majeur.psclient.util.Utils.str;
 import static com.majeur.psclient.util.Utils.truncate;
 import static java.lang.String.format;
 
-@SuppressWarnings("ConstantConditions")
 public class HomeFragment extends Fragment implements MainActivity.Callbacks, View.OnClickListener {
 
     private static final String URL_BUG_REPORT_GFORM = "https://docs.google.com/forms/d/e/1FAIpQLSfvaHpKtRhN-naHtmaIongBRzjU0rmPXu770tvjseWUNky48Q/viewform?usp=send_form";
@@ -116,7 +116,8 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
         mLoginButton.setOnClickListener(view12 -> {
             if (mService == null || !mService.isConnected()) return;
             if (mMyUsername == null || mMyUsername.toLowerCase().startsWith("guest")) {
-                SignInDialog.newInstance().show(getFragmentManager(), "");
+                if (requireFragmentManager().findFragmentByTag(SignInDialog.FRAGMENT_TAG) == null)
+                    SignInDialog.newInstance().show(requireFragmentManager(), SignInDialog.FRAGMENT_TAG);
             } else {
                 mService.sendGlobalCommand("logout");
                 mService.forgetUserLoginInfos();
@@ -182,11 +183,11 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
             @Override
             public void onAcceptButtonClick(PrivateMessagesOverviewWidget p, String with, String format) {
                 if (mIsSearchingBattle) {
-                    Snackbar.make(getView(), "Cannot accept challenge while searching for battle", Snackbar.LENGTH_LONG).show();
+                    Snackbar.make(p, "Cannot accept challenge while searching for battle", Snackbar.LENGTH_LONG).show();
                     return;
                 }
                 if (mIsChallengingSomeone) {
-                    Snackbar.make(getView(), "You are already challenging someone", Snackbar.LENGTH_LONG).show();
+                    Snackbar.make(p, "You are already challenging someone", Snackbar.LENGTH_LONG).show();
                     return;
                 }
                 mIsAcceptingChallenge = true;
@@ -207,7 +208,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
         });
 
         view.findViewById(R.id.button_finduser).setOnClickListener(this);
-        view.findViewById(R.id.button_reportbug).setOnClickListener(view1 -> new AlertDialog.Builder(getContext())
+        view.findViewById(R.id.button_reportbug).setOnClickListener(view1 -> new AlertDialog.Builder(requireActivity())
                 .setTitle("Wait a minute !")
                 .setMessage("If the bug you want to report needs a detailed description to be clearly understood, please consider posting on the Smogon forum thread.\nIf not, you can continue to the form.\nThanks !")
                 .setPositiveButton("Continue", (dialog, which) -> openUrl(URL_BUG_REPORT_GFORM, true))
@@ -221,12 +222,13 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
         if (mService == null || !mService.isConnected()) return;
         switch (view.getId()) {
             case R.id.button_battle:
-                if (mObserver.isUserGuest())
-                    SignInDialog.newInstance().show(getFragmentManager(), "");
-                else {
-                    MainActivity activity = (MainActivity) getActivity();
+                if (mObserver.isUserGuest()) {
+                    if (requireFragmentManager().findFragmentByTag(SignInDialog.FRAGMENT_TAG) == null)
+                        SignInDialog.newInstance().show(requireFragmentManager(), SignInDialog.FRAGMENT_TAG);
+                } else {
+                    MainActivity activity = (MainActivity) requireActivity();
                     if (activity.getBattleFragment().battleRunning()) {
-                        Snackbar.make(getView(), "A battle is already running", Snackbar.LENGTH_SHORT).show();
+                        Snackbar.make(view, "A battle is already running", Snackbar.LENGTH_SHORT).show();
                     } else {
                         searchForBattle();
                     }
@@ -237,7 +239,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
                     if (mWaitingForChallenge) {
                         mService.sendGlobalCommand("cancelchallenge", toId(mChallengeTo));
                     } else {
-                        mWaitingForChallenge = mIsChallengingSomeone = false;
+                        mIsChallengingSomeone = false;
                         mChallengeTo = null;
                         setBattleButtonUIState("Battle !", true, false, false);
                         showSearchableFormatsOnly(true);
@@ -256,7 +258,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
                 View dialogView = getLayoutInflater().inflate(R.layout.dialog_battle_message, null);
                 final EditText editText = dialogView.findViewById(R.id.edit_text_team_name);
                 editText.setHint("Type a username");
-                new MaterialAlertDialogBuilder(getContext())
+                new MaterialAlertDialogBuilder(view.getContext())
                         .setPositiveButton("Find", (dialogInterface, i) -> {
                             String input = editText.getText().toString();
                             String regex = "[{}:\",|\\[\\]]";
@@ -281,7 +283,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
             try {
                 startActivity( new Intent(Intent.ACTION_VIEW, Uri.parse(url))); // Fallback to default browser
             } catch (ActivityNotFoundException e2) {
-                Snackbar.make(getView(), "No web browser found.", Snackbar.LENGTH_SHORT).show();
+                Snackbar.make(requireView(), "No web browser found.", Snackbar.LENGTH_SHORT).show();
             }
         }
     }
@@ -331,7 +333,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
         CategoryAdapter adapter = (CategoryAdapter) mTeamsSpinner.getAdapter();
         adapter.clearItems();
         if (mCurrentBattleFormat.isTeamNeeded()) {
-            List<Team.Group> teamGroups = ((MainActivity) getActivity())
+            List<Team.Group> teamGroups = ((MainActivity) requireActivity())
                     .getTeamsFragment().getTeamGroups();
             int matchingFormatGroupIndex = -1;
             int otherFormatGroupIndex = -1;
@@ -366,10 +368,10 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
         if (mCurrentBattleFormat.isTeamNeeded()) {
             Team team = (Team) mTeamsSpinner.getSelectedItem();
             if (team == null) {
-                Snackbar.make(getView(), "You have no team !", Snackbar.LENGTH_SHORT).show();
+                Snackbar.make(requireView(), "You have no team !", Snackbar.LENGTH_SHORT).show();
                 return;
             } else if (team.isEmpty()) {
-                Snackbar.make(getView(), "Your team is empty !", Snackbar.LENGTH_SHORT).show();
+                Snackbar.make(requireView(), "Your team is empty !", Snackbar.LENGTH_SHORT).show();
                 return;
             }
             mService.sendGlobalCommand("utm", team.pack());
@@ -388,7 +390,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
 
     private void tryJoinBattleRoom(final String roomId) {
         if (mService == null || !mService.isConnected()) return;
-        MainActivity activity = (MainActivity) getActivity();
+        MainActivity activity = (MainActivity) requireActivity();
         BattleFragment battleFragment = activity.getBattleFragment();
         if (battleFragment.getObservedRoomId() == null || !battleFragment.battleRunning()) {
             mService.sendGlobalCommand("join", roomId);
@@ -398,6 +400,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
                 activity.showBattleFragment();
                 return;
             }
+            //noinspection unused
             String currentBattleName = runningBattleRoomId.substring("battle-".length());
             String battleName = roomId.substring("battle-".length());
             new AlertDialog.Builder(activity)
@@ -415,12 +418,12 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
 
     public void startPrivateChat(String user) {
         if (user.equals(mMyUsername)) {
-            Snackbar.make(getView(), "Cannot talk to yourself", Snackbar.LENGTH_LONG).show();
+            Snackbar.make(requireView(), "Cannot talk to yourself", Snackbar.LENGTH_LONG).show();
             return;
         }
-        if (getFragmentManager().findFragmentByTag(PrivateChatDialog.FRAGMENT_TAG) != null) return;
+        if (requireFragmentManager().findFragmentByTag(PrivateChatDialog.FRAGMENT_TAG) != null) return;
         PrivateChatDialog dialog = PrivateChatDialog.newInstance(user);
-        dialog.show(getFragmentManager(), PrivateChatDialog.FRAGMENT_TAG);
+        dialog.show(requireFragmentManager(), PrivateChatDialog.FRAGMENT_TAG);
     }
 
     public List<String> getPrivateMessages(String with) {
@@ -429,19 +432,19 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
 
     public void challengeSomeone(String user) {
         if (user.equals(mMyUsername)) {
-            Snackbar.make(getView(), "You should try challenging yourself in an other way", Snackbar.LENGTH_LONG).show();
+            Snackbar.make(requireView(), "You should try challenging yourself in an other way", Snackbar.LENGTH_LONG).show();
             return;
         }
         if (mIsChallengingSomeone) {
-            Snackbar.make(getView(), "You are already challenging someone", Snackbar.LENGTH_LONG).show();
+            Snackbar.make(requireView(), "You are already challenging someone", Snackbar.LENGTH_LONG).show();
             return;
         }
         if (mIsSearchingBattle) {
-            Snackbar.make(getView(), "Cannot challenge someone while searching for battle", Snackbar.LENGTH_LONG).show();
+            Snackbar.make(requireView(), "Cannot challenge someone while searching for battle", Snackbar.LENGTH_LONG).show();
             return;
         }
         if (mIsAcceptingChallenge) {
-            Snackbar.make(getView(), "You are already accepting a challenge", Snackbar.LENGTH_LONG).show();
+            Snackbar.make(requireView(), "You are already accepting a challenge", Snackbar.LENGTH_LONG).show();
             return;
         }
         mIsChallengingSomeone = true;
@@ -449,9 +452,9 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
         mChallengeTo = user;
         setBattleButtonUIState(format("Challenge\n%s!", user), true, true, true);
         showSearchableFormatsOnly(false);
-        MainActivity activity = (MainActivity) getActivity();
+        MainActivity activity = (MainActivity) requireActivity();
         activity.showHomeFragment();
-        getView().post(() -> ((ScrollView) getView()).fullScroll(View.FOCUS_UP));
+        requireView().post(() -> ((ScrollView) requireView()).fullScroll(View.FOCUS_UP));
     }
 
     private void setBattleButtonUIState(String label, boolean enabled, boolean showCancel, boolean tintCard) {
@@ -470,9 +473,10 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
             }
         }
         if (tintCard) mSearchBattleContainer.setCardBackgroundColor(
-                blendARGB(getResources().getColor(R.color.surfaceBackground),
-                getResources().getColor(R.color.primary), 0.25f));
-        else mSearchBattleContainer.setCardBackgroundColor(getResources().getColor(R.color.surfaceBackground));
+                blendARGB(ContextCompat.getColor(requireActivity(), R.color.surfaceBackground),
+                ContextCompat.getColor(requireActivity(), R.color.primary), 0.25f));
+        else mSearchBattleContainer.setCardBackgroundColor(
+                ContextCompat.getColor(requireActivity(), R.color.surfaceBackground));
     }
 
     private void showSearchableFormatsOnly(boolean yes) {
@@ -490,7 +494,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
 
     private void notifyNewMessageReceived() {
         MainActivity activity = (MainActivity) getActivity();
-        if (getId() != activity.getSelectedFragmentId())
+        if (activity != null && getId() != activity.getSelectedFragmentId())
             activity.showBadge(getId());
     }
 
@@ -499,7 +503,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
         mService = service;
         service.registerMessageObserver(mObserver, true);
         if (!service.isConnected()) {
-            Snackbar.make(getView(), "Connecting to Showdown server...",
+            Snackbar.make(requireView(), "Connecting to Showdown server...",
                     Snackbar.LENGTH_INDEFINITE).show();
             service.connectToServer();
         }
@@ -519,20 +523,24 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
             mUsernameView.setText(smallText("Connected as\n"));
             mUsernameView.append(boldText(truncate(userName, 10)));
             if (isGuest) {
-                Snackbar.make(getView(), "Connected as guest !", Snackbar.LENGTH_LONG).show();
+                Snackbar.make(requireView(), "Connected as guest !", Snackbar.LENGTH_LONG).show();
                 mLoginButton.setImageResource(R.drawable.ic_login);
             } else {
-                Snackbar.make(getView(), format("Connected as %s", userName), Snackbar.LENGTH_LONG).show();
+                Snackbar.make(requireView(), format("Connected as %s", userName), Snackbar.LENGTH_LONG).show();
                 mLoginButton.setImageResource(R.drawable.ic_logout);
             }
-            MainActivity activity = (MainActivity) getActivity();
+            MainActivity activity = (MainActivity) requireActivity();
             activity.showHomeFragment();
+
+            SignInDialog signInDialog;
+            if ((signInDialog = (SignInDialog) requireFragmentManager().findFragmentByTag(SignInDialog.FRAGMENT_TAG)) != null)
+                signInDialog.dismissAllowingStateLoss();
 
             checkRooms();
         }
 
         private void checkRooms() {
-            MainActivity activity = (MainActivity) getActivity();
+            MainActivity activity = (MainActivity) requireActivity();
             BattleFragment battleFragment = activity.getBattleFragment();
             if (battleFragment.getObservedRoomId() != null)
                 battleFragment.setObservedRoomId(null);
@@ -607,7 +615,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
                 builder.append(smallText("None")).append("\n");
             }
             if (!online) builder.append(coloredText("(Offline)", Color.RED));
-            new AlertDialog.Builder(getContext())
+            new AlertDialog.Builder(requireActivity())
                     .setTitle(name)
                     .setMessage(builder)
                     .setPositiveButton("Challenge", (dialog, which) -> challengeSomeone(name))
@@ -617,7 +625,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
 
         @Override
         protected void onShowPopup(String message) {
-            Snackbar snackbar = Snackbar.make(getView(), message, Snackbar.LENGTH_INDEFINITE);
+            Snackbar snackbar = Snackbar.make(requireView(), message, Snackbar.LENGTH_INDEFINITE);
             View view = snackbar.getView();
             TextView textView = view.findViewById(com.google.android.material.R.id.snackbar_text);
             textView.setMaxLines(5);
@@ -640,7 +648,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
 
         @Override
         protected void onAvailableRoomsChanged(RoomInfo[] officialRooms, RoomInfo[] chatRooms) {
-            MainActivity activity = (MainActivity) getActivity();
+            MainActivity activity = (MainActivity) requireActivity();
             activity.getChatFragment().onAvailableRoomsChanged(officialRooms, chatRooms);
         }
 
@@ -654,7 +662,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
             mPmsOverviewWidget.incrementPmCount(with);
             if (!mPmsOverviewWidget.isEmpty())
                 mPmsOverviewContainer.setVisibility(View.VISIBLE);
-            PrivateChatDialog dialog = (PrivateChatDialog) getFragmentManager().findFragmentByTag(PrivateChatDialog.FRAGMENT_TAG);
+            PrivateChatDialog dialog = (PrivateChatDialog) requireFragmentManager().findFragmentByTag(PrivateChatDialog.FRAGMENT_TAG);
             if (dialog != null && dialog.getChatWith().equals(with))
                 dialog.onNewMessage(message);
             else
@@ -704,13 +712,13 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
 
         @Override
         protected void onRoomInit(String roomId, String type) {
-            MainActivity activity = (MainActivity) getActivity();
+            MainActivity activity = (MainActivity) requireActivity();
             switch (type) {
                 case "battle":
                     BattleFragment battleFragment = activity.getBattleFragment();
                     if (battleFragment.getObservedRoomId() == null || !battleFragment.battleRunning()) {
                         battleFragment.setObservedRoomId(roomId);
-                        ((MainActivity) getActivity()).showBattleFragment();
+                        activity.showBattleFragment();
                     } else {
                         // Most of the time this is an auto joined battle coming from a new search, let's
                         // just leave it silently. If the user wants to join it deliberately, he will
@@ -728,7 +736,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
 
         @Override
         protected void onRoomDeinit(String roomId) {
-            MainActivity activity = (MainActivity) getActivity();
+            MainActivity activity = (MainActivity) requireActivity();
 
             BattleFragment battleFragment = activity.getBattleFragment();
             if (TextUtils.equals(battleFragment.getObservedRoomId(), roomId)) {
@@ -747,9 +755,9 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
 
         @Override
         protected void onNetworkError() {
-            Snackbar.make(getView(), "Unable to reach Showdown server", Snackbar.LENGTH_INDEFINITE)
+            Snackbar.make(requireView(), "Unable to reach Showdown server", Snackbar.LENGTH_INDEFINITE)
                     .setAction("Retry", view -> {
-                        Snackbar.make(getView(), "Reconnecting to Showdown server...",
+                        Snackbar.make(requireView(), "Reconnecting to Showdown server...",
                                 Snackbar.LENGTH_INDEFINITE).show();
                         getService().reconnectToServer();
                     })
@@ -816,7 +824,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
                 queries[k] = toId(team.pokemons.get(k).species);
             mDexIconLoader.load(queries, results -> {
                 for (int k = 0; k < results.length; k++) {
-                    Drawable icon = new BitmapDrawable(results[k]);
+                    Drawable icon = new BitmapDrawable(getResources(), results[k]);
                     viewHolder.pokemonViews[k].setImageDrawable(icon);
                 }
             });

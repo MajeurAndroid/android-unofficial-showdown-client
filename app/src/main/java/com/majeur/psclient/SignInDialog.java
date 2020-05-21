@@ -12,16 +12,16 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.DialogFragment;
 import com.google.android.material.textfield.TextInputLayout;
 import com.majeur.psclient.service.ShowdownService;
 import com.majeur.psclient.util.SimpleTextWatcher;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.DialogFragment;
-
 public class SignInDialog extends DialogFragment implements View.OnClickListener, ShowdownService.AttemptSignInCallback {
+
+    public static final String FRAGMENT_TAG = "sign-in-dialog";
 
     public static SignInDialog newInstance() {
         return new SignInDialog();
