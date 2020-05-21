@@ -447,6 +447,10 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
             Snackbar.make(requireView(), "You are already accepting a challenge", Snackbar.LENGTH_LONG).show();
             return;
         }
+        if (((MainActivity) requireActivity()).getBattleFragment().battleRunning()) {
+            Snackbar.make(requireView(), "You cannot challenge someone while being in a battle", Snackbar.LENGTH_LONG).show();
+            return;
+        }
         mIsChallengingSomeone = true;
         mWaitingForChallenge = false;
         mChallengeTo = user;
@@ -570,7 +574,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
             mIsSearchingBattle = searching.length > 0;
             if (mIsSearchingBattle)
                 setBattleButtonUIState("Searching...", false, true, false);
-            else
+            else if (!mIsChallengingSomeone)
                 setBattleButtonUIState("Battle !", true, false, false);
 
             mBattleButtonsContainer.removeAllViews();
