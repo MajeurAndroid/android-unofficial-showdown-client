@@ -274,23 +274,24 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
     }
 
     private void handleGameType(ServerMessage msg) {
-        switch (msg.nextArg().charAt(0)) {
-            case 's':
-                mGameType = Const.SINGLE;
-                mTrainerPokemons = new BattlingPokemon[1];
-                mFoePokemons = new BattlingPokemon[1];
-                break;
-            case 'd':
+        switch (msg.nextArg().trim()) {
+            case "doubles":
                 mGameType = Const.DOUBLE;
                 mTrainerPokemons = new BattlingPokemon[2];
                 mFoePokemons = new BattlingPokemon[2];
                 break;
-            case 't':
+            case "rotation":
+            case "triples":
                 mGameType = Const.TRIPLE;
                 printErrorMessage("Triple battles aren't fully implemented yet. " +
                         "App crash is a matter of seconds from now!");
                 mTrainerPokemons = new BattlingPokemon[3];
                 mFoePokemons = new BattlingPokemon[3];
+                break;
+            default:
+                mGameType = Const.SINGLE;
+                mTrainerPokemons = new BattlingPokemon[1];
+                mFoePokemons = new BattlingPokemon[1];
                 break;
         }
         if (mLastActionRequest != null && !mLastActionRequest.hasGameTypeSet())
