@@ -370,7 +370,8 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                 descView.append(smallText("Possible abilities: "));
                 for (String ability1 : dexPokemon.abilities)
                     descView.append(ability1 + ", ");
-                descView.append(dexPokemon.hiddenAbility);
+                if (dexPokemon.hiddenAbility != null)
+                    descView.append(dexPokemon.hiddenAbility);
                 descView.append("\n");
             } else if (dexPokemon.abilities.size() > 0) {
                 descView.append(smallText("Ability: "));
