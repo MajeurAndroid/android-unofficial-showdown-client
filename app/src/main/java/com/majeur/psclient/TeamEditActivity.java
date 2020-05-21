@@ -14,6 +14,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentPagerAdapter;
 import androidx.viewpager.widget.PagerTabStrip;
@@ -50,12 +51,11 @@ public class TeamEditActivity extends AppCompatActivity {
     private GlideHelper mGlideHelper;
     private DexIconLoader mDexIconLoader;
 
-    private List<BattleFormat.Category> mBattleFormats;
     private Team mTeam;
     private boolean mTeamNeedsName;
     private TeamPokemon[] mPokemons;
 
-    @SuppressWarnings("Unchecked")
+    @SuppressWarnings({"Unchecked", "unchecked", "ConstantConditions"})
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -70,7 +70,7 @@ public class TeamEditActivity extends AppCompatActivity {
         mGlideHelper = new GlideHelper(this);
         mDexIconLoader = new DexIconLoader(this);
 
-        mBattleFormats = (List<BattleFormat.Category>) getIntent().getSerializableExtra(INTENT_EXTRA_FORMATS);
+        List<BattleFormat.Category> battleFormats = (List<BattleFormat.Category>) getIntent().getSerializableExtra(INTENT_EXTRA_FORMATS);
         mTeam = (Team) getIntent().getSerializableExtra(INTENT_EXTRA_TEAM);
         if (mTeam == null) {
             mTeam = new Team("Unnamed team", new LinkedList<>(), BattleFormat.FORMAT_OTHER.id());
@@ -104,9 +104,9 @@ public class TeamEditActivity extends AppCompatActivity {
         };
         spinner.setAdapter(adapter);
         adapter.addItem(BattleFormat.FORMAT_OTHER);
-        if (mBattleFormats != null) {
+        if (battleFormats != null) {
             int count = 1;
-            for (BattleFormat.Category category : mBattleFormats) {
+            for (BattleFormat.Category category : battleFormats) {
                 adapter.addItem(category); count++;
                 for (BattleFormat format : category.getBattleFormats()) {
                     if (!format.isTeamNeeded()) continue;
@@ -130,7 +130,8 @@ public class TeamEditActivity extends AppCompatActivity {
         });
 
         ViewPager viewPager = findViewById(R.id.teamViewPager);
-        viewPager.setAdapter(new FragmentPagerAdapter(getSupportFragmentManager()) {
+        viewPager.setAdapter(new FragmentPagerAdapter(getSupportFragmentManager(),
+                FragmentPagerAdapter.BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT) {
             @NonNull
             @Override
             public Fragment getItem(int position) {
@@ -142,7 +143,6 @@ public class TeamEditActivity extends AppCompatActivity {
                 return 6;
             }
 
-            @Nullable
             @Override
             public CharSequence getPageTitle(int position) {
                 return "Slot " + (position + 1);
@@ -150,7 +150,7 @@ public class TeamEditActivity extends AppCompatActivity {
         });
 
         PagerTabStrip pagerTabStrip = findViewById(R.id.teamViewPagerTabStrip);
-        pagerTabStrip.setTabIndicatorColor(getResources().getColor(R.color.secondary));
+        pagerTabStrip.setTabIndicatorColor(ContextCompat.getColor(this, R.color.secondary));
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.majeur.psclient.model;
 
+import androidx.annotation.Nullable;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -129,7 +130,8 @@ public class Stats implements Serializable {
         }
     }
 
-    public void setForHpType(String type) {
+    public void setForHpType(@Nullable String type) {
+        if (type == null) type = "Dark"; // Default all 31 iv spread
         switch (type) {
             case "Bug":			hp = 31; atk = 31; def = 31; spa = 31; spd = 30; spe = 30; break;
             case "Dark":		hp = 31; atk = 31; def = 31; spa = 31; spd = 31; spe = 31; break;

@@ -27,6 +27,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
 import com.google.android.material.button.MaterialButton;
@@ -84,7 +85,7 @@ public class PokemonEditFragment extends Fragment {
         return fragment;
     }
 
-    private boolean mAttachedToContext;
+    private boolean mAttachedToActivity;
     private int mTextHighlightColor;
 
     // Helpers
@@ -133,11 +134,12 @@ public class PokemonEditFragment extends Fragment {
             Utils.hideSoftInputMethod(getActivity());
     };
 
+    @SuppressWarnings("ConstantConditions")
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
-        mAttachedToContext = true;
-        mTextHighlightColor = alphaColor(getResources().getColor(R.color.secondary), 0.45f);
+        mAttachedToActivity = true;
+        mTextHighlightColor = alphaColor(ContextCompat.getColor(context, R.color.secondary), 0.45f);
         mSlotIndex = getArguments().getInt(ARG_SLOT_INDEX);
         TeamEditActivity activity = (TeamEditActivity) context;
         mSpeciesLoader = activity.getSpeciesLoader();
@@ -186,7 +188,7 @@ public class PokemonEditFragment extends Fragment {
         mClearButton = view.findViewById(R.id.clearPokemon);
 
         mSpeciesLoader.load(array(""), results -> {
-            if (!mAttachedToContext) return;
+            if (!mAttachedToActivity) return;
             mSpeciesTextView.setAdapter(new SpeciesAdapter(mDexIconLoader, results[0], mTextHighlightColor));
         });
         mSpeciesTextView.setThreshold(1);
@@ -254,7 +256,7 @@ public class PokemonEditFragment extends Fragment {
         mItemsLoader.load(array(""), results -> {
             List<Item> list = results[0];
             list.size();
-            if (!mAttachedToContext) return;
+            if (!mAttachedToActivity) return;
             mItemTextView.setAdapter(new FilterableAdapter<>(results[0], mTextHighlightColor));
         });
         mItemTextView.setOnItemClickListener((adapterView, view14, i, l) -> {
@@ -291,15 +293,18 @@ public class PokemonEditFragment extends Fragment {
         }
 
         mStatsTable.setRowClickListener((statsTable, rowName, index) -> {
+            if (mCurrentBaseStats == null || mCurrentIvs == null || mCurrentEvs == null ||
+                mCurrentNature == null) return;
             EditStatDialog dialog = EditStatDialog.newInstance(rowName, mCurrentBaseStats.get(index),
                     mCurrentEvs.get(index), mCurrentIvs.get(index), getCurrentLevel(),
                     mCurrentNature.getStatModifier(index), mCurrentEvs.sum());
             dialog.setTargetFragment(PokemonEditFragment.this, 0);
+            //noinspection ConstantConditions
             dialog.show(getFragmentManager(), "");
         });
 
         mCurrentNature = Nature.DEFAULT;
-        mNatureSpinner.setAdapter(new ArrayAdapter<>(getContext(),
+        mNatureSpinner.setAdapter(new ArrayAdapter<>(view.getContext(),
                 android.R.layout.simple_dropdown_item_1line,
                 Nature.ALL));
         mNatureSpinner.setOnItemSelectedListener(new SimpleOnItemSelectedListener() {
@@ -312,7 +317,7 @@ public class PokemonEditFragment extends Fragment {
             }
         });
 
-        mHpTypeSpinner.setAdapter(new ArrayAdapter<>(getContext(),
+        mHpTypeSpinner.setAdapter(new ArrayAdapter<>(view.getContext(),
                 android.R.layout.simple_dropdown_item_1line,
                 Type.HP_TYPES));
         mHpTypeSpinner.setOnItemSelectedListener(new SimpleOnItemSelectedListener() {
@@ -333,13 +338,15 @@ public class PokemonEditFragment extends Fragment {
             TeamPokemon pokemon = buildPokemon();
             String text = ShowdownTeamParser.fromPokemon(pokemon);
             Toast.makeText(getContext(), "Pokemon exported to clipboard", Toast.LENGTH_LONG).show();
-            ClipboardManager clipboard = (ClipboardManager) getContext().getSystemService(CLIPBOARD_SERVICE);
+            ClipboardManager clipboard = (ClipboardManager) view17.getContext().getSystemService(CLIPBOARD_SERVICE);
+            if (clipboard == null) return;
             ClipData clip = ClipData.newPlainText("Exported Pokemon", text);
             clipboard.setPrimaryClip(clip);
         });
 
         view.findViewById(R.id.importButton).setOnClickListener(view18 -> {
-            ClipboardManager clipboard = (ClipboardManager) getContext().getSystemService(CLIPBOARD_SERVICE);
+            ClipboardManager clipboard = (ClipboardManager) view18.getContext().getSystemService(CLIPBOARD_SERVICE);
+            if (clipboard == null) return;
             ClipData clip = clipboard.getPrimaryClip();
             if (clip == null) {
                 Toast.makeText(getContext(), "There is nothing in clipboard.",
@@ -350,7 +357,7 @@ public class PokemonEditFragment extends Fragment {
                         name -> mDexPokemonLoader.load(array(name))[0]);
                 if (pokemon != null) {
                     mDexPokemonLoader.load(array(toId(pokemon.species)), results -> {
-                        if (!mAttachedToContext) return;
+                        if (!mAttachedToActivity) return;
                         DexPokemon dexPokemon = results[0];
                         if (dexPokemon == null) { // This pokemon does not have an entry in our dex.json
                             Toast.makeText(getContext(), "The Pokemon you imported does not exist in current pokedex.",
@@ -374,6 +381,7 @@ public class PokemonEditFragment extends Fragment {
         });
     }
 
+    @SuppressWarnings("ConstantConditions")
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
@@ -381,7 +389,7 @@ public class PokemonEditFragment extends Fragment {
         final TeamPokemon pokemon = (TeamPokemon) getArguments().getSerializable(ARG_PKMN);
         if (pokemon != null) {
             mDexPokemonLoader.load(array(toId(pokemon.species)), results -> {
-                if (!mAttachedToContext) return;
+                if (!mAttachedToActivity) return;
                 DexPokemon dexPokemon = results[0];
                 if (dexPokemon == null) return; // This pokemon does not have an entry in our dex.json
                 bindExistingPokemon(pokemon); // Binding our data
@@ -395,13 +403,13 @@ public class PokemonEditFragment extends Fragment {
     @Override
     public void onDetach() {
         super.onDetach();
-        mAttachedToContext = false;
+        mAttachedToActivity = false;
     }
 
     private void trySpecies(final String species) {
         String[] query = {toId(species)};
         mDexPokemonLoader.load(query, results -> {
-            if (!mAttachedToContext) return;
+            if (!mAttachedToActivity) return;
             DexPokemon dexPokemon = results[0];
             if (dexPokemon == null) {
                 mSpeciesTextView.setText(mCurrentSpecies != null ? mCurrentSpecies.name : null);
@@ -420,17 +428,16 @@ public class PokemonEditFragment extends Fragment {
         updatePokemonSprite();
         mSpeciesTextView.setText(dexPokemon.species);
 
-        ImageView placeHolderTop = getView().findViewById(R.id.type1);
+        ImageView placeHolderTop = requireView().findViewById(R.id.type1);
         placeHolderTop.setImageResource(Type.getResId(dexPokemon.firstType));
-        ImageView placeHolderBottom = getView().findViewById(R.id.type2);
+        ImageView placeHolderBottom = requireView().findViewById(R.id.type2);
         if (dexPokemon.secondType != null) placeHolderBottom.setImageResource(Type.getResId(dexPokemon.secondType));
         else placeHolderBottom.setImageDrawable(null);
 
-        List<String> abilities = new LinkedList<>();
-        abilities.addAll(dexPokemon.abilities);
+        List<String> abilities = new LinkedList<>(dexPokemon.abilities);
         if (dexPokemon.hiddenAbility != null)
             abilities.add(dexPokemon.hiddenAbility + " (Hidden)");
-        mAbilitySpinner.setAdapter(new ArrayAdapter<>(getContext(),
+        mAbilitySpinner.setAdapter(new ArrayAdapter<>(requireContext(),
                 android.R.layout.simple_dropdown_item_1line,
                 abilities));
         if (mCurrentAbility == null) {
@@ -445,7 +452,7 @@ public class PokemonEditFragment extends Fragment {
 
         String[] query = {mCurrentSpecies.id};
         mLearnsetLoader.load(query, results -> {
-            if (!mAttachedToContext) return;
+            if (!mAttachedToActivity) return;
             final Set<String> moves = results[0];
             if (moves == null) return;
             for (int i = 0; i < 4; i++) {
@@ -486,7 +493,7 @@ public class PokemonEditFragment extends Fragment {
             if (mCurrentMoves.length > 0) {
                 // Retrieve full name for moves
                 mMoveDetailsLoader.load(mCurrentMoves, results -> {
-                    if (!mAttachedToContext) return;
+                    if (!mAttachedToActivity) return;
                     for (int i = 0; i < results.length; i++) {
                         if (results[i] != null)
                             mMoveTextViews[i].setText(results[i].name);
@@ -514,9 +521,9 @@ public class PokemonEditFragment extends Fragment {
         updatePokemonSprite();
         mSpeciesTextView.getText().clear();
 
-        ImageView placeHolderTop = getView().findViewById(R.id.type1);
+        ImageView placeHolderTop = requireView().findViewById(R.id.type1);
         placeHolderTop.setImageDrawable(null);
-        ImageView placeHolderBottom = getView().findViewById(R.id.type2);
+        ImageView placeHolderBottom = requireView().findViewById(R.id.type2);
         placeHolderBottom.setImageDrawable(null);
         mNameTextView.getText().clear();
         mLevelTextView.setText("100");
@@ -535,7 +542,7 @@ public class PokemonEditFragment extends Fragment {
         mStatsTable.clear();
         mCurrentNature = Nature.DEFAULT;
         mNatureSpinner.setSelection(0);
-        ScrollView scrollView = getView().findViewById(R.id.scrollView);
+        ScrollView scrollView = requireView().findViewById(R.id.scrollView);
         scrollView.smoothScrollTo(0, 0);
         mSpeciesTextView.requestFocus();
 
@@ -576,8 +583,8 @@ public class PokemonEditFragment extends Fragment {
     }
 
     private void notifyPokemonDataChanged() {
-        if (!mHasPokemonData) return;
-        TeamEditActivity activity = (TeamEditActivity) getContext();
+        if (!mHasPokemonData || !mAttachedToActivity) return;
+        TeamEditActivity activity = (TeamEditActivity) requireActivity();
         activity.onPokemonUpdated(mSlotIndex, buildPokemon());
     }
 
@@ -598,7 +605,8 @@ public class PokemonEditFragment extends Fragment {
     }
 
     private void updatePokemonNoData() {
-        TeamEditActivity activity = (TeamEditActivity) getContext();
+        if (!mAttachedToActivity) return;
+        TeamEditActivity activity = (TeamEditActivity) requireActivity();
         activity.onPokemonUpdated(mSlotIndex, null);
     }
 
@@ -651,7 +659,7 @@ public class PokemonEditFragment extends Fragment {
             textView.setCompoundDrawables(null, null, null, null); // Remove eventual previous icon
             mIconLoader.load(array(species.id), (results) -> {
                 if (results[0] != null && species.name.contentEquals(textView.getText())) {
-                    Drawable drawable = new BitmapDrawable(results[0]);
+                    Drawable drawable = new BitmapDrawable(textView.getResources(), results[0]);
                     drawable.setBounds(0, 0, mIconWidth, mIconHeight);
                     textView.setCompoundDrawables(drawable, null, null, null);
                 }
@@ -764,6 +772,7 @@ public class PokemonEditFragment extends Fragment {
         }
     }
 
+    @SuppressWarnings("FieldCanBeLocal")
     public static class EditStatDialog extends DialogFragment implements SeekBar.OnSeekBarChangeListener {
 
         private static final String ARG_STAT_NAME = "arg-stat-name";
@@ -799,6 +808,7 @@ public class PokemonEditFragment extends Fragment {
         private EditText mEVsValueView;
         private TextView mIVsValueView;
 
+        @SuppressWarnings("ConstantConditions")
         @Override
         public void onCreate(@Nullable Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
@@ -844,6 +854,7 @@ public class PokemonEditFragment extends Fragment {
 
             view.findViewById(R.id.ok_button).setOnClickListener(view1 -> {
                 PokemonEditFragment fragment = (PokemonEditFragment) getTargetFragment();
+                //noinspection ConstantConditions
                 fragment.onStatModified(mStatName, mEv, mIv);
                 dismiss();
             });
