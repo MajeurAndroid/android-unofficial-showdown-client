@@ -15,6 +15,7 @@ import org.json.JSONObject;
 
 import java.io.InputStream;
 import java.util.concurrent.ExecutionException;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static android.text.TextUtils.isEmpty;
@@ -130,7 +131,8 @@ public final class BattleTextBuilder {
             String placeHolder = formats[i++];
             String value = formats[i++];
             if (placeHolder == null || value == null) continue;
-            template = template.replaceFirst(Pattern.quote(placeHolder), value);
+            template = template.replaceFirst(Pattern.quote(placeHolder),
+                    Matcher.quoteReplacement(value));
         }
         return template.trim();
     }
