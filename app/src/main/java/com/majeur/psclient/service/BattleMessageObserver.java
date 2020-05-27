@@ -963,12 +963,11 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
     }
 
     private void handleVolatileStatus(ServerMessage msg, final boolean start) {
-        boolean silent = msg.hasKwarg("silent");
-        if (silent) return;
         String rawId = msg.nextArg();
         final PokemonId id = PokemonId.fromRawId(getPlayer(rawId), rawId);
         final String effect = msg.nextArg();
         String arg3 = msg.hasNextArg() ? msg.nextArg() : null;
+        boolean silent = msg.hasKwarg("silent");
 
         final CharSequence text;
         if (start)
@@ -979,16 +978,23 @@ public abstract class BattleMessageObserver extends RoomMessageObserver {
             text = mBattleTextBuilder.end(id, effect, msg.kwarg("from"), msg.kwarg("of"));
 
         mActionQueue.enqueueMinorAction(() -> {
-            String trimmedEffect = effect.contains(":") ? effect.substring(effect.indexOf(':') + 1).trim() : effect;
-            onVolatileStatusChanged(id, trimmedEffect, start);
+            String effectId = toId(effect.contains(":") ? effect.substring(effect.indexOf(':') + 1) : effect);
+
+            onVolatileStatusChanged(id, effectId, start);
 
             BattlingPokemon pokemon = getBattlingPokemon(id);
             if (pokemon != null) {
-                if (start) pokemon.volatiles.add(trimmedEffect);
-                else pokemon.volatiles.remove(trimmedEffect);
+                if (effectId.startsWith("stockpile")) effectId = "stockpile";
+                if (effectId.startsWith("perish")) effectId = "perish";
+                if (start && effectId.equals("smackdown")) {
+                    pokemon.volatiles.remove("magnetrise");
+                    pokemon.volatiles.remove("telekinesis");
+                }
+                if (start) pokemon.volatiles.add(effectId);
+                else pokemon.volatiles.remove(effectId);
             }
 
-            displayMinorActionMessage(text);
+            if (!silent) displayMinorActionMessage(text);
         });
     }
 

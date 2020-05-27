@@ -12,12 +12,15 @@ public class Colors {
     public static final int YELLOW  = Color.YELLOW;
     public static final int GRAY    = 0xFF636363;
 
-    public static final int STAT_BOOST      = BLUE;
-    public static final int STAT_UNBOOST    = RED;
-    public static final int VOLATILE_STATUS = 0xFF6F35FC;
+    public static final int STAT_BOOST          = BLUE;
+    public static final int STAT_UNBOOST        = RED;
+    public static final int VOLATILE_STATUS     = 0xFF6F35FC;
+    public static final int VOLATILE_GOOD       = 0xFF33AA00;
+    public static final int VOLATILE_NEUTRAL    = 0xFF555555;
+    public static final int VOLATILE_BAD        = 0xFFFF4400;
 
     public static final int CATEGORY_PHYSICAL   = 0xFFEB5628;
-    public static final int CATEGORY_PHY_INNER = 0xFFFFF064;
+    public static final int CATEGORY_PHY_INNER  = 0xFFFFF064;
     public static final int CATEGORY_SPECIAL    = 0xFF2260C2;
     public static final int CATEGORY_STATUS     = 0xFF9A9997;
 

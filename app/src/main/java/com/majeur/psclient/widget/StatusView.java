@@ -11,18 +11,16 @@ import android.text.TextUtils;
 import android.util.Property;
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
-
+import androidx.collection.ArrayMap;
 import com.majeur.psclient.model.BattlingPokemon;
 import com.majeur.psclient.model.Colors;
 import com.majeur.psclient.model.StatModifiers;
+import com.majeur.psclient.model.VolatileStatus;
 import com.majeur.psclient.util.Utils;
 
 import java.text.DecimalFormat;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 import static com.majeur.psclient.model.Id.toId;
 
@@ -30,51 +28,50 @@ public class StatusView extends View {
 
     private static final Property<StatusView, Float> HEALTH_PROP =
             new Property<StatusView, Float>(Float.class, "health") {
-        @Override
-        public void set(StatusView statusView, Float health) {
-            statusView.mHealth = health;
-            statusView.invalidate();
-        }
+                @Override
+                public void set(StatusView statusView, Float health) {
+                    statusView.mHealth = health;
+                    statusView.invalidate();
+                }
 
-        @Override
-        public Float get(StatusView statusView) {
-            return statusView.mHealth;
-        }
-    };
+                @Override
+                public Float get(StatusView statusView) {
+                    return statusView.mHealth;
+                }
+            };
     private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("0.##");
-
-    private Paint mPaint;
-    private Rect mTempRect;
-    private Rect mTempRect2;
-    private Rect mMeasureRect;
-    private Canvas mMockCanvas;
-    private Point mMeasurePoint;
 
     private String mLabel = "";
     private float mHealth = 0f;
     private String mStatus;
-    private Set<String> mVolatileStatus;
-    private ObjectAnimator mHealthAnimator;
+    private final Map<String, VolatileStatus> mVolatileStatus;
+    private final Map<String, Float> mStatsModifiers;
+    private final ObjectAnimator mHealthAnimator;
 
-    private Typeface mDefaultTypeFace;
-    private Typeface mBoldTypeFace;
+    private final Paint mPaint;
+    private final Rect mTempRect;
+    private final Rect mTempRect2;
+    private final Rect mMeasureRect;
+    private final Canvas mMockCanvas;
+    private final Point mMeasurePoint;
+    private final Typeface mDefaultTypeFace;
+    private final Typeface mBoldTypeFace;
 
-    private int mLabelsWidthLimit;
+    private final int mLabelsWidthLimit;
 
-    private int mShadowRadius;
-    private int mHorizontalMargin;
+    private final int mShadowRadius;
+    private final int mHorizontalMargin;
 
-    private int mVerticalMargin;
-    private int mLabelTextSize;
+    private final int mVerticalMargin;
+    private final int mLabelTextSize;
 
-    private int mHealthBarWidth;
-    private int mHealthBarHeight;
-    private int mHealthBarStrokeWidth;
-    private int mRectRadius;
-    private int mExtraTextSize;
-    private int mExtraMargin;
+    private final int mHealthBarWidth;
+    private final int mHealthBarHeight;
+    private final int mHealthBarStrokeWidth;
+    private final int mRectRadius;
+    private final int mExtraTextSize;
+    private final int mExtraMargin;
 
-    private Map<String, Float> mStatsModifiers;
 
     public StatusView(Context context) {
         super(context);
@@ -111,7 +108,7 @@ public class StatusView extends View {
         mDefaultTypeFace = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL);
         mBoldTypeFace = Typeface.create("sans-serif-medium", Typeface.NORMAL);
 
-        mStatsModifiers = new HashMap<>();
+        mStatsModifiers = new ArrayMap<>();
         mStatsModifiers.put("atk", 1f);
         mStatsModifiers.put("def", 1f);
         mStatsModifiers.put("spa", 1f);
@@ -119,7 +116,7 @@ public class StatusView extends View {
         mStatsModifiers.put("spe", 1f);
         mStatsModifiers.put("eva", 1f);
 
-        mVolatileStatus = new HashSet<>();
+        mVolatileStatus = new ArrayMap<>();
 
     }
 
@@ -152,17 +149,19 @@ public class StatusView extends View {
     }
 
     public void addVolatileStatus(String vStatus) {
-        if (mVolatileStatus.add(vStatus.trim())) {
-            requestLayout();
-            invalidate();
-        }
+        VolatileStatus vs = VolatileStatus.getForId(vStatus);
+        if (vs == null) return;
+        mVolatileStatus.put(vs.id, vs);
+        requestLayout();
+        invalidate();
     }
 
     public void removeVolatileStatus(String vStatus) {
-        if (mVolatileStatus.remove(vStatus.trim())) {
-            requestLayout();
-            invalidate();
-        }
+        VolatileStatus vs = VolatileStatus.getForId(vStatus);
+        if (vs == null) return;
+        mVolatileStatus.remove(vs.id);
+        requestLayout();
+        invalidate();
     }
 
     @Override
@@ -194,9 +193,11 @@ public class StatusView extends View {
         drawStatus(canvas, measureRect);
         updateMeasurePoint(measurePoint, measureRect);
 
-        for (String vStatus : mVolatileStatus) {
+        for (VolatileStatus vStatus : mVolatileStatus.values()) {
+            if (vStatus.label == null) continue;
+
             mTempRect2.set(measureRect);
-            drawVolatileStatus(mMockCanvas, measureRect, y, vStatus);
+            drawVolatileStatus(mMockCanvas, measureRect, y, vStatus.label, vStatus.color);
             if (measureRect.right > mLabelsWidthLimit) {
                 y = measureRect.bottom + measureRect.height() / 2 - mShadowRadius - mExtraMargin;
                 measureRect.set(mHorizontalMargin, y, mHorizontalMargin, y);
@@ -204,7 +205,7 @@ public class StatusView extends View {
                 measureRect.set(mTempRect2);
             }
 
-            drawVolatileStatus(canvas, measureRect, y, vStatus);
+            drawVolatileStatus(canvas, measureRect, y, vStatus.label, vStatus.color);
             updateMeasurePoint(measurePoint, measureRect);
         }
 
@@ -230,7 +231,7 @@ public class StatusView extends View {
         mPaint.setColor(Colors.WHITE);
         mPaint.setTextSize(mLabelTextSize);
         mPaint.getTextBounds(mLabel, 0, mLabel.length(), mTempRect);
-        mPaint.setShadowLayer(mShadowRadius, 0, mShadowRadius / 3, Colors.BLACK);
+        mPaint.setShadowLayer(mShadowRadius, 0, mShadowRadius / 3f, Colors.BLACK);
         int y = measureRect.bottom;
         canvas.drawText(mLabel, mHorizontalMargin, y + mTempRect.height(), mPaint);
         measureRect.set(mHorizontalMargin,
@@ -245,11 +246,11 @@ public class StatusView extends View {
         mPaint.setStrokeWidth(mHealthBarStrokeWidth);
         mPaint.setColor(Colors.WHITE);
         mPaint.setStyle(Paint.Style.FILL_AND_STROKE);
-        mPaint.setShadowLayer(mShadowRadius, 0, mShadowRadius / 3, Colors.BLACK);
+        mPaint.setShadowLayer(mShadowRadius, 0, mShadowRadius / 3f, Colors.BLACK);
         int y = measureRect.bottom;
         canvas.drawRoundRect(mShadowRadius, y, mShadowRadius + mHealthBarWidth, y + mHealthBarHeight, mRectRadius, mRectRadius, mPaint);
         measureRect.set(mShadowRadius - mHealthBarStrokeWidth / 2, y - mHealthBarStrokeWidth / 2,
-                mHealthBarWidth + mHealthBarStrokeWidth / 2 + 2*mShadowRadius,
+                mHealthBarWidth + mHealthBarStrokeWidth / 2 + 2 * mShadowRadius,
                 y + mHealthBarHeight + mHealthBarStrokeWidth / 2 + mVerticalMargin);
         mPaint.clearShadowLayer();
 
@@ -257,7 +258,6 @@ public class StatusView extends View {
         mPaint.setStyle(Paint.Style.FILL);
         canvas.drawRoundRect(mShadowRadius, y, mShadowRadius + (int) Math.ceil(mHealthBarWidth * mHealth), y + mHealthBarHeight, mRectRadius, mRectRadius, mPaint);
     }
-
 
 
     private void drawStatus(Canvas canvas, Rect measureRect) {
@@ -273,10 +273,10 @@ public class StatusView extends View {
                 Colors.WHITE, Colors.statusColor(toId(mStatus)));
     }
 
-    private void drawVolatileStatus(Canvas canvas, Rect measureRect, int y, String vStatus) {
+    private void drawVolatileStatus(Canvas canvas, Rect measureRect, int y, String label, int color) {
         int x = measureRect.right;
         drawTextWithBackground(canvas, measureRect, x + mExtraMargin, y + mHealthBarStrokeWidth,
-                vStatus, mExtraTextSize, Colors.VOLATILE_STATUS, Colors.WHITE);
+                label, mExtraTextSize, color, Colors.WHITE);
     }
 
     @SuppressWarnings("DefaultLocale")
@@ -294,16 +294,16 @@ public class StatusView extends View {
         mPaint.setTextSize(textSize);
         mPaint.getTextBounds(text, 0, text.length(), mTempRect);
 
-        mPaint.setShadowLayer(mShadowRadius, 0, mShadowRadius / 3, Colors.BLACK);
+        mPaint.setShadowLayer(mShadowRadius, 0, mShadowRadius / 3f, Colors.BLACK);
         mPaint.setColor(bgColor);
         int w = mTempRect.width() + 2 * mRectRadius;
         int h = mTempRect.height() + 2 * mRectRadius;
-        canvas.drawRoundRect(x, cY - h / 2, x + w, cY + h / 2, mRectRadius, mRectRadius, mPaint);
+        canvas.drawRoundRect(x, cY - h / 2f, x + w, cY + h / 2f, mRectRadius, mRectRadius, mPaint);
         measureRect.set(x, cY - h / 2, x + w + mShadowRadius, cY + h / 2 + mShadowRadius);
         mPaint.clearShadowLayer();
 
         mPaint.setColor(color);
-        canvas.drawText(text, x + mRectRadius, cY - mTempRect.height() / 2 - mTempRect.top, mPaint);
+        canvas.drawText(text, x + mRectRadius, cY - mTempRect.height() / 2f - mTempRect.top, mPaint);
     }
 
     private void updateMeasurePoint(Point measurePoint, Rect measureRect) {
@@ -312,4 +312,5 @@ public class StatusView extends View {
         measurePoint.set(Math.max(measurePoint.x, measureRect.right),
                 Math.max(measurePoint.y, measureRect.bottom));
     }
+
 }
