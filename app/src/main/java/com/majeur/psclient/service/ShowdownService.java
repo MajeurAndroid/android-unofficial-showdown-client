@@ -34,6 +34,8 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.majeur.psclient.util.Utils.substringEnd;
+
 public class ShowdownService extends Service {
 
     private static final String TAG = ShowdownService.class.getSimpleName();
@@ -294,17 +296,18 @@ public class ShowdownService extends Service {
         mOkHttpClient.newCall(request).enqueue(new Callback() {
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                if (response.body() == null) return;
-                String rawResponse = response.body().string();
-                if (rawResponse.charAt(0) != ']')
+                String rawResponse;
+                if (response.body() == null || (rawResponse = response.body().string()).isEmpty()) {
+                    Log.e(TAG, "Assertion request responded with an empty body.");
                     return;
+                }
+                if (rawResponse.charAt(0) == ']') rawResponse = rawResponse.substring(1);
                 try {
-                    JSONObject resultJson = new JSONObject(rawResponse.substring(1));
+                    JSONObject resultJson = new JSONObject(rawResponse);
                     boolean userLogged = resultJson.getBoolean("loggedin");
                     if (userLogged)
                         sendTrnMessage(resultJson.getString("username"),
                                 resultJson.getString("assertion"));
-
                 } catch (JSONException e) {
                     Log.e(TAG, "Error while parsing assertion json.", e);
                 }
@@ -330,29 +333,42 @@ public class ShowdownService extends Service {
         mOkHttpClient.newCall(request).enqueue(new Callback() {
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                if (response.body() == null) return;
-                final String rawResponse = response.body().string();
-
-                final boolean errorInUsername = rawResponse.startsWith(";;");
-                final boolean userRegistered = rawResponse.length() == 1 && rawResponse.charAt(0) == ';';
-                if (!errorInUsername && !userRegistered) {
-                    sendTrnMessage(username, rawResponse);
-                    storeAuthCookieIfAny(response.headers("Set-Cookie"));
+                String rawResponse;
+                if (response.body() == null || (rawResponse = response.body().string()).isEmpty()) {
+                    mUiHandler.post(() -> callback.onError("Something is interfering with our connection to the login server. Most likely, your internet provider needs you to re-log-in, or your internet provider is blocking Pokémon Showdown."));
+                    return;
                 }
 
-                mUiHandler.post(() -> {
-                    if (errorInUsername) {
-                        callback.onSignInAttempted(false, false, rawResponse.substring(2));
-                    } else if (userRegistered) {
-                        callback.onSignInAttempted(false, true, "This name is registered");
-                    } else {
-                        callback.onSignInAttempted(true, false, null);
-                    }
-                });
+                if (substringEnd(rawResponse, 14).toLowerCase().equals("<!doctype html")) {
+                    // some sort of MitM proxy; ignore it
+                    int endIndex = rawResponse.indexOf('>');
+                    if (endIndex > 0) rawResponse = rawResponse.substring(endIndex + 1);
+                }
+                if (rawResponse.charAt(0) == '\r') rawResponse = rawResponse.substring(1);
+                if (rawResponse.charAt(0) == '\n') rawResponse = rawResponse.substring(1);
+                if (rawResponse.indexOf('<') >= 0) {
+                    mUiHandler.post(() -> callback.onError("Something is interfering with our connection to the login server. Most likely, your internet provider needs you to re-log-in, or your internet provider is blocking Pokémon Showdown."));
+                    return;
+                }
+                if (rawResponse.equals(";")) {
+                    mUiHandler.post(callback::onAuthenticationRequired);
+                } else if (rawResponse.equals(";;@gmail")) {
+                    mUiHandler.post(() -> callback.onError("Google log-in is not supported in this client, please use another account."));
+                } else if (substringEnd(rawResponse, 2).equals(";;")) {
+                    String errorReason = rawResponse.substring(2);
+                    mUiHandler.post(() -> callback.onError(errorReason));
+                } else if (rawResponse.indexOf('\n') >= 0) {
+                    mUiHandler.post(() -> callback.onError("Something is interfering with our connection to the login server."));
+                } else {
+                    sendTrnMessage(username, rawResponse);
+                    storeAuthCookieIfAny(response.headers("Set-Cookie"));
+                    mUiHandler.post(callback::onSuccess);
+                }
             }
 
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                mUiHandler.post(() -> callback.onError("An error occurred with your internet connection."));
                 Log.e(TAG, "Call failed.", e);
             }
         });
@@ -377,26 +393,34 @@ public class ShowdownService extends Service {
         mOkHttpClient.newCall(request).enqueue(new Callback() {
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                if (response.body() == null) return;
-                final String rawResponse = response.body().string();
-                if (rawResponse.charAt(0) != ']')
+                String rawResponse;
+                if (response.body() == null || (rawResponse = response.body().string()).isEmpty()) {
+                    mUiHandler.post(() -> callback.onError("Something is interfering with our connection to the login server. Most likely, your internet provider needs you to re-log-in, or your internet provider is blocking Pokémon Showdown."));
                     return;
+                }
+                if (rawResponse.charAt(0) == ']') rawResponse = rawResponse.substring(1);
+
                 try {
-                    final JSONObject jsonObject = new JSONObject(rawResponse.substring(1));
-                    final boolean success = jsonObject.getBoolean("actionsuccess");
-                    final String assertion = jsonObject.getString("assertion");
-                    if (success) {
-                        storeAuthCookieIfAny(response.headers("Set-Cookie"));
-                        sendTrnMessage(username, assertion);
+                    final JSONObject data = new JSONObject(rawResponse);
+                    if (data.has("curuser")) {
+                        JSONObject curuser = data.getJSONObject("curuser");
+                        if (curuser.optBoolean("loggedin")) {
+                            // success!
+                            storeAuthCookieIfAny(response.headers("Set-Cookie"));
+                            sendTrnMessage(username, data.getString("assertion"));
+                            mUiHandler.post(callback::onSuccess);
+                            return;
+                        }
                     }
-                    mUiHandler.post(() -> callback.onSignInAttempted(success, true, null));
                 } catch (JSONException e) {
                     Log.e(TAG, "Error while parsing connection result json.", e);
                 }
+                mUiHandler.post(() -> callback.onError("Wrong password"));
             }
 
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                mUiHandler.post(() -> callback.onError("An error occurred with your internet connection."));
                 Log.e(TAG, "Call failed.", e);
             }
         });
@@ -463,6 +487,8 @@ public class ShowdownService extends Service {
     }
 
     public interface AttemptSignInCallback {
-        void onSignInAttempted(boolean success, boolean registeredUsername, String reason);
+        void onSuccess();
+        void onError(String reason);
+        void onAuthenticationRequired();
     }
 }

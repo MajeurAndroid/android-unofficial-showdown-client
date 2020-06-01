@@ -1,64 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:padding="12dp">
-
-    <TextView
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:orientation="vertical"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="32dp"
-        android:layout_marginStart="10dp"
-        android:textAppearance="@style/TextAppearance.MaterialComponents.Headline5"
-        android:text="Pick a user name"/>
-
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="240dp"
-        android:layout_height="wrap_content">
-
-        <EditText
-            android:id="@+id/edit_text_username"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="textVisiblePassword"
-            android:singleLine="true"
-            android:imeOptions="actionGo"
-            android:hint="Username"/>
-
-    </com.google.android.material.textfield.TextInputLayout>
-
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="240dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:enabled="false">
-
-        <EditText
-            android:id="@+id/edit_text_password"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:singleLine="true"
-            android:imeOptions="actionGo"
-            android:inputType="textPassword"
-            android:hint="Password"/>
-
-    </com.google.android.material.textfield.TextInputLayout>
+        android:padding="12dp">
 
     <TextView
-        android:id="@+id/text_view_message"
-        android:layout_width="240dp"
-        android:layout_height="wrap_content"
-        android:textColor="#c70000"/>
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="32dp"
+            android:layout_marginStart="10dp"
+            android:textAppearance="@style/TextAppearance.MaterialComponents.Headline5"
+            android:text="Pick a user name"/>
+
+    <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="240dp"
+            android:layout_height="wrap_content">
+
+        <EditText
+                android:id="@+id/edit_text_username"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textVisiblePassword"
+                android:singleLine="true"
+                android:imeOptions="actionGo"
+                android:hint="Username"/>
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="240dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:enabled="false"
+            android:visibility="gone">
+
+        <EditText
+                android:id="@+id/edit_text_password"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textPassword"
+                android:singleLine="true"
+                android:imeOptions="actionGo"
+                android:hint="Password"/>
+
+    </com.google.android.material.textfield.TextInputLayout>
 
     <Button
-        android:id="@+id/button_signin"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
-        android:layout_gravity="end"
-        style="@style/Widget.MaterialComponents.Button.TextButton.Dialog"
-        android:text="Sign In"/>
+            android:id="@+id/button_signin"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:layout_gravity="end"
+            style="@style/Widget.MaterialComponents.Button.TextButton.Dialog"
+            android:text="Sign In"/>
 
 </LinearLayout>

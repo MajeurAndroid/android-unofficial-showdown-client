@@ -1,10 +1,8 @@
 package com.majeur.psclient;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.text.Editable;
-import android.text.InputFilter;
-import android.text.Spanned;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,17 +25,27 @@ public class SignInDialog extends DialogFragment implements View.OnClickListener
         return new SignInDialog();
     }
 
+    private ShowdownService mService;
+
     private EditText mUsernameEditText;
     private TextInputLayout mUsernameInputLayout;
-    private TextView mMessageTextView;
     private EditText mPasswordEditText;
+    private TextInputLayout mPasswordInputLayout;
     private Button mSignInButton;
 
-    private boolean mPromptUserPassword;
+    private boolean mHasView;
+    private boolean mIsRequiringPassword;
+
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        mService = ((MainActivity) context).getService();
+    }
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        mHasView = true;
         return inflater.inflate(R.layout.dialog_sign_in, container, false);
     }
 
@@ -49,8 +57,8 @@ public class SignInDialog extends DialogFragment implements View.OnClickListener
         mUsernameEditText.addTextChangedListener(new SimpleTextWatcher() {
             @Override
             public void afterTextChanged(Editable editable) {
-                if (!editable.toString().matches("[a-zA-Z0-9 _]*"))
-                    mUsernameInputLayout.setError("Must only contain letters, spaces and _ character.");
+                if (editable.toString().matches(".*[\\|,;].*"))
+                    mUsernameInputLayout.setError("| , ; are not valid characters in names");
                 else
                     mUsernameInputLayout.setErrorEnabled(false);
 
@@ -60,91 +68,92 @@ public class SignInDialog extends DialogFragment implements View.OnClickListener
         mUsernameEditText.setOnEditorActionListener(mEnterPressListener);
         mUsernameInputLayout = (TextInputLayout) mUsernameEditText.getParent().getParent(); // TextInputLayout wraps its child in a FrameLayout
 
-        mMessageTextView = view.findViewById(R.id.text_view_message);
-
         mPasswordEditText = view.findViewById(R.id.edit_text_password);
         mPasswordEditText.setOnEditorActionListener(mEnterPressListener);
+        mPasswordInputLayout = (TextInputLayout) mPasswordEditText.getParent().getParent();
 
         mSignInButton = view.findViewById(R.id.button_signin);
         mSignInButton.setOnClickListener(this);
     }
 
     @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        mHasView = false;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        mService = null;
+    }
+
+    @Override
     public void onClick(View view) {
-        if (mPromptUserPassword) {
-            if (mPasswordEditText.getText().length() < 2)
-                return;
+        if (mIsRequiringPassword) {
+            if (mPasswordEditText.getText().length() > 0) {
+                mPasswordEditText.setEnabled(false);
+                mSignInButton.setText("Loading...");
+                mSignInButton.setEnabled(false);
+                setCancelable(false);
+                mService.attemptSignIn(mUsernameEditText.getText().toString(),
+                                mPasswordEditText.getText().toString(), SignInDialog.this);
 
-            mPasswordEditText.setEnabled(false);
-            mSignInButton.setText("Loading...");
-            mSignInButton.setEnabled(false);
-            ((MainActivity) getActivity()).getService()
-                    .attemptSignIn(mUsernameEditText.getText().toString(),
-                            mPasswordEditText.getText().toString(), SignInDialog.this);
-
+            }
         } else {
-            if (mUsernameEditText.getText().length() < 2)
-                return;
-
-            mUsernameInputLayout.setEnabled(false);
-            mSignInButton.setText("Loading...");
-            mSignInButton.setEnabled(false);
-            ((MainActivity) getActivity()).getService()
-                    .attemptSignIn(mUsernameEditText.getText().toString(), SignInDialog.this);
+            if (mUsernameEditText.getText().length() > 0) {
+                mUsernameInputLayout.setEnabled(false);
+                mSignInButton.setText("Loading...");
+                mSignInButton.setEnabled(false);
+                setCancelable(false);
+                mService.attemptSignIn(mUsernameEditText.getText().toString(), SignInDialog.this);
+            }
         }
     }
 
     @Override
-    public void onSignInAttempted(boolean success, boolean registeredUsername, String reason) {
-        if (mPromptUserPassword) {
-            if (success) {
-                getDialog().dismiss();
-            } else {
-                mPasswordEditText.setText(null);
-                mPasswordEditText.setEnabled(true);
-                mSignInButton.setText("Sign in");
-                mSignInButton.setEnabled(true);
-                mMessageTextView.setText("Wrong password, please try again.");
-            }
+    public void onSuccess() {
+        if (!mHasView) return;
+        setCancelable(true);
+        mUsernameInputLayout.setErrorEnabled(false);
+        mPasswordInputLayout.setErrorEnabled(false);
+        requireDialog().dismiss();
+    }
+
+    @Override
+    public void onAuthenticationRequired() {
+        if (!mHasView) return;
+        setCancelable(true);
+        mPasswordInputLayout.setVisibility(View.VISIBLE);
+        mPasswordEditText.setEnabled(true);
+        mSignInButton.setText("Sign in");
+        mSignInButton.setEnabled(true);
+        mIsRequiringPassword = true;
+        mUsernameInputLayout.setErrorEnabled(false); // If any issue happened before
+    }
+
+    @Override
+    public void onError(String reason) {
+        if (!mHasView) return;
+        setCancelable(true);
+        if (mIsRequiringPassword) {
+            mPasswordEditText.setEnabled(true);
+            mSignInButton.setText("Sign in");
+            mSignInButton.setEnabled(true);
+            mPasswordInputLayout.setError("Wrong password, please try again.");
         } else {
-            if (success) {
-                getDialog().dismiss();
-            } else {
-                if (registeredUsername) {
-                    mPasswordEditText.setEnabled(true);
-                    mPasswordEditText.requestFocus();
-                    mSignInButton.setText("Sign in");
-                    mSignInButton.setEnabled(true);
-                    mPromptUserPassword = true;
-                } else {
-                    mMessageTextView.setText(reason);
-                    mUsernameInputLayout.setEnabled(true);
-                    mSignInButton.setText("Sign in");
-                    mSignInButton.setEnabled(true);
-                }
-            }
+            mUsernameInputLayout.setError(reason);
+            mUsernameInputLayout.setEnabled(true);
+            mSignInButton.setText("Sign in");
+            mSignInButton.setEnabled(true);
         }
     }
 
-    private TextView.OnEditorActionListener mEnterPressListener = new TextView.OnEditorActionListener() {
-        @Override
-        public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-            if (actionId == EditorInfo.IME_ACTION_GO) {
-                onClick(null);
-                return true;
-            }
-            return false;
+    private final TextView.OnEditorActionListener mEnterPressListener = (v, actionId, event) -> {
+        if (actionId == EditorInfo.IME_ACTION_GO) {
+            onClick(v);
+            return true;
         }
-
+        return false;
     };
-
-    private static class UserNameFilter implements InputFilter {
-        @Override
-        public CharSequence filter(CharSequence charSequence, int i, int i1, Spanned spanned, int i2, int i3) {
-            if (charSequence.toString().matches("[a-zA-Z0-9 _]"))
-                return charSequence;
-            else
-                return "";
-        }
-    }
 }

@@ -212,6 +212,13 @@ public class Utils {
         return string.substring(startIndex, endIndex);
     }
 
+    public static String substringEnd(String string, int endIndex) {
+        if (endIndex < 0) endIndex = string.length() + endIndex;
+        if (endIndex < 0) endIndex = 0;
+        if (endIndex >= string.length()) return string;
+        return string.substring(0, endIndex);
+    }
+
     public static String substringlen(String string, int startIndex, int len) {
         if (startIndex < 0) startIndex = string.length() + startIndex;
         return string.substring(startIndex, startIndex + len);
