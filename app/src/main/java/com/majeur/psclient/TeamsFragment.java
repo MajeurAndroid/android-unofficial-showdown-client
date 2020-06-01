@@ -106,12 +106,12 @@ public class TeamsFragment extends Fragment implements MainActivity.Callbacks {
             @Override
             public boolean onChildClick(ExpandableListView expandableListView, View view, int i, int j, long id) {
                 Team team = ((TeamListAdapter) expandableListView.getExpandableListAdapter()).getChild(i, j);
-                Intent intent = new Intent(getContext(), TeamEditActivity.class);
+                Intent intent = new Intent(getContext(), EditTeamActivity.class);
                 List<BattleFormat.Category> battleFormats = ((MainActivity) getActivity())
                         .getHomeFragment().getBattleFormats();
-                intent.putExtra(TeamEditActivity.INTENT_EXTRA_FORMATS, (Serializable) battleFormats);
-                intent.putExtra(TeamEditActivity.INTENT_EXTRA_TEAM, team);
-                startActivityForResult(intent, TeamEditActivity.INTENT_REQUEST_CODE);
+                intent.putExtra(EditTeamActivity.INTENT_EXTRA_FORMATS, (Serializable) battleFormats);
+                intent.putExtra(EditTeamActivity.INTENT_EXTRA_TEAM, team);
+                startActivityForResult(intent, EditTeamActivity.INTENT_REQUEST_CODE);
                 return true;
             }
         });
@@ -222,9 +222,9 @@ public class TeamsFragment extends Fragment implements MainActivity.Callbacks {
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        if (requestCode == TeamEditActivity.INTENT_REQUEST_CODE
+        if (requestCode == EditTeamActivity.INTENT_REQUEST_CODE
                 && resultCode == Activity.RESULT_OK && data != null) {
-            Team team = (Team) data.getSerializableExtra(TeamEditActivity.INTENT_EXTRA_TEAM);
+            Team team = (Team) data.getSerializableExtra(EditTeamActivity.INTENT_EXTRA_TEAM);
             addTeam(team);
             persistUserTeams();
         }

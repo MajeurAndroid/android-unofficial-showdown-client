@@ -37,7 +37,7 @@ import java.util.List;
 
 import static com.majeur.psclient.util.Utils.addNullSafe;
 
-public class TeamEditActivity extends AppCompatActivity {
+public class EditTeamActivity extends AppCompatActivity {
 
     public static final int INTENT_REQUEST_CODE = 194;
     public static final String INTENT_EXTRA_TEAM = "intent-extra-team";
@@ -135,7 +135,7 @@ public class TeamEditActivity extends AppCompatActivity {
             @NonNull
             @Override
             public Fragment getItem(int position) {
-                return PokemonEditFragment.create(position, mPokemons[position]);
+                return EditPokemonFragment.create(position, mPokemons[position]);
             }
 
             @Override

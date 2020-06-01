@@ -71,13 +71,13 @@ import static com.majeur.psclient.util.Utils.parseInt;
 import static com.majeur.psclient.util.Utils.str;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
-public class PokemonEditFragment extends Fragment {
+public class EditPokemonFragment extends Fragment {
 
     private static final String ARG_SLOT_INDEX = "arg-slot-index";
     private static final String ARG_PKMN = "arg-pkmn";
 
-    public static PokemonEditFragment create(int slotIndex, TeamPokemon pkmn) {
-        PokemonEditFragment fragment = new PokemonEditFragment();
+    public static EditPokemonFragment create(int slotIndex, TeamPokemon pkmn) {
+        EditPokemonFragment fragment = new EditPokemonFragment();
         Bundle args = new Bundle();
         args.putInt(ARG_SLOT_INDEX, slotIndex);
         args.putSerializable(ARG_PKMN, pkmn);
@@ -141,7 +141,7 @@ public class PokemonEditFragment extends Fragment {
         mAttachedToActivity = true;
         mTextHighlightColor = alphaColor(ContextCompat.getColor(context, R.color.secondary), 0.45f);
         mSlotIndex = getArguments().getInt(ARG_SLOT_INDEX);
-        TeamEditActivity activity = (TeamEditActivity) context;
+        EditTeamActivity activity = (EditTeamActivity) context;
         mSpeciesLoader = activity.getSpeciesLoader();
         mItemsLoader = activity.getItemsLoader();
         mDexPokemonLoader = activity.getDexPokemonLoader();
@@ -298,7 +298,7 @@ public class PokemonEditFragment extends Fragment {
             EditStatDialog dialog = EditStatDialog.newInstance(rowName, mCurrentBaseStats.get(index),
                     mCurrentEvs.get(index), mCurrentIvs.get(index), getCurrentLevel(),
                     mCurrentNature.getStatModifier(index), mCurrentEvs.sum());
-            dialog.setTargetFragment(PokemonEditFragment.this, 0);
+            dialog.setTargetFragment(EditPokemonFragment.this, 0);
             //noinspection ConstantConditions
             dialog.show(getFragmentManager(), "");
         });
@@ -584,7 +584,7 @@ public class PokemonEditFragment extends Fragment {
 
     private void notifyPokemonDataChanged() {
         if (!mHasPokemonData || !mAttachedToActivity) return;
-        TeamEditActivity activity = (TeamEditActivity) requireActivity();
+        EditTeamActivity activity = (EditTeamActivity) requireActivity();
         activity.onPokemonUpdated(mSlotIndex, buildPokemon());
     }
 
@@ -606,7 +606,7 @@ public class PokemonEditFragment extends Fragment {
 
     private void updatePokemonNoData() {
         if (!mAttachedToActivity) return;
-        TeamEditActivity activity = (TeamEditActivity) requireActivity();
+        EditTeamActivity activity = (EditTeamActivity) requireActivity();
         activity.onPokemonUpdated(mSlotIndex, null);
     }
 
@@ -853,7 +853,7 @@ public class PokemonEditFragment extends Fragment {
             });
 
             view.findViewById(R.id.ok_button).setOnClickListener(view1 -> {
-                PokemonEditFragment fragment = (PokemonEditFragment) getTargetFragment();
+                EditPokemonFragment fragment = (EditPokemonFragment) getTargetFragment();
                 //noinspection ConstantConditions
                 fragment.onStatModified(mStatName, mEv, mIv);
                 dismiss();

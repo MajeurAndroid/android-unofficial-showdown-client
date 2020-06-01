@@ -14,7 +14,9 @@ import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.RadioGroup;
 import android.widget.Toast;
-
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.DialogFragment;
 import com.majeur.psclient.io.DexPokemonLoader;
 import com.majeur.psclient.model.BattleFormat;
 import com.majeur.psclient.model.DexPokemon;
@@ -24,18 +26,14 @@ import com.majeur.psclient.util.Callback;
 import com.majeur.psclient.util.ShowdownTeamParser;
 import com.majeur.psclient.util.SimpleTextWatcher;
 import com.majeur.psclient.widget.SwitchLayout;
-
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.List;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.DialogFragment;
 import okhttp3.Call;
 import okhttp3.HttpUrl;
 import okhttp3.Request;
 import okhttp3.Response;
+
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.List;
 
 import static com.majeur.psclient.model.Id.toId;
 import static com.majeur.psclient.util.Utils.array;
@@ -83,11 +81,11 @@ public class ImportTeamDialog extends DialogFragment {
         view.findViewById(R.id.teambuilder_button).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(getContext(), TeamEditActivity.class);
+                Intent intent = new Intent(getContext(), EditTeamActivity.class);
                 List<BattleFormat.Category> battleFormats = ((MainActivity) getActivity()).getHomeFragment().getBattleFormats();
-                intent.putExtra(TeamEditActivity.INTENT_EXTRA_FORMATS, (Serializable) battleFormats);
+                intent.putExtra(EditTeamActivity.INTENT_EXTRA_FORMATS, (Serializable) battleFormats);
                 getFragmentManager().findFragmentById(R.id.fragment_teams)
-                        .startActivityForResult(intent, TeamEditActivity.INTENT_REQUEST_CODE);
+                        .startActivityForResult(intent, EditTeamActivity.INTENT_REQUEST_CODE);
                 dismiss();
             }
         });
