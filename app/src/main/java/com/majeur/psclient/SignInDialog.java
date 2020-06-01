@@ -140,7 +140,7 @@ public class SignInDialog extends DialogFragment implements View.OnClickListener
             mPasswordEditText.setEnabled(true);
             mSignInButton.setText("Sign in");
             mSignInButton.setEnabled(true);
-            mPasswordInputLayout.setError("Wrong password, please try again.");
+            mPasswordInputLayout.setError(reason);
         } else {
             mUsernameInputLayout.setError(reason);
             mUsernameInputLayout.setEnabled(true);

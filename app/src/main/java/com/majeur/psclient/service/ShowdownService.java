@@ -415,7 +415,7 @@ public class ShowdownService extends Service {
                 } catch (JSONException e) {
                     Log.e(TAG, "Error while parsing connection result json.", e);
                 }
-                mUiHandler.post(() -> callback.onError("Wrong password"));
+                mUiHandler.post(() -> callback.onError("Wrong password, please try again."));
             }
 
             @Override
