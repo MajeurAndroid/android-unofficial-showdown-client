@@ -109,10 +109,18 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
             view.setBackground(new BackgroundBitmapDrawable(getResources(), R.drawable.client_bg));
         mUserCountView = view.findViewById(R.id.userCountTextView);
         mBattleCountView = view.findViewById(R.id.battleCountTextView);
+        mUserCountView.setText(boldText("-"));
+        mUserCountView.append(smallText("\nusers online"));
+        mBattleCountView.setText(boldText("-"));
+        mBattleCountView.append(smallText("\nactive battles"));
         mSearchBattleContainer = view.findViewById(R.id.searchBattleContainer);
         mCurrentBattlesContainer = view.findViewById(R.id.currentBattleContainer);
         mUsernameView = view.findViewById(R.id.username_text);
+        mUsernameView.setText(smallText("Connected as\n"));
+        mUsernameView.append(boldText("-"));
         mLoginButton = view.findViewById(R.id.logout_button);
+        mLoginButton.setImageResource(R.drawable.ic_login);
+        mLoginButton.setEnabled(false);
         mLoginButton.setOnClickListener(view12 -> {
             if (mService == null || !mService.isConnected()) return;
             if (mMyUsername == null || mMyUsername.toLowerCase().startsWith("guest")) {
@@ -526,6 +534,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
             mMyUsername = userName;
             mUsernameView.setText(smallText("Connected as\n"));
             mUsernameView.append(boldText(truncate(userName, 10)));
+            mLoginButton.setEnabled(true);
             if (isGuest) {
                 Snackbar.make(requireView(), "Connected as guest !", Snackbar.LENGTH_LONG).show();
                 mLoginButton.setImageResource(R.drawable.ic_login);

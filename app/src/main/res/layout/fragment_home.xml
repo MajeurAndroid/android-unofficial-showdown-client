@@ -31,7 +31,8 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:divider="@color/divider"
-                android:showDividers="middle">
+                android:showDividers="middle"
+                    android:gravity="center_vertical">
 
                 <ImageButton
                     android:id="@+id/logout_button"
@@ -76,7 +77,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="12dp"
-            android:layout_gravity="center"
             app:contentPadding="16dp"
             android:id="@+id/searchBattleContainer">
 
@@ -123,7 +123,7 @@
                     android:id="@+id/sound_button"
                     android:layout_width="42dp"
                     android:layout_height="match_parent"
-                    android:layout_alignParentEnd="true"
+                    android:layout_alignEnd="@id/spinner_teams"
                     android:layout_alignTop="@id/button_battle"
                     android:layout_alignBottom="@id/button_battle"
                     android:src="@drawable/ic_sound_off"
