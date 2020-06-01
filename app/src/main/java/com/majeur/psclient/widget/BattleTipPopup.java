@@ -3,17 +3,25 @@ package com.majeur.psclient.widget;
 import android.content.Context;
 import android.graphics.Rect;
 import android.os.Build;
+import android.util.AttributeSet;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.PopupWindow;
 import android.widget.TextView;
-
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.majeur.psclient.R;
 import com.majeur.psclient.util.Utils;
+
+import static android.view.View.MeasureSpec.getSize;
+import static android.view.View.MeasureSpec.makeMeasureSpec;
+import static java.lang.Math.max;
 
 public class BattleTipPopup extends PopupWindow implements View.OnTouchListener {
 
@@ -27,15 +35,15 @@ public class BattleTipPopup extends PopupWindow implements View.OnTouchListener 
     private boolean mLongPressPerformed;
     private int mDownY;
     private View mAnchorView;
-    private int[] mTempArr = new int[2];
-    private Rect mTempRect = new Rect();
+    private final int[] mTempArr = new int[2];
+    private final Rect mTempRect = new Rect();
 
     private OnBindPopupViewListener mOnBindPopupViewListener;
 
-    private TextView mTitleView;
-    private TextView mDescView;
-    private ImageView mPlaceHolderTop;
-    private ImageView mPlaceHolderBottom;
+    private final TextView mTitleView;
+    private final TextView mDescView;
+    private final ImageView mPlaceHolderTop;
+    private final ImageView mPlaceHolderBottom;
 
     public BattleTipPopup(Context context) {
         super(context);
@@ -43,10 +51,10 @@ public class BattleTipPopup extends PopupWindow implements View.OnTouchListener 
         setAnimationStyle(R.style.Animation_PSClient_TipPopup);
 
         View contentView = LayoutInflater.from(context).inflate(R.layout.popup_battle_tips, null);
-        mTitleView = contentView.findViewById(R.id.title_text_view);
-        mDescView = contentView.findViewById(R.id.descr_text_view);
-        mPlaceHolderTop = contentView.findViewById(R.id.type_view);
-        mPlaceHolderBottom = contentView.findViewById(R.id.category_view);
+        mTitleView = contentView.findViewById(R.id.popup_title);
+        mDescView = contentView.findViewById(R.id.popup_content);
+        mPlaceHolderTop = contentView.findViewById(R.id.popup_im1);
+        mPlaceHolderBottom = contentView.findViewById(R.id.popup_im2);
         setContentView(contentView);
 
         mThumbOffset = Utils.dpToPx(8);
@@ -88,7 +96,7 @@ public class BattleTipPopup extends PopupWindow implements View.OnTouchListener 
         mAnchorView.getLocationInWindow(mTempArr);
         int x = mTempArr[0] + mAnchorView.getWidth() / 2 - mTempRect.width() / 2;
         int windowInsetTop = getTopWindowInset();
-        int y = Math.max(windowInsetTop, windowInsetTop + mTempArr[1] + mDownY - mTempRect.height() - mThumbOffset);
+        int y = max(windowInsetTop, windowInsetTop + mTempArr[1] + mDownY - mTempRect.height() - mThumbOffset);
         showAtLocation(mAnchorView, Gravity.NO_GRAVITY, x, y);
     }
 
@@ -138,4 +146,97 @@ public class BattleTipPopup extends PopupWindow implements View.OnTouchListener 
         return 0;
     }
 
+    // Really faster than its only equivalent using ConstraintLayout
+    public static final class Layout extends ViewGroup {
+
+        private final int mImageSpacing;
+
+        private View mTitle;
+        private View mContent;
+        private View mImage1;
+        private View mImage2;
+
+        public Layout(@NonNull Context context, @Nullable AttributeSet attrs) {
+            this(context, attrs, 0);
+        }
+
+        public Layout(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+            super(context, attrs, defStyleAttr);
+            mImageSpacing = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2f,
+                    getResources().getDisplayMetrics());
+        }
+
+        @Override
+        public void onViewAdded(View child) {
+            super.onViewAdded(child);
+            switch (child.getId()) {
+                case R.id.popup_title:
+                    mTitle = child;
+                    break;
+                case R.id.popup_content:
+                    mContent = child;
+                    break;
+                case R.id.popup_im1:
+                    mImage1 = child;
+                    break;
+                case R.id.popup_im2:
+                    mImage2 = child;
+                    break;
+            }
+        }
+
+        @Override
+        protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+            int width = getSize(widthMeasureSpec);
+            int height = getSize(heightMeasureSpec);
+
+            LayoutParams lp = mImage1.getLayoutParams();
+            if (lp.width < 0 || lp.height < 0) throw new UnsupportedOperationException("popup_im1 must have explicit width and height");
+            mImage1.measure(makeMeasureSpec(lp.width, MeasureSpec.EXACTLY),
+                    makeMeasureSpec(lp.height, MeasureSpec.EXACTLY));
+            lp = mImage2.getLayoutParams();
+            if (lp.width < 0 || lp.height < 0) throw new UnsupportedOperationException("popup_im2 must have explicit width and height");
+            mImage2.measure(makeMeasureSpec(lp.width, MeasureSpec.EXACTLY),
+                    makeMeasureSpec(lp.height, MeasureSpec.EXACTLY));
+
+            int imagesWidth = max(mImage1.getMeasuredWidth(), mImage2.getMeasuredWidth());
+
+            mTitle.measure(makeMeasureSpec(width - imagesWidth, MeasureSpec.AT_MOST),
+                    makeMeasureSpec(height, MeasureSpec.AT_MOST));
+            mContent.measure(makeMeasureSpec(width, MeasureSpec.AT_MOST),
+                    makeMeasureSpec(height - mTitle.getMeasuredHeight(), MeasureSpec.AT_MOST));
+
+            int measuredWidth = max(mTitle.getMeasuredWidth() + imagesWidth, mContent.getMeasuredWidth());
+            int measuredHeight = mTitle.getMeasuredHeight() + mContent.getMeasuredHeight();
+            setMeasuredDimension(measuredWidth, measuredHeight);
+        }
+
+        @Override
+        protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+            final int parentLeft = getPaddingLeft();
+            final int parentRight = right - left - getPaddingRight();
+            final int parentTop = getPaddingTop();
+            final int parentBottom = bottom - top - getPaddingBottom();
+
+            mTitle.layout(parentLeft,
+                    parentTop,
+                    parentLeft + mTitle.getMeasuredWidth(),
+                    parentTop + mTitle.getMeasuredHeight());
+
+            mContent.layout(parentLeft,
+                    mTitle.getBottom(),
+                    parentLeft + mContent.getMeasuredWidth(),
+                    mTitle.getBottom() + mContent.getMeasuredHeight());
+
+            mImage1.layout(parentRight - mImage1.getMeasuredWidth(),
+                    parentTop,
+                    parentRight,
+                    parentTop + mImage1.getMeasuredHeight());
+
+            mImage2.layout(parentRight - mImage2.getMeasuredWidth(),
+                    mImage1.getBottom() + mImageSpacing,
+                    parentRight,
+                    mImage1.getBottom() + mImageSpacing + mImage2.getMeasuredHeight());
+        }
+    }
 }
