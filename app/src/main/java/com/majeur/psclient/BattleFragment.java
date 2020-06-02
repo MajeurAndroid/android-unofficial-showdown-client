@@ -7,6 +7,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.text.Spanned;
+import android.text.method.LinkMovementMethod;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -143,6 +144,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         mLogTextView = view.findViewById(R.id.text_view_log);
+        mLogTextView.setMovementMethod(new LinkMovementMethod());
         mLogScrollView = view.findViewById(R.id.scroll_view_log);
         mBattleLayout = view.findViewById(R.id.battle_layout);
         mOverlayImageView = view.findViewById(R.id.overlay_image_view);

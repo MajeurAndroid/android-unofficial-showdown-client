@@ -13,6 +13,7 @@ import com.majeur.psclient.model.User;
 import com.majeur.psclient.util.SpannableStringBuilder;
 import com.majeur.psclient.util.TextTagSpan;
 import com.majeur.psclient.util.Utils;
+import com.majeur.psclient.util.html.UsernameSpan;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -190,6 +191,7 @@ public abstract class RoomMessageObserver extends AbsMessageObserver {
         int textColor = obtainUsernameColor(user);
         Object span = new TextTagSpan(Utils.getTagColor(textColor), textColor);
         spannable.setSpan(span, 0, user.length() + 1, Spannable.SPAN_INCLUSIVE_EXCLUSIVE);
+        spannable.setSpan(new UsernameSpan(user), 0, user.length() + 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         applyStylingTags(spannable);
         if (announce) {
             spannable.setSpan(new BackgroundColorSpan(parseColor("#678CB1")),
