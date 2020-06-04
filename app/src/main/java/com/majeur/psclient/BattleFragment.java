@@ -113,11 +113,11 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
 
     public void setObservedRoomId(String observedRoomId) {
         mObservedRoomId = observedRoomId;
-        mObserver.observeForRoomId(observedRoomId);
+        mObserver.setObservedRoomId(observedRoomId);
     }
 
     public boolean battleRunning() {
-        return mObserver.battleRunning();
+        return mObserver.getBattleRunning();
     }
 
     @Override
@@ -213,7 +213,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
     @Override
     public void onServiceBound(ShowdownService service) {
         mService = service;
-        service.registerMessageObserver(mObserver, false);
+        service.registerMessageObserver(mObserver);
     }
 
     @Override
@@ -257,7 +257,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
                             .show();
                     break;
                 case R.id.button_send:
-                    if (mObserver.observedRoomId() == null) break;
+                    if (mObserver.getObservedRoomId() == null) break;
                     View dialogView = getLayoutInflater().inflate(R.layout.dialog_battle_message, null);
                     final EditText editText = dialogView.findViewById(R.id.edit_text_team_name);
                     new MaterialAlertDialogBuilder(getContext())
@@ -792,7 +792,7 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         }
 
         @Override
-        protected void onDisplayBattleToast(PokemonId id, String text, int color) {
+        protected void onDisplayBattleToast(@NonNull PokemonId id, @NonNull String text, int color) {
             ToasterView toasterView = mBattleLayout.getToasterView(id);
             toasterView.makeToast(text, color);
         }

@@ -112,10 +112,6 @@ public class BattleActionRequest {
         }
     }
 
-    public boolean hasGameTypeSet() {
-        return mGameType != null;
-    }
-
     public void setGameType(Const gameType) {
         mGameType = gameType;
     }

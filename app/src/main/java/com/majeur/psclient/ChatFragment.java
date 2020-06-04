@@ -55,7 +55,7 @@ public class ChatFragment extends Fragment implements MainActivity.Callbacks {
 
     public void setObservedRoomId(String observedRoomId) {
         mObservedRoomId = observedRoomId;
-        mObserver.observeForRoomId(observedRoomId);
+        mObserver.setObservedRoomId(observedRoomId);
     }
 
     @Override
@@ -93,7 +93,7 @@ public class ChatFragment extends Fragment implements MainActivity.Callbacks {
         mTitleButton.setOnClickListener(v -> {
             if (!mShowdownService.isConnected()) return;
 
-            if (mObserver.roomJoined())
+            if (mObserver.getRoomJoined())
                 mShowdownService.sendRoomCommand(mObservedRoomId, "leave");
             else
                 mShowdownService.sendGlobalCommand("cmd", "rooms");
@@ -156,7 +156,7 @@ public class ChatFragment extends Fragment implements MainActivity.Callbacks {
     @Override
     public void onServiceBound(ShowdownService service) {
         mShowdownService = service;
-        service.registerMessageObserver(mObserver, false);
+        service.registerMessageObserver(mObserver);
     }
 
     @Override

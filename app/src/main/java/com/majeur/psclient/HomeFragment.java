@@ -43,6 +43,7 @@ import com.majeur.psclient.widget.PrivateMessagesOverviewWidget;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static androidx.core.graphics.ColorUtils.blendARGB;
 import static com.majeur.psclient.model.Id.toId;
@@ -513,7 +514,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
     @Override
     public void onServiceBound(ShowdownService service) {
         mService = service;
-        service.registerMessageObserver(mObserver, true);
+        service.registerMessageObserver(mObserver);
         if (!service.isConnected()) {
             Snackbar.make(requireView(), "Connecting to Showdown server...",
                     Snackbar.LENGTH_INDEFINITE).show();
@@ -530,7 +531,18 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
     private final GlobalMessageObserver mObserver = new GlobalMessageObserver() {
 
         @Override
-        protected void onUserChanged(String userName, boolean isGuest, String avatarId) {
+        protected void onConnectedToServer() {
+            MainActivity activity = (MainActivity) requireActivity();
+            BattleFragment battleFragment = activity.getBattleFragment();
+            if (battleFragment.getObservedRoomId() != null)
+                battleFragment.setObservedRoomId(null);
+            ChatFragment chatFragment = activity.getChatFragment();
+            if (chatFragment.getObservedRoomId() != null)
+                chatFragment.setObservedRoomId(null);
+        }
+
+        @Override
+        protected void onUserChanged(@NonNull String userName, boolean isGuest, @NonNull String avatarId) {
             mMyUsername = userName;
             mUsernameView.setText(smallText("Connected as\n"));
             mUsernameView.append(boldText(truncate(userName, 10)));
@@ -548,18 +560,6 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
             SignInDialog signInDialog;
             if ((signInDialog = (SignInDialog) requireFragmentManager().findFragmentByTag(SignInDialog.FRAGMENT_TAG)) != null)
                 signInDialog.dismissAllowingStateLoss();
-
-            checkRooms();
-        }
-
-        private void checkRooms() {
-            MainActivity activity = (MainActivity) requireActivity();
-            BattleFragment battleFragment = activity.getBattleFragment();
-            if (battleFragment.getObservedRoomId() != null)
-                battleFragment.setObservedRoomId(null);
-            ChatFragment chatFragment = activity.getChatFragment();
-            if (chatFragment.getObservedRoomId() != null)
-                chatFragment.setObservedRoomId(null);
         }
 
         @Override
@@ -571,7 +571,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
         }
 
         @Override
-        protected void onBattleFormatsChanged(List<BattleFormat.Category> battleFormats) {
+        protected void onBattleFormatsChanged(@NonNull List<BattleFormat.Category> battleFormats) {
             mBattleFormats = battleFormats;
             showSearchableFormatsOnly(true);
             MainActivity activity = (MainActivity) getActivity();
@@ -579,36 +579,36 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
         }
 
         @Override
-        protected void onSearchBattlesChanged(String[] searching, String[] battleRoomIds, String[] battleRoomNames) {
-            mIsSearchingBattle = searching.length > 0;
+        protected void onSearchBattlesChanged(@NonNull List<String> searching, @NonNull Map<String, String> battles) {
+            mIsSearchingBattle = searching.size() > 0;
             if (mIsSearchingBattle)
                 setBattleButtonUIState("Searching...", false, true, false);
             else if (!mIsChallengingSomeone)
                 setBattleButtonUIState("Battle !", true, false, false);
 
             mBattleButtonsContainer.removeAllViews();
-            if (battleRoomIds.length == 0) {
+            if (battles.size() == 0) {
                 mCurrentBattlesContainer.setVisibility(View.GONE);
                 mSearchBattleContainer.setVisibility(View.VISIBLE);
             } else {
                 mCurrentBattlesContainer.setVisibility(View.VISIBLE);
                 mSearchBattleContainer.setVisibility(View.GONE);
             }
-            for (int i = 0; i < battleRoomIds.length; i++) {
-                final String roomId = battleRoomIds[i];
+            for (Map.Entry<String, String> entry : battles.entrySet()) {
+                final String roomId = entry.getKey();
                 getLayoutInflater().inflate(R.layout.button_joined_battle, mBattleButtonsContainer);
                 Button button = (Button) mBattleButtonsContainer
                         .getChildAt(mBattleButtonsContainer.getChildCount() - 1);
-                button.setText(battleRoomNames[i]);
+                button.setText(entry.getValue());
                 button.setOnClickListener(view -> tryJoinBattleRoom(roomId));
             }
         }
 
         @Override
-        protected void onUserDetails(String id, String name, boolean online, String group,
-                                     List<String> chatRooms, List<String> battles) {
+        protected void onUserDetails(@NonNull String id, @NonNull String name, boolean online, @NonNull String group,
+                                     @NonNull List<String> chatRooms, @NonNull List<String> battles) {
             SpannableStringBuilder builder = new SpannableStringBuilder();
-            if (group != null) builder.append(italicText("Group: ")).append(group.replace(" ", "␣")).append("\n");
+            builder.append(italicText("Group: ")).append(group.replace(" ", "␣")).append("\n");
             builder.append(italicText("Battles: "));
             if (battles.size() > 0) {
                 StringBuilder stringBuilder = new StringBuilder();
@@ -637,7 +637,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
         }
 
         @Override
-        protected void onShowPopup(String message) {
+        protected void onShowPopup(@NonNull String message) {
             Snackbar snackbar = Snackbar.make(requireView(), message, Snackbar.LENGTH_INDEFINITE);
             View view = snackbar.getView();
             TextView textView = view.findViewById(com.google.android.material.R.id.snackbar_text);
@@ -657,21 +657,27 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
                 showSearchableFormatsOnly(true);
                 mFormatsSpinner.setEnabled(true);
             }
+
+            // Closing pm dialog to see this popup
+            PrivateChatDialog dialog = (PrivateChatDialog) requireFragmentManager().findFragmentByTag(PrivateChatDialog.FRAGMENT_TAG);
+            if (dialog != null && dialog.isVisible())
+                dialog.dismiss();
         }
 
         @Override
-        protected void onAvailableRoomsChanged(RoomInfo[] officialRooms, RoomInfo[] chatRooms) {
+        protected void onAvailableRoomsChanged(List<RoomInfo> officialRooms, List<RoomInfo> chatRooms) {
             MainActivity activity = (MainActivity) requireActivity();
-            activity.getChatFragment().onAvailableRoomsChanged(officialRooms, chatRooms);
+            activity.getChatFragment()
+                    .onAvailableRoomsChanged(officialRooms.toArray(new RoomInfo[0]), chatRooms.toArray(new RoomInfo[0]));
         }
 
         @Override
-        protected void onAvailableBattleRoomsChanged(AvailableBattleRoomsInfo availableRoomsInfo) {
+        protected void onAvailableBattleRoomsChanged(@NonNull AvailableBattleRoomsInfo availableRoomsInfo) {
 
         }
 
         @Override
-        protected void onNewPrivateMessage(String with, String message) {
+        protected void onNewPrivateMessage(@NonNull String with, @NonNull String message) {
             mPmsOverviewWidget.incrementPmCount(with);
             if (!mPmsOverviewWidget.isEmpty())
                 mPmsOverviewContainer.setVisibility(View.VISIBLE);
@@ -683,9 +689,10 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
         }
 
         @Override
-        protected void onChallengesChange(String to, String format, String[] usersFrom, String[] formatsFrom) {
+        protected void onChallengesChange(String to, String format, @NonNull Map<String, String> from) {
             mPmsOverviewWidget.updateChallengeTo(to, format);
-            mPmsOverviewWidget.updateChallengesFrom(usersFrom, formatsFrom);
+            mPmsOverviewWidget.updateChallengesFrom(from.keySet()
+                    .toArray(new String[0]), from.values().toArray(new String[0]));
 
             if (mPmsOverviewWidget.isEmpty()) {
                 mPmsOverviewContainer.setVisibility(View.GONE);
@@ -696,7 +703,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
 
             if (mIsAcceptingChallenge) {
                 boolean done = true;
-                for (String user : usersFrom)
+                for (String user : from.keySet())
                     if (mIsAcceptingFrom.equals(user)) {
                         done = false;
                         break;
@@ -724,7 +731,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
         }
 
         @Override
-        protected void onRoomInit(String roomId, String type) {
+        protected void onRoomInit(@NonNull String roomId, @NonNull String type) {
             MainActivity activity = (MainActivity) requireActivity();
             switch (type) {
                 case "battle":
@@ -748,7 +755,7 @@ public class HomeFragment extends Fragment implements MainActivity.Callbacks, Vi
         }
 
         @Override
-        protected void onRoomDeinit(String roomId) {
+        protected void onRoomDeinit(@NonNull String roomId) {
             MainActivity activity = (MainActivity) requireActivity();
 
             BattleFragment battleFragment = activity.getBattleFragment();

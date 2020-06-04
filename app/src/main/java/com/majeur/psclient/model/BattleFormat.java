@@ -56,6 +56,11 @@ public class BattleFormat implements Serializable {
     public static class Category implements Serializable {
 
         private String mLabel;
+
+        public void setBattleFormats(List<BattleFormat> battleFormats) {
+            mBattleFormats = battleFormats;
+        }
+
         private List<BattleFormat> mBattleFormats;
 
         public Category() {
