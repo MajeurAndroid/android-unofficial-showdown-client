@@ -141,6 +141,20 @@ public class StatusView extends View {
         invalidate();
     }
 
+    public void clear() {
+        mLabel = "";
+        mHealth = 0f;
+        mStatus = null;
+        mVolatileStatus.clear();
+        mStatsModifiers.put("atk", 1f);
+        mStatsModifiers.put("def", 1f);
+        mStatsModifiers.put("spa", 1f);
+        mStatsModifiers.put("spd", 1f);
+        mStatsModifiers.put("spe", 1f);
+        mStatsModifiers.put("eva", 1f);
+        invalidate();
+    }
+
     public void updateModifier(StatModifiers statModifiers) {
         for (String statKey : StatModifiers.STAT_KEYS)
             mStatsModifiers.put(statKey, statModifiers.modifier(statKey));

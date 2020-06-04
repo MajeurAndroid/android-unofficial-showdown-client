@@ -232,6 +232,8 @@ public class BattleFragment extends Fragment implements MainActivity.Callbacks {
         mBattleLayout.animate().alpha(0f).withEndAction(() -> {
             mBattleLayout.getSideView(Player.TRAINER).clearAllSides();
             mBattleLayout.getSideView(Player.FOE).clearAllSides();
+            mBattleLayout.getStatusViews(Player.TRAINER).forEach(StatusView::clear);
+            mBattleLayout.getStatusViews(Player.FOE).forEach(StatusView::clear);
             mOverlayImageView.setImageDrawable(null);
 
             mTrainerInfoView.clear();

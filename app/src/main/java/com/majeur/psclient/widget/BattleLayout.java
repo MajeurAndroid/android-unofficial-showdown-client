@@ -6,6 +6,7 @@ import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.util.ArraySet;
 import android.util.AttributeSet;
 import android.util.SparseArray;
 import android.util.TypedValue;
@@ -20,6 +21,7 @@ import com.majeur.psclient.util.Utils;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 public class BattleLayout extends ViewGroup {
 
@@ -123,6 +125,13 @@ public class BattleLayout extends ViewGroup {
         return statusViews.get(id.position);
     }
 
+    public Set<StatusView> getStatusViews(Player player) {
+        Set<StatusView> statusViewSet = new ArraySet<>();
+        SparseArray<StatusView> statusViews = player == Player.TRAINER ? mP1StatusViews : mP2StatusViews;
+        for (int i = 0; i < statusViews.size(); i++) statusViewSet.add(statusViews.valueAt(i));
+        return statusViewSet;
+    }
+
     public ImageView getPokemonView(PokemonId id) {
         if (id.position < 0)
             return null;
@@ -132,7 +141,7 @@ public class BattleLayout extends ViewGroup {
 
     public SideView getSideView(Player player) {
         SideView sideView = player == Player.TRAINER ? mP1SideView : mP2SideView;
-        sideView.bringToFront();
+        sideView.bringToFront(); // TODO Fix this not working
         return sideView;
     }
 
@@ -365,7 +374,7 @@ public class BattleLayout extends ViewGroup {
         }
     }
 
-    public void set(View view) {
+    private void set(View view) {
         if (view == null) return;
         view.bringToFront();
         if (mCurrentMode == MODE_BATTLE_SINGLE) {
