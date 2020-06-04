@@ -600,9 +600,13 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
             "-supereffective" -> "Supper-effective"
             else -> "???${msg.command}???"
         }
+        val color = when (msg.command) {
+            "-resisted" -> Colors.GRAY
+            else -> Colors.RED
+        }
         actionQueue.enqueueMinorAction {
             displayMinorActionMessage(text)
-            onDisplayBattleToast(pokemonId, toastText, Colors.RED)
+            onDisplayBattleToast(pokemonId, toastText, color)
         }
     }
 
