@@ -5,6 +5,7 @@ import androidx.annotation.Nullable;
 public class PokemonId {
 
     public static PokemonId fromRawId(Player player, String rawId) {
+        if (player == null || rawId.isEmpty()) return null;
         return new PokemonId(player, rawId);
     }
 
