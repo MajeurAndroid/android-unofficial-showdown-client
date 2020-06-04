@@ -20,6 +20,11 @@ public class TextTagSpan extends ReplacementSpan {
         mRectF = new RectF();
     }
 
+
+    public TextTagSpan(int textColor) {
+        this(Utils.getTagColor(textColor), textColor);
+    }
+
     @Override
     public int getSize(Paint paint, CharSequence text, int start, int end, Paint.FontMetricsInt fm) {
         return (int) (2*mPadding + paint.measureText(text.subSequence(start, end).toString()));
