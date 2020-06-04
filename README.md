@@ -37,16 +37,16 @@ Here I will briefly describe packages along with their main components to help y
 	- *[...]*
  - [`.service`](app/src/main/java/com/majeur/psclient/service)
 	*Everything related to Showdown's protocol will be found in this package. From shodown server communication to handling and processing of incoming data.*
-	- [`.ShowdownService.java`](app/src/main/java/com/majeur/psclient/service/ShowdownService.java)
+	- [`.ShowdownService.kt`](app/src/main/java/com/majeur/psclient/service/ShowdownService.kt)
 		*Responsible of all interactions with showdown server, including authentication.*
-	- [`.AbsMessageObserver.java`](app/src/main/java/com/majeur/psclient/service/AbsMessageObserver.java)
+	- [`.AbsMessageObserver.kt`](app/src/main/java/com/majeur/psclient/service/AbsMessageObserver.kt)
 		*Base definition for a component that would handle messages from showdown server.*
-	- [`.GlobalMessageObserver.java`](app/src/main/java/com/majeur/psclient/service/GlobalMessageObserver.java)
+	- [`.GlobalMessageObserver.kt`](app/src/main/java/com/majeur/psclient/service/GlobalMessageObserver.kt)
 		*In charge of handling global server messages such as '|challstr|', '|popup|', '|formats|' etc... and rooms initialization.*
-	- [`.RoomMessageObserver.java`](app/src/main/java/com/majeur/psclient/service/RoomMessageObserver.java)
+	- [`.RoomMessageObserver.kt`](app/src/main/java/com/majeur/psclient/service/RoomMessageObserver.kt)
 		*Handles everything for a chat room to work.*
-	- [`.BattleMessageObserver.java`](app/src/main/java/com/majeur/psclient/service/BattleMessageObserver.java)
-		*Extends from `.RoomMessageObserver.java` and adds support for battle commands.*
+	- [`.BattleMessageObserver.kt`](app/src/main/java/com/majeur/psclient/service/BattleMessageObserver.kt)
+		*Extends from `.RoomMessageObserver.kt` and adds support for battle commands.*
 	- *[...]*
  - [`.io`](app/src/main/java/com/majeur/psclient/io)
 	*Contains everything involving loading content (eg. from disk for dex/move/poke details and dex icons or from web for sprites).*
