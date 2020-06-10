@@ -33,7 +33,7 @@ class ShowdownService : Service() {
     private val messageObservers = mutableListOf<AbsMessageObserver>()
     private val sharedData = mutableMapOf<String, Any>()
     private var webSocket: WebSocket? = null
-    private var mMessageCache = mutableListOf<String>()
+    private var messageCache = mutableListOf<String>()
     private var _connected = AtomicBoolean(false)
 
     var isConnected: Boolean
@@ -152,9 +152,9 @@ class ShowdownService : Service() {
             Log.i("$TAG[RECEIVE]", data)
             uiHandler.post {
                 if (messageObservers.isEmpty()) {
-                    mMessageCache.add(data)
+                    messageCache.add(data)
                 } else {
-                    while (mMessageCache.isNotEmpty()) processServerData(mMessageCache.removeAt(0))
+                    while (messageCache.isNotEmpty()) processServerData(messageCache.removeAt(0))
                     processServerData(data)
                 }
             }

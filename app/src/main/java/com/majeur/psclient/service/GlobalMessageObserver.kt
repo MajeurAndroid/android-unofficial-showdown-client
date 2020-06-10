@@ -61,14 +61,13 @@ abstract class GlobalMessageObserver : AbsMessageObserver() {
 
     private fun processUpdateUser(msg: ServerMessage) {
         var username = msg.nextArg
-        service?.putSharedData("user", username)
+        service?.putSharedData("myusername", username)
         val userType = username.substring(0, 1)
         username = username.substring(1)
         val isGuest = "0" == msg.nextArg
         var avatar = msg.nextArg
         avatar = "000$avatar".substring(avatar.length)
         isUserGuest = isGuest
-        service?.putSharedData("username", username)
         onUserChanged(username, isGuest, avatar)
 
         // Update server counts (active battle and active users)
