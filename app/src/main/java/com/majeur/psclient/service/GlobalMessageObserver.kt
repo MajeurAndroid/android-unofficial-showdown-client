@@ -205,7 +205,7 @@ abstract class GlobalMessageObserver : AbsMessageObserver() {
     private fun handlePm(msg: ServerMessage) {
         val from = msg.nextArg.substring(1)
         val to = msg.nextArg.substring(1)
-        val myUsername = service?.getSharedData<String>("user")?.substring(1)
+        val myUsername = service?.getSharedData<String>("myusername")?.substring(1)
         val with = if (myUsername == from) to else from
         var content = msg.nextArgSafe
         if (content != null && (content.startsWith("/raw") || content.startsWith("/html") || content.startsWith("/uhtml")))
