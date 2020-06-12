@@ -351,7 +351,7 @@ class ShowdownService : Service() {
 
     interface AttemptSignInCallback {
         fun onSuccess()
-        fun onError(reason: String?)
+        fun onError(reason: String)
         fun onAuthenticationRequired()
     }
 }
