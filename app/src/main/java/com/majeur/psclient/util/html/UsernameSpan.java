@@ -2,8 +2,8 @@ package com.majeur.psclient.util.html;
 
 import android.view.View;
 import androidx.annotation.NonNull;
-import com.majeur.psclient.MainActivity;
 import com.majeur.psclient.service.ShowdownService;
+import com.majeur.psclient.ui.MainActivity;
 
 public class UsernameSpan extends ClickableSpan {
 

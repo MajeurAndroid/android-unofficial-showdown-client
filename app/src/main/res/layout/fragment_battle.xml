@@ -8,29 +8,29 @@
         android:id="@+id/battle_action_widget"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/player1_info_view"
+        android:layout_below="@id/trainer_info"
         android:elevation="4dp"
         android:background="?attr/colorSurface"/>
 
     <ImageView
-        android:id="@+id/background_image_view"
+        android:id="@+id/background_image"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:elevation="4dp"
-        android:layout_alignBottom="@id/player1_info_view"
+        android:layout_alignBottom="@id/trainer_info"
         android:src="@drawable/battle_bg_1"
         android:scaleType="centerCrop"/>
 
     <ImageView
-        android:id="@+id/overlay_image_view"
+        android:id="@+id/overlay_image"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:elevation="4dp"
-        android:layout_alignBottom="@id/player1_info_view"
+        android:layout_alignBottom="@id/trainer_info"
         android:scaleType="centerCrop"/>
 
     <com.majeur.psclient.widget.PlayerInfoView
-        android:id="@+id/player2_info_view"
+        android:id="@+id/foe_info"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:elevation="4dp"
@@ -43,11 +43,11 @@
         android:id="@+id/battle_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/player2_info_view"
+        android:layout_below="@id/foe_info"
         android:elevation="4dp"/>
 
     <com.majeur.psclient.widget.PlayerInfoView
-        android:id="@+id/player1_info_view"
+        android:id="@+id/trainer_info"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@id/battle_layout"
@@ -57,10 +57,10 @@
         android:background="@color/battle_overlay"/>
 
     <TextView
-        android:id="@+id/battle_message_view"
+        android:id="@+id/battle_message"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_above="@id/player1_info_view"
+        android:layout_above="@id/trainer_info"
         android:layout_margin="4dp"
         android:paddingTop="4dp"
         android:paddingBottom="4dp"
@@ -71,20 +71,22 @@
         android:textColor="@android:color/white"
         android:alpha="0"/>
 
-    <include layout="@layout/layout_extra_undo"/>
+    <!-- FIX Same id as parent in included layout (See https://issuetracker.google.com/issues/145687658) -->
+    <include android:id="@+id/undo_container" layout="@layout/layout_extra_undo" />
 
-    <include layout="@layout/layout_extra_actions"/>
+    <!-- FIX Same id as parent in included layout (See https://issuetracker.google.com/issues/145687658) -->
+    <include android:id="@+id/action_container" layout="@layout/layout_extra_actions" />
 
     <ScrollView
-        android:id="@+id/scroll_view_log"
+        android:id="@+id/battle_log_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/player1_info_view"
+        android:layout_below="@id/trainer_info"
         android:background="?attr/colorBackground"
         android:fillViewport="true">
 
         <TextView
-            android:id="@+id/text_view_log"
+            android:id="@+id/battle_log"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textColor="?attr/colorOnBackground"

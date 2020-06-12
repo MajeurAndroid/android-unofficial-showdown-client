@@ -7,7 +7,7 @@
     android:background="?attr/colorBackground">
 
     <TextView
-        android:id="@+id/text_view_title"
+        android:id="@+id/title"
         android:layout_width="match_parent"
         android:layout_height="?android:actionBarSize"
         android:elevation="4dp"
@@ -19,27 +19,27 @@
         android:text="Teams"/>
 
     <ExpandableListView
-        android:id="@+id/teams_list_view"
+        android:id="@+id/team_list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/text_view_title"
+        android:layout_below="@id/title"
         android:paddingHorizontal="12dp"
         android:clipToPadding="false"
         android:divider="@null"
         android:childDivider="@null"
         android:paddingBottom="74dp"/>
 
-    <TextView
+    <!-- <TextView
         android:id="@+id/empty_hint_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_centerInParent="true"
         android:textColor="?attr/colorSecondary"
         android:textSize="16sp"
-        android:text="Tap the add button to create\nor import a team"/>
+        android:text="Tap the add button to create\nor import a team"/> -->
 
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-        android:id="@+id/button_new_team"
+        android:id="@+id/importFab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"

@@ -1,4 +1,4 @@
-package com.majeur.psclient;
+package com.majeur.psclient.ui.teambuilder;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -20,6 +20,7 @@ import androidx.fragment.app.FragmentPagerAdapter;
 import androidx.viewpager.widget.PagerTabStrip;
 import androidx.viewpager.widget.ViewPager;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.majeur.psclient.R;
 import com.majeur.psclient.io.AllItemsLoader;
 import com.majeur.psclient.io.AllSpeciesLoader;
 import com.majeur.psclient.io.DexIconLoader;

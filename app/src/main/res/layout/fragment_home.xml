@@ -35,25 +35,16 @@
                     android:gravity="center_vertical">
 
                 <ImageButton
-                    android:id="@+id/logout_button"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="4dp"
-                    android:padding="4dp"
-                    android:background="?selectableItemBackground"
-                    android:tint="?attr/colorOnSurface"/>
+                        android:id="@+id/login_button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="4dp"
+                        android:padding="4dp"
+                        android:background="?selectableItemBackground"
+                        android:tint="?attr/colorOnSurface"/>
 
                 <TextView
-                    android:id="@+id/username_text"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:layout_marginEnd="8dp"
-                    android:gravity="center"
-                    android:textColor="?attr/colorOnSurface"/>
-
-                <TextView
-                    android:id="@+id/userCountTextView"
+                    android:id="@+id/username"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
@@ -62,7 +53,16 @@
                     android:textColor="?attr/colorOnSurface"/>
 
                 <TextView
-                    android:id="@+id/battleCountTextView"
+                    android:id="@+id/users_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:gravity="center"
+                    android:textColor="?attr/colorOnSurface"/>
+
+                <TextView
+                    android:id="@+id/battles_count"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
@@ -78,42 +78,42 @@
             android:layout_height="wrap_content"
             android:layout_margin="12dp"
             app:contentPadding="16dp"
-            android:id="@+id/searchBattleContainer">
+            android:id="@+id/search_container">
 
             <RelativeLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content">
 
                 <TextView
-                    android:id="@+id/format_label"
+                    android:id="@+id/formats_label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Format:"/>
 
                 <Spinner
-                    android:id="@+id/spinner_formats"
+                    android:id="@+id/formats_selector"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_below="@+id/format_label"/>
+                    android:layout_below="@+id/formats_label"/>
 
                 <TextView
-                    android:id="@+id/team_label"
+                    android:id="@+id/teams_label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_below="@id/spinner_formats"
+                    android:layout_below="@id/formats_selector"
                     android:text="Team:"/>
 
                 <Spinner
-                    android:id="@+id/spinner_teams"
+                    android:id="@+id/teams_selector"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_below="@id/team_label"/>
+                    android:layout_below="@id/teams_label"/>
 
                 <com.google.android.material.button.MaterialButton
-                    android:id="@+id/button_battle"
+                    android:id="@+id/search_button"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_below="@id/spinner_teams"
+                    android:layout_below="@id/teams_selector"
                     android:layout_centerHorizontal="true"
                     android:layout_marginTop="8dp"
                     android:minWidth="196dp"
@@ -123,18 +123,18 @@
                     android:id="@+id/sound_button"
                     android:layout_width="42dp"
                     android:layout_height="match_parent"
-                    android:layout_alignEnd="@id/spinner_teams"
-                    android:layout_alignTop="@id/button_battle"
-                    android:layout_alignBottom="@id/button_battle"
+                    android:layout_alignEnd="@id/teams_selector"
+                    android:layout_alignTop="@id/search_button"
+                    android:layout_alignBottom="@id/search_button"
                     android:src="@drawable/ic_sound_off"
                     android:background="?attr/selectableItemBackground"
                     android:tint="?attr/colorOnSurface"/>
 
                 <com.google.android.material.button.MaterialButton
-                        android:id="@+id/button_cancel_search"
+                        android:id="@+id/cancel_button"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_below="@id/button_battle"
+                        android:layout_below="@id/search_button"
                         android:layout_centerHorizontal="true"
                         android:visibility="gone"
                         android:text="Cancel"
@@ -150,7 +150,7 @@
             android:layout_margin="12dp"
             android:layout_gravity="center"
             app:contentPadding="16dp"
-            android:id="@+id/currentBattleContainer"
+            android:id="@+id/join_container"
             android:visibility="gone">
 
             <LinearLayout
@@ -164,7 +164,7 @@
                     android:text="You are currently in:"/>
 
                 <LinearLayout
-                    android:id="@+id/joinedBattleContainer"
+                    android:id="@+id/joined_battles_container"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"/>
@@ -179,11 +179,11 @@
                 android:layout_margin="12dp"
                 android:layout_gravity="center"
                 app:contentPadding="16dp"
-                android:id="@+id/pmsOverviewContainer"
+                android:id="@+id/pms_container"
                 android:visibility="gone">
 
             <com.majeur.psclient.widget.PrivateMessagesOverviewWidget
-                    android:id="@+id/pmsOverviewWidget"
+                    android:id="@+id/pms_overview"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"/>
 
@@ -201,7 +201,7 @@
                 android:orientation="vertical">
 
                 <com.google.android.material.button.MaterialButton
-                    android:id="@+id/button_finduser"
+                    android:id="@+id/user_search_button"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:minWidth="196dp"
@@ -209,7 +209,7 @@
                     style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
 
                 <com.google.android.material.button.MaterialButton
-                    android:id="@+id/button_reportbug"
+                    android:id="@+id/bug_report_button"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"

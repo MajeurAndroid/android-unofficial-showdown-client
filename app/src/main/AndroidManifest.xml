@@ -15,7 +15,7 @@
         android:name=".ShowdownClient">
 
         <activity
-            android:name=".MainActivity"
+            android:name=".ui.MainActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustPan">
             <intent-filter>
@@ -25,7 +25,7 @@
         </activity>
 
         <activity
-            android:name=".EditTeamActivity"
+            android:name=".ui.teambuilder.EditTeamActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustPan"
             android:theme="@style/Theme.PSClient.TeamEditActivityTheme"

@@ -15,11 +15,12 @@
             android:text="Pick a user name"/>
 
     <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/username_container"
             android:layout_width="240dp"
             android:layout_height="wrap_content">
 
         <EditText
-                android:id="@+id/edit_text_username"
+                android:id="@+id/username"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textVisiblePassword"
@@ -30,6 +31,7 @@
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/password_container"
             android:layout_width="240dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
@@ -37,7 +39,7 @@
             android:visibility="gone">
 
         <EditText
-                android:id="@+id/edit_text_password"
+                android:id="@+id/password"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textPassword"
@@ -48,7 +50,7 @@
     </com.google.android.material.textfield.TextInputLayout>
 
     <Button
-            android:id="@+id/button_signin"
+            android:id="@+id/button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="32dp"

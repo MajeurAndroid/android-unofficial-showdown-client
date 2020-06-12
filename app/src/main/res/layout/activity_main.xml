@@ -18,25 +18,25 @@
                 android:id="@+id/fragment_home"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:name="com.majeur.psclient.HomeFragment"/>
+                android:name="com.majeur.psclient.ui.HomeFragment"/>
 
             <fragment
                 android:id="@+id/fragment_battle"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:name="com.majeur.psclient.BattleFragment"/>
+                android:name="com.majeur.psclient.ui.BattleFragment"/>
 
             <fragment
                 android:id="@+id/fragment_chat"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:name="com.majeur.psclient.ChatFragment"/>
+                android:name="com.majeur.psclient.ui.ChatFragment"/>
 
             <fragment
                 android:id="@+id/fragment_teams"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:name="com.majeur.psclient.TeamsFragment"/>
+                android:name="com.majeur.psclient.ui.TeamsFragment"/>
 
         </FrameLayout>
 

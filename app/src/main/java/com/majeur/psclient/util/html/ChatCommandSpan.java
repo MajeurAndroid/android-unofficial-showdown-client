@@ -1,11 +1,9 @@
 package com.majeur.psclient.util.html;
 
 import android.view.View;
-
-import com.majeur.psclient.ChatFragment;
-import com.majeur.psclient.MainActivity;
-
 import androidx.annotation.NonNull;
+import com.majeur.psclient.ui.ChatFragment;
+import com.majeur.psclient.ui.MainActivity;
 
 public class ChatCommandSpan extends ClickableSpan {
 

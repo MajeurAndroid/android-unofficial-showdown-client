@@ -1,4 +1,4 @@
-package com.majeur.psclient;
+package com.majeur.psclient.ui.teambuilder;
 
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -31,6 +31,7 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
 import com.google.android.material.button.MaterialButton;
+import com.majeur.psclient.R;
 import com.majeur.psclient.io.AllItemsLoader;
 import com.majeur.psclient.io.AllSpeciesLoader;
 import com.majeur.psclient.io.DexIconLoader;

@@ -9,8 +9,11 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.annotation.Nullable;
 import com.google.android.material.button.MaterialButton;
-import com.majeur.psclient.MainActivity;
 import com.majeur.psclient.R;
+import com.majeur.psclient.model.BattleFormat;
+import com.majeur.psclient.ui.MainActivity;
+
+import java.util.List;
 
 import static com.majeur.psclient.util.Utils.boldText;
 import static com.majeur.psclient.util.Utils.coloredText;
@@ -166,7 +169,9 @@ public class PrivateMessagesOverviewWidget extends LinearLayout implements View.
 
     private String resolveFormat(String format) { // This can be done in a nicer way
         MainActivity activity = (MainActivity) getContext();
-        return activity.getHomeFragment().resolveBattleFormatName(format);
+        List<BattleFormat.Category> formats = activity.getService().getSharedData("formats");
+        if (formats != null) return BattleFormat.resolveName(formats, format);
+        return format;
     }
 
     @Override

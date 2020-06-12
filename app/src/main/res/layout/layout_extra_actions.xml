@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/extra_action_container"
+    android:id="@+id/action_container"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:layout_alignParentEnd="true"
@@ -13,7 +13,7 @@
     android:background="@drawable/battle_extra_actions_bg">
 
     <ImageButton
-        android:id="@+id/button_send"
+        android:id="@+id/send_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:paddingTop="6dp"
@@ -25,7 +25,7 @@
         android:tint="?attr/colorOnSurface"/>
 
     <ImageButton
-        android:id="@+id/button_forfeit"
+        android:id="@+id/forfeit_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:paddingTop="6dp"
@@ -37,7 +37,7 @@
         android:tint="?attr/colorOnSurface"/>
 
     <ImageButton
-        android:id="@+id/button_timer"
+        android:id="@+id/timer_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:paddingTop="6dp"

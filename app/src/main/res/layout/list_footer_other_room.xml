@@ -8,7 +8,7 @@
     android:padding="8dp">
 
     <EditText
-        android:id="@+id/other_room_input"
+        android:id="@+id/room_name_input"
         android:layout_width="190dp"
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
@@ -17,7 +17,7 @@
         android:inputType="text"/>
 
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/button_join_room"
+        android:id="@+id/button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:enabled="false"
