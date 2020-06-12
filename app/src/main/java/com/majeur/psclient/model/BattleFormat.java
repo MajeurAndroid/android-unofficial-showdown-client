@@ -12,6 +12,34 @@ public class BattleFormat implements Serializable {
 
     public static final BattleFormat FORMAT_OTHER = new BattleFormat("[Other]", -1);
 
+    public static int compare(List<Category> formats, String f1, String f2) {
+        if (Objects.equals(f1, f2)) return 0;
+        if (f1.contains("other")) return 1;
+        if (f2.contains("other")) return -1;
+        if (formats == null) return f1.compareTo(f2);
+        int f1Index = -1;
+        int f2Index = -1;
+        int index = 0;
+        loop: for (Category category : formats)
+            for (BattleFormat format : category.getBattleFormats()) {
+            String id = format.id();
+            if (id.equals(f1)) f1Index = index;
+            if (id.equals(f2)) f2Index = index;
+            if (f1Index >= 0 && f2Index >= 0) break loop;
+            index++;
+        }
+        return Integer.compare(f1Index, f2Index);
+    }
+
+    public static String resolveName(List<BattleFormat.Category> formats, String formatId) {
+        if (formats == null) return formatId;
+        if ("other".equals(formatId)) return "Other";
+        for (BattleFormat.Category category : formats)
+            for (BattleFormat format : category.getBattleFormats())
+                if (format.id().contains(formatId)) return format.getLabel();
+        return formatId;
+    }
+
     private static final int MASK_TEAM = 0x1;
     private static final int MASK_SEARCH_SHOW = 0x2;
     private static final int MASK_CHALLENGE_SHOW = 0x4;

@@ -5,7 +5,7 @@ import static com.majeur.psclient.util.Utils.str;
 
 public class StatModifiers {
 
-    public static final String[] STAT_KEYS = {"atk", "def", "spa", "spd", "spe", "evasion"};
+    public static final String[] STAT_KEYS = {"atk", "def", "spa", "spd", "spe", "evasion", "accuracy"};
 
     private static final float[] LEVELS = {1f / 4f, 2f / 7f, 1f / 3f, 2f / 5f, 1f / 2f, 2f / 3f, 1f, 3f / 2f, 2f, 5f / 2f, 3f, 7f / 2f, 4f};
     private static final float[] LEVELS_ALT = {3f / 9f, 3f / 8f, 3f / 7f, 3f / 6f, 3f / 5f, 3f / 4f, 3f / 3f, 4f / 3f, 5f / 3f, 6f / 3f, 7f / 3f, 8f / 3f, 9f / 3f};
@@ -16,7 +16,7 @@ public class StatModifiers {
     private int spd = 0;
     private int spe = 0;
     private int eva = 0;
-
+    private int acc = 0;
 
     public int get(String stat) {
         switch (stat) {
@@ -30,8 +30,12 @@ public class StatModifiers {
                 return spd;
             case "spe":
                 return spe;
-            default:
+            case "evasion":
                 return eva;
+            case "accuracy":
+                return acc;
+            default:
+                return 0;
         }
     }
 
@@ -54,7 +58,10 @@ public class StatModifiers {
                 break;
             case "evasion":
                 eva += val;
-
+                break;
+            case "accuracy":
+                acc += val;
+                break;
         }
     }
 
@@ -78,6 +85,9 @@ public class StatModifiers {
             case "evasion":
                 eva = val;
                 break;
+            case "accuracy":
+                acc = val;
+                break;
         }
     }
 
@@ -88,6 +98,7 @@ public class StatModifiers {
         spd = modifiers.spd;
         spe = modifiers.spe;
         eva = modifiers.eva;
+        acc = modifiers.acc;
     }
 
     public void invert() {
@@ -97,10 +108,11 @@ public class StatModifiers {
         spd = -spd;
         spe = -spe;
         eva = -eva;
+        acc = -acc;
     }
 
     public void clear() {
-        atk = def = spa = spd = spe = eva = 0;
+        atk = def = spa = spd = spe = eva = acc = 0;
     }
 
     public void clearPositive() {
@@ -110,6 +122,7 @@ public class StatModifiers {
         if (spd > 0) spd = 0;
         if (spe > 0) spe = 0;
         if (eva > 0) eva = 0;
+        if (acc > 0) acc = 0;
     }
 
     public void clearNegative() {
@@ -119,6 +132,7 @@ public class StatModifiers {
         if (spd < 0) spd = 0;
         if (spe < 0) spe = 0;
         if (eva < 0) eva = 0;
+        if (acc < 0) acc = 0;
     }
 
     public float modifier(String stat) {
@@ -135,6 +149,8 @@ public class StatModifiers {
                 return LEVELS[spe + 6];
             case "evasion":
                 return LEVELS_ALT[eva + 6];
+            case "accuracy":
+                return LEVELS_ALT[acc + 6];
             default:
                 return 0;
         }

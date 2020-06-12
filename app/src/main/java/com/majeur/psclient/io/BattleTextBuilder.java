@@ -702,7 +702,7 @@ public final class BattleTextBuilder {
         if (targetId != null && contains(id, includes)) {
             pkmnId = getPokemonId(of);
             targetId = pkmnId;
-            if (pkmnId == null) pkmnId = targetId;
+            if (pkmnId == null) pkmnId = targetId; //TODO
         }
         if (targetId != null) targetId = of != null ? getPokemonId(of) : pkmnId;
         CharSequence line1 = line(maybeAbility(effect, pkmnId));

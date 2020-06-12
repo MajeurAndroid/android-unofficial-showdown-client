@@ -9,7 +9,6 @@ import android.view.ViewPropertyAnimator;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.ImageView;
-
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.RequestBuilder;
 import com.bumptech.glide.RequestManager;
@@ -26,7 +25,6 @@ import com.majeur.psclient.util.html.Html;
 import java.util.concurrent.ExecutionException;
 
 import static com.majeur.psclient.model.Player.FOE;
-import static com.majeur.psclient.util.Utils.array;
 
 public class GlideHelper {
 
@@ -187,7 +185,7 @@ public class GlideHelper {
                 .toString();
     }
 
-    public Html.ImageGetter getHtmlImageGetter(final DexIconLoader iconLoader, int maxWidth) {
+    public Html.ImageGetter getHtmlImageGetter(final AssetLoader iconLoader, int maxWidth) {
         final int mw = maxWidth - Utils.dpToPx(2);
         return new Html.ImageGetter() {
             @Override
@@ -196,7 +194,7 @@ public class GlideHelper {
                     Drawable d = null;
                     if (source.startsWith("content://com.majeur.psclient/dex-icon/")) {
                         String species = source.substring(source.lastIndexOf('/') + 1, source.length());
-                        Bitmap icon = iconLoader.load(array(species))[0];
+                        Bitmap icon = iconLoader.dexIconNonSuspend(species);
                         if (icon != null) d = new BitmapDrawable(icon);
                     } else {
                         d = mRequestManager.asDrawable().load(source).submit().get();

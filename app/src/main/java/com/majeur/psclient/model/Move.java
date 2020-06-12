@@ -1,9 +1,8 @@
 package com.majeur.psclient.model;
 
+import androidx.annotation.Nullable;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import androidx.annotation.Nullable;
 
 import static com.majeur.psclient.model.Id.toId;
 
@@ -97,19 +96,34 @@ public class Move {
 
     public static class Details {
 
-        public final String name;
-        public final int accuracy;
-        public final int priority;
-        public final int basePower;
-        public final int zPower;
-        public final int color;
-        public final String category;
-        public final String desc;
-        public final String type;
-        public final int pp;
-        public final Target target;
-        public final String zEffect;
-        public final int maxPower;
+        public static String zMoveEffects(String effect) {
+            if (effect == null) return null;
+            switch (effect) {
+                case "clearnegativeboost": return "Restores negative stat stages to 0";
+                case "crit2": return "Crit ratio +2";
+                case "heal": return "Restores HP 100%";
+                case "curse": return "Restores HP 100% if user is Ghost type, otherwise Attack +1";
+                case "redirect": return "Redirects opposing attacks to user";
+                case "healreplacement": return "Restores replacement's HP 100%";
+                default: return null;
+            }
+        }
+
+        public String name;
+        public int accuracy;
+        public int priority;
+        public int basePower;
+        public int zPower;
+        public int color;
+        public String category;
+        public String desc;
+        public String type;
+        public int pp;
+        public Target target;
+        public String zEffect;
+        public int maxPower;
+
+        public Details() {}
 
         public Details(String name, int accuracy, int priority, int basePower, int zPower,
                        String category, String desc, String type, int pp, String target,

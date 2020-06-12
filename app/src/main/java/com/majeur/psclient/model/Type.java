@@ -45,7 +45,7 @@ public class Type {
     };
 
     public static int getResId(String rawType) {
-        if (rawType == null) return R.drawable.ic_type_unknown;
+        if (rawType == null) return 0;
         rawType = rawType.toLowerCase().trim();
         switch (rawType) {
             case "bug": return R.drawable.ic_type_bug;

@@ -16,6 +16,10 @@ public class DexPokemon extends BasePokemon {
     public String gender;
     public String tier;
 
+    public DexPokemon(String rawSpecies) {
+        super(rawSpecies);
+    }
+
     public DexPokemon(String rawSpecies, int num, String firstType, String secondType,
                       Stats baseStats, List<String> abilities, String hiddenAbility,
                       float height, float weight, String color, String gender, String tier) {

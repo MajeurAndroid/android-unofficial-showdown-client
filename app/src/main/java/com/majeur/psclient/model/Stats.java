@@ -24,6 +24,8 @@ public class Stats implements Serializable {
         spe = jsonObject.getInt("spe");
     }
 
+    public Stats() {}
+
     public Stats(int hp, int atk, int def, int spa, int spd, int spe) {
         this.hp = hp;
         this.atk = atk;
