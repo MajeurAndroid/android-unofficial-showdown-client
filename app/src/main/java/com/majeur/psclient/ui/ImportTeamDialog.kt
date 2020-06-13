@@ -211,5 +211,7 @@ class ImportTeamDialog : DialogFragment() {
 
         private const val IMPORT_TYPE_PASTEBIN = 0
         private const val IMPORT_TYPE_RAW_TEXT = 1
+
+        public const val FRAGMENT_TAG = "import-team-dialog"
     }
 }

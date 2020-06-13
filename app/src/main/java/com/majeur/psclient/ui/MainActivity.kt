@@ -11,7 +11,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.majeur.psclient.R
 import com.majeur.psclient.databinding.ActivityMainBinding
 import com.majeur.psclient.io.AssetLoader
-import com.majeur.psclient.io.DexIconLoader
 import com.majeur.psclient.io.GlideHelper
 import com.majeur.psclient.service.ShowdownService
 import timber.log.Timber
@@ -19,7 +18,6 @@ import timber.log.Timber
 
 class MainActivity : AppCompatActivity() {
 
-    val dexIconLoader by lazy { DexIconLoader(this) }
     val glideHelper by lazy { GlideHelper(this) }
     val assetLoader by lazy { AssetLoader(this) }
 
@@ -106,8 +104,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun showBadge(fragmentId: Int) {
-        val badge = binding.bottomNavigation.getOrCreateBadge(fragmentId)
-        badge.backgroundColor = resources.getColor(R.color.secondary)
+        if (selectedFragmentId != fragmentId) {
+            val badge = binding.bottomNavigation.getOrCreateBadge(fragmentId)
+            badge.backgroundColor = resources.getColor(R.color.secondary)
+        }
     }
 
     fun clearBadge(fragmentId: Int) = binding.bottomNavigation.removeBadge(fragmentId)

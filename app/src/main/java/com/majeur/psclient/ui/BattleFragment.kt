@@ -69,8 +69,8 @@ class BattleFragment : BaseFragment() {
     override fun onAttach(context: Context) {
         super.onAttach(context)
         observer.gotContext(context)
-        glideHelper = activity.glideHelper
-        assetLoader = activity.assetLoader
+        glideHelper = mainActivity.glideHelper
+        assetLoader = mainActivity.assetLoader
         battleTipPopup = BattleTipPopup(context)
         battleTipPopup.setOnBindPopupViewListener(mOnBindPopupViewListener)
         audioManager = AudioBattleManager(context)
@@ -180,7 +180,7 @@ class BattleFragment : BaseFragment() {
         when (view) {
             binding.actionContainer.forfeitButton -> {
                 if (battleRunning())
-                    AlertDialog.Builder(context!!)
+                    AlertDialog.Builder(requireActivity())
                         .setMessage("Do you really want to forfeit this battle ?")
                         .setPositiveButton("Forfeit") { _: DialogInterface?, _: Int -> forfeit() }
                         .setNegativeButton("Cancel", null)
@@ -189,7 +189,7 @@ class BattleFragment : BaseFragment() {
             binding.actionContainer.sendButton -> {
                 val dialogView: View = layoutInflater.inflate(R.layout.dialog_battle_message, null)
                 val editText = dialogView.findViewById<EditText>(R.id.edit_text_team_name)
-                MaterialAlertDialogBuilder(context!!)
+                MaterialAlertDialogBuilder(requireActivity())
                         .setPositiveButton("Send") { _: DialogInterface?, _: Int ->
                             val regex = "[{}:\",|\\[\\]]".toRegex()
                             val input = editText.text.toString().replace(regex, "")
@@ -490,7 +490,7 @@ class BattleFragment : BaseFragment() {
     fun sendUndoCommand() = service?.sendRoomCommand(observedRoomId, "undo")
 
     private fun notifyNewMessageReceived() {
-        if (id != activity.selectedFragmentId) activity.showBadge(id)
+        mainActivity.showBadge(id)
     }
 
     private val observer: BattleMessageObserver = object : BattleMessageObserver() {
@@ -511,7 +511,7 @@ class BattleFragment : BaseFragment() {
 
         override fun onBattleStarted() {
             prepareBattleFieldUi()
-            activity.setKeepScreenOn(true)
+            mainActivity.setKeepScreenOn(true)
             when (gameType) {
                 Const.SINGLE -> binding.battleLayout.setMode(BattleLayout.MODE_BATTLE_SINGLE)
                 Const.DOUBLE -> binding.battleLayout.setMode(BattleLayout.MODE_BATTLE_DOUBLE)
@@ -522,7 +522,7 @@ class BattleFragment : BaseFragment() {
         }
 
         override fun onBattleEnded(winner: String) {
-            activity.setKeepScreenOn(false)
+            mainActivity.setKeepScreenOn(false)
             audioManager.stopBattleMusic()
             inactiveBattleOverlayDrawable.setWinner(winner)
             clearBattleFieldUi()
@@ -806,7 +806,7 @@ class BattleFragment : BaseFragment() {
 
         override fun onRoomDeInit() {
             super.onRoomDeInit()
-            activity.setKeepScreenOn(false)
+            mainActivity.setKeepScreenOn(false)
             binding.apply {
                 battleActionWidget.dismiss()
                 battleLog.text = ""

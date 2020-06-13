@@ -57,7 +57,7 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
-        assetLoader = activity.assetLoader
+        assetLoader = mainActivity.assetLoader
         soundEnabled = Preferences.getBoolPreference(context, "sound")
     }
 
@@ -96,17 +96,7 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
         binding.loginButton.apply {
             isEnabled = false
             setImageResource(R.drawable.ic_login)
-            setOnClickListener {
-                if (service == null || service?.isConnected != true) return@setOnClickListener
-                val myUsername = service?.getSharedData<String?>("myusername")?.substring(1)
-                if (myUsername?.toLowerCase()?.startsWith("guest") == true) {
-                    if (fragmentManager?.findFragmentByTag(SignInDialog.FRAGMENT_TAG) == null)
-                        SignInDialog.newInstance().show(fragmentManager!!, SignInDialog.FRAGMENT_TAG)
-                } else {
-                    service?.sendGlobalCommand("logout")
-                    service?.forgetUserLoginInfos()
-                }
-            }
+            setOnClickListener(this@HomeFragment)
         }
         binding.formatsSelector.apply {
             adapter = object : CategoryAdapter(context) {
@@ -182,12 +172,22 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
     override fun onClick(view: View) {
         if (service?.isConnected != true) return
         when (view) {
+            binding.loginButton -> {
+                val myUsername = service?.getSharedData<String?>("myusername")?.substring(1)
+                if (myUsername?.toLowerCase()?.startsWith("guest") == true) {
+                    if (fragmentManager?.findFragmentByTag(SignInDialog.FRAGMENT_TAG) == null)
+                        SignInDialog.newInstance().show(fragmentManager!!, SignInDialog.FRAGMENT_TAG)
+                } else {
+                    service?.sendGlobalCommand("logout")
+                    service?.forgetUserLoginInfos()
+                }
+            }
             binding.searchButton -> {
                 if (observer.isUserGuest) {
                     if (requireFragmentManager().findFragmentByTag(SignInDialog.FRAGMENT_TAG) == null)
                         SignInDialog.newInstance().show(requireFragmentManager(), SignInDialog.FRAGMENT_TAG)
                 } else {
-                    if (activity.battleFragment.battleRunning() == true)
+                    if (battleFragment.battleRunning() == true)
                         makeSnackbar("A battle is already running")
                     else
                         searchForBattle()
@@ -216,7 +216,7 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
             binding.userSearchButton -> {
                 val dialogBinding = DialogBattleMessageBinding.inflate(layoutInflater)
                 dialogBinding.editTextTeamName.hint = "Type a username"
-                MaterialAlertDialogBuilder(view.context)
+                MaterialAlertDialogBuilder(requireActivity())
                         .setPositiveButton("Find") { _: DialogInterface?, _: Int ->
                             val input = dialogBinding.editTextTeamName.text.toString().replace(USERNAME_REGEX, "")
                             if (input.isNotEmpty()) service?.sendGlobalCommand("cmd userdetails", input)
@@ -267,8 +267,7 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
         val adapter = binding.teamsSelector.adapter as CategoryAdapter
         adapter.clearItems()
         if (currentBattleFormat?.isTeamNeeded == true) {
-            val teamGroups = (requireActivity() as MainActivity)
-                    .teamsFragment.teams
+            val teamGroups = teamsFragment.teams
             var matchingFormatGroupIndex = -1
             var otherFormatGroupIndex = -1
             for (i in teamGroups.indices) {
@@ -324,18 +323,17 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
 
     private fun tryJoinBattleRoom(roomId: String) {
         if (service?.isConnected != true) return
-        val battleFragment = activity!!.battleFragment
         if (battleFragment.observedRoomId == null || !battleFragment.battleRunning()) {
             service?.sendGlobalCommand("join", roomId)
         } else {
             val runningBattleRoomId = battleFragment.observedRoomId
             if (runningBattleRoomId == roomId) {
-                activity.showBattleFragment()
+                mainActivity.showBattleFragment()
                 return
             }
             val currentBattleName = runningBattleRoomId?.substring("battle-".length)
             val battleName = roomId.substring("battle-".length)
-            AlertDialog.Builder(activity!!)
+            AlertDialog.Builder(requireActivity())
                     .setTitle("Do you want to continue ?")
                     .setMessage(String.format("Joining battle '%s' will make you leave (and forfeit) the current battle.", battleName))
                     .setPositiveButton("Continue") { _: DialogInterface?, _: Int ->
@@ -365,34 +363,22 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
 
     fun challengeSomeone(user: String) {
         val myUsername = service?.getSharedData<String?>("myusername")?.substring(1)
-        if (user == myUsername) {
-            makeSnackbar("You should try challenging yourself in an other way")
-            return
+        when {
+            user == myUsername -> makeSnackbar("You should try challenging yourself in an other way")
+            isChallengingSomeone -> makeSnackbar("You are already challenging someone")
+            isSearchingBattle -> makeSnackbar("Cannot challenge someone while searching for battle")
+            isAcceptingChallenge -> makeSnackbar("You are already accepting a challenge")
+            battleFragment.battleRunning() -> makeSnackbar("You cannot challenge someone while being in a battle")
+            else -> {
+                isChallengingSomeone = true
+                waitingForChallenge = false
+                challengeTo = user
+                setBattleButtonUIState(String.format("Challenge\n%s!", user), showCancel = true, tintCard = true)
+                showSearchableFormatsOnly(false)
+                mainActivity.showHomeFragment()
+                requireView().post { (requireView() as ScrollView).fullScroll(View.FOCUS_UP) }
+            }
         }
-        if (isChallengingSomeone) {
-            makeSnackbar("You are already challenging someone")
-            return
-        }
-        if (isSearchingBattle) {
-            makeSnackbar("Cannot challenge someone while searching for battle")
-            return
-        }
-        if (isAcceptingChallenge) {
-            makeSnackbar("You are already accepting a challenge")
-            return
-        }
-        if ((requireActivity() as MainActivity).battleFragment.battleRunning()) {
-            makeSnackbar("You cannot challenge someone while being in a battle")
-            return
-        }
-        isChallengingSomeone = true
-        waitingForChallenge = false
-        challengeTo = user
-        setBattleButtonUIState(String.format("Challenge\n%s!", user), showCancel = true, tintCard = true)
-        showSearchableFormatsOnly(false)
-        val activity = requireActivity() as MainActivity
-        activity.showHomeFragment()
-        requireView().post { (requireView() as ScrollView).fullScroll(View.FOCUS_UP) }
     }
 
     private fun setBattleButtonUIState(label: String, enabled: Boolean = true, showCancel: Boolean = false, tintCard: Boolean = false) {
@@ -437,7 +423,7 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
     }
 
     private fun notifyNewMessageReceived() {
-        if (id != activity?.selectedFragmentId) activity?.showBadge(id)
+        mainActivity.showBadge(id)
     }
 
     override fun onServiceBound(service: ShowdownService) {
@@ -455,11 +441,9 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
     }
 
     private val observer: GlobalMessageObserver = object : GlobalMessageObserver() {
+
         override fun onConnectedToServer() {
-            val activity = requireActivity() as MainActivity
-            val battleFragment = activity.battleFragment
             if (battleFragment.observedRoomId != null) battleFragment.observedRoomId = null
-            val chatFragment = activity.chatFragment
             if (chatFragment.observedRoomId != null) chatFragment.observedRoomId = null
         }
 
@@ -478,7 +462,6 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
             }
             val signInDialog = requireFragmentManager().findFragmentByTag(SignInDialog.FRAGMENT_TAG) as SignInDialog?
             signInDialog?.dismissAllowingStateLoss()
-            //activity?.showHomeFragment()
         }
 
         override fun onUpdateCounts(userCount: Int, battleCount: Int) {
@@ -495,7 +478,7 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
         override fun onBattleFormatsChanged(battleFormats: List<BattleFormat.Category>) {
             this@HomeFragment.battleFormats = battleFormats
             showSearchableFormatsOnly(true)
-            activity?.teamsFragment?.onBattleFormatsChanged()
+            teamsFragment.onBattleFormatsChanged()
         }
 
         override fun onSearchBattlesChanged(searching: List<String>, games: Map<String, String>) {
@@ -574,7 +557,7 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
         }
 
         override fun onAvailableRoomsChanged(officialRooms: List<RoomInfo>, chatRooms: List<RoomInfo>) {
-            activity?.chatFragment?.onAvailableRoomsChanged(officialRooms, chatRooms)
+            chatFragment.onAvailableRoomsChanged(officialRooms, chatRooms)
         }
 
         override fun onAvailableBattleRoomsChanged(availableRoomsInfo: AvailableBattleRoomsInfo) {}
@@ -626,13 +609,11 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
         }
 
         override fun onRoomInit(roomId: String, type: String) {
-            val activity: MainActivity = requireActivity() as MainActivity
             when (type) {
                 "battle" -> {
-                    val battleFragment = activity.battleFragment
                     if (battleFragment.observedRoomId == null || !battleFragment.battleRunning()) {
                         battleFragment.observedRoomId = roomId
-                        activity.showBattleFragment()
+                        mainActivity.showBattleFragment()
                     } else {
                         // Most of the time this is an auto joined battle coming from a new search, let's
                         // just leave it silently. If the user wants to join it deliberately, he will
@@ -641,23 +622,20 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
                     }
                 }
                 "chat" -> {
-                    val chatFragment = activity.chatFragment
                     if (chatFragment.observedRoomId == null) chatFragment.observedRoomId = roomId
                 }
             }
         }
 
         override fun onRoomDeinit(roomId: String) {
-            val battleFragment = activity?.battleFragment
-            if (battleFragment?.observedRoomId == roomId) {
+            if (battleFragment.observedRoomId == roomId) {
                 battleFragment.observedRoomId = null
                 if (pendingBattleToJoin != null) {
                     this@HomeFragment.service?.sendGlobalCommand("join", pendingBattleToJoin!!)
                     pendingBattleToJoin = null
                 }
             }
-            val chatFragment = activity?.chatFragment
-            if (chatFragment?.observedRoomId == roomId) chatFragment.observedRoomId = null
+            if (chatFragment.observedRoomId == roomId) chatFragment.observedRoomId = null
         }
 
         override fun onNetworkError() {
@@ -696,18 +674,14 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
 
             val team = getItem(position) as Team
             viewHolder.labelView.text = team.label
-            if (team.pokemons.isEmpty()) {
-                viewHolder.pokemonViews.forEach { it.setImageDrawable(null) }
-                return convertView
-            }
+            viewHolder.pokemonViews.forEach { it.setImageDrawable(null) }
+            if (team.pokemons.isEmpty()) return convertView
 
             viewHolder.job?.cancel()
             viewHolder.job = fragmentScope.launch {
-                assetLoader.dexIcons(*team.pokemons.map { it.species.toId() }.toTypedArray()).also {
-                    for (index in it.size until 6)
-                        viewHolder.pokemonViews[index].setImageDrawable(null)
-                }.forEachIndexed { index, bitmap ->
-                    viewHolder.pokemonViews[index].setImageDrawable(BitmapDrawable(bitmap))
+                assetLoader.dexIcons(*team.pokemons.map { it.species.toId() }.toTypedArray()).forEachIndexed { index, bitmap ->
+                    val drawable = BitmapDrawable(convertView.resources, bitmap)
+                    viewHolder.pokemonViews[index].setImageDrawable(drawable)
                 }
             }
             return convertView

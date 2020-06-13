@@ -44,8 +44,8 @@ class ChatFragment : BaseFragment() {
     override fun onAttach(context: Context) {
         super.onAttach(context)
         inputMethodManager = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        glideHelper = activity.glideHelper
-        assetLoader = activity.assetLoader
+        glideHelper = mainActivity.glideHelper
+        assetLoader = mainActivity.assetLoader
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -70,8 +70,8 @@ class ChatFragment : BaseFragment() {
             else service?.sendGlobalCommand("cmd", "rooms")
         }
         binding.usersCount.setOnClickListener { v: View ->
-            val adapter = ArrayAdapter(v.context, android.R.layout.simple_list_item_1, observer.users)
-            AlertDialog.Builder(v.context)
+            val adapter = ArrayAdapter(requireActivity(), android.R.layout.simple_list_item_1, observer.users)
+            AlertDialog.Builder(requireActivity())
                     .setTitle("Users")
                     .setAdapter(adapter) { dialog: DialogInterface, pos: Int ->
                         service?.sendGlobalCommand("cmd userdetails", Id.toIdSafe(adapter.getItem(pos)))
@@ -146,8 +146,7 @@ class ChatFragment : BaseFragment() {
     }
 
     private fun notifyNewMessageReceived() {
-        val activity = activity as MainActivity
-        if (id != activity.selectedFragmentId) activity.showBadge(id)
+        mainActivity.showBadge(id)
     }
 
     private fun postFullScroll() {

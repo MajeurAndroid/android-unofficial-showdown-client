@@ -11,48 +11,39 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import android.widget.ExpandableListView.ExpandableListContextMenuInfo
-import androidx.fragment.app.Fragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.majeur.psclient.R
 import com.majeur.psclient.databinding.FragmentTeamsBinding
-import com.majeur.psclient.io.DexIconLoader
+import com.majeur.psclient.io.AssetLoader
+import com.majeur.psclient.io.UserTeamsStore
 import com.majeur.psclient.model.BattleFormat
-import com.majeur.psclient.model.Id
 import com.majeur.psclient.model.Team
-import com.majeur.psclient.service.ShowdownService
 import com.majeur.psclient.ui.teambuilder.EditTeamActivity
-import com.majeur.psclient.util.UserTeamsStore
+import com.majeur.psclient.util.toId
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import java.io.Serializable
 import java.util.*
 
 
-class TeamsFragment : Fragment(), MainActivity.Callbacks {
+class TeamsFragment : BaseFragment() {
 
     val teams: List<Team.Group> get() = groups
 
     private lateinit var userTeamsStore: UserTeamsStore
-    private lateinit var dexIconLoader: DexIconLoader
-    private var service: ShowdownService? = null
+    private lateinit var assetLoader: AssetLoader
+    private lateinit var listAdapter: TeamListAdapter
 
     private val groups = mutableListOf<Team.Group>()
     private val fallbackFormat = BattleFormat.FORMAT_OTHER
-    private lateinit var listAdapter: TeamListAdapter
 
     private var _binding: FragmentTeamsBinding? = null
     private val binding get() = _binding!!
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
-        dexIconLoader = (context as MainActivity).dexIconLoader
         userTeamsStore = UserTeamsStore(context)
-    }
-
-    override fun onServiceBound(service: ShowdownService) {
-        this.service = service
-    }
-
-    override fun onServiceWillUnbound(service: ShowdownService) {
-        this.service = null
+        assetLoader = mainActivity.assetLoader
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -90,11 +81,14 @@ class TeamsFragment : Fragment(), MainActivity.Callbacks {
         binding.teamList.setOnCreateContextMenuListener { contextMenu, _, contextMenuInfo ->
             val info = contextMenuInfo as ExpandableListContextMenuInfo
             val type = ExpandableListView.getPackedPositionType(info.packedPosition)
-            if (type == ExpandableListView.PACKED_POSITION_TYPE_CHILD) activity!!.menuInflater.inflate(R.menu.context_menu_team, contextMenu)
+            if (type == ExpandableListView.PACKED_POSITION_TYPE_CHILD)
+                requireActivity().menuInflater.inflate(R.menu.context_menu_team, contextMenu)
         }
         binding.importFab.setOnClickListener {
-            ImportTeamDialog.newInstance(this@TeamsFragment)
-                    .show(fragmentManager!!, "")
+            val fm = requireFragmentManager()
+            if (fm.findFragmentByTag(ImportTeamDialog.FRAGMENT_TAG) == null)
+                ImportTeamDialog.newInstance(this@TeamsFragment)
+                        .show(fm, ImportTeamDialog.FRAGMENT_TAG)
         }
         binding.teamList.setOnScrollListener(object : AbsListView.OnScrollListener {
             var state = AbsListView.OnScrollListener.SCROLL_STATE_IDLE
@@ -220,7 +214,7 @@ class TeamsFragment : Fragment(), MainActivity.Callbacks {
         })
         groups.forEach { it.sort() }
         listAdapter.notifyDataSetChanged()
-        (activity as? MainActivity)?.homeFragment?.updateTeamSpinner()
+        homeFragment.updateTeamSpinner()
     }
 
     private fun resolveFormatName(formatId: String): String {
@@ -253,6 +247,7 @@ class TeamsFragment : Fragment(), MainActivity.Callbacks {
         }
 
         internal inner class ViewHolder(view: View) {
+            var job: Job? = null
             val labelView: TextView = view.findViewById(R.id.text_view_title)
             val pokemonViews = listOf(
                     R.id.image_view_pokemon1, R.id.image_view_pokemon2, R.id.image_view_pokemon3,
@@ -271,10 +266,12 @@ class TeamsFragment : Fragment(), MainActivity.Callbacks {
             viewHolder.pokemonViews.forEach { it.setImageDrawable(null) }
             if (team.pokemons.isEmpty()) return convertView
 
-            val queries = team.pokemons.map { Id.toId(it.species) }.toTypedArray()
-            dexIconLoader.load(queries) {
-                for (k in it.indices)
-                    viewHolder.pokemonViews[k].setImageDrawable(BitmapDrawable(it[k]))
+            viewHolder.job?.cancel()
+            viewHolder.job = fragmentScope.launch {
+                assetLoader.dexIcons(*team.pokemons.map { it.species.toId() }.toTypedArray()).forEachIndexed { index, bitmap ->
+                    val drawable = BitmapDrawable(convertView.resources, bitmap)
+                    viewHolder.pokemonViews[index].setImageDrawable(drawable)
+                }
             }
             return convertView
         }
