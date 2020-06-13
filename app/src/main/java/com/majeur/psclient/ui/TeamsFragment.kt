@@ -12,10 +12,11 @@ import android.view.ViewGroup
 import android.widget.*
 import android.widget.ExpandableListView.ExpandableListContextMenuInfo
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.snackbar.Snackbar
 import com.majeur.psclient.R
 import com.majeur.psclient.databinding.FragmentTeamsBinding
 import com.majeur.psclient.io.AssetLoader
-import com.majeur.psclient.io.UserTeamsStore
+import com.majeur.psclient.io.TeamsStore
 import com.majeur.psclient.model.BattleFormat
 import com.majeur.psclient.model.Team
 import com.majeur.psclient.ui.teambuilder.EditTeamActivity
@@ -30,7 +31,7 @@ class TeamsFragment : BaseFragment() {
 
     val teams: List<Team.Group> get() = groups
 
-    private lateinit var userTeamsStore: UserTeamsStore
+    private lateinit var teamsStore: TeamsStore
     private lateinit var assetLoader: AssetLoader
     private lateinit var listAdapter: TeamListAdapter
 
@@ -42,15 +43,16 @@ class TeamsFragment : BaseFragment() {
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
-        userTeamsStore = UserTeamsStore(context)
+        teamsStore = TeamsStore(context)
         assetLoader = mainActivity.assetLoader
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        userTeamsStore.read {
+        fragmentScope.launch {
+            val storedGroups = teamsStore.get()
             groups.clear()
-            groups.addAll(it)
+            groups.addAll(storedGroups)
             notifyGroupChanged()
         }
     }
@@ -225,8 +227,9 @@ class TeamsFragment : BaseFragment() {
     }
 
     private fun persistUserTeams() {
-        userTeamsStore.write(groups) { success ->
-            if (!success) Toast.makeText(context, "Failed to save teams.", Toast.LENGTH_SHORT).show()
+        fragmentScope.launch {
+            val success = teamsStore.store(groups)
+            if (!success) Snackbar.make(binding.root, "Error when saving teams", Snackbar.LENGTH_LONG).show()
         }
     }
 
