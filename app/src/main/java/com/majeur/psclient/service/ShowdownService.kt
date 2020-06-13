@@ -6,18 +6,17 @@ import android.content.Intent
 import android.os.Handler
 import android.os.Looper
 import android.util.Base64
-import android.util.Log
 import com.majeur.psclient.util.S
 import okhttp3.*
 import org.json.JSONException
 import org.json.JSONObject
+import timber.log.Timber
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicBoolean
 
 class ShowdownService : Service() {
 
     companion object {
-        private val TAG: String = ShowdownService::class.java.simpleName
         private const val WS_CLOSE_NORMAL: Int = 1000
         private const val WS_CLOSE_GOING_AWAY: Int = 1001
         private const val WS_CLOSE_NETWORK_ERROR: Int = 4001
@@ -42,7 +41,7 @@ class ShowdownService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        Log.d(TAG, "Lifecycle: onCreate()")
+        Timber.d("Lifecycle: onCreate()")
         uiHandler = Handler(Looper.getMainLooper())
         binder = Binder()
         okHttpClient = OkHttpClient.Builder()
@@ -63,7 +62,7 @@ class ShowdownService : Service() {
 
     fun connectToServer() {
         if (isConnected) return
-        Log.d(TAG, "Attempting to open WS connection.")
+        Timber.d("Attempting to open WS connection.")
         val request = Request.Builder().url(SHOWDOWN_SOCKET_URL).build()
         webSocket = okHttpClient.newWebSocket(request, webSocketListener)
     }
@@ -75,7 +74,7 @@ class ShowdownService : Service() {
 
     fun disconnectFromServer() {
         if (!isConnected) return
-        Log.d(TAG, "Attempting to close WS connection.")
+        Timber.d("Attempting to close WS connection.")
         webSocket?.close(WS_CLOSE_NORMAL, "Normal closure")
         sharedData.clear()
     }
@@ -94,10 +93,10 @@ class ShowdownService : Service() {
 
     private fun sendMessage(message: String) {
         if (isConnected) {
-            Log.i("$TAG[SEND]", message)
+            Timber.tag("WebSocket[SEND]").i(message)
             webSocket?.send(message)
         } else {
-            Log.w(TAG, "WebSocket not opened. Ignoring message: $message")
+            Timber.w("WebSocket not opened. Ignoring message: $message")
         }
     }
 
@@ -141,7 +140,7 @@ class ShowdownService : Service() {
 
     private val webSocketListener = object : WebSocketListener() {
         override fun onOpen(webSocket: WebSocket, response: Response) {
-            Log.i("$TAG[OPEN]", response.request().url().host())
+            Timber.tag("WebSocket[OPEN]").i("Host: " + response.request().url().host())
             isConnected = true
             uiHandler.post {
                 dispatchMessage(ServerMessage("lobby", "|connected|"))
@@ -149,7 +148,7 @@ class ShowdownService : Service() {
         }
 
         override fun onMessage(webSocket: WebSocket, data: String) {
-            Log.i("$TAG[RECEIVE]", data)
+            Timber.tag("WebSocket[RECEIVE]").i(data)
             uiHandler.post {
                 if (messageObservers.isEmpty()) {
                     messageCache.add(data)
@@ -161,11 +160,11 @@ class ShowdownService : Service() {
         }
 
         override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
-            Log.i("$TAG[CLOSING]", reason)
+            Timber.tag("WebSocket[CLOSING]").i(reason)
         }
 
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-            Log.w("$TAG[ERR]", t)
+            Timber.tag("WebSocket[ERR]").w(t)
             isConnected = false
             this@ShowdownService.webSocket = null
             uiHandler.post {
@@ -174,7 +173,7 @@ class ShowdownService : Service() {
         }
 
         override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-            Log.i("$TAG[CLOSED]", reason)
+            Timber.tag("WebSocket[CLOSED]").i(reason)
             isConnected = false
             this@ShowdownService.webSocket = null
         }
@@ -194,7 +193,7 @@ class ShowdownService : Service() {
                 override fun onResponse(call: Call, response: Response) {
                     val rawResponse = response.body()?.string()
                     if (rawResponse?.isEmpty() != false) {
-                        Log.e(TAG, "Assertion request responded with an empty body.")
+                        Timber.e("Assertion request responded with an empty body.")
                         return
                     }
                     try {
@@ -203,12 +202,12 @@ class ShowdownService : Service() {
                             sendTrnMessage(resultJson.getString("username"),
                                     resultJson.getString("assertion"))
                     } catch (e: JSONException) {
-                        Log.e(TAG, "Error while parsing assertion json.", e)
+                        Timber.e(e,"Error while parsing assertion json.")
                     }
                 }
 
                 override fun onFailure(call: Call, e: IOException) {
-                    Log.e(TAG, "Call failed.", e)
+                    Timber.e(e,"Call failed.")
                 }
             })
         }
@@ -263,7 +262,7 @@ class ShowdownService : Service() {
 
             override fun onFailure(call: Call, e: IOException) {
                 uiHandler.post { callback.onError("An error occurred with your internet connection.") }
-                Log.e(TAG, "Call failed.", e)
+                Timber.e(e,"Call failed.")
             }
         })
     }
@@ -298,14 +297,14 @@ class ShowdownService : Service() {
                         return
                     }
                 } catch (e: JSONException) {
-                    Log.e(TAG, "Error while parsing connection result json.", e)
+                    Timber.e(e,"Error while parsing connection result json.")
                 }
                 uiHandler.post { callback.onError("Wrong password, please try again.") }
             }
 
             override fun onFailure(call: Call, e: IOException) {
                 uiHandler.post { callback.onError("An error occurred with your internet connection.") }
-                Log.e(TAG, "Call failed.", e)
+                Timber.e(e,"Call failed.")
             }
         })
     }

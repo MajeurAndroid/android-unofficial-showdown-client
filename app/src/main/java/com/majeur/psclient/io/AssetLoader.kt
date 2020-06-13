@@ -9,7 +9,7 @@ import android.util.JsonReader
 import android.util.JsonToken
 import com.majeur.psclient.R
 import com.majeur.psclient.model.*
-import com.majeur.psclient.model.Id.toId
+import com.majeur.psclient.util.toId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.IOException
@@ -53,15 +53,11 @@ class AssetLoader(val context: Context) {
 
     suspend fun dexIcon(species: String) = withContext(io) {
         species.run {
-            dexIconLoader.load(toId(
-                    if (startsWith("arceus", ignoreCase = true))"arceus" else this
-            ))
+            dexIconLoader.load(if (startsWith("arceus", ignoreCase = true)) "arceus" else this.toId())
         }
     }
     suspend fun dexIcons(vararg species: String) = withContext(io) {
-        species.map { toId(
-                if (it.startsWith("arceus", ignoreCase = true)) "arceus" else it
-        ) }.run {
+        species.map { if (it.startsWith("arceus", ignoreCase = true)) "arceus" else it.toId() }.run {
             dexIconLoader.load(*toTypedArray())
         }
     }
@@ -74,15 +70,11 @@ class AssetLoader(val context: Context) {
 
     suspend fun moveDetails(moveName: String) = withContext(io) {
         moveName.run {
-            moveDetailsLoader.load(toId(
-                    if (startsWith("z-", ignoreCase = true)) substring(2) else this
-            ))
+            moveDetailsLoader.load(if (startsWith("z-", ignoreCase = true)) substring(2).toId() else toId())
         }
     }
     suspend fun movesDetails(vararg moveIds: String) = withContext(io) {
-        moveIds.map { toId(
-                if (it.startsWith("-z", ignoreCase = true)) it.substring(2) else it
-        ) }.run {
+        moveIds.map { if (it.startsWith("-z", ignoreCase = true)) it.substring(2).toId() else it.toId() }.run {
             moveDetailsLoader.load(*toTypedArray())
         }
     }
@@ -100,7 +92,7 @@ class AssetLoader(val context: Context) {
         fun load(vararg assetIds: String) = assetIds.map { load(it) }
 
         fun load(assetId: String): T? {
-            return if (useCache) cache.computeIfAbsent(assetId) { compute(it) }
+            return if (useCache) cache.getOrPut(assetId) { compute(assetId) }
             else compute(assetId)
         }
 
@@ -255,7 +247,7 @@ class AssetLoader(val context: Context) {
 
         @Throws(IOException::class)
         private fun parseDexPokemon(reader: JsonReader): DexPokemon {
-            return DexPokemon("hhhjhjk").apply {
+            return DexPokemon("hhhjhjk").apply { // TODO("Alter BasePokemon to allow lateinit of species name")
                 reader.beginObject()
                 while (reader.hasNext()) {
                     when (reader.nextName()) {

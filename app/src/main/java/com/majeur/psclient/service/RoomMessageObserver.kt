@@ -1,35 +1,25 @@
 package com.majeur.psclient.service
 
 import android.graphics.Color
-import android.graphics.Typeface
 import android.text.Spannable
-import android.text.SpannableString
-import android.text.Spanned
 import android.text.style.BackgroundColorSpan
 import android.text.style.ForegroundColorSpan
-import android.text.style.RelativeSizeSpan
-import android.text.style.StyleSpan
-import com.majeur.psclient.model.Id
-import com.majeur.psclient.util.SpannableStringBuilder
-import com.majeur.psclient.util.TextTagSpan
-import com.majeur.psclient.util.Utils
+import com.majeur.psclient.util.*
 import com.majeur.psclient.util.html.UsernameSpan
 
 abstract class RoomMessageObserver : AbsMessageObserver() {
 
-    private val TAG = RoomMessageObserver::class.simpleName
-
     var roomJoined = false
         private set
 
-    private var _currentUsers = mutableListOf<String>()
+    private var currentUsers = mutableListOf<String>()
     private val _usernameColorCache = mutableMapOf<String, Int>()
 
     override var observedRoomId: String? = null
         set(value) {
             if (value == null && field != null) {
                 roomJoined = false
-                _currentUsers.clear()
+                currentUsers.clear()
                 _usernameColorCache.clear()
                 onRoomDeInit()
             }
@@ -37,7 +27,7 @@ abstract class RoomMessageObserver : AbsMessageObserver() {
         }
 
     val users: List<String>
-        get() = _currentUsers.toList()
+        get() = currentUsers.toList()
 
     override fun onMessage(message: ServerMessage) {
         message.newArgsIteration()
@@ -51,14 +41,14 @@ abstract class RoomMessageObserver : AbsMessageObserver() {
             "users" -> initializeUserList(message)
             "J", "j", "join" -> {
                 val username = message.nextArg
-                _currentUsers.add(username)
-                onUpdateUsers(_currentUsers.toList())
+                currentUsers.add(username)
+                onUpdateUsers(currentUsers.toList())
                 if (message.command != "J") printUserRelatedMessage("$username joined")
             }
             "L", "l", "leave" -> {
                 val username = message.nextArg
-                _currentUsers.remove(username)
-                onUpdateUsers(_currentUsers.toList())
+                currentUsers.remove(username)
+                onUpdateUsers(currentUsers.toList())
                 if (message.command != "L") printUserRelatedMessage("$username left")
             }
             "html" -> { // printMessage("~html messages aren't supported yet~");
@@ -88,7 +78,7 @@ abstract class RoomMessageObserver : AbsMessageObserver() {
             }
             "deinit" -> {
                 roomJoined = false
-                _currentUsers.clear()
+                currentUsers.clear()
                 _usernameColorCache.clear()
                 onRoomDeInit()
             }
@@ -99,13 +89,11 @@ abstract class RoomMessageObserver : AbsMessageObserver() {
 
     private fun initializeUserList(args: ServerMessage) {
         val rawUsers = args.nextArg // first element is total user count, skipping it
-        _currentUsers.also { li ->
-            li.clear()
-            // first element is total user count, skipping it
-            // we substring names from 1 to avoid prefixes
-            li.addAll(rawUsers.split(',').drop(1).map { it.substring(1) })
-        }
-        onUpdateUsers(_currentUsers.toList())
+        currentUsers.clear()
+        // first element is total user count, skipping it
+        // we substring names from 1 to avoid prefixes
+        currentUsers.addAll(rawUsers.split(',').drop(1).map { it.substring(1) })
+        onUpdateUsers(currentUsers.toList())
     }
 
     private fun handleNameChange(args: ServerMessage) {
@@ -146,19 +134,14 @@ abstract class RoomMessageObserver : AbsMessageObserver() {
         }
     }
 
-    private fun getHashColor(username: String) = _usernameColorCache.getOrPut(username) { Utils.hashColor(Id.toId(username)) }
+    private fun getHashColor(username: String) = _usernameColorCache.getOrPut(username) { Utils.hashColor(username.toId()) }
 
-    private fun printUserRelatedMessage(message: String) = SpannableString(message).let {
-        it.setSpan(StyleSpan(Typeface.ITALIC), 0, message.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
-        it.setSpan(ForegroundColorSpan(-0xbdbdbe), 0, message.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
-        it.setSpan(RelativeSizeSpan(0.8f), 0, message.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
-        printMessage(it)
+    private fun printUserRelatedMessage(message: String) {
+        message.italic().color(-0xbdbdbe).small().also { printMessage(it) }
     }
 
-    protected fun printErrorMessage(message: String) = SpannableString(message).let {
-        it.setSpan(StyleSpan(Typeface.BOLD), 0, message.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
-        it.setSpan(ForegroundColorSpan(Color.RED), 0, message.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
-        printMessage(it)
+    protected fun printErrorMessage(message: String) {
+        message.bold().color(Color.RED).also { printMessage(it) }
     }
 
     protected open fun printMessage(text: CharSequence) = onPrintText(text)

@@ -1,17 +1,15 @@
 package com.majeur.psclient.service
 
-import android.util.Log
 import com.majeur.psclient.model.AvailableBattleRoomsInfo
 import com.majeur.psclient.model.BattleFormat
 import com.majeur.psclient.model.RoomInfo
 import com.majeur.psclient.util.Utils
 import org.json.JSONException
 import org.json.JSONObject
+import timber.log.Timber
 import java.util.*
 
 abstract class GlobalMessageObserver : AbsMessageObserver() {
-
-    val TAG = GlobalMessageObserver::class.java.simpleName
 
     override var observedRoomId: String? = "lobby"
 
@@ -88,7 +86,7 @@ abstract class GlobalMessageObserver : AbsMessageObserver() {
             "savereplay" -> {
             }
             "userdetails" -> processUserDetailsQueryResponse(queryContent)
-            else -> Log.w(TAG, "Command queryresponse not handled, type=$query")
+            else -> Timber.w("Command queryresponse not handled, type=$query")
         }
     }
 

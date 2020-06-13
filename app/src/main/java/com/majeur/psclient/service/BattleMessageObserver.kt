@@ -1,20 +1,13 @@
 package com.majeur.psclient.service
 
 import android.content.Context
-import android.graphics.Typeface
 import android.os.Looper
-import android.text.Spannable
-import android.text.SpannableString
-import android.text.Spanned
-import android.text.style.ForegroundColorSpan
-import android.text.style.RelativeSizeSpan
-import android.text.style.StyleSpan
-import android.util.Log
 import com.majeur.psclient.io.BattleTextBuilder
 import com.majeur.psclient.model.*
-import com.majeur.psclient.util.Utils
+import com.majeur.psclient.util.*
 import org.json.JSONException
 import org.json.JSONObject
+import timber.log.Timber
 import java.util.*
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -33,13 +26,13 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
     private var p2Username: String? = null
 
 
-    private var mPreviewPokemonIndexes = IntArray(2)
-    private var mLastActionRequest: BattleActionRequest? = null
-    private var mTrainerPokemons: Array<BattlingPokemon?> = emptyArray()
-    private var mFoePokemons: Array<BattlingPokemon?> = emptyArray()
-    private var mActiveWeather: String? = null
-    private val mActiveFieldEffects = LinkedList<String>() // We use LinkedList specific methods.
-    private var mLastMove: String? = null
+    private var previewPokemonIndexes = IntArray(2)
+    private var lastActionRequest: BattleActionRequest? = null
+    private var trainerPokemons: Array<BattlingPokemon?> = emptyArray()
+    private var foePokemons: Array<BattlingPokemon?> = emptyArray()
+    private var activeWeather: String? = null
+    private val activeFieldEffects = LinkedList<String>() // We use LinkedList specific methods.
+    private var lastMove: String? = null
 
     fun gotContext(context: Context?) {
         battleTextBuilder = BattleTextBuilder(context)
@@ -60,11 +53,11 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
         gameType = null
         actionQueue.clear()
         battleRunning = true
-        mPreviewPokemonIndexes[0] = 0
-        mPreviewPokemonIndexes[1] = 0
-        mLastActionRequest = null
-        mActiveWeather = null
-        mActiveFieldEffects.clear()
+        previewPokemonIndexes[0] = 0
+        previewPokemonIndexes[1] = 0
+        lastActionRequest = null
+        activeWeather = null
+        activeFieldEffects.clear()
     }
 
     public override fun onRoomDeInit() {
@@ -73,9 +66,9 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
         gameType = null
         actionQueue.clear()
         battleRunning = false
-        mPreviewPokemonIndexes = IntArray(2)
-        mActiveWeather = null
-        mActiveFieldEffects.clear()
+        previewPokemonIndexes = IntArray(2)
+        activeWeather = null
+        activeFieldEffects.clear()
     }
 
     private fun myUsername(): String? = service?.getSharedData("username")
@@ -84,17 +77,17 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
 
     private fun getPokemonId(rawId: String) = PokemonId.fromRawId(getPlayer(rawId), rawId)
 
-    fun reAskForRequest() = mLastActionRequest?.let {
+    fun reAskForRequest() = lastActionRequest?.let {
         onRequestAsked(it)
     }
 
     fun getBattlingPokemon(id: PokemonId): BattlingPokemon? {
-        val arr = (if (id.foe) mFoePokemons else mTrainerPokemons)
+        val arr = (if (id.foe) foePokemons else trainerPokemons)
         return if (id.position >= 0 && id.position < arr.size) arr[id.position] else null
     }
 
     private fun getBattlingPokemon(player: Player, position: Int): BattlingPokemon? {
-        val arr = (if (player == Player.FOE) mFoePokemons else mTrainerPokemons)
+        val arr = (if (player == Player.FOE) foePokemons else trainerPokemons)
         return if (position >= 0 && position < arr.size) arr[position] else null
     }
 
@@ -122,8 +115,8 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
         "rated" -> printMessage(Utils.tagText("Rated battle"))
         "rule" -> printMessage(Utils.italicText(message.nextArg))
         "clearpoke" -> {
-            mPreviewPokemonIndexes[0] = 0
-            mPreviewPokemonIndexes[1] = 0
+            previewPokemonIndexes[0] = 0
+            previewPokemonIndexes[1] = 0
             onPreviewStarted()
         }
         "poke" -> handlePreviewPokemon(message)
@@ -156,7 +149,7 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
 
         // Major action's duration would be too long here
         actionQueue.enqueueMinorAction {
-            mLastMove = moveName
+            lastMove = moveName
             onMove(sourcePoke, targetPoke, moveName, shouldAnim)
             displayMajorActionMessage(text)
         }
@@ -190,23 +183,23 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
         when (msg.nextArg.trim()) {
             "doubles" -> {
                 gameType = Const.DOUBLE
-                mTrainerPokemons = arrayOfNulls(2)
-                mFoePokemons = arrayOfNulls(2)
+                trainerPokemons = arrayOfNulls(2)
+                foePokemons = arrayOfNulls(2)
             }
             "rotation", "triples" -> {
                 gameType = Const.TRIPLE
                 printErrorMessage("Triple battles aren't fully implemented yet. " +
                         "App crash is a matter of seconds from now!")
-                mTrainerPokemons = arrayOfNulls(3)
-                mFoePokemons = arrayOfNulls(3)
+                trainerPokemons = arrayOfNulls(3)
+                foePokemons = arrayOfNulls(3)
             }
             else -> {
                 gameType = Const.SINGLE
-                mTrainerPokemons = arrayOfNulls(1)
-                mFoePokemons = arrayOfNulls(1)
+                trainerPokemons = arrayOfNulls(1)
+                foePokemons = arrayOfNulls(1)
             }
         }
-        mLastActionRequest?.setGameType(gameType)
+        lastActionRequest?.setGameType(gameType)
     }
 
     private fun handleSwitch(msg: ServerMessage) {
@@ -219,8 +212,8 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
         val text2 = battleTextBuilder.switchIn(pokemon, username)
         actionQueue.enqueueMajorAction {
             if (pokemon.id.isInBattle) {
-                if (Id.toIdSafe(mLastMove) == "batonpass" || Id.toIdSafe(mLastMove) == "zbatonpass") pokemon.copyVolatiles(prevPoke, false)
-                (if (pokemon.foe) mFoePokemons else mTrainerPokemons)[pokemon.position] = pokemon
+                if (lastMove?.toId() == "batonpass" || lastMove?.toId() == "zbatonpass") pokemon.copyVolatiles(prevPoke, false)
+                (if (pokemon.foe) foePokemons else trainerPokemons)[pokemon.position] = pokemon
             }
             onSwitch(pokemon)
             text1?.let { displayMajorActionMessage(it) }
@@ -262,14 +255,10 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
     }
 
     private fun handleTurn(msg: ServerMessage) {
-        val spannable: Spannable = SpannableString(" — Turn ${msg.nextArg} — ")
-        spannable.setSpan(StyleSpan(Typeface.BOLD), 1,
-                spannable.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-        spannable.setSpan(RelativeSizeSpan(1.2f), 1,
-                spannable.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        val text = " — Turn ${msg.nextArg} — ".bold().big()
         actionQueue.enqueueTurnAction {
-            // Prevents from queuing message print
-            super@BattleMessageObserver.printMessage(spannable)
+            // super prevents from queuing message print
+            super@BattleMessageObserver.printMessage(text)
         }
     }
 
@@ -279,17 +268,17 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
         try {
             val jsonObject = JSONObject(rawJson)
             val request = BattleActionRequest(jsonObject, gameType)
-            mLastActionRequest = request
+            lastActionRequest = request
             actionQueue.setLastAction { onRequestAsked(request) }
         } catch (e: JSONException) {
-            Log.e(javaClass.simpleName, "Error while parsing request json", e)
+            Timber.e(e, "Error while parsing request json")
             printErrorMessage("An error has occurred while receiving choices.")
         }
     }
 
     private fun handlePreviewPokemon(msg: ServerMessage) {
         val player = getPlayer(msg.nextArg)
-        val curIndex = mPreviewPokemonIndexes[if (player == Player.FOE) 1 else 0]++
+        val curIndex = previewPokemonIndexes[if (player == Player.FOE) 1 else 0]++
         val species = msg.nextArg.split(",")[0]
         val pokemon = BasePokemon(species)
         val hasItem = msg.hasNextArg
@@ -326,7 +315,7 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
     private fun handleSwap(msg: ServerMessage) {
         val sourceId = getPokemonId(msg.nextArg)
         val sourceIndex = Utils.indexOf(getBattlingPokemon(sourceId),
-                if (sourceId.foe) mFoePokemons else mTrainerPokemons)
+                if (sourceId.foe) foePokemons else trainerPokemons)
         val with = if (msg.hasNextArg) msg.nextArg else "-1"
         val targetIndex: Int
         targetIndex = if (Utils.isInteger(with)) {
@@ -334,14 +323,14 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
         } else { // Not tested, old showdown feature
             val otherId = PokemonId.fromRawId(getPlayer(with), with)
             Utils.indexOf(getBattlingPokemon(otherId),
-                    if (otherId.foe) mFoePokemons else mTrainerPokemons)
+                    if (otherId.foe) foePokemons else trainerPokemons)
         }
         if (targetIndex == sourceIndex || targetIndex < 0) return
         actionQueue.enqueueMajorAction {
             onSwap(sourceId, targetIndex)
             val targetPoke = getBattlingPokemon(sourceId.player, targetIndex)
             displayMajorActionMessage(battleTextBuilder.swap(sourceId, targetPoke?.id))
-            Utils.swap(if (sourceId.foe) mFoePokemons else mTrainerPokemons, sourceIndex, targetIndex)
+            Utils.swap(if (sourceId.foe) foePokemons else trainerPokemons, sourceIndex, targetIndex)
         }
     }
 
@@ -511,7 +500,7 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
     private fun handleClearAllBoost(msg: ServerMessage) {
         val text = battleTextBuilder.clearAllBoost(msg.kwargs["from"])
         actionQueue.enqueueMinorAction {
-            for (pokemon in mTrainerPokemons + mFoePokemons) {
+            for (pokemon in trainerPokemons + foePokemons) {
                 pokemon?.let {
                     it.statModifiers.clear()
                     onStatChanged(it.id)
@@ -535,16 +524,14 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
 
     private fun handleWeather(msg: ServerMessage) {
         val weather = msg.nextArg
-        val text = battleTextBuilder.weather(weather, mActiveWeather,
+        val text = battleTextBuilder.weather(weather, activeWeather,
                 msg.kwargs["from"], msg.kwargs["of"], msg.kwargs["upkeep"])
         actionQueue.enqueueMinorAction {
-            mActiveWeather = if ("none" == weather) null else weather
-            if (mActiveWeather != null) onFieldEffectChanged(weather) else if (mActiveFieldEffects.size > 0) onFieldEffectChanged(mActiveFieldEffects[0]) else onFieldEffectChanged(null)
+            activeWeather = if ("none" == weather) null else weather
+            if (activeWeather != null) onFieldEffectChanged(weather) else if (activeFieldEffects.size > 0) onFieldEffectChanged(activeFieldEffects[0]) else onFieldEffectChanged(null)
             displayMinorActionMessage(text)
         }
     }
-
-    fun String.toId(): String = Id.toId(this)
 
     private fun handleField(msg: ServerMessage, start: Boolean) {
         val effect = msg.nextArg
@@ -554,14 +541,14 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
                 msg.kwargs["of"]) else battleTextBuilder.fieldend(effect)
         actionQueue.enqueueMinorAction {
             if (start) {
-                mActiveFieldEffects.add(fieldEffect)
-                if (mActiveWeather == null) {
-                    if (mActiveFieldEffects.size == 1) onFieldEffectChanged(fieldEffect)
+                activeFieldEffects.add(fieldEffect)
+                if (activeWeather == null) {
+                    if (activeFieldEffects.size == 1) onFieldEffectChanged(fieldEffect)
                 }
             } else {
-                mActiveFieldEffects.remove(fieldEffect)
-                if (mActiveWeather == null) {
-                    if (mActiveFieldEffects.size > 0) onFieldEffectChanged(mActiveFieldEffects[0]) else onFieldEffectChanged(null)
+                activeFieldEffects.remove(fieldEffect)
+                if (activeWeather == null) {
+                    if (activeFieldEffects.size > 0) onFieldEffectChanged(activeFieldEffects[0]) else onFieldEffectChanged(null)
                 }
             }
             displayMinorActionMessage(text)
@@ -696,7 +683,7 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
                 msg.kwargs["already"], msg.kwargs["fatigue"], msg.kwargs["zeffect"],
                 msg.kwargs["damage"], msg.kwargs["block"], msg.kwargs["upkeep"]) else battleTextBuilder.end(id, effect, msg.kwargs["from"], msg.kwargs["of"])
         actionQueue.enqueueMinorAction {
-            var effectId = Id.toId(if (effect.contains(":")) effect.substring(effect.indexOf(':') + 1) else effect)
+            var effectId = effect.substringAfter(":").toId()
             onVolatileStatusChanged(id, effectId, start)
             val pokemon = getBattlingPokemon(id)
             if (pokemon != null) {
@@ -788,20 +775,14 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
     // This should be called only from action queue runnables
     private fun displayMinorActionMessage(text: CharSequence?) {
         if (text == null) return
-        val spannable: Spannable = SpannableString(text)
-        spannable.setSpan(RelativeSizeSpan(0.8f), 0, text.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
         // Calling super to prevent queuing
-        super.printMessage(spannable)
-        onPrintBattleMessage(spannable)
+        super.printMessage(text.small())
+        onPrintBattleMessage(text.small())
     }
 
     private fun printInactiveText(text: String?) {
         if (text == null) return
-        val spannable: Spannable = SpannableString(text)
-        spannable.setSpan(RelativeSizeSpan(0.8f), 0, text.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
-        spannable.setSpan(StyleSpan(Typeface.ITALIC), 0, text.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
-        spannable.setSpan(ForegroundColorSpan(-0x750000), 0, text.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
-        printMessage(spannable)
+        printMessage(text.small().italic().color(-0x750000))
     }
 
     override fun printMessage(text: CharSequence) {
