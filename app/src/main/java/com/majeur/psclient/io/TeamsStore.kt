@@ -20,7 +20,7 @@ class TeamsStore(context: Context) {
             getInternal()
         } catch (e: Exception) {
             if (e is JSONException) Timber.e(e)
-            emptyList()
+            emptyList<Team.Group>()
         }
     }
 

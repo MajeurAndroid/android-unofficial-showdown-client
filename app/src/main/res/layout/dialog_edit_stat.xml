@@ -8,7 +8,7 @@
     android:padding="12dp">
 
     <TextView
-        android:id="@+id/title_text_view"
+        android:id="@+id/title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
@@ -27,7 +27,7 @@
         android:gravity="center_vertical">
 
         <SeekBar
-            android:id="@+id/seek_bar_evs"
+            android:id="@+id/ev_slider"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -37,7 +37,7 @@
             android:max="252"/>
 
         <EditText
-            android:id="@+id/evs_text_view"
+            android:id="@+id/ev_value"
             android:layout_width="38dp"
             android:layout_height="wrap_content"
             android:layout_marginEnd="12dp"
@@ -60,7 +60,7 @@
         android:gravity="center_vertical">
 
         <SeekBar
-            android:id="@+id/seek_bar_ivs"
+            android:id="@+id/iv_slider"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -71,7 +71,7 @@
             style="@style/Widget.AppCompat.SeekBar.Discrete"/>
 
         <TextView
-            android:id="@+id/ivs_text_view"
+            android:id="@+id/iv_value"
             android:layout_width="28dp"
             android:layout_height="wrap_content"
             android:layout_marginEnd="12dp"

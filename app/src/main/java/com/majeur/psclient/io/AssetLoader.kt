@@ -87,6 +87,8 @@ class AssetLoader(val context: Context) {
         return dexIconLoader.load(species) // TODO
     }
 
+    fun dexPokemonNonSuspend(species: String) = dexPokemonLoader.load(species)
+
     abstract class Loader<T>(
             protected val context: Context,
             private val useCache: Boolean = true) {

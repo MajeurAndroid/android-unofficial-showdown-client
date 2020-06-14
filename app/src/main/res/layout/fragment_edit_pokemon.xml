@@ -12,7 +12,7 @@
         android:layout_height="match_parent">
 
         <ImageView
-            android:id="@+id/spriteImageView"
+            android:id="@+id/sprite"
             android:layout_width="116dp"
             android:layout_height="116dp"
             android:layout_marginStart="8dp"
@@ -22,7 +22,7 @@
             app:srcCompat="@drawable/placeholder_pokeball"/>
 
         <AutoCompleteTextView
-            android:id="@+id/speciesTextView"
+            android:id="@+id/speciesInput"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
@@ -31,11 +31,11 @@
             android:selectAllOnFocus="true"
             android:singleLine="true"
             app:layout_constraintEnd_toStartOf="@+id/textView2"
-            app:layout_constraintStart_toEndOf="@+id/spriteImageView"
-            app:layout_constraintTop_toTopOf="@+id/spriteImageView"/>
+            app:layout_constraintStart_toEndOf="@+id/sprite"
+            app:layout_constraintTop_toTopOf="@+id/sprite"/>
 
         <EditText
-            android:id="@+id/nameEditText"
+            android:id="@+id/nameInput"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
@@ -45,21 +45,21 @@
             android:selectAllOnFocus="true"
             android:singleLine="true"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/spriteImageView"
-            app:layout_constraintTop_toBottomOf="@+id/speciesTextView"/>
+            app:layout_constraintStart_toEndOf="@+id/sprite"
+            app:layout_constraintTop_toBottomOf="@+id/speciesInput"/>
 
         <TextView
             android:id="@+id/textView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Level:"
-            app:layout_constraintBottom_toBottomOf="@+id/levelEditText"
-            app:layout_constraintStart_toStartOf="@+id/nameEditText"
-            app:layout_constraintTop_toTopOf="@+id/levelEditText"
+            app:layout_constraintBottom_toBottomOf="@+id/levelInput"
+            app:layout_constraintStart_toStartOf="@+id/nameInput"
+            app:layout_constraintTop_toTopOf="@+id/levelInput"
             app:layout_constraintVertical_bias="0.518"/>
 
         <EditText
-            android:id="@+id/levelEditText"
+            android:id="@+id/levelInput"
             android:layout_width="48dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
@@ -69,19 +69,19 @@
             android:selectAllOnFocus="true"
             android:text="100"
             app:layout_constraintStart_toEndOf="@+id/textView"
-            app:layout_constraintTop_toBottomOf="@+id/nameEditText"/>
+            app:layout_constraintTop_toBottomOf="@+id/nameInput"/>
 
         <TextView
             android:id="@+id/textView2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Shiny:"
-            app:layout_constraintBottom_toBottomOf="@+id/shinyCheckBox"
-            app:layout_constraintEnd_toStartOf="@+id/shinyCheckBox"
-            app:layout_constraintTop_toTopOf="@+id/shinyCheckBox"/>
+            app:layout_constraintBottom_toBottomOf="@+id/shiny"
+            app:layout_constraintEnd_toStartOf="@+id/shiny"
+            app:layout_constraintTop_toTopOf="@+id/shiny"/>
 
         <CheckBox
-            android:id="@+id/shinyCheckBox"
+            android:id="@+id/shiny"
             android:layout_width="38dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
@@ -95,12 +95,12 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
             android:text="Happiness:"
-            app:layout_constraintBottom_toBottomOf="@+id/happinessEditText"
-            app:layout_constraintEnd_toStartOf="@+id/happinessEditText"
-            app:layout_constraintTop_toTopOf="@+id/happinessEditText"/>
+            app:layout_constraintBottom_toBottomOf="@+id/happinessInput"
+            app:layout_constraintEnd_toStartOf="@+id/happinessInput"
+            app:layout_constraintTop_toTopOf="@+id/happinessInput"/>
 
         <EditText
-            android:id="@+id/happinessEditText"
+            android:id="@+id/happinessInput"
             android:layout_width="48dp"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
@@ -110,15 +110,15 @@
             android:selectAllOnFocus="true"
             android:text="255"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/nameEditText"/>
+            app:layout_constraintTop_toBottomOf="@+id/nameInput"/>
 
         <ImageView
             android:id="@+id/type1"
             android:layout_width="32dp"
             android:layout_height="13dp"
             android:layout_marginTop="8dp"
-            app:layout_constraintStart_toStartOf="@+id/spriteImageView"
-            app:layout_constraintTop_toBottomOf="@+id/spriteImageView"/>
+            app:layout_constraintStart_toStartOf="@+id/sprite"
+            app:layout_constraintTop_toBottomOf="@+id/sprite"/>
 
         <ImageView
             android:id="@+id/type2"
@@ -129,7 +129,7 @@
             app:layout_constraintTop_toTopOf="@+id/type1"/>
 
         <Spinner
-            android:id="@+id/abilityTextView"
+            android:id="@+id/abilitySelector"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
@@ -139,7 +139,7 @@
             app:layout_constraintTop_toBottomOf="@+id/textView7"/>
 
         <AutoCompleteTextView
-            android:id="@+id/itemTextView"
+            android:id="@+id/itemInput"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
@@ -185,7 +185,7 @@
             android:background="?android:attr/listDivider"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/happinessEditText"/>
+            app:layout_constraintTop_toBottomOf="@+id/happinessInput"/>
 
         <View
             android:id="@+id/divider2"
@@ -197,7 +197,7 @@
             android:background="?android:attr/listDivider"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/abilityTextView"/>
+            app:layout_constraintTop_toBottomOf="@+id/abilitySelector"/>
 
         <TextView
             android:id="@+id/textView9"
@@ -210,7 +210,7 @@
             app:layout_constraintTop_toBottomOf="@+id/divider2"/>
 
         <AutoCompleteTextView
-            android:id="@+id/move1TextView"
+            android:id="@+id/move1Input"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginEnd="4dp"
@@ -220,7 +220,7 @@
             app:layout_constraintTop_toBottomOf="@+id/textView9"/>
 
         <AutoCompleteTextView
-            android:id="@+id/move2TextView"
+            android:id="@+id/move2Input"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="4dp"
@@ -232,7 +232,7 @@
             app:layout_constraintTop_toBottomOf="@+id/textView9"/>
 
         <AutoCompleteTextView
-            android:id="@+id/move4TextView"
+            android:id="@+id/move4Input"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="4dp"
@@ -242,10 +242,10 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="@+id/guideline"
-            app:layout_constraintTop_toBottomOf="@+id/move2TextView"/>
+            app:layout_constraintTop_toBottomOf="@+id/move2Input"/>
 
         <AutoCompleteTextView
-            android:id="@+id/move3TextView"
+            android:id="@+id/move3Input"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
@@ -254,7 +254,7 @@
             app:layout_constraintEnd_toStartOf="@+id/guideline"
             app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="@+id/textView9"
-            app:layout_constraintTop_toBottomOf="@+id/move1TextView"/>
+            app:layout_constraintTop_toBottomOf="@+id/move1Input"/>
 
         <View
             android:id="@+id/divider3"
@@ -277,7 +277,7 @@
             android:background="?android:attr/listDivider"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/move3TextView"/>
+            app:layout_constraintTop_toBottomOf="@+id/move3Input"/>
 
         <com.majeur.psclient.widget.StatsTable
             android:id="@+id/statsTable"
@@ -293,7 +293,7 @@
             android:padding="8dp"/>
 
         <Spinner
-            android:id="@+id/natureSpinner"
+            android:id="@+id/natureSelector"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
@@ -302,11 +302,11 @@
             app:layout_constraintTop_toBottomOf="@+id/statsTable"/>
 
         <Spinner
-            android:id="@+id/hpTypeSpinner"
+            android:id="@+id/hpTypeSelector"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:layout_constraintEnd_toEndOf="@+id/natureSpinner"
-            app:layout_constraintTop_toBottomOf="@+id/natureSpinner"/>
+            app:layout_constraintEnd_toEndOf="@+id/natureSelector"
+            app:layout_constraintTop_toBottomOf="@+id/natureSelector"/>
 
         <TextView
             android:id="@+id/textView11"
@@ -314,9 +314,9 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
             android:text="Nature:"
-            app:layout_constraintBottom_toBottomOf="@+id/natureSpinner"
-            app:layout_constraintEnd_toStartOf="@+id/natureSpinner"
-            app:layout_constraintTop_toTopOf="@+id/natureSpinner"/>
+            app:layout_constraintBottom_toBottomOf="@+id/natureSelector"
+            app:layout_constraintEnd_toStartOf="@+id/natureSelector"
+            app:layout_constraintTop_toTopOf="@+id/natureSelector"/>
 
         <TextView
             android:id="@+id/textView12"
@@ -324,12 +324,12 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
             android:text="HP Type:"
-            app:layout_constraintBottom_toBottomOf="@+id/hpTypeSpinner"
-            app:layout_constraintEnd_toStartOf="@+id/hpTypeSpinner"
-            app:layout_constraintTop_toTopOf="@+id/hpTypeSpinner"/>
+            app:layout_constraintBottom_toBottomOf="@+id/hpTypeSelector"
+            app:layout_constraintEnd_toStartOf="@+id/hpTypeSelector"
+            app:layout_constraintTop_toTopOf="@+id/hpTypeSelector"/>
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/clearPokemon"
+            android:id="@+id/clear_button"
             style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -342,7 +342,7 @@
             app:layout_constraintTop_toBottomOf="@+id/divider5"/>
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/export"
+            android:id="@+id/export_button"
             style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -351,11 +351,11 @@
             android:layout_marginTop="4dp"
             android:text="Export"
             app:icon="@drawable/ic_export"
-            app:layout_constraintStart_toEndOf="@+id/clearPokemon"
+            app:layout_constraintStart_toEndOf="@+id/clear_button"
             app:layout_constraintTop_toBottomOf="@+id/divider5"/>
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/importButton"
+            android:id="@+id/import_button"
             style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -364,7 +364,7 @@
             android:layout_marginTop="4dp"
             android:text="Import"
             app:icon="@drawable/ic_import"
-            app:layout_constraintStart_toEndOf="@+id/export"
+            app:layout_constraintStart_toEndOf="@+id/export_button"
             app:layout_constraintTop_toBottomOf="@+id/divider5"/>
 
         <View
@@ -377,7 +377,7 @@
             android:background="?android:attr/listDivider"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/hpTypeSpinner"/>
+            app:layout_constraintTop_toBottomOf="@+id/hpTypeSelector"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

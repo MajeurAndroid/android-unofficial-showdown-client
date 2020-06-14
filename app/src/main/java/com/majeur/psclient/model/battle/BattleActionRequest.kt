@@ -48,7 +48,7 @@ class BattleActionRequest(json: JSONObject, var gameType: GameType?) {
                         if (canDynamax == null) canDynamax = BooleanArray(length())
                         canDynamax!![i] = true
                     }
-                    if (moves == null) moves = Array(length()) { emptyArray() }
+                    if (moves == null) moves = Array(length()) { emptyArray<Move>() }
                     val movesJson = active.getJSONArray("moves")
                     val canZMove = active.optJSONArray("canZMove")
                     val maxMoves = active.optJSONObject("maxMoves")?.optJSONArray("maxMoves")

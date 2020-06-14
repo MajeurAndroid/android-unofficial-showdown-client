@@ -9,7 +9,7 @@ import java.util.*
 class Team private constructor(
         val uniqueId: Int,
        var label: String,
-       val pokemons: List<TeamPokemon>,
+       var pokemons: List<TeamPokemon>,
        var format: String?)
     : Serializable, Comparable<Team> {
 
@@ -184,7 +184,7 @@ class Team private constructor(
                 // moves
                 j = buf.indexOf('|', i)
                 if (j < 0) return null
-                pokemon.moves = buf.substring(i, j).split(",").take(24)
+                pokemon.moves = buf.substring(i, j).split(",").take(24).toMutableList()
                 i = j + 1
 
                 // nature
