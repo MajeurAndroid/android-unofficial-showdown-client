@@ -17,7 +17,7 @@ class Stats() : Serializable {
     val array
         get() = intArrayOf(hp, atk, def, spa, spd, spe)
 
-    constructor(json: JSONObject) {
+    constructor(json: JSONObject) : this() {
         hp = json.optInt("hp", 0)
         atk = json.getInt("atk")
         def = json.getInt("def")
@@ -26,7 +26,7 @@ class Stats() : Serializable {
         spe = json.getInt("spe")
     }
 
-    constructor(hp: Int, atk: Int, def: Int, spa: Int, spd: Int, spe: Int) {
+    constructor(hp: Int, atk: Int, def: Int, spa: Int, spd: Int, spe: Int) : this() {
         this.hp = hp
         this.atk = atk
         this.def = def
@@ -35,7 +35,7 @@ class Stats() : Serializable {
         this.spe = spe
     }
 
-    constructor(defaultValue: Int) {
+    constructor(defaultValue: Int) : this() {
         hp = defaultValue
         atk = defaultValue
         def = defaultValue
@@ -43,6 +43,26 @@ class Stats() : Serializable {
         spd = defaultValue
         spe = defaultValue
     }
+
+    fun setAll(value: Int) {
+        hp =  value
+        atk = value
+        def = value
+        spa = value
+        spd = value
+        spe = value
+    }
+
+    fun set(stats: Stats) {
+        hp =  stats.hp
+        atk = stats.atk
+        def = stats.def
+        spa = stats.spa
+        spd = stats.spd
+        spe = stats.spe
+    }
+
+    fun set(name: String, value: Int) = set(toIndex(name), value)
 
     operator fun set(index: Int, value: Int) = when (index) {
         0 -> hp = value
