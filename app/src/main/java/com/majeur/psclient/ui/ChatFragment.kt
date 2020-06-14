@@ -15,13 +15,13 @@ import com.majeur.psclient.R
 import com.majeur.psclient.databinding.FragmentChatBinding
 import com.majeur.psclient.io.AssetLoader
 import com.majeur.psclient.io.GlideHelper
-import com.majeur.psclient.model.Id
-import com.majeur.psclient.model.RoomInfo
+import com.majeur.psclient.model.ChatRoomInfo
 import com.majeur.psclient.service.RoomMessageObserver
 import com.majeur.psclient.service.ShowdownService
 import com.majeur.psclient.util.Callback
 import com.majeur.psclient.util.Utils
 import com.majeur.psclient.util.html.Html
+import com.majeur.psclient.util.toId
 
 
 class ChatFragment : BaseFragment() {
@@ -74,7 +74,7 @@ class ChatFragment : BaseFragment() {
             AlertDialog.Builder(requireActivity())
                     .setTitle("Users")
                     .setAdapter(adapter) { dialog: DialogInterface, pos: Int ->
-                        service?.sendGlobalCommand("cmd userdetails", Id.toIdSafe(adapter.getItem(pos)))
+                        service?.sendGlobalCommand("cmd userdetails", adapter.getItem(pos)!!.toId())
                         dialog.dismiss()
                     }
                     .setNegativeButton("Close", null)
@@ -140,7 +140,7 @@ class ChatFragment : BaseFragment() {
         service.unregisterMessageObserver(observer)
     }
 
-    fun onAvailableRoomsChanged(officialRooms: List<RoomInfo>, chatRooms: List<RoomInfo>) {
+    fun onAvailableRoomsChanged(officialRooms: List<ChatRoomInfo>, chatRooms: List<ChatRoomInfo>) {
         JoinRoomDialog.newInstance(officialRooms.toTypedArray(), chatRooms.toTypedArray())
                 .show(requireFragmentManager(), "")
     }
