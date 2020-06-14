@@ -3,8 +3,12 @@ package com.majeur.psclient.model.battle
 
 class BattleDecision {
 
-    var command: String? = null
-        private set
+    private var _command: String? = null
+
+    val command: String get() {
+        if (_command == null) throw NullPointerException("BattleDecision has no command set")
+        return _command!!
+    }
 
     private val choices = mutableListOf<Choice>()
     private var teamSize = 0
@@ -17,12 +21,12 @@ class BattleDecision {
     )
 
     fun addSwitchChoice(who: Int) {
-        command = CMD_CHOOSE
+        _command = CMD_CHOOSE
         choices.add(Choice(action = ACTION_SWITCH, index = who))
     }
 
     fun addMoveChoice(which: Int, mega: Boolean, zmove: Boolean, dynamax: Boolean) {
-        command = CMD_CHOOSE
+        _command = CMD_CHOOSE
         val extra = if (mega) EXTRA_MEGA else if (zmove) EXTRA_ZMOVE else if (dynamax) EXTRA_DYNAMAX else null
         choices.add(Choice(action = ACTION_MOVE, index = which, extra = extra))
     }
@@ -32,12 +36,12 @@ class BattleDecision {
     }
 
     fun addPassChoice() {
-        command = CMD_CHOOSE
+        _command = CMD_CHOOSE
         choices.add(Choice(action = ACTION_PASS))
     }
 
     fun addLeadChoice(first: Int, teamSize: Int) {
-        command = CMD_TEAM
+        _command = CMD_TEAM
         this.teamSize = teamSize
         choices.add(Choice(index = first))
     }
@@ -52,7 +56,7 @@ class BattleDecision {
 
     fun build(): String {
         return StringBuilder().run {
-            if (command == CMD_TEAM) {
+            if (_command == CMD_TEAM) {
                 choices.forEach { c -> append(c.index) }
                 (1..teamSize).forEach { if (!contains(it.toString())) append(it) }
             } else {

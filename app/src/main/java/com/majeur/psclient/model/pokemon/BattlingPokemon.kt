@@ -20,6 +20,7 @@ class BattlingPokemon(val player: Player, switchMessage: String) : BasePokemon()
 
     val position get() = id.position
     val foe get() = id.foe
+    val trainer get() = id.trainer
 
     // name|details[|condition]
     init {

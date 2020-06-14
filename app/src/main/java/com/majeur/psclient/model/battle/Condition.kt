@@ -8,7 +8,8 @@ class Condition(rawCondition: String) {
     @JvmField var status: String?
     @JvmField val maxHp: Int
     @JvmField val hp: Int
-    @JvmField val health: Float
+    val health: Float
+        get() = hp.toFloat() / maxHp.toFloat()
 
     init {
         val separator = rawCondition.indexOf('/')
@@ -16,7 +17,6 @@ class Condition(rawCondition: String) {
             hp = 0
             maxHp = 100
             status = "fnt"
-            health = 0f
             color = 0
         } else {
             hp = rawCondition.substring(0, separator).toInt()
@@ -28,7 +28,6 @@ class Condition(rawCondition: String) {
                 maxHp = rawCondition.substring(separator + 1, sep).toInt()
                 status = rawCondition.substring(sep + 1)
             }
-            health = hp.toFloat() / maxHp.toFloat()
             color = statusColor(status)
         }
     }

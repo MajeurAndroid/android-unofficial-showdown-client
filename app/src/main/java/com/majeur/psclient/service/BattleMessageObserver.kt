@@ -23,6 +23,8 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
     var battleRunning = false
         private set
 
+    var gen: Int = 0
+
     private lateinit var battleTextBuilder: BattleTextBuilder
     private val actionQueue = ActionQueue(Looper.getMainLooper())
     private var p1Username: String? = null
@@ -102,6 +104,7 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
     }
 
     private fun handleRegularCommand(message: ServerMessage) = when (message.command) {
+        "gen" -> gen = message.nextArg.toInt()
         "break" -> onMarkBreak()
         "move" -> handleMove(message)
         "switch" -> handleSwitch(message)

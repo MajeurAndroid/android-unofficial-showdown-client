@@ -2,6 +2,7 @@ package com.majeur.psclient.util
 
 import android.graphics.Typeface
 import android.text.Spannable
+import android.text.style.BackgroundColorSpan
 import android.text.style.ForegroundColorSpan
 import android.text.style.RelativeSizeSpan
 import android.text.style.StyleSpan
@@ -21,6 +22,8 @@ fun CharSequence.small() = toSpannable().small()
 fun CharSequence.big() = toSpannable().big()
 
 fun CharSequence.color(color: Int) = toSpannable().color(color)
+
+fun CharSequence.bg(color: Int) = toSpannable().bg(color)
 
 fun Spannable.bold(): Spannable {
     setSpan(StyleSpan(Typeface.BOLD), 0, length, Spannable.SPAN_INCLUSIVE_EXCLUSIVE)
@@ -44,5 +47,10 @@ fun Spannable.big(): Spannable {
 
 fun Spannable.color(color: Int): Spannable {
     setSpan(ForegroundColorSpan(color), 0, length, Spannable.SPAN_INCLUSIVE_EXCLUSIVE)
+    return this
+}
+
+fun Spannable.bg(color: Int): Spannable {
+    setSpan(BackgroundColorSpan(color), 0, length, Spannable.SPAN_INCLUSIVE_EXCLUSIVE)
     return this
 }
