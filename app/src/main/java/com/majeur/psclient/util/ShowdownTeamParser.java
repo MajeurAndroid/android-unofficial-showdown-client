@@ -1,7 +1,6 @@
 package com.majeur.psclient.util;
 
 import android.os.AsyncTask;
-import com.majeur.psclient.model.common.BattleFormat;
 import com.majeur.psclient.model.common.Stats;
 import com.majeur.psclient.model.common.Team;
 import com.majeur.psclient.model.pokemon.DexPokemon;
@@ -13,7 +12,7 @@ import java.util.Queue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.majeur.psclient.model.Id.toId;
+import static com.majeur.psclient.util.ExtensionsKt.toId;
 
 public class ShowdownTeamParser {
 
@@ -63,7 +62,7 @@ public class ShowdownTeamParser {
                 teams.add(parseTeam(teamString, format, teamLabel, dexPokemonFactory));
             } else {
                 teams.add(parseTeam(teamString,
-                        BattleFormat.FORMAT_OTHER.id(),
+                        toId("[Other]"),
                         "Unnamed team",
                         dexPokemonFactory));
             }
@@ -161,16 +160,16 @@ public class ShowdownTeamParser {
         p = new TeamPokemon(pokemonName);
 
         if (pokemonNickname != null) {
-            p.name = pokemonNickname.trim();
+            p.setName(pokemonNickname.trim());
         }
 
         if (pokemonItem != null) {
-            p.item = toId(pokemonItem);
+            p.setItem(toId(pokemonItem));
         }
 
         if (pokemonGender != null) {
             if (pokemonGender.equals("M") || pokemonGender.equals("F") || pokemonGender.equals("N")) {
-                p.gender = pokemonGender;
+                p.setGender(pokemonGender);
             }
         }
 
@@ -181,10 +180,7 @@ public class ShowdownTeamParser {
                 // same as items, it's a real name , we need an id. Lowercasing and removing spaces  + - should do the trick
                 String move = currentString.substring(currentString.indexOf("-") + 1);
                 move = toId(move);
-                if (p.moves == null)
-                    p.moves = new String[]{move};
-                else
-                    p.moves = Utils.append(p.moves, move);
+                p.getMoves().add(move);
 
             } else if (currentString.startsWith("IVs:")) {
                 String ivs = currentString.substring(currentString.indexOf(":") + 1);
@@ -204,22 +200,22 @@ public class ShowdownTeamParser {
                     }
                     switch (stat) {
                         case "HP":
-                            p.ivs.hp = ivValue;
+                            p.getIvs().setHp(ivValue);
                             break;
                         case "Atk":
-                            p.ivs.atk = ivValue;
+                            p.getIvs().setAtk(ivValue);
                             break;
                         case "Def":
-                            p.ivs.def = ivValue;
+                            p.getIvs().setDef(ivValue);
                             break;
                         case "SpA":
-                            p.ivs.spa = ivValue;
+                            p.getIvs().setSpa(ivValue);
                             break;
                         case "SpD":
-                            p.ivs.spd = ivValue;
+                            p.getIvs().setSpd(ivValue);
                             break;
                         case "Spe":
-                            p.ivs.spe = ivValue;
+                            p.getIvs().setSpe(ivValue);
                             break;
                     }
                 }
@@ -241,31 +237,31 @@ public class ShowdownTeamParser {
                     }
                     switch (stat) {
                         case "HP":
-                            p.evs.hp = evValue;
+                            p.getEvs().setHp(evValue);
                             break;
                         case "Atk":
-                            p.evs.atk = evValue;
+                            p.getEvs().setAtk(evValue);
                             break;
                         case "Def":
-                            p.evs.def = evValue;
+                            p.getEvs().setDef(evValue);
                             break;
                         case "SpA":
-                            p.evs.spa = evValue;
+                            p.getEvs().setSpa(evValue);
                             break;
                         case "SpD":
-                            p.evs.spd = evValue;
+                            p.getEvs().setSpd(evValue);
                             break;
                         case "Spe":
-                            p.evs.spe = evValue;
+                            p.getEvs().setSpe(evValue);
                             break;
                     }
                 }
             } else if (currentString.contains("Nature")) { /* Example : Adamant Nature*/
                 String nature = currentString.substring(0, currentString.indexOf("Nature")).trim();
-                p.nature = nature;
+                p.setNature(nature);
             } else if (currentString.startsWith("Ability:")) {
                 String abilityName = currentString.substring(currentString.indexOf(":") + 1).trim();
-                DexPokemon dexPokemon = dexPokemonFactory.loadDexPokemon(toId(p.species));
+                DexPokemon dexPokemon = dexPokemonFactory.loadDexPokemon(toId(p.getSpecies()));
                 if (dexPokemon != null) {
                     for (int j = 0; j < dexPokemon.abilities.size(); j++) {
                         String ability = dexPokemon.abilities.get(j);
@@ -275,19 +271,19 @@ public class ShowdownTeamParser {
                         }
                     }
 
-                    if (abilityName.equals(dexPokemon.hiddenAbility)) {
-                        p.ability = abilityName;
+                    if (abilityName.equals(dexPokemon.getHiddenAbility())) {
+                        p.setAbility(abilityName);
                     }
                 }
             } else if (currentString.startsWith("Level:")) {
                 String level = currentString.substring(currentString.indexOf(":") + 1).trim();
                 try {
-                    p.level = Integer.parseInt(level);
+                    p.setLevel(Integer.parseInt(level));
                 } catch (NumberFormatException e) {
                     break;
                 }
             } else if (currentString.startsWith("Shiny")) {
-                p.shiny = true;
+                p.setShiny(true);
             }
         }
 
@@ -299,34 +295,34 @@ public class ShowdownTeamParser {
 
     public static String fromPokemon(TeamPokemon curSet) {
         String text = "";
-        if (curSet.name != null && !curSet.name.equals(curSet.species)) {
-            text += "" + curSet.name + " (" + curSet.species + ")";
+        if (curSet.getName() != null && !curSet.getName().equals(curSet.getSpecies())) {
+            text += "" + curSet.getName() + " (" + curSet.getSpecies() + ")";
         } else {
-            text += "" + curSet.species;
+            text += "" + curSet.getSpecies();
         }
-        if ("m".equalsIgnoreCase(curSet.gender)) text += " (M)";
-        if ("f".equalsIgnoreCase(curSet.gender)) text += " (F)";
-        if (curSet.item != null && curSet.item.length() > 0) {
-            text += " @ " + curSet.item;
+        if ("m".equalsIgnoreCase(curSet.getGender())) text += " (M)";
+        if ("f".equalsIgnoreCase(curSet.getGender())) text += " (F)";
+        if (curSet.getItem() != null && curSet.getItem().length() > 0) {
+            text += " @ " + curSet.getItem();
         }
         text += "  \n";
-        if (curSet.ability != null) {
-            text += "Ability: " + curSet.ability + "  \n";
+        if (curSet.getAbility() != null) {
+            text += "Ability: " + curSet.getAbility() + "  \n";
         }
-        if (curSet.level != 100) {
-            text += "Level: " + curSet.level + "  \n";
+        if (curSet.getLevel() != 100) {
+            text += "Level: " + curSet.getLevel() + "  \n";
         }
-        if (curSet.shiny) {
+        if (curSet.getShiny()) {
             text += "Shiny: Yes  \n";
         }
-        if (curSet.happiness != 255) {
-            text += "Happiness: " + curSet.happiness + "  \n";
+        if (curSet.getHappiness() != 255) {
+            text += "Happiness: " + curSet.getHappiness() + "  \n";
         }
-        if (curSet.pokeball != null) {
-            text += "Pokeball: " + curSet.pokeball + "  \n";
+        if (curSet.getPokeball() != null) {
+            text += "Pokeball: " + curSet.getPokeball() + "  \n";
         }
-        if (curSet.hpType != null) {
-            text += "Hidden Power: " + curSet.hpType + "  \n";
+        if (curSet.getHpType() != null) {
+            text += "Hidden Power: " + curSet.getHpType() + "  \n";
         }
         boolean first = true;
         if (curSet.evs != null) {
