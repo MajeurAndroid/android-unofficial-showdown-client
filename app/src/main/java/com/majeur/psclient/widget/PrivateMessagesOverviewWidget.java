@@ -10,7 +10,7 @@ import android.widget.TextView;
 import androidx.annotation.Nullable;
 import com.google.android.material.button.MaterialButton;
 import com.majeur.psclient.R;
-import com.majeur.psclient.model.battle.BattleFormat;
+import com.majeur.psclient.model.common.BattleFormat;
 import com.majeur.psclient.ui.MainActivity;
 
 import java.util.List;

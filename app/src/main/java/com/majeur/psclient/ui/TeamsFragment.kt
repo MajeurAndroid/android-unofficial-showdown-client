@@ -17,9 +17,9 @@ import com.majeur.psclient.R
 import com.majeur.psclient.databinding.FragmentTeamsBinding
 import com.majeur.psclient.io.AssetLoader
 import com.majeur.psclient.io.TeamsStore
-import com.majeur.psclient.model.battle.BattleFormat
-import com.majeur.psclient.model.battle.toId
+import com.majeur.psclient.model.common.BattleFormat
 import com.majeur.psclient.model.common.Team
+import com.majeur.psclient.model.common.toId
 import com.majeur.psclient.ui.teambuilder.EditTeamActivity
 import com.majeur.psclient.util.toId
 import kotlinx.coroutines.Job

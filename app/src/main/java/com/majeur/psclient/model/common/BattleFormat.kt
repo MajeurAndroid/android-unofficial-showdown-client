@@ -1,4 +1,4 @@
-package com.majeur.psclient.model.battle
+package com.majeur.psclient.model.common
 
 import com.majeur.psclient.util.toId
 import java.io.Serializable
