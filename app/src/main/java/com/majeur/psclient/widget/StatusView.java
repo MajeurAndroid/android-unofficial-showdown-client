@@ -12,10 +12,10 @@ import android.util.Property;
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
 import androidx.collection.ArrayMap;
-import com.majeur.psclient.model.BattlingPokemon;
-import com.majeur.psclient.model.Colors;
-import com.majeur.psclient.model.StatModifiers;
-import com.majeur.psclient.model.VolatileStatus;
+import com.majeur.psclient.model.battle.StatModifiers;
+import com.majeur.psclient.model.battle.VolatileStatus;
+import com.majeur.psclient.model.common.Colors;
+import com.majeur.psclient.model.pokemon.BattlingPokemon;
 import com.majeur.psclient.util.Utils;
 
 import java.text.DecimalFormat;

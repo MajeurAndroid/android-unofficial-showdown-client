@@ -1,6 +1,6 @@
-package com.majeur.psclient.model
+package com.majeur.psclient.model.battle
 
-import com.majeur.psclient.model.Colors.statusColor
+import com.majeur.psclient.model.common.Colors.statusColor
 
 class Condition(rawCondition: String) {
 

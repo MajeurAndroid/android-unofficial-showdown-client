@@ -28,13 +28,13 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.BlendModeColorFilterCompat;
 import androidx.core.graphics.BlendModeCompat;
 import com.majeur.psclient.R;
-import com.majeur.psclient.model.BattleActionRequest;
-import com.majeur.psclient.model.BattleDecision;
-import com.majeur.psclient.model.BattlingPokemon;
-import com.majeur.psclient.model.Move;
-import com.majeur.psclient.model.Player;
-import com.majeur.psclient.model.PokemonId;
-import com.majeur.psclient.model.SidePokemon;
+import com.majeur.psclient.model.battle.BattleActionRequest;
+import com.majeur.psclient.model.battle.BattleDecision;
+import com.majeur.psclient.model.battle.Move;
+import com.majeur.psclient.model.battle.Player;
+import com.majeur.psclient.model.battle.PokemonId;
+import com.majeur.psclient.model.pokemon.BattlingPokemon;
+import com.majeur.psclient.model.pokemon.SidePokemon;
 import com.majeur.psclient.service.BattleMessageObserver;
 import com.majeur.psclient.util.SimpleAnimatorListener;
 import com.majeur.psclient.util.Utils;
@@ -622,7 +622,7 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
             if (dynamax) mega = zmove = false;
             else if (zmove) mega = false;
             mDecision.addMoveChoice(which, mega, zmove, dynamax);
-            if (mRequest.getCount() > 1 && move.target.isChosable())
+            if (mRequest.getCount() > 1 && move.target.isChoosable())
                 mTargetToChoose = move.target;
         } else if (data instanceof BattlingPokemon) {
             PokemonId id = ((BattlingPokemon) data).id;

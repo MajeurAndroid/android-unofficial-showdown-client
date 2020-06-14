@@ -13,14 +13,12 @@ import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
-
-import com.majeur.psclient.R;
-import com.majeur.psclient.model.Colors;
-import com.majeur.psclient.model.Nature;
-import com.majeur.psclient.model.Stats;
-import com.majeur.psclient.util.Utils;
-
 import androidx.annotation.Nullable;
+import com.majeur.psclient.R;
+import com.majeur.psclient.model.common.Colors;
+import com.majeur.psclient.model.common.Nature;
+import com.majeur.psclient.model.common.Stats;
+import com.majeur.psclient.util.Utils;
 
 /*
  * This widget needs improvements, it works well but is a bit hacky.

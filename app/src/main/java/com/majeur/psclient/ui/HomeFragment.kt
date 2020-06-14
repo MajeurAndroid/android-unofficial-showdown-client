@@ -23,7 +23,10 @@ import com.majeur.psclient.R
 import com.majeur.psclient.databinding.DialogBattleMessageBinding
 import com.majeur.psclient.databinding.FragmentHomeBinding
 import com.majeur.psclient.io.AssetLoader
-import com.majeur.psclient.model.*
+import com.majeur.psclient.model.AvailableBattleRoomsInfo
+import com.majeur.psclient.model.Id
+import com.majeur.psclient.model.battle.BattleFormat
+import com.majeur.psclient.model.common.Team
 import com.majeur.psclient.service.GlobalMessageObserver
 import com.majeur.psclient.service.ShowdownService
 import com.majeur.psclient.util.BackgroundBitmapDrawable

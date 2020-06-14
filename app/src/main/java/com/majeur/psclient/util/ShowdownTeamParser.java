@@ -1,12 +1,11 @@
 package com.majeur.psclient.util;
 
 import android.os.AsyncTask;
-
-import com.majeur.psclient.model.BattleFormat;
-import com.majeur.psclient.model.DexPokemon;
-import com.majeur.psclient.model.Stats;
-import com.majeur.psclient.model.Team;
-import com.majeur.psclient.model.TeamPokemon;
+import com.majeur.psclient.model.battle.BattleFormat;
+import com.majeur.psclient.model.common.Stats;
+import com.majeur.psclient.model.common.Team;
+import com.majeur.psclient.model.pokemon.DexPokemon;
+import com.majeur.psclient.model.pokemon.TeamPokemon;
 
 import java.util.LinkedList;
 import java.util.List;

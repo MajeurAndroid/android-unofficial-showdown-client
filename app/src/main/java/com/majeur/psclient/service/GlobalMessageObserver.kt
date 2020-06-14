@@ -1,8 +1,8 @@
 package com.majeur.psclient.service
 
 import com.majeur.psclient.model.AvailableBattleRoomsInfo
-import com.majeur.psclient.model.BattleFormat
 import com.majeur.psclient.model.RoomInfo
+import com.majeur.psclient.model.battle.BattleFormat
 import com.majeur.psclient.util.Utils
 import org.json.JSONException
 import org.json.JSONObject

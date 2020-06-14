@@ -16,15 +16,15 @@ import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.request.target.Target;
 import com.bumptech.glide.request.target.ViewTarget;
 import com.majeur.psclient.R;
-import com.majeur.psclient.model.BasePokemon;
-import com.majeur.psclient.model.BattlingPokemon;
-import com.majeur.psclient.model.Player;
+import com.majeur.psclient.model.battle.Player;
+import com.majeur.psclient.model.pokemon.BasePokemon;
+import com.majeur.psclient.model.pokemon.BattlingPokemon;
 import com.majeur.psclient.util.Utils;
 import com.majeur.psclient.util.html.Html;
 
 import java.util.concurrent.ExecutionException;
 
-import static com.majeur.psclient.model.Player.FOE;
+import static com.majeur.psclient.model.battle.Player.FOE;
 
 public class GlideHelper {
 
@@ -32,7 +32,7 @@ public class GlideHelper {
         ViewTarget.setTagId(R.id.glide_tag);
     }
 
-    private RequestManager mRequestManager;
+    private final RequestManager mRequestManager;
 
     public GlideHelper(Context context) {
         mRequestManager = Glide.with(context);
@@ -42,14 +42,14 @@ public class GlideHelper {
 
     @SuppressWarnings("CheckResult")
     public void loadSprite(final BattlingPokemon pokemon, final ImageView imageView, final int fieldWidth) {
-        String spriteId = pokemon.transformSpecies != null ? pokemon.transformSpecies : pokemon.spriteId;
-        RequestBuilder<Drawable> request = mRequestManager.load(ani3dSpriteUri(spriteId, pokemon.foe, pokemon.shiny));
+        String spriteId = pokemon.getTransformSpecies() != null ? pokemon.getTransformSpecies() : pokemon.getSpriteId();
+        RequestBuilder<Drawable> request = mRequestManager.load(ani3dSpriteUri(spriteId, pokemon.getFoe(), pokemon.getShiny()));
         RequestOptions options = new RequestOptions().override(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL);
         request.apply(options);
         request.error(
-                mRequestManager.load(ani2dSpriteUri(spriteId, pokemon.foe, pokemon.shiny))
+                mRequestManager.load(ani2dSpriteUri(spriteId, pokemon.getFoe(), pokemon.getShiny()))
                 .error(
-                        mRequestManager.load(fixed2dSpriteUri(spriteId, pokemon.foe, pokemon.shiny))
+                        mRequestManager.load(fixed2dSpriteUri(spriteId, pokemon.getFoe(), pokemon.getShiny()))
                         .apply(options.error(R.drawable.missingno))
                 )
         );
@@ -77,7 +77,7 @@ public class GlideHelper {
             @Override
             protected void setResource(Drawable resource) {
                 int scale = Math.round(fieldWidth * MAGIC_SCALE);
-                if (!pokemon.foe) scale = Math.round(scale * 1.5f);
+                if (!pokemon.getFoe()) scale = Math.round(scale * 1.5f);
 
                 ViewGroup.LayoutParams layoutParams = imageView.getLayoutParams();
                 layoutParams.width = resource.getIntrinsicWidth() * scale;
@@ -89,13 +89,13 @@ public class GlideHelper {
     }
 
     public void loadPreviewSprite(Player player, BasePokemon pokemon, ImageView imageView) {
-        RequestBuilder<Drawable> request = mRequestManager.load(ani3dSpriteUri(pokemon.spriteId, player == FOE, false));
+        RequestBuilder<Drawable> request = mRequestManager.load(ani3dSpriteUri(pokemon.getSpriteId(), player == FOE, false));
         RequestOptions options = new RequestOptions().override(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL);
         request.apply(options);
         request.error(
-                mRequestManager.load(ani2dSpriteUri(pokemon.spriteId, player == FOE, false))
+                mRequestManager.load(ani2dSpriteUri(pokemon.getSpriteId(), player == FOE, false))
                         .error(
-                                mRequestManager.load(fixed2dSpriteUri(pokemon.spriteId, player == FOE, false))
+                                mRequestManager.load(fixed2dSpriteUri(pokemon.getSpriteId(), player == FOE, false))
                                         .apply(options.error(R.drawable.missingno))
                         )
         );
@@ -105,11 +105,11 @@ public class GlideHelper {
     }
 
     public void loadDexSprite(BasePokemon pokemon, boolean shiny, ImageView imageView) {
-        RequestBuilder<Drawable> request = mRequestManager.load(dexSpriteUri(pokemon.spriteId, shiny));
+        RequestBuilder<Drawable> request = mRequestManager.load(dexSpriteUri(pokemon.getSpriteId(), shiny));
         RequestOptions options = new RequestOptions().override(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL);
         request.apply(options);
         request.error(
-                mRequestManager.load(fixed2dSpriteUri(pokemon.spriteId, true, false))
+                mRequestManager.load(fixed2dSpriteUri(pokemon.getSpriteId(), true, false))
                         .apply(options.error(R.drawable.placeholder_pokeball))
         );
         request.into(imageView);

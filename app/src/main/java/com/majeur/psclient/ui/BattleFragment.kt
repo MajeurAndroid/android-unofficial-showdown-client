@@ -23,14 +23,21 @@ import com.majeur.psclient.R
 import com.majeur.psclient.databinding.FragmentBattleBinding
 import com.majeur.psclient.io.AssetLoader
 import com.majeur.psclient.io.GlideHelper
-import com.majeur.psclient.model.*
-import com.majeur.psclient.model.Colors.healthColor
-import com.majeur.psclient.model.Colors.statusColor
+import com.majeur.psclient.model.Id
 import com.majeur.psclient.model.Id.toId
+import com.majeur.psclient.model.battle.*
+import com.majeur.psclient.model.common.Colors.healthColor
+import com.majeur.psclient.model.common.Colors.statusColor
+import com.majeur.psclient.model.common.Stats
+import com.majeur.psclient.model.common.Type
+import com.majeur.psclient.model.pokemon.BasePokemon
+import com.majeur.psclient.model.pokemon.BattlingPokemon
+import com.majeur.psclient.model.pokemon.SidePokemon
 import com.majeur.psclient.service.BattleMessageObserver
 import com.majeur.psclient.service.ShowdownService
 import com.majeur.psclient.util.*
 import com.majeur.psclient.util.html.Html
+import com.majeur.psclient.util.toId
 import com.majeur.psclient.widget.BattleLayout
 import com.majeur.psclient.widget.BattleTipPopup
 import com.majeur.psclient.widget.BattleTipPopup.OnBindPopupViewListener
@@ -513,9 +520,9 @@ class BattleFragment : BaseFragment() {
             prepareBattleFieldUi()
             mainActivity.setKeepScreenOn(true)
             when (gameType) {
-                Const.SINGLE -> binding.battleLayout.setMode(BattleLayout.MODE_BATTLE_SINGLE)
-                Const.DOUBLE -> binding.battleLayout.setMode(BattleLayout.MODE_BATTLE_DOUBLE)
-                Const.TRIPLE -> binding.battleLayout.setMode(BattleLayout.MODE_BATTLE_TRIPLE)
+                GameType.SINGLE -> binding.battleLayout.setMode(BattleLayout.MODE_BATTLE_SINGLE)
+                GameType.DOUBLE -> binding.battleLayout.setMode(BattleLayout.MODE_BATTLE_DOUBLE)
+                GameType.TRIPLE -> binding.battleLayout.setMode(BattleLayout.MODE_BATTLE_TRIPLE)
             }
             if (soundEnabled) audioManager.playBattleMusic()
             //sendChatMessage("[Playing from the unofficial Android Showdown client]");

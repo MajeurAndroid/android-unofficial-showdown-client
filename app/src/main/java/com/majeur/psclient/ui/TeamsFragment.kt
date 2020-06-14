@@ -17,8 +17,9 @@ import com.majeur.psclient.R
 import com.majeur.psclient.databinding.FragmentTeamsBinding
 import com.majeur.psclient.io.AssetLoader
 import com.majeur.psclient.io.TeamsStore
-import com.majeur.psclient.model.BattleFormat
-import com.majeur.psclient.model.Team
+import com.majeur.psclient.model.battle.BattleFormat
+import com.majeur.psclient.model.battle.toId
+import com.majeur.psclient.model.common.Team
 import com.majeur.psclient.ui.teambuilder.EditTeamActivity
 import com.majeur.psclient.util.toId
 import kotlinx.coroutines.Job
@@ -177,7 +178,7 @@ class TeamsFragment : BaseFragment() {
     }
 
     private fun addOrUpdateTeam(newTeam: Team) {
-        if (newTeam.format == null) newTeam.format = fallbackFormat.id()
+        if (newTeam.format == null) newTeam.format = fallbackFormat.toId()
         for (group in groups) {
             val oldTeam = group.teams.firstOrNull { it.uniqueId == newTeam.uniqueId } ?: continue
             if (oldTeam.format == newTeam.format) { // Format has not changed so we just replace item
@@ -186,7 +187,7 @@ class TeamsFragment : BaseFragment() {
                 group.teams.remove(oldTeam)
                 if (group.teams.isEmpty()) groups.remove(group)
                 val newGroup = groups.firstOrNull { it.format == newTeam.format }
-                        ?: Team.Group(newTeam.format).also { groups.add(it) }
+                        ?: Team.Group(newTeam.format!!).also { groups.add(it) }
                 newGroup.teams.add(newTeam)
             }
             break
@@ -214,7 +215,7 @@ class TeamsFragment : BaseFragment() {
                 return g1.format.compareTo(g2.format)
             }
         })
-        groups.forEach { it.sort() }
+        groups.forEach { it.teams.sort() }
         listAdapter.notifyDataSetChanged()
         homeFragment.updateTeamSpinner()
     }

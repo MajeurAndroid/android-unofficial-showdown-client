@@ -9,11 +9,9 @@ import android.graphics.Path;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
-
-import com.majeur.psclient.model.Colors;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import com.majeur.psclient.model.common.Colors;
 
 public class CategoryDrawable extends Drawable {
 

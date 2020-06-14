@@ -8,7 +8,11 @@ import android.graphics.Rect
 import android.util.JsonReader
 import android.util.JsonToken
 import com.majeur.psclient.R
-import com.majeur.psclient.model.*
+import com.majeur.psclient.model.Species
+import com.majeur.psclient.model.battle.Move
+import com.majeur.psclient.model.common.Item
+import com.majeur.psclient.model.common.Stats
+import com.majeur.psclient.model.pokemon.DexPokemon
 import com.majeur.psclient.util.toId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -247,7 +251,7 @@ class AssetLoader(val context: Context) {
 
         @Throws(IOException::class)
         private fun parseDexPokemon(reader: JsonReader): DexPokemon {
-            return DexPokemon("hhhjhjk").apply { // TODO("Alter BasePokemon to allow lateinit of species name")
+            return DexPokemon().apply {
                 reader.beginObject()
                 while (reader.hasNext()) {
                     when (reader.nextName()) {
@@ -339,8 +343,8 @@ class AssetLoader(val context: Context) {
                     when (reader.nextName()) {
                         "name" -> name = reader.nextString()
                         "id" -> id = reader.nextString()
-                        "desc" -> desc = reader.nextString()
-                        "spritenum" -> spriteNum = reader.nextInt()
+                        "desc" -> description = reader.nextString()
+                        "spritenum" -> spriteId = reader.nextInt()
                         else -> reader.skipValue()
                     }
                 }
@@ -443,7 +447,7 @@ class AssetLoader(val context: Context) {
                         "pp" -> pp = reader.nextInt()
                         "zMovePower" -> zPower = reader.nextInt()
                         "target" -> target = Move.Target.parse(reader.nextString())
-                        "zMoveEffect" -> zEffect = Move.Details.zMoveEffects(reader.nextString())
+                        "zMoveEffect" -> zEffect = reader.nextString()
                         "gmaxPower" -> maxPower = reader.nextInt()
                         else -> reader.skipValue()
                     }
@@ -452,25 +456,4 @@ class AssetLoader(val context: Context) {
             }
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }

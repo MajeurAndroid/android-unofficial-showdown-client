@@ -1,4 +1,4 @@
-package com.majeur.psclient.model
+package com.majeur.psclient.model.common
 
 import android.graphics.Color
 

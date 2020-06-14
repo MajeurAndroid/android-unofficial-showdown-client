@@ -1,7 +1,7 @@
 package com.majeur.psclient.io
 
 import android.content.Context
-import com.majeur.psclient.model.Team
+import com.majeur.psclient.model.common.Team
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -35,7 +35,7 @@ class TeamsStore(context: Context) {
                 (0..teamsJson.length()).map { teamsJson.getJSONObject(it) }.forEach {
                     val label = it.optString(JSON_KEY_TEAM_LABEL)
                     val data = it.getString(JSON_KEY_TEAM_DATA)
-                    group.teams.add(Team.unpack(label, format, data))
+                    Team.unpack(label, format, data)?.let { team -> group.teams.add(team) }
                 }
                 groups.add(group)
             }

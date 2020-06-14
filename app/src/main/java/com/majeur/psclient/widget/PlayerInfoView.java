@@ -12,14 +12,12 @@ import android.text.style.StyleSpan;
 import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.Gravity;
-
+import androidx.appcompat.widget.AppCompatTextView;
 import com.majeur.psclient.R;
-import com.majeur.psclient.model.BasePokemon;
+import com.majeur.psclient.model.pokemon.BasePokemon;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
-
-import androidx.appcompat.widget.AppCompatTextView;
 
 import static com.majeur.psclient.model.Id.toId;
 

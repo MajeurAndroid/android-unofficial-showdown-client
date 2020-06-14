@@ -11,13 +11,11 @@ import android.util.ArrayMap;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.View;
-
-import com.majeur.psclient.model.Colors;
+import androidx.annotation.Nullable;
+import com.majeur.psclient.model.common.Colors;
 import com.majeur.psclient.util.Utils;
 
 import java.util.Map;
-
-import androidx.annotation.Nullable;
 
 public class SideView extends View {
 

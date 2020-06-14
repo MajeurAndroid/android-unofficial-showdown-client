@@ -15,23 +15,23 @@ import androidx.fragment.app.DialogFragment
 import com.majeur.psclient.R
 import com.majeur.psclient.databinding.DialogJoinRoomBinding
 import com.majeur.psclient.databinding.ListFooterOtherRoomBinding
-import com.majeur.psclient.model.RoomInfo
+import com.majeur.psclient.model.ChatRoomInfo
 import com.majeur.psclient.util.SimpleTextWatcher
 import java.util.*
 
 
 class JoinRoomDialog : DialogFragment() {
 
-    private lateinit var officialRooms: List<RoomInfo>
-    private lateinit var chatRooms: List<RoomInfo>
+    private lateinit var officialRooms: List<ChatRoomInfo>
+    private lateinit var chatRooms: List<ChatRoomInfo>
 
     private var _binding: DialogJoinRoomBinding? = null
     private val binding get() = _binding!!
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        officialRooms = requireArguments().getSerializable(ARG_OFFICIAL_ROOMS) as List<RoomInfo>
-        chatRooms = requireArguments().getSerializable(ARG_CHAT_ROOMS) as List<RoomInfo>
+        officialRooms = requireArguments().getSerializable(ARG_OFFICIAL_ROOMS) as List<ChatRoomInfo>
+        chatRooms = requireArguments().getSerializable(ARG_CHAT_ROOMS) as List<ChatRoomInfo>
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -43,7 +43,7 @@ class JoinRoomDialog : DialogFragment() {
         super.onViewCreated(view, savedInstanceState)
         binding.list.adapter = listAdapter
         binding.list.onItemClickListener = AdapterView.OnItemClickListener { _, _, index, _ ->
-            val roomInfo = listAdapter.getItem(index) as RoomInfo
+            val roomInfo = listAdapter.getItem(index) as ChatRoomInfo
             joinRoom(roomInfo.name)
         }
         val footerBinding = ListFooterOtherRoomBinding.inflate(layoutInflater, binding.list, false)
@@ -117,7 +117,7 @@ class JoinRoomDialog : DialogFragment() {
                 viewHolder.descrView!!.visibility = View.GONE
                 viewHolder.iconView!!.visibility = View.GONE
             } else {
-                val roomInfo = item as RoomInfo
+                val roomInfo = item as ChatRoomInfo
                 val spannableString = SpannableString(roomInfo.name + " (" +
                         roomInfo.userCount + ")")
                 spannableString.setSpan(StyleSpan(Typeface.BOLD), 0,
@@ -147,7 +147,7 @@ class JoinRoomDialog : DialogFragment() {
     companion object {
         private const val ARG_OFFICIAL_ROOMS = "official-rooms"
         private const val ARG_CHAT_ROOMS = "chat-rooms"
-        fun newInstance(officialRooms: Array<RoomInfo?>?, chatRooms: Array<RoomInfo?>?): JoinRoomDialog {
+        fun newInstance(officialRooms: Array<ChatRoomInfo?>?, chatRooms: Array<ChatRoomInfo?>?): JoinRoomDialog {
             val joinRoomDialog = JoinRoomDialog()
             val bundle = Bundle()
             bundle.putSerializable(ARG_OFFICIAL_ROOMS, officialRooms)

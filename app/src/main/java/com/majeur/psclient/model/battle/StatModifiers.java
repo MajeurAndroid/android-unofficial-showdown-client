@@ -1,4 +1,4 @@
-package com.majeur.psclient.model;
+package com.majeur.psclient.model.battle;
 
 import static com.majeur.psclient.util.Utils.boldText;
 import static com.majeur.psclient.util.Utils.str;

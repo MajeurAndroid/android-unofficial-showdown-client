@@ -15,8 +15,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import com.majeur.psclient.R;
-import com.majeur.psclient.model.Player;
-import com.majeur.psclient.model.PokemonId;
+import com.majeur.psclient.model.battle.Player;
+import com.majeur.psclient.model.battle.PokemonId;
 import com.majeur.psclient.util.Utils;
 
 import java.util.LinkedList;

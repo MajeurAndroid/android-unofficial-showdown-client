@@ -1,6 +1,7 @@
-package com.majeur.psclient.model;
+package com.majeur.psclient.model.battle;
 
 import androidx.annotation.Nullable;
+import com.majeur.psclient.model.common.Colors;
 
 public class VolatileStatus {
 

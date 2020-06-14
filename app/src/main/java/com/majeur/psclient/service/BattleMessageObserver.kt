@@ -3,7 +3,10 @@ package com.majeur.psclient.service
 import android.content.Context
 import android.os.Looper
 import com.majeur.psclient.io.BattleTextBuilder
-import com.majeur.psclient.model.*
+import com.majeur.psclient.model.battle.*
+import com.majeur.psclient.model.common.Colors
+import com.majeur.psclient.model.pokemon.BasePokemon
+import com.majeur.psclient.model.pokemon.BattlingPokemon
 import com.majeur.psclient.util.*
 import org.json.JSONException
 import org.json.JSONObject
@@ -14,7 +17,7 @@ import kotlin.math.roundToInt
 
 abstract class BattleMessageObserver : RoomMessageObserver() {
 
-    var gameType: Const? = null
+    var gameType: GameType? = null
         private set
 
     var battleRunning = false
@@ -38,7 +41,7 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
         battleTextBuilder = BattleTextBuilder(context)
         battleTextBuilder.setPokemonIdFactory { rawString: String ->
             try {
-                return@setPokemonIdFactory PokemonId.fromRawId(getPlayer(rawString), rawString)
+                return@setPokemonIdFactory PokemonId(getPlayer(rawString), rawString)
             } catch (e: NullPointerException) {
                 return@setPokemonIdFactory null
             } catch (e: StringIndexOutOfBoundsException) {
@@ -71,11 +74,11 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
         activeFieldEffects.clear()
     }
 
-    private fun myUsername(): String? = service?.getSharedData("username")
+    private fun myUsername(): String = service?.getSharedData("username") ?: ""
 
     private fun getPlayer(rawId: String) = Player.get(rawId, p1Username, p2Username, myUsername())
 
-    private fun getPokemonId(rawId: String) = PokemonId.fromRawId(getPlayer(rawId), rawId)
+    private fun getPokemonId(rawId: String) = PokemonId(getPlayer(rawId), rawId)
 
     fun reAskForRequest() = lastActionRequest?.let {
         onRequestAsked(it)
@@ -161,8 +164,8 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
         val username = msg.nextArg
         if (playerId.contains("1")) p1Username = username else p2Username = username
         if (p1Username != null && p2Username != null)
-            onPlayerInit(Player.TRAINER.username(p1Username, p2Username, myUsername()),
-                Player.FOE.username(p1Username, p2Username, myUsername()))
+            onPlayerInit(Player.TRAINER.username(p1Username!!, p2Username!!, myUsername()),
+                Player.FOE.username(p1Username!!, p2Username!!, myUsername()))
     }
 
     private fun handleFaint(msg: ServerMessage) {
@@ -182,32 +185,32 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
     private fun handleGameType(msg: ServerMessage) {
         when (msg.nextArg.trim()) {
             "doubles" -> {
-                gameType = Const.DOUBLE
+                gameType = GameType.DOUBLE
                 trainerPokemons = arrayOfNulls(2)
                 foePokemons = arrayOfNulls(2)
             }
             "rotation", "triples" -> {
-                gameType = Const.TRIPLE
+                gameType = GameType.TRIPLE
                 printErrorMessage("Triple battles aren't fully implemented yet. " +
                         "App crash is a matter of seconds from now!")
                 trainerPokemons = arrayOfNulls(3)
                 foePokemons = arrayOfNulls(3)
             }
             else -> {
-                gameType = Const.SINGLE
+                gameType = GameType.SINGLE
                 trainerPokemons = arrayOfNulls(1)
                 foePokemons = arrayOfNulls(1)
             }
         }
-        lastActionRequest?.setGameType(gameType)
+        lastActionRequest?.gameType = gameType!!
     }
 
     private fun handleSwitch(msg: ServerMessage) {
         val raw = msg.remainingArgsRaw
         val player = getPlayer(raw)
-        val pokemon = BattlingPokemon.fromSwitchMessage(player, raw)
+        val pokemon = BattlingPokemon(player, raw)
         val prevPoke = getBattlingPokemon(pokemon.id)
-        val username = player.username(p1Username, p2Username, myUsername())
+        val username = player.username(p1Username!!, p2Username!!, myUsername())
         val text1 = battleTextBuilder.switchOut(prevPoke, username, msg.kwargs["from"])
         val text2 = battleTextBuilder.switchIn(pokemon, username)
         actionQueue.enqueueMajorAction {
@@ -224,7 +227,7 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
     private fun handleDrag(msg: ServerMessage) {
         val raw = msg.remainingArgsRaw
         val player = getPlayer(raw)
-        val pokemon = BattlingPokemon.fromSwitchMessage(player, raw)
+        val pokemon = BattlingPokemon(player, raw)
         val text = battleTextBuilder.drag(pokemon)
         actionQueue.enqueueMajorAction {
             onSwitch(pokemon)
@@ -235,7 +238,7 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
     private fun handleDetailsChanged(msg: ServerMessage) {
         val raw = msg.remainingArgsRaw
         val player = getPlayer(raw)
-        val pokemon = BattlingPokemon.fromSwitchMessage(player, raw)
+        val pokemon = BattlingPokemon(player, raw)
         msg.newArgsIteration()
         msg.nextArg
         val arg2 = msg.nextArgSafe
@@ -280,9 +283,9 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
         val player = getPlayer(msg.nextArg)
         val curIndex = previewPokemonIndexes[if (player == Player.FOE) 1 else 0]++
         val species = msg.nextArg.split(",")[0]
-        val pokemon = BasePokemon(species)
+        val pokemon = BasePokemon().also { it.species = species }
         val hasItem = msg.hasNextArg
-        onAddPreviewPokemon(PokemonId.fromPosition(player, curIndex), pokemon, hasItem)
+        onAddPreviewPokemon(PokemonId(player, curIndex), pokemon, hasItem)
     }
 
     private fun handleInactive(msg: ServerMessage, on: Boolean) {
@@ -321,7 +324,7 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
         targetIndex = if (Utils.isInteger(with)) {
             with.toInt()
         } else { // Not tested, old showdown feature
-            val otherId = PokemonId.fromRawId(getPlayer(with), with)
+            val otherId = PokemonId(getPlayer(with), with)
             Utils.indexOf(getBattlingPokemon(otherId),
                     if (otherId.foe) foePokemons else trainerPokemons)
         }
@@ -399,7 +402,7 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
     private fun handleMiss(msg: ServerMessage) {
         val pokemonId = getPokemonId(msg.nextArg)
         val targetRawId = msg.nextArgSafe
-        val targetPokeId = if (targetRawId != null) PokemonId.fromRawId(getPlayer(targetRawId), targetRawId) else null
+        val targetPokeId = if (targetRawId != null) PokemonId(getPlayer(targetRawId), targetRawId) else null
         val text = battleTextBuilder.miss(pokemonId, targetPokeId, msg.kwargs["from"],
                 msg.kwargs["of"])
         actionQueue.enqueueMinorAction {
@@ -444,7 +447,7 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
         battleTextBuilder.curestatus(id, status, msg.kwargs["from"], msg.kwargs["of"], msg.kwargs["thaw"])
         actionQueue.enqueueMinorAction {
             if (id.isInBattle) {
-                getBattlingPokemon(id)!!.condition.status = if (cure) null else status
+                getBattlingPokemon(id)!!.condition?.status = if (cure) null else status
                 onStatusChanged(id, if (cure) null else status)
             }
             displayMinorActionMessage(text)
@@ -654,7 +657,7 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
         actionQueue.enqueueMinorAction {
             displayMinorActionMessage(text)
             if (msg.command.contains("transform") && arg2 != null) {
-                val targetId = PokemonId.fromRawId(getPlayer(arg2), arg2)
+                val targetId = PokemonId(getPlayer(arg2), arg2)
                 if (pokemonId == targetId) return@enqueueMinorAction
                 val pokemon = getBattlingPokemon(pokemonId)
                 val tpokemon = getBattlingPokemon(targetId)
@@ -667,7 +670,7 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
                 onStatChanged(pokemonId)
             } else if (msg.command.contains("formechange") && arg2 != null) {
                 val pokemon = getBattlingPokemon(pokemonId)
-                pokemon!!.spriteId = BasePokemon(arg2).spriteId
+                pokemon!!.spriteId = BasePokemon().also { it.species = arg2 }.spriteId
                 onDetailsChanged(pokemon)
             }
         }

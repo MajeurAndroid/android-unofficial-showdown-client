@@ -12,8 +12,8 @@ import android.widget.*
 import androidx.fragment.app.DialogFragment
 import com.majeur.psclient.R
 import com.majeur.psclient.io.AssetLoader
-import com.majeur.psclient.model.BattleFormat
-import com.majeur.psclient.model.Team
+import com.majeur.psclient.model.battle.BattleFormat
+import com.majeur.psclient.model.common.Team
 import com.majeur.psclient.ui.teambuilder.EditTeamActivity
 import com.majeur.psclient.util.Callback
 import com.majeur.psclient.util.ShowdownTeamParser
