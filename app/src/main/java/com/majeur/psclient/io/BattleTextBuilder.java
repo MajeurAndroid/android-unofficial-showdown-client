@@ -19,8 +19,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static android.text.TextUtils.isEmpty;
-import static com.majeur.psclient.model.Id.toId;
-import static com.majeur.psclient.model.Id.toIdSafe;
 import static com.majeur.psclient.util.Utils.contains;
 import static com.majeur.psclient.util.Utils.firstCharUpperCase;
 import static com.majeur.psclient.util.Utils.parseBoldTags;
@@ -33,6 +31,22 @@ import static com.majeur.psclient.util.Utils.str;
  * https://github.com/smogon/pokemon-showdown-client/commit/0c19bb3c82d39c9b01cdf44723af945b7622fc4a#diff-73c45fc8dbf03d7d5353d2ad39123f96
  */
 public final class BattleTextBuilder {
+
+    /* QUICK FIXES BEFORE KOTLIN */
+
+    private static String toId(String v) {
+        return com.majeur.psclient.util.ExtensionsKt.toId(v);
+    }
+
+    private static String toId(String v, String fallback) {
+        return v != null ? toId(v) : fallback;
+    }
+
+    private static String toIdSafe(String v) {
+        return toId(v, "");
+    }
+
+    /* QUICK FIXES BEFORE KOTLIN */
 
     private static final String TAG = BattleTextBuilder.class.getSimpleName();
 
@@ -164,10 +178,10 @@ public final class BattleTextBuilder {
 
     private String pokemon(PokemonId pokemonId) {
         if (pokemonId == null) return null;
-        if (pokemonId.foe)
-            return formatPlaceHolders(resolve("opposingPokemon"), PH_NICKNAME, pokemonId.name);
+        if (pokemonId.getFoe())
+            return formatPlaceHolders(resolve("opposingPokemon"), PH_NICKNAME, pokemonId.getName());
         else
-            return formatPlaceHolders(resolve("pokemon"), PH_NICKNAME, pokemonId.name);
+            return formatPlaceHolders(resolve("pokemon"), PH_NICKNAME, pokemonId.getName());
     }
 
     private PokemonId getPokemonId(String rawPoke) {
@@ -185,8 +199,8 @@ public final class BattleTextBuilder {
     }
 
     private String pokemonFull(BattlingPokemon pokemon) {
-		String nickname = pokemon.name;
-		String species = pokemon.species;
+		String nickname = pokemon.getName();
+		String species = pokemon.getSpecies();
         if (species.equalsIgnoreCase(nickname) || nickname == null)
             return "**" + species + "**";
         return nickname + " (**" + species + "**)";
@@ -194,7 +208,7 @@ public final class BattleTextBuilder {
 
     private String team(PokemonId pokemonId) {
         if (pokemonId == null) return null;
-        return resolve(pokemonId.foe ? "opposingTeam" : "team");
+        return resolve(pokemonId.getFoe() ? "opposingTeam" : "team");
     }
 
     private String team(Player player) {
@@ -208,7 +222,7 @@ public final class BattleTextBuilder {
 
     private String trainer(PokemonId pokemonId) {
         if (pokemonId == null) return null;
-        return resolve(pokemonId.foe ? "opposingTeam" : "team");
+        return resolve(pokemonId.getFoe() ? "opposingTeam" : "team");
     }
 
     private String effect(String effect) {
@@ -264,7 +278,7 @@ public final class BattleTextBuilder {
     }
 
     public CharSequence switchIn(BattlingPokemon pokemon, String username) {
-        return line(resolveOwn("switchIn", !pokemon.foe),
+        return line(resolveOwn("switchIn", !pokemon.getFoe()),
                 PH_FULLNAME, pokemonFull(pokemon), PH_TRAINER, username);
     }
 
@@ -274,15 +288,15 @@ public final class BattleTextBuilder {
 
     public CharSequence switchOut(BattlingPokemon pokemon, String username, String from) {
         if (pokemon == null) return null;
-        PokemonId pkmnId = pokemon.id;
+        PokemonId pkmnId = pokemon.getId();
         String pokemonName = pokemon(pkmnId);
-        String template = resolveOwn(from, "switchOut", !pkmnId.foe);
+        String template = resolveOwn(from, "switchOut", !pkmnId.getFoe());
         return line(template, PH_TRAINER, username, PH_POKEMON, pokemonName,
-                PH_NICKNAME, pkmnId.name);
+                PH_NICKNAME, pkmnId.getName());
     }
 
     public CharSequence pokemonChange(String cmd, PokemonId pkmnId, String arg2, String arg3, String of, String from) {
-        String pokemon = pkmnId.name;
+        String pokemon = pkmnId.getName();
         String newSpecies = null;
         switch (cmd) {
             case "detailschange":
@@ -731,7 +745,7 @@ public final class BattleTextBuilder {
             return lines(line1, line2);
         }
         if ("brickbreak".equals(id)) {
-            template = formatPlaceHolders(template, PH_TEAM, team(targetId != null ? targetId.player : null));
+            template = formatPlaceHolders(template, PH_TEAM, team(targetId != null ? targetId.getPlayer() : null));
         }
         if (ability != null) {
             line1 = lines(line1, ability(ability, pkmnId));

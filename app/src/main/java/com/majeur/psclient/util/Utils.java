@@ -17,7 +17,7 @@ import android.text.style.URLSpan;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ScrollView;
-import com.majeur.psclient.model.Colors;
+import com.majeur.psclient.model.common.Colors;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
