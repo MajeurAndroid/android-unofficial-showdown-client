@@ -173,6 +173,7 @@ public class ShowdownTeamParser {
             }
         }
 
+        List<String> moves = new LinkedList<>();
         for (int i = 1; i < pokemonStrings.length; i++) {
             String currentString = pokemonStrings[i];
             if (currentString.startsWith("-")) {
@@ -180,7 +181,7 @@ public class ShowdownTeamParser {
                 // same as items, it's a real name , we need an id. Lowercasing and removing spaces  + - should do the trick
                 String move = currentString.substring(currentString.indexOf("-") + 1);
                 move = toId(move);
-                p.getMoves().add(move);
+                moves.add(move);
 
             } else if (currentString.startsWith("IVs:")) {
                 String ivs = currentString.substring(currentString.indexOf(":") + 1);
@@ -290,7 +291,8 @@ public class ShowdownTeamParser {
         //Log.e("PSP", "Parsed " + pokemonName);
         //Log.e("PSP", p.toString());
         // If p.moves is null, the pokemon parsed is probably broken.
-        return p.moves != null ? p : null;
+        p.setMoves(moves);
+        return p.getMoves().size() > 0 ? p : null;
     }
 
     public static String fromPokemon(TeamPokemon curSet) {

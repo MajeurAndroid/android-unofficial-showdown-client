@@ -7,7 +7,7 @@ class TeamPokemon(species: String) : BasePokemon() {
     var name: String? = null
     var item: String? = null
     var ability: String? = null
-    var moves = mutableListOf<String>()
+    var moves = emptyList<String>()
     var nature: String? = null
     var evs: Stats
     var gender: String? = null
