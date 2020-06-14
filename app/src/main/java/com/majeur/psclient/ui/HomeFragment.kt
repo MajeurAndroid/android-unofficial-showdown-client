@@ -24,9 +24,10 @@ import com.majeur.psclient.databinding.DialogBattleMessageBinding
 import com.majeur.psclient.databinding.FragmentHomeBinding
 import com.majeur.psclient.io.AssetLoader
 import com.majeur.psclient.model.AvailableBattleRoomsInfo
-import com.majeur.psclient.model.Id
+import com.majeur.psclient.model.ChatRoomInfo
 import com.majeur.psclient.model.common.BattleFormat
 import com.majeur.psclient.model.common.Team
+import com.majeur.psclient.model.common.toId
 import com.majeur.psclient.service.GlobalMessageObserver
 import com.majeur.psclient.service.ShowdownService
 import com.majeur.psclient.util.BackgroundBitmapDrawable
@@ -154,7 +155,7 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
                             setBattleButtonUIState("Accept\n$with's\nchallenge", enabled = true, showCancel = true, tintCard = true)
                             showSearchableFormatsOnly(false)
                             battleFormats?.forEach { category ->
-                                category.battleFormats.firstOrNull { Id.toId(format) == it.id() }?.let {
+                                category.formats.firstOrNull { format.toId() == it.toId() }?.let {
                                     setCurrentBattleFormat(it, false)
                                 }
                             }
@@ -199,7 +200,7 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
             binding.cancelButton -> when {
                 isChallengingSomeone -> {
                     if (waitingForChallenge) {
-                        service?.sendGlobalCommand("cancelchallenge", Id.toId(challengeTo))
+                        service?.sendGlobalCommand("cancelchallenge", challengeTo!!.toId())
                     } else {
                         isChallengingSomeone = false
                         challengeTo = null
@@ -274,9 +275,9 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
             var matchingFormatGroupIndex = -1
             var otherFormatGroupIndex = -1
             for (i in teamGroups.indices) {
-                val id = Id.toIdSafe(teamGroups[i].format)
-                if (BattleFormat.FORMAT_OTHER.id() == id) otherFormatGroupIndex = i
-                if (currentBattleFormat!!.id() == id) matchingFormatGroupIndex = i
+                val id = teamGroups[i].format.toId()
+                if (BattleFormat.FORMAT_OTHER.toId() == id) otherFormatGroupIndex = i
+                if (currentBattleFormat!!.toId() == id) matchingFormatGroupIndex = i
             }
             if (matchingFormatGroupIndex != -1) Collections.swap(teamGroups,
                     matchingFormatGroupIndex, 0)
@@ -316,11 +317,11 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
         }
         when {
             isChallengingSomeone -> {
-                service?.sendGlobalCommand("challenge", Id.toId(challengeTo), Id.toId(currentBattleFormat!!.label))
+                service?.sendGlobalCommand("challenge", challengeTo!!.toId(), currentBattleFormat!!.label.toId())
                 setBattleButtonUIState(String.format("Challenging\n%s...", challengeTo), enabled = false, showCancel = true, tintCard = true)
             }
             isAcceptingChallenge -> service?.sendGlobalCommand("accept", isAcceptingFrom!!)
-            else -> service?.sendGlobalCommand("search", Id.toId(currentBattleFormat!!.label))
+            else -> service?.sendGlobalCommand("search", currentBattleFormat!!.label.toId())
         }
     }
 
@@ -417,7 +418,7 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
         val adapter = binding.formatsSelector.adapter as CategoryAdapter
         adapter.clearItems()
         for (category in battleFormats!!) {
-            val formats = if (yes) category.searchableBattleFormats else category.battleFormats
+            val formats = if (yes) category.searchableBattleFormats else category.formats
             if (formats.size == 0) continue
             adapter.addItem(category)
             adapter.addItems(formats)
@@ -559,7 +560,7 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
             if (dialog != null && dialog.isVisible) dialog.dismiss()
         }
 
-        override fun onAvailableRoomsChanged(officialRooms: List<RoomInfo>, chatRooms: List<RoomInfo>) {
+        override fun onAvailableRoomsChanged(officialRooms: List<ChatRoomInfo>, chatRooms: List<ChatRoomInfo>) {
             chatFragment.onAvailableRoomsChanged(officialRooms, chatRooms)
         }
 

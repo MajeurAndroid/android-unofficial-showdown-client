@@ -19,7 +19,7 @@ class BattleFormat(val label: String, private val formatInt: Int) : Serializable
 
     class Category : Serializable {
 
-        var label: String? = null
+        lateinit var label: String
 
         val formats = mutableListOf<BattleFormat>()
 
