@@ -8,13 +8,12 @@ import android.media.AudioFocusRequest;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Build;
-
 import com.majeur.psclient.R;
-import com.majeur.psclient.model.BasePokemon;
+import com.majeur.psclient.model.pokemon.BasePokemon;
 
 import java.io.IOException;
 
-import static com.majeur.psclient.model.Id.toId;
+import static com.majeur.psclient.util.ExtensionsKt.toId;
 
 public class AudioBattleManager implements AudioManager.OnAudioFocusChangeListener {
 
@@ -115,7 +114,7 @@ public class AudioBattleManager implements AudioManager.OnAudioFocusChangeListen
         // We do not ask for audio focus here cause it should have been requested by the music part
         // TODO Check for delayed focus
         // Also as long as cries are really short, we do not take care of pausing it if user leaves
-        String species = toId(pokemon.baseSpecies) + ("mega".equals(pokemon.forme) ? "-mega" : "");
+        String species = toId(pokemon.getBaseSpecies()) + ("mega".equals(pokemon.getForme()) ? "-mega" : "");
         String url = cryUrl(species);
         MediaPlayer mediaPlayer = newMediaPlayer(url);
         if (mediaPlayer == null) return;
