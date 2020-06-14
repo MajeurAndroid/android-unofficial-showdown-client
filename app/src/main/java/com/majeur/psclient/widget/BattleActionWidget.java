@@ -42,7 +42,7 @@ import com.majeur.psclient.util.Utils;
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.majeur.psclient.model.Id.toIdSafe;
+import static com.majeur.psclient.util.ExtensionsKt.toId;
 import static com.majeur.psclient.util.Utils.addNullSafe;
 
 public class BattleActionWidget extends FrameLayout implements View.OnClickListener {
@@ -282,7 +282,7 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
             SwitchButton switchButton = mSwitchButtons.get(i);
             Object tag = switchButton.getTag(R.id.battle_data_tag);
             if (tag instanceof SidePokemon) {
-                Bitmap icon = ((SidePokemon) tag).icon;
+                Bitmap icon = ((SidePokemon) tag).getIcon();
                 if (icon != null) switchButton.setDexIcon(new BitmapDrawable(getResources(), icon));
             }
         }
@@ -291,10 +291,10 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
     public void notifyDetailsUpdated() {
         for (Button button : mMoveButtons) {
             Move move = (Move) button.getTag(R.id.battle_data_tag);
-            if (move == null || move.maxflag || move.details == null) continue;
+            if (move == null || move.getMaxflag() || move.getDetails() == null) continue;
             button.getBackground().setColorFilter(
                     BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
-                            move.details.color, BlendModeCompat.MODULATE)
+                            move.getDetails().getColor(), BlendModeCompat.MODULATE)
             );
         }
     }
@@ -302,11 +302,11 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
     public void notifyMaxDetailsUpdated() {
         for (Button button : mMoveButtons) {
             Move move = (Move) button.getTag(R.id.battle_data_tag);
-            if (move == null || !move.maxflag || move.maxDetails == null) continue;
-            button.setText(move.maxDetails.name);
+            if (move == null || !move.getMaxflag() || move.getMaxDetails() == null) continue;
+            button.setText(move.getMaxDetails().name);
             button.getBackground().setColorFilter(
                     BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
-                            move.maxDetails.color, BlendModeCompat.MODULATE)
+                            move.getMaxDetails().getColor(), BlendModeCompat.MODULATE)
             );
         }
     }
@@ -329,12 +329,12 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
             List<BattlingPokemon> targets = new LinkedList<>();
             List<BattlingPokemon> foeTargets = new LinkedList<>();
             for (int i = 0; i < mRequest.getCount(); i++) {
-                addNullSafe(targets, mObserver.getBattlingPokemon(PokemonId.fromPosition(Player.TRAINER, i)));
-                addNullSafe(foeTargets, mObserver.getBattlingPokemon(PokemonId.fromPosition(Player.FOE, i)));
+                addNullSafe(targets, mObserver.getBattlingPokemon(new PokemonId(Player.TRAINER, i)));
+                addNullSafe(foeTargets, mObserver.getBattlingPokemon(new PokemonId(Player.FOE, i)));
             }
             boolean[][] b = Move.Target.computeTargetAvailabilities(mTargetToChoose, mCurrentPrompt, mRequest.getCount());
             showTargetChoice(mBattleTipPopup, targets, foeTargets, b);
-        } else if (mRequest.teamPreview() ? mCurrentPrompt == 0 : mCurrentPrompt + 1 >= mRequest.getCount()) { // Request completed
+        } else if (mRequest.getTeamPreview() ? mCurrentPrompt == 0 : mCurrentPrompt + 1 >= mRequest.getCount()) { // Request completed
             mOnDecisionListener.onDecisionTook(mDecision);
             revealOut();
             mObserver = null;
@@ -345,11 +345,11 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
             mTargetToChoose = null;
         } else {
             mCurrentPrompt += 1;
-            if (!mRequest.teamPreview()) {
-                boolean activeFainted = mRequest.getSide().get(mCurrentPrompt).condition.health == 0f;
+            if (!mRequest.getTeamPreview()) {
+                boolean activeFainted = mRequest.getSide().get(mCurrentPrompt).getCondition().getHealth() == 0f;
                 int unfaintedCount = 0;
                 for (int i = mRequest.getCount(); i < mRequest.getSide().size(); i++)
-                    if (mRequest.getSide().get(i).condition.health != 0f) unfaintedCount++;
+                    if (mRequest.getSide().get(i).getCondition().getHealth() != 0f) unfaintedCount++;
                 int switchChoicesCount = mDecision.switchChoicesCount();
                 boolean pass = activeFainted && (unfaintedCount - switchChoicesCount) <= 0;
                 if (mRequest.shouldPass(mCurrentPrompt) || pass) {
@@ -358,7 +358,7 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
                     return;
                 }
             }
-            boolean hideMoves = mRequest.forceSwitch(mCurrentPrompt) || mRequest.teamPreview();
+            boolean hideMoves = mRequest.forceSwitch(mCurrentPrompt) || mRequest.getTeamPreview();
             boolean hideSwitch = mRequest.trapped(mCurrentPrompt);
             final Move[] moves = hideMoves ? null : mRequest.getMoves(mCurrentPrompt);
             List<SidePokemon> team = hideSwitch ? null : mRequest.getSide();
@@ -368,7 +368,7 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
                     mRequest.canDynamax(mCurrentPrompt),
                     mRequest.isDynamaxed(mCurrentPrompt),
                     team,
-                    mRequest.teamPreview());
+                    mRequest.getTeamPreview());
         }
     }
 
@@ -417,8 +417,8 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
             if (targets != null && i - offset < targets.size()) {
                 BattlingPokemon pokemon = targets.get(i - offset);
                 button.setVisibility(VISIBLE);
-                button.setPokemonName(pokemon.name);
-                boolean enabled = availabilities[i < 3 ? 0 : 1][i - offset] && pokemon.condition.health != 0f;
+                button.setPokemonName(pokemon.getName());
+                boolean enabled = availabilities[i < 3 ? 0 : 1][i - offset] && pokemon.getCondition().getHealth() != 0f;
                 button.setEnabled(enabled);
                 button.setTag(R.id.battle_data_tag, pokemon);
                 battleTipPopup.removeTippedView(button);
@@ -470,16 +470,16 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
             if (moves != null && i < moves.length) {
                 Move move = moves[i];
                 button.setText(sp(move));
-                setMoveButtonEnabled(button, !move.disabled);
+                setMoveButtonEnabled(button, !move.getDisabled());
                 button.getBackground().clearColorFilter();
                 button.setVisibility(VISIBLE);
                 button.setTag(R.id.battle_data_tag, move);
                 battleTipPopup.addTippedView(button);
-                if (move.canZMove()) canZMove = true;
-                if (move.details != null)
+                if (move.getCanZMove()) canZMove = true;
+                if (move.getDetails() != null)
                     button.getBackground().setColorFilter(
                         BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
-                                move.details.color, BlendModeCompat.MODULATE)
+                                move.getDetails().getColor(), BlendModeCompat.MODULATE)
                     );
             } else {
                 button.setText(null);
@@ -515,15 +515,15 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
             if (team != null && i < team.size()) {
                 SidePokemon sidePokemon = team.get(i);
                 button.setVisibility(VISIBLE);
-                button.setPokemonName(sidePokemon.name);
-                boolean enabled = chooseLead || (i >= mRequest.getCount() && sidePokemon.condition.health != 0f);
+                button.setPokemonName(sidePokemon.getName());
+                boolean enabled = chooseLead || (i >= mRequest.getCount() && sidePokemon.getCondition().getHealth() != 0f);
                 if (mCurrentPrompt > 0 && mRequest.getCount() > 1)
                     if (mDecision.hasSwitchChoice(i+1)) enabled = false;
                 button.setEnabled(enabled);
                 button.setTag(R.id.battle_data_tag, sidePokemon);
                 battleTipPopup.addTippedView(button);
-                if (sidePokemon.icon != null)
-                    button.setDexIcon(new BitmapDrawable(getResources(), sidePokemon.icon));
+                if (sidePokemon.getIcon() != null)
+                    button.setDexIcon(new BitmapDrawable(getResources(), sidePokemon.getIcon()));
             } else {
                 button.setPokemonName(null);
                 button.setDexIcon(null);
@@ -538,9 +538,9 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
             if (button.getVisibility() == GONE) continue;
             Move move = (Move) button.getTag(R.id.battle_data_tag);
             if (toggle) {
-                if (move.canZMove()) {
-                    button.setText(move.zName);
-                    move.zflag = true;
+                if (move.getCanZMove()) {
+                    button.setText(move.getZName());
+                    move.setZflag(true);
                 } else {
                     button.setText("—");
                     setMoveButtonEnabled(button, false);
@@ -548,7 +548,7 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
             } else {
                 button.setText(sp(move));
                 setMoveButtonEnabled(button, true);
-                move.zflag = false;
+                move.setZflag(false);
             }
            // battleTipPopup.addTippedView(button);
 
@@ -561,30 +561,30 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
             if (button.getVisibility() == GONE) continue;
             Move move = (Move) button.getTag(R.id.battle_data_tag);
             if (toggle) {
-                if (move.maxMoveId != null) {
-                    String text = move.maxDetails != null ? move.maxDetails.name : move.maxMoveId;
+                if (move.getMaxMoveId() != null) {
+                    String text = move.getMaxDetails() != null ? move.getMaxDetails().name : move.getMaxMoveId();
                     button.setText(text);
-                    if (move.maxDetails != null)
+                    if (move.getMaxDetails() != null)
                         button.getBackground().setColorFilter(
                                 BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
-                                        move.maxDetails.color, BlendModeCompat.MODULATE)
+                                        move.getMaxDetails().getColor(), BlendModeCompat.MODULATE)
                         );
                     else button.getBackground().clearColorFilter();
-                    move.maxflag = true;
+                    move.setMaxflag(true);
                 } else {
                     button.setText("—");
                     setMoveButtonEnabled(button, false);
                 }
             } else {
                 button.setText(sp(move));
-                if (move.details != null)
+                if (move.getDetails() != null)
                     button.getBackground().setColorFilter(
                             BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
-                                    move.details.color, BlendModeCompat.MODULATE)
+                                    move.getDetails().getColor(), BlendModeCompat.MODULATE)
                     );
                 else button.getBackground().clearColorFilter();
                 setMoveButtonEnabled(button, true);
-                move.maxflag = false;
+                move.setMaxflag(false);
             }
             // battleTipPopup.addTippedView(button);
 
@@ -602,9 +602,9 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
     }
 
     private Spanned sp(Move move) {
-        String ppText = "\n" + move.pp + "/" + move.ppMax;
-        SpannableString spannableString = new SpannableString(move.name + ppText);
-        spannableString.setSpan(new RelativeSizeSpan(0.8f), move.name.length() + 1,
+        String ppText = "\n" + move.getPp() + "/" + move.getPpMax();
+        SpannableString spannableString = new SpannableString(move.getName() + ppText);
+        spannableString.setSpan(new RelativeSizeSpan(0.8f), move.getName().length() + 1,
                 spannableString.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         return spannableString;
     }
@@ -615,30 +615,30 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
         Object data = view.getTag(R.id.battle_data_tag);
         if (data instanceof Move) {
             Move move = (Move) data;
-            int which = move.index + 1;
+            int which = move.getIndex() + 1;
             boolean mega = mMovesCheckBox.getVisibility() == VISIBLE && mMovesCheckBox.isChecked();
-            boolean zmove = mega && move.zflag;
-            boolean dynamax = mega && move.maxflag;
+            boolean zmove = mega && move.getZflag();
+            boolean dynamax = mega && move.getMaxflag();
             if (dynamax) mega = zmove = false;
             else if (zmove) mega = false;
             mDecision.addMoveChoice(which, mega, zmove, dynamax);
-            if (mRequest.getCount() > 1 && move.target.isChoosable())
-                mTargetToChoose = move.target;
+            if (mRequest.getCount() > 1 && move.getTarget().isChoosable())
+                mTargetToChoose = move.getTarget();
         } else if (data instanceof BattlingPokemon) {
-            PokemonId id = ((BattlingPokemon) data).id;
-            int index = id.position + 1;
-            if (!id.foe) index *= -1;
+            PokemonId id = ((BattlingPokemon) data).getId();
+            int index = id.getPosition() + 1;
+            if (!id.getFoe()) index *= -1;
             mDecision.setLastMoveTarget(index);
             mTargetToChoose = null;
         } else if (data instanceof SidePokemon) {
-            int who = ((SidePokemon) data).index + 1;
-            if (mRequest.teamPreview()) {
+            int who = ((SidePokemon) data).getIndex() + 1;
+            if (mRequest.getTeamPreview()) {
                 mDecision.addLeadChoice(who, mRequest.getSide().size());
                 view.setEnabled(false);
                 // Request full team order if one of our Pokémon has Illusion
                 boolean fullTeamOrder = false;
                 for (SidePokemon pokemon : mRequest.getSide()) {
-                    if (toIdSafe(pokemon.baseAbility).equals("illusion")) {
+                    if (toId(pokemon.getBaseAbility() == null ? "" : pokemon.getBaseAbility()).equals("illusion")) {
                         fullTeamOrder = true;
                         break;
                     }

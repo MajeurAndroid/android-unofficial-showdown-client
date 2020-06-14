@@ -100,7 +100,7 @@ class Move(val index: Int, json: JSONObject, zJson: JSONObject?, maxJson: JSONOb
             //  Triples       Doubles     Singles
             //  3  2  1         2  1         1
             // -1 -2 -3        -1 -2        -1
-            fun computeTargetAvailabilities(target: Target, position: Int, pokeCount: Int): Array<BooleanArray> {
+            @JvmStatic fun computeTargetAvailabilities(target: Target, position: Int, pokeCount: Int): Array<BooleanArray> {
                 val availabilities = Array(2) { BooleanArray(pokeCount) }
                 for (i in 0..1) for (j in 0 until pokeCount) availabilities[i][j] = true
                 if (target == ADJACENT_FOE) {
