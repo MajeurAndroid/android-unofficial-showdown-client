@@ -22,7 +22,7 @@ import java.text.DecimalFormat;
 import java.util.Map;
 import java.util.Objects;
 
-import static com.majeur.psclient.model.Id.toId;
+import static com.majeur.psclient.util.ExtensionsKt.toId;
 
 public class StatusView extends View {
 
@@ -121,11 +121,11 @@ public class StatusView extends View {
     }
 
     public void setPokemon(BattlingPokemon pokemon) {
-        mLabel = pokemon.name + " " + Objects.toString(pokemon.gender, "") + " l." + pokemon.level;
-        mHealth = pokemon.condition.health;
-        mStatus = pokemon.condition.status;
+        mLabel = pokemon.getName() + " " + Objects.toString(pokemon.getGender(), "") + " l." + pokemon.getLevel();
+        mHealth = pokemon.getCondition().getHealth();
+        mStatus = pokemon.getCondition().status;
         mVolatileStatus.clear();
-        updateModifier(pokemon.statModifiers);
+        updateModifier(pokemon.getStatModifiers());
     }
 
     public void setHealth(float health) {

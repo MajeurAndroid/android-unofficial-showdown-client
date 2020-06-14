@@ -243,7 +243,7 @@ class Stats() : Serializable {
 
     companion object {
 
-        fun getName(index: Int) =  when (index) {
+        @JvmStatic fun getName(index: Int) =  when (index) {
             0 -> "HP"
             1 -> "Atk"
             2 -> "Def"
@@ -253,7 +253,7 @@ class Stats() : Serializable {
                 else -> null
         }
 
-        fun checkHpType(type: String?) = when (type?.trim()?.toLowerCase(Locale.ROOT)) {
+        @JvmStatic fun checkHpType(type: String?) = when (type?.trim()?.toLowerCase(Locale.ROOT)) {
             "bug" -> true
             "dark" -> true
             "dragon" -> true
@@ -296,11 +296,11 @@ class Stats() : Serializable {
             return value.toInt()
         }
 
-        fun calculateStat(base: Int, iv: Int, ev: Int, niv: Int, nat: Float): Int {
+        @JvmStatic fun calculateStat(base: Int, iv: Int, ev: Int, niv: Int, nat: Float): Int {
             return (((2 * base + iv + ev / 4) * niv / 100 + 5) * nat).toInt()
         }
 
-        fun calculateHp(base: Int, iv: Int, ev: Int, niv: Int): Int {
+        @JvmStatic fun calculateHp(base: Int, iv: Int, ev: Int, niv: Int): Int {
             return (2 * base + iv + ev / 4) * niv / 100 + niv + 10
         }
 

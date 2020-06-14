@@ -29,7 +29,7 @@ class Nature private constructor(val name: String, val plus: String, val minus: 
         val Sassy = Nature("Sassy", "spd", "spe")
         val Serious = Nature("Serious", "", "")
         val Timid = Nature("Timid", "spe", "atk")
-        val DEFAULT = Serious
+        @JvmStatic val DEFAULT = Serious
 
         // Ordered
         val ALL = arrayOf(Serious, Bashful, Bold, Brave, Calm, Careful, Docile,

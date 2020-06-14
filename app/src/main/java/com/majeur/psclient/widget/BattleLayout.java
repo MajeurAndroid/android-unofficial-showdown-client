@@ -112,17 +112,17 @@ public class BattleLayout extends ViewGroup {
     }
 
     public ToasterView getToasterView(PokemonId id) {
-        if (id.position < 0)
+        if (id.getPosition() < 0)
             return null;
-        SparseArray<ToasterView> toasterViews = id.player == Player.TRAINER ? mP1ToasterViews : mP2ToasterViews;
-        return toasterViews.get(id.position);
+        SparseArray<ToasterView> toasterViews = id.getTrainer() ? mP1ToasterViews : mP2ToasterViews;
+        return toasterViews.get(id.getPosition());
     }
 
     public StatusView getStatusView(PokemonId id) {
-        if (id.position < 0)
+        if (id.getPosition() < 0)
             return null;
-        SparseArray<StatusView> statusViews = id.player == Player.TRAINER ? mP1StatusViews : mP2StatusViews;
-        return statusViews.get(id.position);
+        SparseArray<StatusView> statusViews = id.getTrainer() ? mP1StatusViews : mP2StatusViews;
+        return statusViews.get(id.getPosition());
     }
 
     public Set<StatusView> getStatusViews(Player player) {
@@ -133,10 +133,10 @@ public class BattleLayout extends ViewGroup {
     }
 
     public ImageView getPokemonView(PokemonId id) {
-        if (id.position < 0)
+        if (id.getPosition() < 0)
             return null;
-        SparseArray<ImageView> imageViews = id.player == Player.TRAINER ? mP1ImageViews : mP2ImageViews;
-        return imageViews.get(id.position);
+        SparseArray<ImageView> imageViews = id.getTrainer() ? mP1ImageViews : mP2ImageViews;
+        return imageViews.get(id.getPosition());
     }
 
     public SideView getSideView(Player player) {
@@ -146,22 +146,22 @@ public class BattleLayout extends ViewGroup {
     }
 
     public void swap(PokemonId id, int targetIndex) {
-        if (id.position < 0 || targetIndex < 0)
+        if (id.getPosition() < 0 || targetIndex < 0)
             return;
-        SparseArray<ImageView> imageViews = id.player == Player.TRAINER ? mP1ImageViews : mP2ImageViews;
-        ImageView imageView1 = imageViews.get(id.position);
+        SparseArray<ImageView> imageViews = id.getTrainer() ? mP1ImageViews : mP2ImageViews;
+        ImageView imageView1 = imageViews.get(id.getPosition());
         ImageView imageView2 = imageViews.get(targetIndex);
-        imageViews.remove(id.position);
+        imageViews.remove(id.getPosition());
         imageViews.remove(targetIndex);
-        imageViews.put(id.position, imageView2);
+        imageViews.put(id.getPosition(), imageView2);
         imageViews.put(targetIndex, imageView1);
 
-        SparseArray<StatusView> statusViews = id.player == Player.TRAINER ? mP1StatusViews : mP2StatusViews;
-        StatusView statusView1 = statusViews.get(id.position);
+        SparseArray<StatusView> statusViews = id.getTrainer() ? mP1StatusViews : mP2StatusViews;
+        StatusView statusView1 = statusViews.get(id.getPosition());
         StatusView statusView2 = statusViews.get(targetIndex);
-        statusViews.remove(id.position);
+        statusViews.remove(id.getPosition());
         statusViews.remove(targetIndex);
-        statusViews.put(id.position, statusView2);
+        statusViews.put(id.getPosition(), statusView2);
         statusViews.put(targetIndex, statusView1);
         requestLayout();
     }
@@ -177,7 +177,7 @@ public class BattleLayout extends ViewGroup {
         mFxDrawingRect = new Rect(cX - w/2, cY - h/2, cX + w/2, cY + h/2);
         float rw = (float) Math.random();
         float rh = (float) Math.random();
-        if (id.foe) mFxDrawingRect.offset(-Math.round(rw*w/4), Math.round(rh*h/4));
+        if (id.getFoe()) mFxDrawingRect.offset(-Math.round(rw*w/4), Math.round(rh*h/4));
         else mFxDrawingRect.offset(Math.round(rw*w/4), -Math.round(rh*h/4));
         postDelayed(new Runnable() {
             @Override

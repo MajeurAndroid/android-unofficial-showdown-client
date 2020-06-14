@@ -56,7 +56,7 @@ public class StatsTable extends View {
      */
     private int[][] mStatData = new int[4][6];
     private int mLevel = 100;
-    private Nature mNature = Nature.Serious;
+    private Nature mNature = Nature.getDEFAULT();
     private StringBuilder mStringBuilder = new StringBuilder();
 
     public StatsTable(Context context) {
@@ -97,17 +97,17 @@ public class StatsTable extends View {
     }
 
     public void setBaseStats(Stats baseStats) {
-        mStatData[BASE] = baseStats.toArray();
+        mStatData[BASE] = baseStats.getArray();
         invalidateData();
     }
 
     public void setEVs(Stats evs) {
-        mStatData[EVS] = evs.toArray();
+        mStatData[EVS] = evs.getArray();
         invalidateData();
     }
 
     public void setIVs(Stats ivs) {
-        mStatData[IVS] = ivs.toArray();
+        mStatData[IVS] = ivs.getArray();
         invalidateData();
     }
 

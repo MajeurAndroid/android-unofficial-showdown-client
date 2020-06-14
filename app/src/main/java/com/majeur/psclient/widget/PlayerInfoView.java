@@ -19,7 +19,8 @@ import com.majeur.psclient.model.pokemon.BasePokemon;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import static com.majeur.psclient.model.Id.toId;
+import static com.majeur.psclient.util.ExtensionsKt.toId;
+
 
 public class PlayerInfoView extends AppCompatTextView {
 
@@ -114,7 +115,7 @@ public class PlayerInfoView extends AppCompatTextView {
     }
 
     public void appendPokemon(BasePokemon pokemon, Drawable dexIcon) {
-        if (!mPokemonIds.add(toId(pokemon.baseSpecies)))
+        if (!mPokemonIds.add(toId(pokemon.getBaseSpecies())))
             return;
 
         int i;
@@ -132,14 +133,14 @@ public class PlayerInfoView extends AppCompatTextView {
     }
 
     public void updatePokemon(BasePokemon pokemon, Drawable dexIcon) {
-        if (!mPokemonIds.contains(toId(pokemon.baseSpecies))) {
+        if (!mPokemonIds.contains(toId(pokemon.getBaseSpecies()))) {
             appendPokemon(pokemon, dexIcon);
             return;
         }
 
         int index = 0;
         for (String id : mPokemonIds) {
-            if (id.equals(toId(pokemon.baseSpecies))) break;
+            if (id.equals(toId(pokemon.getBaseSpecies()))) break;
             index++;
         }
 
@@ -158,12 +159,12 @@ public class PlayerInfoView extends AppCompatTextView {
     }
 
     public void setPokemonFainted(BasePokemon pokemon) {
-        if (!mPokemonIds.contains(toId(pokemon.baseSpecies)))
+        if (!mPokemonIds.contains(toId(pokemon.getBaseSpecies())))
             return;
 
         int index = 0;
         for (String id : mPokemonIds) {
-            if (id.equals(toId(pokemon.baseSpecies))) break;
+            if (id.equals(toId(pokemon.getBaseSpecies()))) break;
             index++;
         }
 

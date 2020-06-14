@@ -264,10 +264,10 @@ public class ShowdownTeamParser {
                 String abilityName = currentString.substring(currentString.indexOf(":") + 1).trim();
                 DexPokemon dexPokemon = dexPokemonFactory.loadDexPokemon(toId(p.getSpecies()));
                 if (dexPokemon != null) {
-                    for (int j = 0; j < dexPokemon.abilities.size(); j++) {
-                        String ability = dexPokemon.abilities.get(j);
+                    for (int j = 0; j < dexPokemon.getAbilities().size(); j++) {
+                        String ability = dexPokemon.getAbilities().get(j);
                         if (ability.equals(abilityName)) {
-                            p.ability = abilityName;
+                            p.setAbility(abilityName);
                             break;
                         }
                     }
@@ -327,31 +327,31 @@ public class ShowdownTeamParser {
             text += "Hidden Power: " + curSet.getHpType() + "  \n";
         }
         boolean first = true;
-        if (curSet.evs != null) {
+        if (curSet.getEvs() != null) {
             for (int i = 0; i < 6; i++) {
-                if (curSet.evs.get(i) == 0) continue;
+                if (curSet.getEvs().get(i) == 0) continue;
                 if (first) {
                     text += "EVs: ";
                     first = false;
                 } else {
                     text += " / ";
                 }
-                text += curSet.evs.get(i) + " " + Stats.getName(i);
+                text += curSet.getEvs().get(i) + " " + Stats.getName(i);
             }
         }
         if (!first) {
             text += "  \n";
         }
-        if (curSet.nature != null) {
-            text += curSet.nature + " Nature" + "  \n";
+        if (curSet.getNature() != null) {
+            text += curSet.getNature() + " Nature" + "  \n";
         }
         first = true;
-        if (curSet.ivs != null) {
+        if (curSet.getIvs() != null) {
             boolean defaultIvs = true;
             String hpType = null;
             Stats dummyStats = new Stats(0);
-            for (int j = 0; j < curSet.moves.length; j++) {
-                String move = curSet.moves[j];
+            for (int j = 0; j < curSet.getMoves().size(); j++) {
+                String move = curSet.getMoves().get(j);
                 if (move != null && move.length() >= 13 && move.substring(0, 13).equals("Hidden Power ")
                         && !move.substring(0, 14).equals("Hidden Power [")) {
                     hpType = move.substring(13);
@@ -360,7 +360,7 @@ public class ShowdownTeamParser {
                     }
                     for (int i = 0; i < 6; i++) {
                         dummyStats.setForHpType(hpType);
-                        if (curSet.ivs.get(i) != dummyStats.get(i)) {
+                        if (curSet.getIvs().get(i) != dummyStats.get(i)) {
                             defaultIvs = false;
                             break;
                         }
@@ -369,7 +369,7 @@ public class ShowdownTeamParser {
             }
             if (defaultIvs && hpType == null) {
                 for (int i = 0; i < 6; i++) {
-                    if (curSet.ivs.get(i) != 31) {
+                    if (curSet.getIvs().get(i) != 31) {
                         defaultIvs = false;
                         break;
                     }
@@ -377,23 +377,23 @@ public class ShowdownTeamParser {
             }
             if (!defaultIvs) {
                 for (int i = 0; i < 6; i++) {
-                    if (curSet.ivs.get(i) == 31) continue;
+                    if (curSet.getIvs().get(i) == 31) continue;
                     if (first) {
                         text += "IVs: ";
                         first = false;
                     } else {
                         text += " / ";
                     }
-                    text += curSet.ivs.get(i) + " " + Stats.getName(i);
+                    text += curSet.getIvs().get(i) + " " + Stats.getName(i);
                 }
             }
         }
         if (!first) {
             text += "  \n";
         }
-        if (curSet.moves != null && curSet.moves.length > 0)
-            for (int j = 0; j < curSet.moves.length; j++) {
-                String move = curSet.moves[j];
+        if (curSet.getMoves() != null && curSet.getMoves().size() > 0)
+            for (int j = 0; j < curSet.getMoves().size(); j++) {
+                String move = curSet.getMoves().get(j);
                 if (move == null) continue;
                 if (move.length() >= 13 && move.substring(0, 13).equalsIgnoreCase("Hidden Power ")) {
                     move = move.substring(0, 13) + '[' + move.substring(13) + ']';

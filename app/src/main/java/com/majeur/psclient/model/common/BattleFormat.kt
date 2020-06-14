@@ -56,7 +56,7 @@ class BattleFormat(val label: String, private val formatInt: Int) : Serializable
             return f1Index.compareTo(f2Index)
         }
 
-        fun resolveName(formats: List<Category>?, formatId: String): String {
+        @JvmStatic fun resolveName(formats: List<Category>?, formatId: String): String {
             if (formats == null) return formatId
             if ("other" == formatId) return "Other"
             for (category in formats) for (format in category.formats) if (format.toId().contains(formatId)) return format.label
