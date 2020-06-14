@@ -1,7 +1,7 @@
 package com.majeur.psclient.service
 
 import com.majeur.psclient.model.AvailableBattleRoomsInfo
-import com.majeur.psclient.model.RoomInfo
+import com.majeur.psclient.model.ChatRoomInfo
 import com.majeur.psclient.model.common.BattleFormat
 import com.majeur.psclient.util.Utils
 import org.json.JSONException
@@ -102,20 +102,20 @@ abstract class GlobalMessageObserver : AbsMessageObserver() {
                 return
             }
             var jsonArray = jsonObject.getJSONArray("official")
-            val officialRooms = mutableListOf<RoomInfo>()
+            val officialRooms = mutableListOf<ChatRoomInfo>()
             for (i in 0 until jsonArray.length()) {
                 val roomJson = jsonArray.getJSONObject(i)
                 officialRooms.add(
-                        RoomInfo(roomJson.getString("title"),
+                        ChatRoomInfo(roomJson.getString("title"),
                                 roomJson.getString("desc"),
                                 roomJson.getInt("userCount")))
             }
             jsonArray = jsonObject.getJSONArray("chat")
-            val chatRooms = mutableListOf<RoomInfo>()
+            val chatRooms = mutableListOf<ChatRoomInfo>()
             for (i in 0 until jsonArray.length()) {
                 val roomJson = jsonArray.getJSONObject(i)
                 chatRooms.add(
-                        RoomInfo(roomJson.getString("title"),
+                        ChatRoomInfo(roomJson.getString("title"),
                                 roomJson.getString("desc"),
                                 roomJson.getInt("userCount")))
             }
@@ -168,8 +168,8 @@ abstract class GlobalMessageObserver : AbsMessageObserver() {
                         BattleFormat(s.substringBefore(","), s.substringAfter(",").toInt(16))
                     }
             BattleFormat.Category().apply {
+                this.formats.addAll(formats)
                 label = catName
-                battleFormats = formats
             }.also {
                 categories.add(it)
             }
@@ -246,7 +246,7 @@ abstract class GlobalMessageObserver : AbsMessageObserver() {
     protected abstract fun onSearchBattlesChanged(searching: List<String>, games: Map<String, String>)
     protected abstract fun onUserDetails(id: String, name: String, online: Boolean, group: String, rooms: List<String>, battles: List<String>)
     protected abstract fun onShowPopup(message: String)
-    protected abstract fun onAvailableRoomsChanged(officialRooms: List<@JvmSuppressWildcards RoomInfo>, chatRooms: List<@JvmSuppressWildcards RoomInfo>)
+    protected abstract fun onAvailableRoomsChanged(officialRooms: List<ChatRoomInfo>, chatRooms: List<ChatRoomInfo>)
     protected abstract fun onAvailableBattleRoomsChanged(availableRoomsInfo: AvailableBattleRoomsInfo)
     protected abstract fun onNewPrivateMessage(with: String, message: String)
     protected abstract fun onChallengesChange(to: String?, format: String?, from: Map<String, String>)

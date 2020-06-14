@@ -13,10 +13,9 @@ import android.view.inputmethod.EditorInfo
 import android.widget.TextView
 import androidx.fragment.app.DialogFragment
 import com.majeur.psclient.databinding.DialogPrivateChatBinding
-import com.majeur.psclient.model.Id
-import com.majeur.psclient.model.Id.toId
 import com.majeur.psclient.util.TextTagSpan
 import com.majeur.psclient.util.Utils
+import com.majeur.psclient.util.toId
 
 
 class PrivateChatDialog : DialogFragment() {
@@ -88,14 +87,14 @@ class PrivateChatDialog : DialogFragment() {
     private fun sendMessageIfAny() {
         val message = binding.messageInput.text.toString()
         if (message.isNotEmpty()) {
-            (activity as MainActivity).service?.sendPrivateMessage(Id.toId(chatWith), message)
+            (activity as MainActivity).service?.sendPrivateMessage(chatWith.toId(), message)
             binding.messageInput.text.clear()
         }
     }
 
     private fun obtainUsernameColor(username: String): Int {
-        return usernameColorCache.computeIfAbsent(toId(username)) {
-            Utils.hashColor(toId(username))
+        return usernameColorCache.computeIfAbsent(username.toId()) {
+            Utils.hashColor(username.toId())
         }
     }
 

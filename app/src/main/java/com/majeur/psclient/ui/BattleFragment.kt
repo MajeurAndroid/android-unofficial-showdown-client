@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.DialogInterface
 import android.graphics.PorterDuff
 import android.graphics.drawable.BitmapDrawable
-import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.text.Spanned
 import android.text.method.LinkMovementMethod
@@ -23,8 +22,6 @@ import com.majeur.psclient.R
 import com.majeur.psclient.databinding.FragmentBattleBinding
 import com.majeur.psclient.io.AssetLoader
 import com.majeur.psclient.io.GlideHelper
-import com.majeur.psclient.model.Id
-import com.majeur.psclient.model.Id.toId
 import com.majeur.psclient.model.battle.*
 import com.majeur.psclient.model.common.Colors.healthColor
 import com.majeur.psclient.model.common.Colors.statusColor
@@ -37,7 +34,6 @@ import com.majeur.psclient.service.BattleMessageObserver
 import com.majeur.psclient.service.ShowdownService
 import com.majeur.psclient.util.*
 import com.majeur.psclient.util.html.Html
-import com.majeur.psclient.util.toId
 import com.majeur.psclient.widget.BattleLayout
 import com.majeur.psclient.widget.BattleTipPopup
 import com.majeur.psclient.widget.BattleTipPopup.OnBindPopupViewListener
@@ -230,99 +226,104 @@ class BattleFragment : BaseFragment() {
     private fun bindBattlingPokemonTipPopup(pokemon: BattlingPokemon, titleView: TextView,
                                             descView: TextView, placeHolderTop: ImageView,
                                             placeHolderBottom: ImageView) {
+        placeHolderTop.setImageDrawable(null)
+        placeHolderBottom.setImageDrawable(null)
+
         titleView.apply {
             text = pokemon.name
             append(" ")
-            append(Utils.smallText(pokemon.gender))
+            append(pokemon.gender.small())
             append(" l.")
-            append(Utils.str(pokemon.level))
+            append(pokemon.level.toString())
         }
 
-        descView.text = ""
-        if (pokemon.species != pokemon.name) descView.append(pokemon.species)
-        descView.append(Utils.smallText("HP: "))
-        val healthText = String.format("%.1f%% ", pokemon.condition.health * 100)
-        descView.append(Utils.boldText(healthText, healthColor(pokemon.condition.health)))
-        if (!pokemon.foe) descView.append(Utils.smallText("(" + pokemon.condition.hp + "/" + pokemon.condition.maxHp + ")"))
-        if (pokemon.condition.status != null) descView.append(Utils.smallText(Utils.tagText(pokemon.condition.status!!.toUpperCase(),
-                statusColor(pokemon.condition.status))))
-        descView.append("\n")
-        val ability: String?
-        if (!pokemon.foe && lastActionRequest != null) {
-            val sidePokemon = lastActionRequest!!.side[pokemon.position]
-            ability = sidePokemon.ability
-            if (pokemon.transformSpecies == null) { // Ditto case
-                descView.append(Utils.smallText("Atk:"))
-                descView.append(pokemon.statModifiers.calcReadableStat("atk", sidePokemon.stats.atk))
-                descView.append(Utils.smallText(" Def:"))
-                descView.append(pokemon.statModifiers.calcReadableStat("def", sidePokemon.stats.def))
-                descView.append(Utils.smallText(" Spa:"))
-                descView.append(pokemon.statModifiers.calcReadableStat("spa", sidePokemon.stats.spa))
-                descView.append(Utils.smallText(" Spd:"))
-                descView.append(pokemon.statModifiers.calcReadableStat("spd", sidePokemon.stats.spd))
-                descView.append(Utils.smallText(" Spe:"))
-                descView.append(pokemon.statModifiers.calcReadableStat("spe", sidePokemon.stats.spe))
+        descView.apply {
+            text = ""
+            if (pokemon.species != pokemon.name) append(pokemon.species)
+
+            pokemon.condition?.let { condition ->
+                append("HP: ".small())
+                append("%.1f%% ".format(condition.health * 100).bold().color(healthColor(condition.health)))
+                if (pokemon.trainer) append("(${condition.hp}/${condition.maxHp})".small())
+                condition.status?.let { append(it.toUpperCase().small().bg(statusColor(it))) }
                 descView.append("\n")
             }
-            descView.append(Utils.smallText("Ability: "))
-            descView.append(sidePokemon.ability)
-            descView.append("\n")
-            descView.append(Utils.smallText("Item: "))
-            descView.append(sidePokemon.item)
-            fragmentScope.launch {
-                assetLoader.item(toId(sidePokemon.item))?.let { item ->
-                    Utils.replace(descView.editableText, sidePokemon.item, item.name)
+
+            var ability: String? = null
+            if (pokemon.trainer && lastActionRequest?.side != null) {
+                val sidePokemon = lastActionRequest!!.side[pokemon.position]
+                if (pokemon.transformSpecies == null) { // Ditto case
+                    append("Atk:".small())
+                    append(pokemon.statModifiers.calcReadableStat("atk", sidePokemon.stats.atk))
+                    append(" Def:".small())
+                    append(pokemon.statModifiers.calcReadableStat("def", sidePokemon.stats.def))
+                    append(" Spa:".small())
+                    append(pokemon.statModifiers.calcReadableStat("spa", sidePokemon.stats.spa))
+                    append(" Spd:".small())
+                    append(pokemon.statModifiers.calcReadableStat("spd", sidePokemon.stats.spd))
+                    append(" Spe:".small())
+                    append(pokemon.statModifiers.calcReadableStat("spe", sidePokemon.stats.spe))
+                    append("\n")
+                }
+                append("Ability: ".small())
+                ability = sidePokemon.ability
+                append(sidePokemon.ability)
+                append("\n")
+                descView.append("Item: ".small())
+                descView.append(sidePokemon.item)
+                fragmentScope.launch {
+                    assetLoader.item(sidePokemon.item.toId())?.let { item ->
+                        Utils.replace(descView.editableText, sidePokemon.item, item.name)
+                    }
                 }
             }
-        } else ability = null
-        placeHolderTop.setImageDrawable(null)
-        placeHolderBottom.setImageDrawable(null)
-        fragmentScope.launch {
-            val dexPokemon = assetLoader.dexPokemon(toId(pokemon.species))
-            if (dexPokemon == null) {
-                descView.append("No dex entry for " + pokemon.species)
-                return@launch
-            }
-            placeHolderTop.setImageResource(Type.getResId(dexPokemon.firstType))
-            dexPokemon.secondType?.let { placeHolderBottom.setImageResource(Type.getResId(it)) }
 
-            if (!pokemon.foe) {
-                if (ability == null) return@launch
-                var abilityName: String? = null
-                if (ability == Id.toIdSafe(dexPokemon.hiddenAbility)) abilityName = dexPokemon.hiddenAbility else for (ab in dexPokemon.abilities) if (Id.toId(ab) == ability) abilityName = ab
-                if (abilityName != null) Utils.replace(descView.editableText, ability, abilityName)
-                return@launch
-            }
-            if (dexPokemon.abilities.size > 1 || dexPokemon.hiddenAbility != null) {
-                descView.append(Utils.smallText("Possible abilities: "))
-                for (ability1 in dexPokemon.abilities) descView.append("$ability1, ")
-                if (dexPokemon.hiddenAbility != null) descView.append(dexPokemon.hiddenAbility)
-                descView.append("\n")
-            } else if (dexPokemon.abilities.size > 0) {
-                descView.append(Utils.smallText("Ability: "))
-                descView.append(dexPokemon.abilities[0])
-                descView.append("\n")
-            }
-            val speedRange = Stats.calculateSpeedRange(pokemon.level, dexPokemon.baseStats.spe, "Random Battle", 7)
-            descView.append(Utils.smallText("Speed: "))
-            descView.append(speedRange[0].toString() + " to " + speedRange[1])
-            descView.append(Utils.smallText(" (before items/abilities/modifiers)"))
+            fragmentScope.launch {
+                val dexPokemon = assetLoader.dexPokemon(pokemon.species.toId())
+                if (dexPokemon == null) {
+                    append("No dex entry for ${pokemon.species}")
+                    return@launch
+                }
+                placeHolderTop.setImageResource(Type.getResId(dexPokemon.firstType))
+                dexPokemon.secondType?.let { placeHolderBottom.setImageResource(Type.getResId(it)) }
 
+                if (pokemon.trainer) {
+                    if (ability == null) return@launch
+                    val abilityName = if (dexPokemon.hiddenAbility?.toId() == ability) dexPokemon.hiddenAbility
+                    else  dexPokemon.abilities.firstOrNull { it.toId() == ability }
+                    if (abilityName != null) Utils.replace(descView.editableText, ability, abilityName)
+                    return@launch
+                }
+
+                if (dexPokemon.abilities.isNotEmpty() && dexPokemon.hiddenAbility != null) {
+                    append("Possible abilities: ".small())
+                    append(dexPokemon.abilities.plus(dexPokemon.hiddenAbility).joinToString(", "))
+                    append("\n")
+                } else {
+                    append("Ability: ".small())
+                    append(dexPokemon.hiddenAbility ?: dexPokemon.abilities.firstOrNull() ?: "none")
+                    append("\n")
+                }
+                val speedRange = Stats.calculateSpeedRange(pokemon.level, dexPokemon.baseStats.spe, "Random Battle", observer.gen)
+                append("Speed: ".small())
+                append("${speedRange[0]} to ${speedRange[1]}")
+                append(" (before items/abilities/modifiers)".small())
+            }
         }
     }
 
     private fun bindMoveTipPopup(move: Move, titleView: TextView, descView: TextView, placeHolderTop: ImageView,
                                  placeHolderBottom: ImageView) {
         var moveName: String? = null
-        if (move.maxflag) moveName = if (move.maxDetails != null) move.maxDetails.name else move.maxMoveId
+        if (move.maxflag) moveName = move.maxDetails?.name ?: move.maxMoveId
         if (move.zflag) moveName = move.zName
         if (moveName == null) moveName = move.name
         titleView.text = moveName
         descView.text = ""
         var priority = -20
-        if (move.maxflag) priority = if (move.maxDetails != null) move.maxDetails.priority else 0
-        if (move.zflag) priority = if (move.zDetails != null) move.zDetails.priority else 0
-        if (priority == -20) priority = if (move.details != null) move.details.priority else 0
+        if (move.maxflag) priority = move.maxDetails?.priority ?: 0
+        if (move.zflag) priority = move.zDetails?.priority ?: 0
+        if (priority == -20) priority = move.details?.priority ?: 0
         when {
             priority > 1 -> {
                 descView.append("Nearly always moves first ")
@@ -371,30 +372,30 @@ class BattleFragment : BaseFragment() {
 //        descView.append("Accuracy: " + (move.details.accuracy > 0 ? move.details.accuracy : "Can't miss"));
         }
         var basePower = -1
-        if (move.maxflag) basePower = if (move.details != null) move.details.maxPower else 0
-        if (move.zflag) basePower = if (move.zDetails != null) move.zDetails.basePower else if (move.details != null) move.details.zPower else 0
-        if (basePower == -1) basePower = if (move.details != null) move.details.basePower else 0
+        if (move.maxflag) basePower = move.details?.maxPower ?: 0
+        if (move.zflag) basePower = move.zDetails?.basePower ?: move.details?.zPower ?: 0
+        if (basePower == -1) basePower = move.details?.basePower ?: 0
         if (basePower > 0) descView.append("Base power: $basePower\n")
         var accuracy = -20
-        if (move.maxflag) accuracy = if (move.maxDetails != null) move.maxDetails.accuracy else 0
+        if (move.maxflag) accuracy = move.maxDetails?.accuracy ?: 0
         if (move.zflag) accuracy = 0
-        if (accuracy == -20) accuracy = if (move.details != null) move.details.accuracy else 0
+        if (accuracy == -20) accuracy = move.details?.accuracy ?: 0
         if (accuracy != 0) {
             descView.append("Accuracy: ")
             if (accuracy == -1) descView.append("can't miss") else descView.append(Utils.str(accuracy))
             descView.append("\n")
         }
         var desc: String? = null
-        if (move.maxflag) desc = if (move.maxDetails != null) move.maxDetails.desc else ""
-        if (move.zflag) desc = if (move.zDetails != null) move.zDetails.desc else if (move.details != null) "Z-Effect: " + move.details.zEffect else ""
-        if (desc == null) desc = if (move.details != null) move.details.desc else ""
-        if (desc != null && desc.isNotEmpty()) descView.append(Utils.italicText(desc))
+        if (move.maxflag) desc = move.maxDetails?.desc ?: ""
+        if (move.zflag) desc = move.zDetails?.desc ?: move.details?.zEffect?.let { "Z-Effect: $it" } ?: ""
+        if (desc == null) desc = move.details?.desc ?: ""
+        if (desc.isNotBlank()) descView.append(desc.italic())
         var type: String? = null
-        if (move.maxflag) type = if (move.maxDetails != null) move.maxDetails.type else "???"
-        if (type == null) type = if (move.details != null) move.details.type else "???"
+        if (move.maxflag) type = move.maxDetails?.type ?: "???"
+        if (type == null) type = move.details?.type ?: "???"
         placeHolderTop.setImageResource(Type.getResId(type))
-        val category = if (move.details != null) move.details.category else null
-        val drawable: Drawable? = if (category != null) CategoryDrawable(move.details.category) else null
+        val category = move.details?.category
+        val drawable = if (category != null) CategoryDrawable(category) else null
         placeHolderBottom.setImageDrawable(drawable)
 
 //        if (move.zflag) {
@@ -458,14 +459,14 @@ class BattleFragment : BaseFragment() {
         descView.append(Utils.smallText("Item: "))
         descView.append(pokemon.item)
         fragmentScope.launch {
-            assetLoader.item(toId(pokemon.item))?.let { item ->
+            assetLoader.item(pokemon.item.toId())?.let { item ->
                 Utils.replace(descView.editableText, pokemon.item, item.name)
             }
         }
         descView.append("\n")
         descView.append(Utils.smallText("Moves:"))
         fragmentScope.launch {
-            assetLoader.movesDetails(*pokemon.moves.map { toId(it) }.toTypedArray()).forEachIndexed { index, details ->
+            assetLoader.movesDetails(*pokemon.moves.map { it.toId() }.toTypedArray()).forEachIndexed { index, details ->
                 descView.append("\n\t")
                 descView.append(details?.name ?: pokemon.moves[index])
             }
@@ -473,12 +474,13 @@ class BattleFragment : BaseFragment() {
         placeHolderTop.setImageDrawable(null)
         placeHolderBottom.setImageDrawable(null)
         fragmentScope.launch {
-            assetLoader.dexPokemon(toId(pokemon.species))?.let {dexPokemon ->
+            assetLoader.dexPokemon(pokemon.species.toId())?.let {dexPokemon ->
                 placeHolderTop.setImageResource(Type.getResId(dexPokemon.firstType))
                 if (dexPokemon.secondType != null) placeHolderBottom.setImageResource(Type.getResId(dexPokemon.secondType))
                 if (pokemon.ability == null) return@let
                 var abilityName: String? = null
-                if (pokemon.ability == Id.toIdSafe(dexPokemon.hiddenAbility)) abilityName = dexPokemon.hiddenAbility else for (ab in dexPokemon.abilities) if (Id.toId(ab) == pokemon.ability) abilityName = ab
+                if (pokemon.ability == dexPokemon.hiddenAbility?.toId()) abilityName = dexPokemon.hiddenAbility
+                else for (ab in dexPokemon.abilities) if (ab.toId() == pokemon.ability) abilityName = ab
                 if (abilityName != null) Utils.replace(descView.editableText, pokemon.ability, abilityName)
             }
         }
@@ -642,7 +644,7 @@ class BattleFragment : BaseFragment() {
 
         override fun onRequestAsked(request: BattleActionRequest) {
             lastActionRequest = request
-            if (request.shouldWait()) return
+            if (request.shouldWait) return
             binding.battleActionWidget.promptDecision(this, battleTipPopup, request) { decision ->
                 sendDecision(request.id, decision)
             }
@@ -651,7 +653,7 @@ class BattleFragment : BaseFragment() {
                 if (!request.trapped(which)) hideSwitch = false
                 val hideMoves = request.forceSwitch(which)
                 val moves = request.getMoves(which)
-                if (hideMoves || moves?.isEmpty() == true) continue
+                if (hideMoves || moves == null || moves.isEmpty()) continue
                 fragmentScope.launch {
                     assetLoader.movesDetails(*moves.map { it.id }.toTypedArray()).forEachIndexed { index, details ->
                         moves[index].details = details
@@ -660,7 +662,7 @@ class BattleFragment : BaseFragment() {
                 }
                 fragmentScope.launch {
                     val zMoves = moves.map { it.zName?.toId() }
-                    if (!zMoves.all { it == null }) {
+                    if (zMoves.all { it == null } == false) {
                         assetLoader.movesDetails().forEachIndexed { index, details ->
                             moves[index].zDetails = details
                         }
@@ -669,7 +671,7 @@ class BattleFragment : BaseFragment() {
                 }
                 fragmentScope.launch {
                     val maxMoves = moves.map { it.maxMoveId?.toId() }
-                    if (!maxMoves.all { it == null }) {
+                    if (maxMoves.all { it == null } == false) {
                         assetLoader.movesDetails().forEachIndexed { index, details ->
                             moves[index].maxDetails = details
                         }
@@ -677,7 +679,7 @@ class BattleFragment : BaseFragment() {
                     }
                 }
             }
-            if (request.teamPreview() || !hideSwitch) {
+            if (request.teamPreview || !hideSwitch) {
                 val team = request.side
                 fragmentScope.launch {
                     assetLoader.dexIcons(*team.map { it.species.toId() }.toTypedArray()).forEachIndexed { index, bitmap ->
