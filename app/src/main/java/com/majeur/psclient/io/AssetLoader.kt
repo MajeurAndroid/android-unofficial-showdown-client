@@ -8,9 +8,9 @@ import android.graphics.Rect
 import android.util.JsonReader
 import android.util.JsonToken
 import com.majeur.psclient.R
-import com.majeur.psclient.model.Species
 import com.majeur.psclient.model.battle.Move
 import com.majeur.psclient.model.common.Item
+import com.majeur.psclient.model.common.Species
 import com.majeur.psclient.model.common.Stats
 import com.majeur.psclient.model.pokemon.DexPokemon
 import com.majeur.psclient.util.toId

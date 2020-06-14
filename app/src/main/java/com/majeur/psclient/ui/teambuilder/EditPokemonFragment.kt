@@ -22,11 +22,7 @@ import com.majeur.psclient.R
 import com.majeur.psclient.databinding.FragmentEditPokemonBinding
 import com.majeur.psclient.io.AssetLoader
 import com.majeur.psclient.io.GlideHelper
-import com.majeur.psclient.model.Species
-import com.majeur.psclient.model.common.Item
-import com.majeur.psclient.model.common.Nature
-import com.majeur.psclient.model.common.Stats
-import com.majeur.psclient.model.common.Type
+import com.majeur.psclient.model.common.*
 import com.majeur.psclient.model.common.Type.getResId
 import com.majeur.psclient.model.pokemon.BasePokemon
 import com.majeur.psclient.model.pokemon.DexPokemon

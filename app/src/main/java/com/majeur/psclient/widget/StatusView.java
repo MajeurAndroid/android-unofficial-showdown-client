@@ -156,7 +156,7 @@ public class StatusView extends View {
     }
 
     public void updateModifier(StatModifiers statModifiers) {
-        for (String statKey : StatModifiers.STAT_KEYS)
+        for (String statKey : StatModifiers.getSTAT_KEYS())
             mStatsModifiers.put(statKey, statModifiers.modifier(statKey));
         requestLayout();
         invalidate();
@@ -165,7 +165,7 @@ public class StatusView extends View {
     public void addVolatileStatus(String vStatus) {
         VolatileStatus vs = VolatileStatus.getForId(vStatus);
         if (vs == null) return;
-        mVolatileStatus.put(vs.id, vs);
+        mVolatileStatus.put(vs.getId(), vs);
         requestLayout();
         invalidate();
     }
@@ -173,7 +173,7 @@ public class StatusView extends View {
     public void removeVolatileStatus(String vStatus) {
         VolatileStatus vs = VolatileStatus.getForId(vStatus);
         if (vs == null) return;
-        mVolatileStatus.remove(vs.id);
+        mVolatileStatus.remove(vs.getId());
         requestLayout();
         invalidate();
     }
@@ -208,10 +208,10 @@ public class StatusView extends View {
         updateMeasurePoint(measurePoint, measureRect);
 
         for (VolatileStatus vStatus : mVolatileStatus.values()) {
-            if (vStatus.label == null) continue;
+            if (vStatus.getLabel() == null) continue;
 
             mTempRect2.set(measureRect);
-            drawVolatileStatus(mMockCanvas, measureRect, y, vStatus.label, vStatus.color);
+            drawVolatileStatus(mMockCanvas, measureRect, y, vStatus.getLabel(), vStatus.getColor());
             if (measureRect.right > mLabelsWidthLimit) {
                 y = measureRect.bottom + measureRect.height() / 2 - mShadowRadius - mExtraMargin;
                 measureRect.set(mHorizontalMargin, y, mHorizontalMargin, y);
@@ -219,7 +219,7 @@ public class StatusView extends View {
                 measureRect.set(mTempRect2);
             }
 
-            drawVolatileStatus(canvas, measureRect, y, vStatus.label, vStatus.color);
+            drawVolatileStatus(canvas, measureRect, y, vStatus.getLabel(), vStatus.getColor());
             updateMeasurePoint(measurePoint, measureRect);
         }
 
