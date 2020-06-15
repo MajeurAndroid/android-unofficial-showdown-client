@@ -35,10 +35,7 @@ import com.majeur.psclient.model.common.Team
 import com.majeur.psclient.model.common.toId
 import com.majeur.psclient.service.GlobalMessageObserver
 import com.majeur.psclient.service.ShowdownService
-import com.majeur.psclient.util.BackgroundBitmapDrawable
-import com.majeur.psclient.util.Preferences
-import com.majeur.psclient.util.Utils
-import com.majeur.psclient.util.toId
+import com.majeur.psclient.util.*
 import com.majeur.psclient.widget.CategoryAdapter
 import com.majeur.psclient.widget.PrivateMessagesOverviewWidget
 import com.majeur.psclient.widget.PrivateMessagesOverviewWidget.OnItemButtonClickListener
@@ -91,16 +88,16 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         if (view.background == null) view.background = BackgroundBitmapDrawable(resources, R.drawable.client_bg)
         binding.usersCount.apply {
-            text = Utils.boldText("-")
-            append(Utils.smallText("\nusers online"))
+            text = "-".bold()
+            append("\nusers online".small())
         }
         binding.battlesCount.apply {
-            text = Utils.boldText("-")
-            append(Utils.smallText("\nactive battles"))
+            text = "-".bold()
+            append("\nactive battles".small())
         }
         binding.username.apply {
-            text = Utils.smallText("Connected as\n")
-            append(Utils.boldText("-"))
+            text = "Connected as\n".small()
+            append("-".bold())
         }
         binding.loginButton.apply {
             isEnabled = false
@@ -196,7 +193,7 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
                     if (requireFragmentManager().findFragmentByTag(SignInDialog.FRAGMENT_TAG) == null)
                         SignInDialog.newInstance().show(requireFragmentManager(), SignInDialog.FRAGMENT_TAG)
                 } else {
-                    if (battleFragment.battleRunning() == true)
+                    if (battleFragment.battleRunning())
                         makeSnackbar("A battle is already running")
                     else
                         searchForBattle()
@@ -323,7 +320,7 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
         when {
             isChallengingSomeone -> {
                 service?.sendGlobalCommand("challenge", challengeTo!!.toId(), currentBattleFormat!!.label.toId())
-                setBattleButtonUIState(String.format("Challenging\n%s...", challengeTo), enabled = false, showCancel = true, tintCard = true)
+                setBattleButtonUIState("Challenging\n$challengeTo...", enabled = false, showCancel = true, tintCard = true)
             }
             isAcceptingChallenge -> service?.sendGlobalCommand("accept", isAcceptingFrom!!)
             else -> service?.sendGlobalCommand("search", currentBattleFormat!!.label.toId())
@@ -367,7 +364,7 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
                 isChallengingSomeone = true
                 waitingForChallenge = false
                 challengeTo = user
-                setBattleButtonUIState(String.format("Challenge\n%s!", user), showCancel = true, tintCard = true)
+                setBattleButtonUIState("Challenge\n$user!", showCancel = true, tintCard = true)
                 showSearchableFormatsOnly(false)
                 mainActivity.showHomeFragment()
                 requireView().post { (requireView() as ScrollView).fullScroll(View.FOCUS_UP) }
@@ -394,7 +391,7 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
             }.start()
 
         }
-        binding.searchContainer.setBackgroundColor(
+        binding.searchContainer.setCardBackgroundColor(
                 if (tintCard) ColorUtils.blendARGB(
                         ContextCompat.getColor(requireActivity(), R.color.surfaceBackground),
                         ContextCompat.getColor(requireActivity(), R.color.primary),
@@ -443,8 +440,8 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
 
         override fun onUserChanged(userName: String, isGuest: Boolean, avatarId: String) {
             binding.username.apply {
-                text = Utils.smallText("Connected as\n")
-                append(Utils.boldText(Utils.truncate(userName, 10)))
+                text = "Connected as\n".small()
+                append(Utils.truncate(userName, 10).bold())
             }
             binding.loginButton.isEnabled = true
             if (isGuest) {
@@ -460,12 +457,12 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
 
         override fun onUpdateCounts(userCount: Int, battleCount: Int) {
             binding.usersCount.apply {
-                text = Utils.boldText(userCount.toString())
-                append(Utils.smallText("\nusers online"))
+                text = userCount.toString().bold()
+                append("\nusers online".small())
             }
             binding.battlesCount.apply {
-                text = Utils.boldText(battleCount.toString())
-                append(Utils.smallText("\nactive battles"))
+                text = battleCount.toString().bold()
+                append("\nactive battles".small())
             }
         }
 
@@ -499,26 +496,26 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
         override fun onUserDetails(id: String, name: String, online: Boolean, group: String,
                                    rooms: List<String>, battles: List<String>) {
             val builder = SpannableStringBuilder()
-            builder.append(Utils.italicText("Group: ")).append(group.replace(" ", "␣")).append("\n")
-            builder.append(Utils.italicText("Battles: "))
+            builder.append("Group: ".italic()).append(group.replace(" ", "␣")).append("\n")
+            builder.append("Battles: ".italic())
             if (battles.isNotEmpty()) {
                 val stringBuilder = StringBuilder()
                 for (battle in battles) stringBuilder.append(battle).append(", ")
                 stringBuilder.deleteCharAt(stringBuilder.length - 2)
-                builder.append(Utils.smallText(stringBuilder.toString()))
+                builder.append(stringBuilder.toString().small())
             } else {
-                builder.append(Utils.smallText("None")).append("\n")
+                builder.append("None".small()).append("\n")
             }
-            builder.append(Utils.italicText("Chatrooms: "))
+            builder.append("Chatrooms: ".italic())
             if (rooms.isNotEmpty()) {
                 val stringBuilder = StringBuilder()
                 for (room in rooms) stringBuilder.append(room).append(", ")
                 stringBuilder.deleteCharAt(stringBuilder.length - 2)
-                builder.append(Utils.smallText(stringBuilder.toString()))
+                builder.append(stringBuilder.toString().small())
             } else {
-                builder.append(Utils.smallText("None")).append("\n")
+                builder.append("None".small()).append("\n")
             }
-            if (!online) builder.append(Utils.coloredText("(Offline)", Color.RED))
+            if (!online) builder.append("(Offline)".color(Color.RED))
             AlertDialog.Builder(requireActivity())
                     .setTitle(name)
                     .setMessage(builder)
@@ -594,7 +591,7 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
             if (isChallengingSomeone) {
                 if (to != null) {
                     waitingForChallenge = true
-                    setBattleButtonUIState(String.format("Waiting for\n%s...", to), enabled = false, showCancel = true, tintCard = true)
+                    setBattleButtonUIState("Waiting for\n$to...", enabled = false, showCancel = true, tintCard = true)
                 } else {
                     isChallengingSomeone = false
                     waitingForChallenge = isChallengingSomeone
