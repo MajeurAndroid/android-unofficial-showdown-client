@@ -18,9 +18,10 @@ import com.majeur.psclient.databinding.ListFooterOtherRoomBinding
 import com.majeur.psclient.model.ChatRoomInfo
 import com.majeur.psclient.util.SimpleTextWatcher
 import java.util.*
+import kotlin.collections.ArrayList
 
 
-class JoinRoomDialog : DialogFragment() {
+class JoinChatRoomDialog : DialogFragment() {
 
     private lateinit var officialRooms: List<ChatRoomInfo>
     private lateinit var chatRooms: List<ChatRoomInfo>
@@ -30,8 +31,8 @@ class JoinRoomDialog : DialogFragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        officialRooms = requireArguments().getSerializable(ARG_OFFICIAL_ROOMS) as List<ChatRoomInfo>
-        chatRooms = requireArguments().getSerializable(ARG_CHAT_ROOMS) as List<ChatRoomInfo>
+        officialRooms = requireArguments().getParcelableArrayList<ChatRoomInfo>(ARG_OFFICIAL_ROOMS)!!
+        chatRooms = requireArguments().getParcelableArrayList<ChatRoomInfo>(ARG_CHAT_ROOMS)!!
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -145,13 +146,17 @@ class JoinRoomDialog : DialogFragment() {
     }
 
     companion object {
+
+        const val FRAGMENT_TAG = "join-chat-room-dialog"
+
         private const val ARG_OFFICIAL_ROOMS = "official-rooms"
         private const val ARG_CHAT_ROOMS = "chat-rooms"
-        fun newInstance(officialRooms: Array<ChatRoomInfo?>?, chatRooms: Array<ChatRoomInfo?>?): JoinRoomDialog {
-            val joinRoomDialog = JoinRoomDialog()
+
+        fun newInstance(officialRooms: List<ChatRoomInfo>, chatRooms: List<ChatRoomInfo>): JoinChatRoomDialog {
+            val joinRoomDialog = JoinChatRoomDialog()
             val bundle = Bundle()
-            bundle.putSerializable(ARG_OFFICIAL_ROOMS, officialRooms)
-            bundle.putSerializable(ARG_CHAT_ROOMS, chatRooms)
+            bundle.putParcelableArrayList(ARG_OFFICIAL_ROOMS, officialRooms as? ArrayList ?: ArrayList(officialRooms))
+            bundle.putParcelableArrayList(ARG_CHAT_ROOMS, chatRooms as? ArrayList ?: ArrayList(chatRooms))
             joinRoomDialog.arguments = bundle
             return joinRoomDialog
         }

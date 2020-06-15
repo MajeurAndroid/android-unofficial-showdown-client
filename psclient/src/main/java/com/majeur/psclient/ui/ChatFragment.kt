@@ -141,8 +141,9 @@ class ChatFragment : BaseFragment() {
     }
 
     fun onAvailableRoomsChanged(officialRooms: List<ChatRoomInfo>, chatRooms: List<ChatRoomInfo>) {
-        JoinRoomDialog.newInstance(officialRooms.toTypedArray(), chatRooms.toTypedArray())
-                .show(requireFragmentManager(), "")
+        if (requireFragmentManager().findFragmentByTag(JoinChatRoomDialog.FRAGMENT_TAG) == null)
+            JoinChatRoomDialog.newInstance(officialRooms, chatRooms)
+                .show(requireFragmentManager(), JoinChatRoomDialog.FRAGMENT_TAG)
     }
 
     private fun notifyNewMessageReceived() {
