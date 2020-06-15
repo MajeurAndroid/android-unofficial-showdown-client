@@ -5,7 +5,7 @@ import timber.log.Timber
 import timber.log.Timber.DebugTree
 
 
-class ShowdownClient : Application() {
+class PSClient : Application() {
 
     override fun onCreate() {
         super.onCreate()

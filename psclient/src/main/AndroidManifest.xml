@@ -12,7 +12,7 @@
         android:supportsRtl="true"
         tools:ignore="GoogleAppIndexingWarning"
         android:theme="@style/Theme.PSClient.AppTheme"
-        android:name=".ShowdownClient">
+        android:name=".PSClient">
 
         <activity
             android:name=".ui.MainActivity"
