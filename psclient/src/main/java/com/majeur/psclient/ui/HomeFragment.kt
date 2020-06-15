@@ -12,11 +12,16 @@ import android.text.SpannableStringBuilder
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.*
+import android.widget.AdapterView
 import android.widget.AdapterView.OnItemSelectedListener
+import android.widget.ImageView
+import android.widget.ScrollView
+import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
+import androidx.core.view.children
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.majeur.psclient.R
@@ -327,27 +332,12 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
 
     private fun tryJoinBattleRoom(roomId: String) {
         if (service?.isConnected != true) return
-        if (battleFragment.observedRoomId == null || !battleFragment.battleRunning()) {
-            service?.sendGlobalCommand("join", roomId)
-        } else {
-            val runningBattleRoomId = battleFragment.observedRoomId
-            if (runningBattleRoomId == roomId) {
-                mainActivity.showBattleFragment()
-                return
-            }
-            val currentBattleName = runningBattleRoomId?.substring("battle-".length)
-            val battleName = roomId.substring("battle-".length)
-            AlertDialog.Builder(requireActivity())
-                    .setTitle("Do you want to continue ?")
-                    .setMessage(String.format("Joining battle '%s' will make you leave (and forfeit) the current battle.", battleName))
-                    .setPositiveButton("Continue") { _: DialogInterface?, _: Int ->
-                        pendingBattleToJoin = roomId
-                        service!!.sendRoomCommand(runningBattleRoomId, "forfeit")
-                        service!!.sendRoomCommand(runningBattleRoomId, "leave")
-                    }
-                    .setNegativeButton("Cancel", null)
-                    .show()
+        battleFragment.observedRoomId?.let {
+            if (it == roomId) return
+            service?.sendRoomCommand(it, "leave")
         }
+        service?.sendGlobalCommand("join", roomId)
+        mainActivity.showBattleFragment()
     }
 
     fun startPrivateChat(user: String) {
@@ -419,7 +409,7 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
         adapter.clearItems()
         for (category in battleFormats!!) {
             val formats = if (yes) category.searchableBattleFormats else category.formats
-            if (formats.size == 0) continue
+            if (formats.isEmpty()) continue
             adapter.addItem(category)
             adapter.addItems(formats)
         }
@@ -491,15 +481,18 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
                 isSearchingBattle -> setBattleButtonUIState("Searching...", enabled = false, showCancel = true, tintCard = false)
                 !isChallengingSomeone -> setBattleButtonUIState("Battle !", enabled = true, showCancel = false, tintCard = false)
             }
-            binding.joinedBattlesContainer.visibility = if (games.isEmpty()) View.GONE else View.VISIBLE
+            binding.joinContainer.visibility = if (games.isEmpty()) View.GONE else View.VISIBLE
             binding.searchContainer.visibility = if (games.isNotEmpty()) View.GONE else View.VISIBLE
 
             binding.joinedBattlesContainer.removeAllViews()
             for ((roomId, value) in games) {
                 layoutInflater.inflate(R.layout.button_joined_battle, binding.joinedBattlesContainer)
-                val button: Button? = binding.joinedBattlesContainer.getChildAt(binding.joinedBattlesContainer.childCount - 1) as Button
-                button?.text = value
-                button?.setOnClickListener { _: View? -> tryJoinBattleRoom(roomId) }
+                (binding.joinedBattlesContainer.children.last() as MaterialButton).apply {
+                    text = value
+                    tag = roomId
+                    isEnabled = roomId != battleFragment.observedRoomId
+                    setOnClickListener { tryJoinBattleRoom(roomId) }
+                }
             }
         }
 
@@ -624,9 +617,16 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
                         // be able to do that from the "you're currently in" menu.
                         this@HomeFragment.service!!.sendRoomCommand(roomId, "leave")
                     }
+                    binding.joinedBattlesContainer.children.forEach { button ->
+                        // Disable the corresponding button if battle is already joined
+                        button.isEnabled = button.tag as String != battleFragment.observedRoomId
+                    }
                 }
                 "chat" -> {
-                    if (chatFragment.observedRoomId == null) chatFragment.observedRoomId = roomId
+                    chatFragment.observedRoomId?.let {
+                        this@HomeFragment.service!!.sendRoomCommand(it, "leave")
+                    }
+                    chatFragment.observedRoomId = roomId
                 }
             }
         }
