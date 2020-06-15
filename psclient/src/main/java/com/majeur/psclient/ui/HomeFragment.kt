@@ -620,8 +620,11 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
                     }
                 }
                 "chat" -> {
-                    chatFragment.observedRoomId?.let {
-                        this@HomeFragment.service!!.sendRoomCommand(it, "leave")
+                    // lobby init can trigger this two times, make sure to avoid that
+                    if (chatFragment.observedRoomId == roomId) return
+
+                    if (chatFragment.observedRoomId != null) {
+                        this@HomeFragment.service!!.sendRoomCommand(roomId, "leave")
                     }
                     chatFragment.observedRoomId = roomId
                 }
