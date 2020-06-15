@@ -4,7 +4,6 @@ import android.text.Editable;
 import android.text.TextPaint;
 import android.view.View;
 import android.widget.TextView;
-
 import androidx.annotation.NonNull;
 
 public class DetailsSpan extends ClickableSpan {

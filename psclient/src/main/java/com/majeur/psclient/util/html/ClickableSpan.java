@@ -2,7 +2,6 @@ package com.majeur.psclient.util.html;
 
 import android.graphics.Color;
 import android.text.TextPaint;
-
 import androidx.annotation.NonNull;
 
 public abstract class ClickableSpan extends android.text.style.ClickableSpan {

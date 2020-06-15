@@ -3,9 +3,7 @@ package com.majeur.psclient.util.html;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.text.Spanned;
-
 import com.majeur.psclient.util.Callback;
-
 import org.ccil.cowan.tagsoup.HTMLSchema;
 import org.ccil.cowan.tagsoup.Parser;
 

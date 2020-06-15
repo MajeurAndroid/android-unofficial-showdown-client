@@ -9,7 +9,6 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.FrameLayout;
-
 import com.majeur.psclient.util.Utils;
 
 import java.util.LinkedList;

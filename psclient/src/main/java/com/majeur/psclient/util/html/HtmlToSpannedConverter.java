@@ -25,9 +25,7 @@ import android.text.style.SuperscriptSpan;
 import android.text.style.TypefaceSpan;
 import android.text.style.UnderlineSpan;
 import android.view.View;
-
 import com.majeur.psclient.util.Utils;
-
 import org.ccil.cowan.tagsoup.Parser;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;

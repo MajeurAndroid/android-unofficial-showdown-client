@@ -4,7 +4,6 @@ import android.graphics.drawable.Animatable;
 import android.graphics.drawable.Drawable;
 import android.view.ViewPropertyAnimator;
 import android.widget.ImageView;
-
 import com.bumptech.glide.request.target.ViewTarget;
 import com.bumptech.glide.request.transition.Transition;
 
