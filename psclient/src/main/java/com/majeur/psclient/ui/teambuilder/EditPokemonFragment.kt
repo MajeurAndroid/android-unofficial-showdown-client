@@ -364,7 +364,7 @@ class EditPokemonFragment : Fragment() {
         mCurrentAbility = pokemon.ability
         val itemAdapter = binding.itemInput.adapter as FilterableAdapter<Item>?
         if (itemAdapter != null) {
-            (0..itemAdapter.count).map { itemAdapter.getItem(it) }.forEach { item ->
+            (0 until itemAdapter.count).map { itemAdapter.getItem(it) }.forEach { item ->
                 if (item.id == pokemon.item?.toId()) {
                     mCurrentItem = item
                     binding.itemInput.setText(item.name)

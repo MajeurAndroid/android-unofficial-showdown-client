@@ -18,11 +18,11 @@ class BattleActionRequest(json: JSONObject, var gameType: GameType?) {
     val teamPreview = json.optBoolean("teamPreview", false)
     val shouldWait = json.optBoolean("wait", false)
     val side = json.getJSONObject("side").getJSONArray("pokemon").run {
-        (0..length()).map { SidePokemon(it, getJSONObject(it)) }
+        (0 until length()).map { SidePokemon(it, getJSONObject(it)) }
     }
 
     private var forceSwitch = json.optJSONArray("forceSwitch")?.run {
-        (0..length()).map { getBoolean(it) }.toBooleanArray()
+        (0 until length()).map { getBoolean(it) }.toBooleanArray()
     }
     private var trapped: BooleanArray? = null
     private var canMegaEvo: BooleanArray? = null
@@ -52,7 +52,7 @@ class BattleActionRequest(json: JSONObject, var gameType: GameType?) {
                     val movesJson = active.getJSONArray("moves")
                     val canZMove = active.optJSONArray("canZMove")
                     val maxMoves = active.optJSONObject("maxMoves")?.optJSONArray("maxMoves")
-                    moves!![i] = (0..movesJson.length()).map { j ->
+                    moves!![i] = (0 until movesJson.length()).map { j ->
                         Move(j, movesJson.getJSONObject(j),
                                 canZMove?.optJSONObject(j),
                                 maxMoves?.optJSONObject(j))

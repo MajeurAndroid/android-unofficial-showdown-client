@@ -28,11 +28,11 @@ class TeamsStore(context: Context) {
     private fun getInternal(): List<Team.Group> {
         return readJsonFromFile().run {
             val groups = mutableListOf<Team.Group>()
-            (0..length()).map { getJSONObject(it) }.forEach { groupJson ->
+            (0 until length()).map { getJSONObject(it) }.forEach { groupJson ->
                 val format = groupJson.getString(JSON_KEY_FORMAT)
                 val group = Team.Group(format)
                 val teamsJson = groupJson.getJSONArray(JSON_KEY_TEAMS)
-                (0..teamsJson.length()).map { teamsJson.getJSONObject(it) }.forEach {
+                (0 until teamsJson.length()).map { teamsJson.getJSONObject(it) }.forEach {
                     val label = it.optString(JSON_KEY_TEAM_LABEL)
                     val data = it.getString(JSON_KEY_TEAM_DATA)
                     Team.unpack(label, format, data)?.let { team -> group.teams.add(team) }

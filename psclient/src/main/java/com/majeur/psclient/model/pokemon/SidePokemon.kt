@@ -13,7 +13,7 @@ class SidePokemon(val index: Int, json: JSONObject) : BasePokemon() {
     val condition = Condition(json.getString("condition"))
     val active = json.getBoolean("active")
     val stats = Stats(json.getJSONObject("stats"))
-    val moves = json.getJSONArray("moves").run { (0..length()).map { getString(it) } }
+    val moves = json.getJSONArray("moves").run { (0 until length()).map { getString(it) } }
     val baseAbility = json.getString("baseAbility")
     val item: String = json.getString("item")
     val pokeBall = json.getString("pokeball")
