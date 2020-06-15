@@ -9,6 +9,7 @@ import org.json.JSONException
 import org.json.JSONObject
 import timber.log.Timber
 import java.io.File
+import java.io.FileNotFoundException
 import java.io.IOException
 
 class TeamsStore(context: Context) {
@@ -61,7 +62,7 @@ class TeamsStore(context: Context) {
                 put(JSON_KEY_TEAMS, JSONArray().apply {
                     group.teams.forEach { team ->
                         put(JSONObject().apply {
-                            put(JSON_KEY_TEAM_LABEL, team.label ?: "Unnamed team")
+                            put(JSON_KEY_TEAM_LABEL, team.label)
                             put(JSON_KEY_TEAM_DATA, team.pack())
                         })
                     }
@@ -71,7 +72,7 @@ class TeamsStore(context: Context) {
         return jsonArray
     }
 
-    @Throws(JSONException::class)
+    @Throws(JSONException::class, FileNotFoundException::class)
     private fun readJsonFromFile() = JSONArray(jsonFile.readText())
 
     private fun writeJsonToFile(json: JSONArray) = jsonFile.writeText(json.toString())
