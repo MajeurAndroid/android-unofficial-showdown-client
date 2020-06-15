@@ -34,7 +34,7 @@ class SidePokemon(val index: Int, json: JSONObject) : BasePokemon() {
                 's' -> shiny = true
                 'm' -> gender = "♂"
                 'f' -> gender = "♀"
-                'l' -> level = it.removePrefix("l").toInt()
+                'l' -> level = it.drop(1).toInt()
             }
         }
     }
