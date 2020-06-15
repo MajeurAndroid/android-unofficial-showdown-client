@@ -11,7 +11,7 @@ class BattleFormat(val label: String, private val formatInt: Int) : Serializable
         get() = formatInt and MASK_TEAM == 0
 
     val isSearchShow: Boolean
-        get() = formatInt and MASK_SEARCH_SHOW == 0
+        get() = formatInt and MASK_SEARCH_SHOW != 0
 
     override fun equals(other: Any?) = (other as? BattleFormat)?.label == label
 
