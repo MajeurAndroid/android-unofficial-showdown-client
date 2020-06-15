@@ -43,6 +43,6 @@ open class BasePokemon : Serializable {
 
         spriteId = baseSpecies.toId() + "-" + (forme ?: "").toId()
         if (spriteId.endsWith("totem")) spriteId = spriteId.removeSuffix("totem")
-        if (spriteId.endsWith('-')) spriteId.removeSuffix("-")
+        spriteId = spriteId.removeSuffix("-")
     }
 }
