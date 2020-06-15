@@ -7,16 +7,16 @@ import com.majeur.psclient.model.battle.StatModifiers
 
 class BattlingPokemon(val player: Player, switchMessage: String) : BasePokemon() {
 
-    var id: PokemonId = PokemonId(player, switchMessage.substringBefore('|'))
-    var name: String? = null
+    val id: PokemonId = PokemonId(player, switchMessage.substringBefore('|'))
+    val name = switchMessage.substringAfter(":").substringBefore('|').trim()
+    val statModifiers = StatModifiers()
+    val volatiles = mutableSetOf<String>()
+
     var gender: String = ""
     var shiny: Boolean = false
     var level: Int = 100
     var condition: Condition? = null
-    val statModifiers = StatModifiers()
     var transformSpecies: String? = null
-
-    val volatiles = mutableSetOf<String>()
 
     val position get() = id.position
     val foe get() = id.foe
