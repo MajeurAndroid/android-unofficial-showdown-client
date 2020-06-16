@@ -21,6 +21,8 @@ fun CharSequence.small() = toSpannable().small()
 
 fun CharSequence.big() = toSpannable().big()
 
+fun CharSequence.relSize(relSize: Float) = toSpannable().relSize(relSize)
+
 fun CharSequence.color(color: Int) = toSpannable().color(color)
 
 fun CharSequence.bg(color: Int) = toSpannable().bg(color)
@@ -35,13 +37,12 @@ fun Spannable.italic(): Spannable {
     return this
 }
 
-fun Spannable.small(): Spannable {
-    setSpan(RelativeSizeSpan(0.8f), 0, length, Spannable.SPAN_INCLUSIVE_EXCLUSIVE)
-    return this
-}
+fun Spannable.small() = relSize(0.8f)
 
-fun Spannable.big(): Spannable {
-    setSpan(RelativeSizeSpan(1.2f), 0, length, Spannable.SPAN_INCLUSIVE_EXCLUSIVE)
+fun Spannable.big() = relSize(1.2f)
+
+fun Spannable.relSize(relSize: Float): Spannable {
+    setSpan(RelativeSizeSpan(relSize), 0, length, Spannable.SPAN_INCLUSIVE_EXCLUSIVE)
     return this
 }
 

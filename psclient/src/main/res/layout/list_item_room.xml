@@ -7,7 +7,7 @@
     android:padding="8dp">
 
     <ImageView
-        android:id="@+id/imageView"
+        android:id="@+id/chat_image"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentStart="true"
@@ -16,21 +16,21 @@
         android:tint="?attr/colorSecondary"/>
 
     <TextView
-        android:id="@+id/title_text_view"
+        android:id="@+id/title"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:layout_alignBottom="@+id/imageView"
-        android:layout_alignTop="@+id/imageView"
-        android:layout_toEndOf="@+id/imageView"
+        android:layout_alignBottom="@+id/chat_image"
+        android:layout_alignTop="@+id/chat_image"
+        android:layout_toEndOf="@+id/chat_image"
         android:layout_marginStart="4dp"
         android:gravity="center_vertical"
         android:textSize="16sp"/>
 
     <TextView
-        android:id="@+id/descr_text_view"
+        android:id="@+id/description"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/title_text_view"
+        android:layout_below="@id/title"
         android:layout_alignParentStart="true"/>
 
 </RelativeLayout>

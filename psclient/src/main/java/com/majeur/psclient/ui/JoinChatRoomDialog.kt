@@ -1,27 +1,24 @@
 package com.majeur.psclient.ui
 
-import android.graphics.Typeface
 import android.os.Bundle
 import android.text.Editable
-import android.text.SpannableString
-import android.text.Spanned
-import android.text.style.RelativeSizeSpan
-import android.text.style.StyleSpan
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
-import androidx.fragment.app.DialogFragment
-import com.majeur.psclient.R
+import androidx.core.view.children
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.majeur.psclient.databinding.DialogJoinRoomBinding
 import com.majeur.psclient.databinding.ListFooterOtherRoomBinding
+import com.majeur.psclient.databinding.ListItemRoomBinding
 import com.majeur.psclient.model.ChatRoomInfo
-import com.majeur.psclient.util.SimpleTextWatcher
+import com.majeur.psclient.util.*
 import java.util.*
 import kotlin.collections.ArrayList
 
 
-class JoinChatRoomDialog : DialogFragment() {
+class JoinChatRoomDialog : BottomSheetDialogFragment() {
 
     private lateinit var officialRooms: List<ChatRoomInfo>
     private lateinit var chatRooms: List<ChatRoomInfo>
@@ -43,6 +40,7 @@ class JoinChatRoomDialog : DialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.list.adapter = listAdapter
+        binding.list.setOnTouchListener(NestedScrollLikeTouchListener())
         binding.list.onItemClickListener = AdapterView.OnItemClickListener { _, _, index, _ ->
             val roomInfo = listAdapter.getItem(index) as ChatRoomInfo
             joinRoom(roomInfo.name)
@@ -77,7 +75,7 @@ class JoinChatRoomDialog : DialogFragment() {
         private val VIEW_TYPE_HEADER = 0
         private val VIEW_TYPE_REGULAR = 1
 
-        override fun getCount() =  2 + officialRooms.size + chatRooms.size
+        override fun getCount() = 2 + officialRooms.size + chatRooms.size
 
         override fun isEnabled(position: Int) = getItemViewType(position) == VIEW_TYPE_REGULAR
 
@@ -89,48 +87,31 @@ class JoinChatRoomDialog : DialogFragment() {
             return if (position == 0 || position == officialRooms.size + 1) VIEW_TYPE_HEADER else VIEW_TYPE_REGULAR
         }
 
-        inner class ViewHolder {
-            var titleView: TextView? = null
-            var descrView: TextView? = null
-            var iconView: View? = null
-        }
-
         override fun getView(i: Int, view: View?, viewGroup: ViewGroup): View {
             val convertView: View
-            val viewHolder: ViewHolder
+            val binding: ListItemRoomBinding
             if (view == null) {
-                convertView = layoutInflater.inflate(R.layout.list_item_room, viewGroup, false)
-                viewHolder = ViewHolder()
-                viewHolder.titleView = convertView.findViewById(R.id.title_text_view)
-                viewHolder.descrView = convertView.findViewById(R.id.descr_text_view)
-                viewHolder.iconView = convertView.findViewById(R.id.imageView)
-                convertView.tag = viewHolder
+                binding = ListItemRoomBinding.inflate(layoutInflater, viewGroup, false)
+                convertView = binding.root
+                convertView.tag = binding
             } else {
                 convertView = view
-                viewHolder = view.tag as ViewHolder
+                binding = view.tag as ListItemRoomBinding
             }
             val item = getItem(i)
-            if (item is String) {
-                val spannableString = SpannableString(item)
-                spannableString.setSpan(RelativeSizeSpan(1.35f), 0, spannableString.length,
-                        Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
-                viewHolder.titleView!!.text = spannableString
-                viewHolder.descrView!!.visibility = View.GONE
-                viewHolder.iconView!!.visibility = View.GONE
-            } else {
-                val roomInfo = item as ChatRoomInfo
-                val spannableString = SpannableString(roomInfo.name + " (" +
-                        roomInfo.userCount + ")")
-                spannableString.setSpan(StyleSpan(Typeface.BOLD), 0,
-                        roomInfo.name.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
-                spannableString.setSpan(StyleSpan(Typeface.ITALIC), roomInfo.name.length + 1,
-                        spannableString.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
-                spannableString.setSpan(RelativeSizeSpan(0.8f), roomInfo.name.length + 1,
-                        spannableString.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
-                viewHolder.titleView!!.text = spannableString
-                viewHolder.descrView!!.text = roomInfo.description
-                viewHolder.descrView!!.visibility = View.VISIBLE
-                viewHolder.iconView!!.visibility = View.VISIBLE
+            binding.apply {
+                if (item is String) {
+                    title.text = item.relSize(1.35f)
+                    description.visibility = View.GONE
+                    chatImage.visibility = View.GONE
+                } else {
+                    val roomInfo = item as ChatRoomInfo
+                    title.text = roomInfo.name.bold()
+                    title.append(" (${roomInfo.userCount})".small().italic())
+                    description.text = roomInfo.description
+                    description.visibility = View.VISIBLE
+                    chatImage.visibility = View.VISIBLE
+                }
             }
             return convertView
         }
@@ -143,6 +124,21 @@ class JoinChatRoomDialog : DialogFragment() {
         }
 
         override fun getItemId(i: Int) = 0L
+    }
+
+    class NestedScrollLikeTouchListener : View.OnTouchListener {
+
+        override fun onTouch(view: View, event: MotionEvent): Boolean {
+            var preventParentScroll = false
+            if ((view as ListView).childCount > 0) {
+                val isOnTop = view.firstVisiblePosition == 0 && view.children.first().top == view.paddingTop
+                val allItemsVisible = isOnTop && view.lastVisiblePosition == view.childCount
+                preventParentScroll = !isOnTop && !allItemsVisible
+            }
+            view.parent.requestDisallowInterceptTouchEvent(preventParentScroll)
+            return view.onTouchEvent(event)
+        }
+
     }
 
     companion object {
