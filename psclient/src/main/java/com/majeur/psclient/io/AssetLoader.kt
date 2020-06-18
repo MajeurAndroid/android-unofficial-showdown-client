@@ -21,8 +21,6 @@ import java.io.InputStreamReader
 
 class AssetLoader(val context: Context) {
 
-    private val io = Dispatchers.IO
-
     private val allItemsLoader by lazy {
         AllItemsLoader(context)
     }
@@ -51,43 +49,35 @@ class AssetLoader(val context: Context) {
         MoveDetailsLoader(context)
     }
 
-    suspend fun allItems(constraint: String) = withContext(io) { allItemsLoader.load(constraint) }
+    suspend fun allItems(constraint: String) = allItemsLoader.load(constraint)
 
-    suspend fun allSpecies(constraint: String) = withContext(io) { allSpeciesLoader.load(constraint) }
+    suspend fun allSpecies(constraint: String) = allSpeciesLoader.load(constraint)
 
-    suspend fun dexIcon(species: String) = withContext(io) {
-        species.run {
-            dexIconLoader.load(if (startsWith("arceus", ignoreCase = true)) "arceus" else this.toId())
-        }
-    }
-    suspend fun dexIcons(vararg species: String) = withContext(io) {
-        species.map { if (it.startsWith("arceus", ignoreCase = true)) "arceus" else it.toId() }.run {
-            dexIconLoader.load(*toTypedArray())
-        }
+    suspend fun dexIcon(species: String) = species.run {
+        dexIconLoader.load(if (startsWith("arceus", ignoreCase = true)) "arceus" else this.toId())
     }
 
-    suspend fun dexPokemon(species: String) = withContext(io) { dexPokemonLoader.load(species) }
-
-    suspend fun item(itemId: String) = withContext(io) { itemLoader.load(itemId) }
-
-    suspend fun learnset(species: String) = withContext(io) { learnsetLoader.load(species) }
-
-    suspend fun moveDetails(moveName: String) = withContext(io) {
-        moveName.run {
-            moveDetailsLoader.load(if (startsWith("z-", ignoreCase = true)) substring(2).toId() else toId())
-        }
-    }
-    suspend fun movesDetails(vararg moveIds: String) = withContext(io) {
-        moveIds.map { if (it.startsWith("-z", ignoreCase = true)) it.substring(2).toId() else it.toId() }.run {
-            moveDetailsLoader.load(*toTypedArray())
-        }
+    suspend fun dexIcons(vararg species: String) = species.map { if (it.startsWith("arceus", ignoreCase = true)) "arceus" else it.toId() }.run {
+        dexIconLoader.load(*toTypedArray())
     }
 
-    fun dexIconNonSuspend(species: String): Bitmap? {
-        return dexIconLoader.load(species) // TODO
+    suspend fun dexPokemon(species: String) = dexPokemonLoader.load(species)
+
+    suspend fun item(itemId: String) = itemLoader.load(itemId)
+
+    suspend fun learnset(species: String) = learnsetLoader.load(species)
+
+    suspend fun moveDetails(moveName: String) = moveName.run {
+        moveDetailsLoader.load(if (startsWith("z-", ignoreCase = true)) substring(2).toId() else toId())
     }
 
-    fun dexPokemonNonSuspend(species: String) = dexPokemonLoader.load(species)
+    suspend fun movesDetails(vararg moveIds: String) = moveIds.map { if (it.startsWith("-z", ignoreCase = true)) it.substring(2).toId() else it.toId() }.run {
+        moveDetailsLoader.load(*toTypedArray())
+    }
+
+    fun dexIconNonSuspend(species: String) = dexIconLoader.loadNonSuspend(species)
+
+    fun dexPokemonNonSuspend(species: String) = dexPokemonLoader.loadNonSuspend(species)
 
     abstract class Loader<T>(
             protected val context: Context,
@@ -95,11 +85,20 @@ class AssetLoader(val context: Context) {
 
         private var cache = mutableMapOf<String, T?>()
 
-        fun load(vararg assetIds: String) = assetIds.map { load(it) }
-
-        fun load(assetId: String): T? {
+        fun loadNonSuspend(assetId: String): T? {
             return if (useCache) cache.getOrPut(assetId) { compute(assetId) }
             else compute(assetId)
+        }
+
+        suspend fun load(vararg assetIds: String) = assetIds.map { load(it) }
+
+        suspend fun load(assetId: String): T? {
+            return if (useCache) cache.getOrPut(assetId) { computeInternal(assetId) }
+            else computeInternal(assetId)
+        }
+
+        private suspend fun computeInternal(assetId: String) = withContext(Dispatchers.IO) {
+            compute(assetId)
         }
 
         protected abstract fun compute(assetId: String): T?
@@ -407,9 +406,13 @@ class AssetLoader(val context: Context) {
         @Throws(IOException::class)
         private fun parseLearnset(reader: JsonReader): List<String> {
             return mutableListOf<String>().apply {
-                reader.beginArray()
-                while (reader.hasNext()) add(reader.nextString())
-                reader.endArray()
+                reader.beginObject()
+                while (reader.hasNext()) {
+                    if (reader.nextName() == "also") reader.skipValue()
+                    reader.beginArray()
+                    while (reader.hasNext()) add(reader.nextString())
+                    reader.endArray()
+                }
             }
         }
 
