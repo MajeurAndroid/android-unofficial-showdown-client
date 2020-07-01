@@ -81,9 +81,12 @@ class AssetLoader(val context: Context) {
 
     abstract class Loader<T>(
             protected val context: Context,
-            private val useCache: Boolean = true) {
+            private val useCache: Boolean = true,
+            private val maxCache: Int = 64) {
 
-        private var cache = mutableMapOf<String, T?>()
+        private var cache = object : LinkedHashMap<String, T?>() {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, T?>?) = size > maxCache
+        }
 
         fun loadNonSuspend(assetId: String): T? {
             return if (useCache) cache.getOrPut(assetId) { compute(assetId) }
