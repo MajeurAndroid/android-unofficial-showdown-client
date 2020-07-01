@@ -4,7 +4,7 @@ from pyjsparser import parse
 from common import *
 from json import dumps
 
-app_data_dir = "../app/src/main/res/raw"
+app_data_dir = "../psclient/src/main/res/raw"
 target_file_name = "learnsets.json"
 url_js_file = "http://play.pokemonshowdown.com/data/learnsets.js"
 url_js_file2 = "http://play.pokemonshowdown.com/data/pokedex.js"
