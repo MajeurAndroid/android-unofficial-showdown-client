@@ -12,7 +12,7 @@ data = get_remote_data(url_js_file)
 
 log("Decoding JavaScript data...")
 obj = parse(data)
-keys = ["num", "name", "types", "baseStats", "abilities", "heightm", "weightkg", "color", "gender", "LC"]
+keys = ["num", "name", "types", "baseStats", "abilities", "heightm", "weightkg", "color", "gender", "LC", "evos"]
 properties = obj['body'][0]['expression']['right']['properties']
 dex = dict()   
 set_log_p() 

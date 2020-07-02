@@ -360,9 +360,12 @@ class AssetLoader(val context: Context) {
     class LearnsetLoader(context: Context) : Loader<List<String>>(context) {
 
         override fun compute(species: String): List<String>? {
-            val family = jsonReader(R.raw.dex).use { reader ->
-                return@use parseFamily(reader, species)
-            }
+            val family = mutableListOf(species)
+            do {
+                val preEvos = getPreEvos(family.last())
+                family.addAll(preEvos)
+            } while (preEvos.isNotEmpty())
+
             val learnset = mutableListOf<String>()
             jsonReader(R.raw.learnsets).use { reader ->
                 reader.beginObject()
@@ -376,6 +379,10 @@ class AssetLoader(val context: Context) {
                 reader.endObject()
             }
             return learnset.sorted()
+        }
+
+        private fun getPreEvos(species: String) = jsonReader(R.raw.dex).use { reader ->
+            return@use parseFamily(reader, species)
         }
 
         private fun parseFamily(reader: JsonReader, species: String): List<String> {
@@ -393,7 +400,6 @@ class AssetLoader(val context: Context) {
                 reader.endObject()
             }
             reader.endObject()
-            family.add(species)
             return family
         }
 
@@ -401,7 +407,7 @@ class AssetLoader(val context: Context) {
         private fun parseEvos(reader: JsonReader): List<String> {
             return mutableListOf<String>().apply {
                 reader.beginArray()
-                while (reader.hasNext()) add(reader.nextString())
+                while (reader.hasNext()) add(reader.nextString().toId())
                 reader.endArray()
             }
         }
@@ -409,13 +415,9 @@ class AssetLoader(val context: Context) {
         @Throws(IOException::class)
         private fun parseLearnset(reader: JsonReader): List<String> {
             return mutableListOf<String>().apply {
-                reader.beginObject()
-                while (reader.hasNext()) {
-                    if (reader.nextName() == "also") reader.skipValue()
-                    reader.beginArray()
-                    while (reader.hasNext()) add(reader.nextString())
-                    reader.endArray()
-                }
+                reader.beginArray()
+                while (reader.hasNext()) add(reader.nextString())
+                reader.endArray()
             }
         }
 
