@@ -179,18 +179,28 @@ class TeamsFragment : BaseFragment() {
 
     private fun addOrUpdateTeam(newTeam: Team) {
         if (newTeam.format == null) newTeam.format = fallbackFormat.toId()
+        var teamAdded = false
         for (group in groups) {
-            val oldTeam = group.teams.firstOrNull { it.uniqueId == newTeam.uniqueId } ?: continue
-            if (oldTeam.format == newTeam.format) { // Format has not changed so we just replace item
-                group.teams[group.teams.indexOf(oldTeam)] = newTeam
-            } else { // Format has changed so we need to remove old team from group and place new one in its group
-                group.teams.remove(oldTeam)
-                if (group.teams.isEmpty()) groups.remove(group)
-                val newGroup = groups.firstOrNull { it.format == newTeam.format }
-                        ?: Team.Group(newTeam.format!!).also { groups.add(it) }
-                newGroup.teams.add(newTeam)
+            val oldTeam = group.teams.firstOrNull { it.uniqueId == newTeam.uniqueId }
+            if (oldTeam != null) { // Its an update
+                if (oldTeam.format == newTeam.format) { // Format has not changed so we just replace item
+                    group.teams[group.teams.indexOf(oldTeam)] = newTeam
+                    teamAdded = true
+                } else { // Format has changed so we need to remove team from its previous group
+                    group.teams.remove(oldTeam)
+                    if (group.teams.isEmpty()) groups.remove(group)
+                }
+                break
             }
-            break
+            if (group.format == newTeam.format) {
+                group.teams.add(newTeam)
+                teamAdded = true
+            }
+        }
+        if (!teamAdded) { // No group matched our team format
+            val newGroup = Team.Group(newTeam.format!!)
+            groups.add(newGroup)
+            newGroup.teams.add(newTeam)
         }
         notifyGroupChanged()
     }
