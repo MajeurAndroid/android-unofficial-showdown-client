@@ -123,9 +123,4 @@ open class ListFragment : Fragment() {
             recyclerView.visibility = View.GONE
         }
     }
-
-    interface OnItemClickListener {
-        fun onItemClick(itemView: View, holder: RecyclerView.ViewHolder, position: Int)
-    }
-
 }

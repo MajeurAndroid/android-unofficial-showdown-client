@@ -21,10 +21,11 @@ import com.majeur.psclient.ui.BaseFragment
 import com.majeur.psclient.util.CategoryDrawable
 import com.majeur.psclient.util.Utils
 import com.majeur.psclient.util.italic
+import com.majeur.psclient.util.recyclerview.OnItemClickListener
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
-class MovesFragment : ListFragment(), ListFragment.OnItemClickListener {
+class MovesFragment : ListFragment(), OnItemClickListener {
 
     private val fragmentScope = BaseFragment.FragmentScope()
     private lateinit var assetLoader: AssetLoader

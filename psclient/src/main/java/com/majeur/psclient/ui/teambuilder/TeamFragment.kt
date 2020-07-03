@@ -3,16 +3,8 @@ package com.majeur.psclient.ui.teambuilder
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Rect
-import android.graphics.drawable.ColorDrawable
-import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.*
-import androidx.core.content.ContextCompat
-import androidx.core.graphics.BlendModeColorFilterCompat
-import androidx.core.graphics.BlendModeCompat
 import androidx.core.os.bundleOf
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
@@ -20,7 +12,6 @@ import androidx.navigation.fragment.FragmentNavigatorExtras
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.ItemTouchHelper
-import androidx.recyclerview.widget.ItemTouchHelper.*
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
 import com.majeur.psclient.R
@@ -33,11 +24,12 @@ import com.majeur.psclient.model.common.toId
 import com.majeur.psclient.model.pokemon.TeamPokemon
 import com.majeur.psclient.ui.BaseFragment
 import com.majeur.psclient.util.*
+import com.majeur.psclient.util.recyclerview.DividerItemDecoration
+import com.majeur.psclient.util.recyclerview.ItemTouchHelperCallbacks
 import com.majeur.psclient.widget.CategoryAdapter
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.util.*
-import kotlin.math.roundToInt
 
 
 class TeamFragment : Fragment() {
@@ -135,7 +127,13 @@ class TeamFragment : Fragment() {
             val dividerItemDecoration = DividerItemDecoration(context)
             dividerItemDecoration.startOffset = Utils.dpToPx(8f + 82f + 16f)
             addItemDecoration(dividerItemDecoration)
-            ItemTouchHelper(ItemTouchHelperCallbacks(context, adapter)).attachToRecyclerView(this)
+            ItemTouchHelper(object : ItemTouchHelperCallbacks(context, allowReordering = true, allowDeletion = true) {
+
+                override fun onMoveItem(from: Int, to: Int) = adapter.moveItem(from, to)
+
+                override fun onRemoveItem(position: Int) = adapter.removeItem(position)
+
+            }).attachToRecyclerView(this)
             itemAnimator = DefaultItemAnimator()
 
             postponeEnterTransition()
@@ -285,107 +283,6 @@ class TeamFragment : Fragment() {
         override fun getItemCount() = adapterList.size
 
         inner class ItemViewHolder(val binding: ListItemPokemonBinding, var job: Job? = null) : RecyclerView.ViewHolder(binding.root)
-    }
-
-    class ItemTouchHelperCallbacks(
-            context: Context,
-            private val adapter: PokemonListAdapter
-    ) : SimpleCallback(UP or DOWN, LEFT) {
-
-        private val background = ColorDrawable(ContextCompat.getColor(context, R.color.error))
-        private val icon = ContextCompat.getDrawable(context, R.drawable.ic_delete)!!
-                .also {
-                    it.colorFilter = BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
-                            Color.WHITE, BlendModeCompat.SRC_IN)
-                }
-        private val iconLeftMargin = Utils.dpToPx(12f)
-
-        override fun onMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
-            val from = viewHolder.adapterPosition
-            val to = target.adapterPosition
-            adapter.moveItem(from, to)
-            return true
-        }
-
-        override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-            val position = viewHolder.adapterPosition
-            val adapter = adapter
-            adapter.removeItem(position)
-        }
-
-        override fun onChildDraw(c: Canvas, recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, dX: Float, dY: Float, actionState: Int, isCurrentlyActive: Boolean) {
-            super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
-            val itemView = viewHolder.itemView
-
-            if (dY != 0f) {
-                itemView.elevation = Utils.dpToPx(4f).toFloat()
-            } else {
-                itemView.elevation = 0f
-            }
-
-            if (dX < 0) {
-                background.setBounds(itemView.right + dX.toInt(),
-                        itemView.top, itemView.right, itemView.bottom)
-                val cY = (itemView.top + itemView.bottom) / 2
-                icon.setBounds(itemView.right - icon.intrinsicWidth - iconLeftMargin,
-                        cY - icon.intrinsicHeight / 2, itemView.right - iconLeftMargin,
-                        cY + icon.intrinsicHeight / 2)
-            } else {
-                background.setBounds(0, 0, 0, 0)
-                icon.setBounds(0, 0, 0, 0)
-            }
-            background.draw(c)
-            icon.draw(c)
-        }
-    }
-
-    class DividerItemDecoration(context: Context) : RecyclerView.ItemDecoration() {
-
-        private val bounds = Rect()
-        private val divider: Drawable?
-        var startOffset = 0
-
-        init {
-            val a = context.obtainStyledAttributes(intArrayOf(android.R.attr.listDivider))
-            divider = a.getDrawable(0)
-            a.recycle()
-        }
-
-        override fun onDraw(canvas: Canvas, parent: RecyclerView, state: RecyclerView.State) {
-            if (parent.layoutManager == null || divider == null) {
-                return
-            }
-            canvas.save()
-            val left: Int
-            val right: Int
-            //noinspection AndroidLintNewApi - NewApi lint fails to handle overrides.
-            if (parent.clipToPadding) {
-                left = parent.paddingLeft
-                right = parent.width - parent.paddingRight
-                canvas.clipRect(left, parent.paddingTop, right,
-                        parent.height - parent.paddingBottom)
-            } else {
-                left = 0
-                right = parent.width
-            }
-
-            val childCount = parent.childCount
-            for (i in 0 until childCount - 1) {
-                val child = parent.getChildAt(i)
-                parent.getDecoratedBoundsWithMargins(child, bounds)
-                val bottom: Int = bounds.bottom + child.translationY.roundToInt()
-                val top: Int = bottom - divider.intrinsicHeight
-                divider.setBounds(left + startOffset, top, right, bottom)
-                divider.draw(canvas)
-            }
-            canvas.restore()
-        }
-
-        override fun getItemOffsets(outRect: Rect, view: View, parent: RecyclerView, state: RecyclerView.State) {
-            if (divider == null) return
-            outRect.set(0, 0, 0, divider.intrinsicHeight)
-        }
-
     }
 
     companion object {
