@@ -10,12 +10,12 @@ import android.util.JsonToken
 import com.majeur.psclient.R
 import com.majeur.psclient.model.battle.Move
 import com.majeur.psclient.model.common.Item
-import com.majeur.psclient.model.common.Species
 import com.majeur.psclient.model.common.Stats
 import com.majeur.psclient.model.pokemon.DexPokemon
 import com.majeur.psclient.util.toId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import java.io.IOException
 import java.io.InputStreamReader
 
@@ -49,35 +49,63 @@ class AssetLoader(val context: Context) {
         MoveDetailsLoader(context)
     }
 
-    suspend fun allItems(constraint: String) = allItemsLoader.load(constraint)
-
-    suspend fun allSpecies(constraint: String) = allSpeciesLoader.load(constraint)
-
-    suspend fun dexIcon(species: String) = species.run {
-        dexIconLoader.load(if (startsWith("arceus", ignoreCase = true)) "arceus" else this.toId())
+    private val itemIconLoader by lazy {
+        ItemIconLoader(context)
     }
 
-    suspend fun dexIcons(vararg species: String) = species.map { if (it.startsWith("arceus", ignoreCase = true)) "arceus" else it.toId() }.run {
-        dexIconLoader.load(*toTypedArray())
+    suspend fun allItems(constraint: String) = withContext(Dispatchers.IO) {
+        allItemsLoader.load(constraint)
     }
 
-    suspend fun dexPokemon(species: String) = dexPokemonLoader.load(species)
-
-    suspend fun item(itemId: String) = itemLoader.load(itemId)
-
-    suspend fun learnset(species: String) = learnsetLoader.load(species)
-
-    suspend fun moveDetails(moveName: String) = moveName.run {
-        moveDetailsLoader.load(if (startsWith("z-", ignoreCase = true)) substring(2).toId() else toId())
+    suspend fun allSpecies(constraint: String) = withContext(Dispatchers.IO) {
+        allSpeciesLoader.load(constraint)
     }
 
-    suspend fun movesDetails(vararg moveIds: String) = moveIds.map { if (it.startsWith("-z", ignoreCase = true)) it.substring(2).toId() else it.toId() }.run {
-        moveDetailsLoader.load(*toTypedArray())
+    suspend fun dexIcon(species: String) = withContext(Dispatchers.IO) {
+        species.run {
+            dexIconLoader.load(if (startsWith("arceus", ignoreCase = true)) "arceus" else this.toId())
+        }
     }
 
-    fun dexIconNonSuspend(species: String) = dexIconLoader.loadNonSuspend(species)
+    suspend fun dexIcons(vararg species: String) = withContext(Dispatchers.IO) {
+        species.map { if (it.startsWith("arceus", ignoreCase = true)) "arceus" else it.toId() }.run {
+            dexIconLoader.load(*toTypedArray())
+        }
+    }
 
-    fun dexPokemonNonSuspend(species: String) = dexPokemonLoader.loadNonSuspend(species)
+    suspend fun dexPokemon(species: String) = withContext(Dispatchers.IO) {
+        dexPokemonLoader.load(species)
+    }
+
+    suspend fun item(itemId: String) = withContext(Dispatchers.IO) {
+        itemLoader.load(itemId)
+    }
+
+    suspend fun learnset(species: String) = withContext(Dispatchers.IO) {
+        learnsetLoader.load(species)
+    }
+
+    suspend fun moveDetails(moveName: String) = withContext(Dispatchers.IO) {
+        moveName.run {
+            moveDetailsLoader.load(if (startsWith("z-", ignoreCase = true)) substring(2).toId() else toId())
+        }
+    }
+
+    suspend fun movesDetails(vararg moveIds: String) = withContext(Dispatchers.IO) {
+        moveIds.map { if (it.startsWith("-z", ignoreCase = true)) it.substring(2).toId() else it.toId() }.run {
+            moveDetailsLoader.load(*toTypedArray())
+        }
+    }
+
+    suspend fun itemIcon(spriteId: Int) = withContext(Dispatchers.IO) {
+        itemIconLoader.load(spriteId.toString())
+    }
+
+    fun dexIconNonSuspend(species: String) = dexIconLoader.load(species)
+
+    fun dexPokemonNonSuspend(species: String) = dexPokemonLoader.load(species)
+
+    fun allSpeciesNonSuspend(species: String) = allSpeciesLoader.load(species)
 
     abstract class Loader<T>(
             protected val context: Context,
@@ -88,20 +116,12 @@ class AssetLoader(val context: Context) {
             override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, T?>?) = size > maxCache
         }
 
-        fun loadNonSuspend(assetId: String): T? {
+        fun load(vararg assetIds: String) = assetIds.map { load(it) }
+
+        // Synchronizing here may be a bit rough but I'll keep this here for now...
+        @Synchronized fun load(assetId: String): T? {
             return if (useCache) cache.getOrPut(assetId) { compute(assetId) }
             else compute(assetId)
-        }
-
-        suspend fun load(vararg assetIds: String) = assetIds.map { load(it) }
-
-        suspend fun load(assetId: String): T? {
-            return if (useCache) cache.getOrPut(assetId) { computeInternal(assetId) }
-            else computeInternal(assetId)
-        }
-
-        private suspend fun computeInternal(assetId: String) = withContext(Dispatchers.IO) {
-            compute(assetId)
         }
 
         protected abstract fun compute(assetId: String): T?
@@ -114,54 +134,52 @@ class AssetLoader(val context: Context) {
             }
     }
 
-    class AllItemsLoader(context: Context) : Loader<List<Item>>(context, useCache = false) {
+    class AllItemsLoader(context: Context) : Loader<List<String>>(context, useCache = false) {
 
         @Throws(IOException::class)
-        override fun compute(constraint: String): List<Item>? {
-            val items = mutableListOf<Item>()
+        override fun compute(constraint: String): List<String>? {
+            val itemNames = mutableListOf<String>()
             jsonReader(R.raw.items).use { reader ->
                 reader.beginObject()
                 while (reader.hasNext()) {
                     val itemId = reader.nextName()
                     if (itemId.contains(constraint)) {
-                        items.add(parseItem(reader, itemId))
+                        itemNames.add(parseItemName(reader, itemId))
                     } else {
                         reader.skipValue()
                     }
                 }
                 reader.endObject()
             }
-            return items
+            return itemNames
         }
 
         @Throws(IOException::class)
-        private fun parseItem(reader: JsonReader, itemId: String): Item {
-            return Item().apply {
-                id = itemId
-                reader.beginObject()
-                while (reader.hasNext()) {
-                    when (reader.nextName()) {
-                        "name" -> name = reader.nextString()
-                        "desc" -> reader.skipValue() // Ignored for now
-                        else -> reader.skipValue()
-                    }
+        private fun parseItemName(reader: JsonReader, itemId: String): String {
+            var name = itemId
+            reader.beginObject()
+            while (reader.hasNext()) {
+                when (reader.nextName()) {
+                    "name" -> name = reader.nextString()
+                    else -> reader.skipValue()
                 }
-                reader.endObject()
             }
+            reader.endObject()
+            return name
         }
     }
 
-    class AllSpeciesLoader(context: Context) : Loader<List<Species>>(context, useCache = false) {
+    class AllSpeciesLoader(context: Context) : Loader<List<String>>(context, useCache = false) {
 
         @Throws(IOException::class)
-        override fun compute(constraint: String): List<Species>? {
-            val species = mutableListOf<Species>()
+        override fun compute(constraint: String): List<String>? {
+            val species = mutableListOf<String>()
             jsonReader(R.raw.dex).use { reader ->
                 reader.beginObject()
                 while (reader.hasNext()) {
                     val speciesId = reader.nextName()
-                    if (speciesId.contains(constraint)) {
-                        species.add(parseSpecies(reader, speciesId))
+                    if (speciesId.startsWith(constraint, ignoreCase = true)) {
+                        species.add(parseSpeciesName(reader, speciesId))
                     } else {
                         reader.skipValue()
                     }
@@ -172,27 +190,24 @@ class AssetLoader(val context: Context) {
         }
 
         @Throws(IOException::class)
-        private fun parseSpecies(reader: JsonReader, speciesId: String): Species {
-            return Species().apply {
-                id = speciesId
-                reader.beginObject()
-                while (reader.hasNext()) {
-                    when (reader.nextName()) {
-                        "name" -> name = reader.nextString()
-                        "forme" -> reader.skipValue() // Maybe prevent item related formes from being available in teambuilder ?
-                        else -> reader.skipValue()
-                    }
+        private fun parseSpeciesName(reader: JsonReader, speciesId: String): String {
+            var name = speciesId
+            reader.beginObject()
+            while (reader.hasNext()) {
+                when (reader.nextName()) {
+                    "name" -> name = reader.nextString()
+                    else -> reader.skipValue()
                 }
-                reader.endObject()
             }
+            reader.endObject()
+            return name
         }
     }
 
-    class DexIconLoader(context: Context) : Loader<Bitmap>(context) {
+    class DexIconLoader(context: Context) : Loader<Bitmap>(context, maxCache = 16) {
 
         companion object {
             private const val SHEET_WIDTH = 480
-            private const val SHEET_HEIGHT = 3030
             private const val ELEMENT_WIDTH = 40
             private const val ELEMENT_HEIGHT = 30
         }
@@ -201,7 +216,7 @@ class AssetLoader(val context: Context) {
 
         private val bitmapDecoder: BitmapRegionDecoder
             get() {
-                val inputStream = resources.openRawResource(R.raw.dex_icon_sheet)
+                val inputStream = resources.openRawResource(R.raw.dex_icons_sheet)
                 return BitmapRegionDecoder.newInstance(inputStream, true)
             }
 
@@ -366,7 +381,7 @@ class AssetLoader(val context: Context) {
                 family.addAll(preEvos)
             } while (preEvos.isNotEmpty())
 
-            val learnset = mutableListOf<String>()
+            val learnset = mutableSetOf<String>()
             jsonReader(R.raw.learnsets).use { reader ->
                 reader.beginObject()
                 while (reader.hasNext()) {
@@ -463,6 +478,43 @@ class AssetLoader(val context: Context) {
                     }
                 }
                 reader.endObject()
+            }
+        }
+    }
+
+    class ItemIconLoader(context: Context) : Loader<Bitmap>(context, maxCache = 16) {
+
+        companion object {
+            private const val SHEET_WIDTH = 384
+            private const val ELEMENT_WIDTH = 24
+            private const val ELEMENT_HEIGHT = 24
+        }
+
+        private val tempRect = Rect()
+
+        private val bitmapDecoder: BitmapRegionDecoder
+            get() {
+                val inputStream = resources.openRawResource(R.raw.item_icons_sheet)
+                return BitmapRegionDecoder.newInstance(inputStream, true)
+            }
+
+        @Throws(IOException::class)
+        override fun compute(assetId: String): Bitmap? {
+            val index = assetId.toIntOrNull() ?: 0
+            val xDim = SHEET_WIDTH / ELEMENT_WIDTH
+            val x = index % xDim
+            val y = index / xDim
+            tempRect.apply {
+                left = x * ELEMENT_WIDTH
+                top = y * ELEMENT_HEIGHT
+                right = (x + 1) * ELEMENT_WIDTH
+                bottom = (y + 1) * ELEMENT_HEIGHT
+            }
+            Timber.d("index:$assetId -> left:${tempRect.left} top:${tempRect.top}")
+            return bitmapDecoder.run {
+                val bitmap = decodeRegion(tempRect, null)
+                recycle()
+                bitmap
             }
         }
     }

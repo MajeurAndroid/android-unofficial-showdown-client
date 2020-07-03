@@ -10,4 +10,11 @@ data = get_remote_data(url_png_file, utf8=False)
 
 write_into_file(app_data_dir + "/" + target_file_name, data, binary=True)
 
+target_file_name = "item_icons_sheet.png"
+url_png_file = "http://play.pokemonshowdown.com/sprites/itemicons-sheet.png"
+
+data = get_remote_data(url_png_file, utf8=False)
+
+write_into_file(app_data_dir + "/" + target_file_name, data, binary=True)
+
 finish()
