@@ -2,28 +2,24 @@ package com.majeur.psclient.model.pokemon
 
 import com.majeur.psclient.model.common.Stats
 
-class TeamPokemon(species: String) : BasePokemon() {
+class TeamPokemon() : BasePokemon() {
 
-    var name: String? = null
-    var item: String? = null
-    var ability: String? = null
-    var moves = emptyList<String>()
-    var nature: String? = null
-    var evs: Stats
-    var gender: String? = null
-    var ivs: Stats
+    var name: String = ""
+    var item: String = ""
+    var ability: String = ""
+    var moves: List<String> = emptyList()
+    var nature: String = ""
+    var evs = Stats(0)
+    var gender: String = ""
+    var ivs = Stats(31)
     var shiny = false
-    var level: Int
-    var happiness: Int
-    var hpType: String? = null
-    var pokeball: String? = null
+    var level = 100
+    var happiness = 255
+    var hpType: String = ""
+    var pokeball: String = ""
 
-    init {
+    constructor(species: String) : this() {
         this.species = species
-        ivs = Stats(31)
-        evs = Stats(0)
-        level = 100
-        happiness = 255
     }
 
     companion object {

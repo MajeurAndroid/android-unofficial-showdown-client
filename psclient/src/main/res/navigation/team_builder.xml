@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/team_fragment">
+
+    <fragment
+        android:id="@+id/team_fragment"
+        android:name="com.majeur.psclient.ui.teambuilder.TeamFragment"
+        android:label="Team Builder"
+        tools:layout="@layout/fragment_tb_team">
+
+        <action
+            android:id="@+id/action_team_frag_to_pokemon_frag"
+            app:destination="@id/pokemon_fragment"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim"/>
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/pokemon_fragment"
+        android:name="com.majeur.psclient.ui.teambuilder.PokemonFragment"
+        android:label="Edit Pokémon"
+        tools:layout="@layout/fragment_tb_pokemon">
+
+        <action
+            android:id="@+id/action_pokemon_frag_to_move_choice_frag"
+            app:destination="@id/move_choice_fragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right"/>
+
+        <action
+                android:id="@+id/action_pokemon_frag_to_item_choice_frag"
+                app:destination="@id/item_choice_fragment"
+                app:enterAnim="@anim/slide_in_right"
+                app:exitAnim="@anim/slide_out_left"
+                app:popEnterAnim="@anim/slide_in_left"
+                app:popExitAnim="@anim/slide_out_right"/>
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/move_choice_fragment"
+        android:name="com.majeur.psclient.ui.teambuilder.MovesFragment"
+        android:label="Moves"/>
+
+    <fragment
+            android:id="@+id/item_choice_fragment"
+            android:name="com.majeur.psclient.ui.teambuilder.ItemsFragment"
+            android:label="Items"/>
+
+</navigation>

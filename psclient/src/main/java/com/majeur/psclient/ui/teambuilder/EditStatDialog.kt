@@ -68,7 +68,7 @@ class EditStatDialog : DialogFragment(), SeekBar.OnSeekBarChangeListener {
                 }
             })
             okButton.setOnClickListener {
-                val fragment = targetFragment as EditPokemonFragment
+                val fragment = parentFragment as PokemonFragment
                 fragment.onStatModified(statName, ev, iv)
                 dismiss()
             }

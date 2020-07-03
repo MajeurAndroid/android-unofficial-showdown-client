@@ -1,5 +1,10 @@
 package com.majeur.psclient.model.common
 
+import android.text.SpannableStringBuilder
+import androidx.core.text.toSpanned
+import com.majeur.psclient.util.plus
+import com.majeur.psclient.util.small
+import com.majeur.psclient.util.toId
 import org.json.JSONObject
 import java.io.Serializable
 import java.util.*
@@ -45,7 +50,7 @@ class Stats() : Serializable {
     }
 
     fun setAll(value: Int) {
-        hp =  value
+        hp = value
         atk = value
         def = value
         spa = value
@@ -54,7 +59,7 @@ class Stats() : Serializable {
     }
 
     fun set(stats: Stats) {
-        hp =  stats.hp
+        hp = stats.hp
         atk = stats.atk
         def = stats.def
         spa = stats.spa
@@ -64,7 +69,7 @@ class Stats() : Serializable {
 
     fun set(name: String, value: Int) = set(toIndex(name), value)
 
-    operator fun set(index: Int, value: Int) = when (index) {
+    fun set(index: Int, value: Int) = when (index) {
         0 -> hp = value
         1 -> atk = value
         2 -> def = value
@@ -74,10 +79,9 @@ class Stats() : Serializable {
         else -> Unit
     }
 
-
     fun get(index: Int) = array[index]
 
-    fun sum() =  hp + atk + def + spa + spd + spe
+    fun sum() = hp + atk + def + spa + spd + spe
 
     fun hpType(): String {
         val a = if (hp % 2 == 0) 0 else 1
@@ -241,19 +245,31 @@ class Stats() : Serializable {
         }
     }
 
+    fun summaryText(nature: Nature = Nature.DEFAULT): CharSequence {
+        val a = arrayOf(nature.plus, nature.minus)
+        return (0 until 6).filter { i -> get(i) != 0 || a.contains(getName(i)!!.toId()) }
+                .joinTo(SpannableStringBuilder()) { i ->
+                    val name = getName(i)!!
+                    val natSign = if (name.toId() == nature.plus) "+" else if (name.toId() == nature.minus) "-" else ""
+                    "${get(i)}".toSpanned() + natSign.small() + name.small()
+                }
+    }
+
     companion object {
 
-        @JvmStatic fun getName(index: Int) =  when (index) {
+        @JvmStatic
+        fun getName(index: Int) = when (index) {
             0 -> "HP"
             1 -> "Atk"
             2 -> "Def"
             3 -> "SpA"
             4 -> "Spd"
             5 -> "Spe"
-                else -> null
+            else -> null
         }
 
-        @JvmStatic fun checkHpType(type: String?) = when (type?.trim()?.toLowerCase(Locale.ROOT)) {
+        @JvmStatic
+        fun checkHpType(type: String?) = when (type?.trim()?.toLowerCase(Locale.ROOT)) {
             "bug" -> true
             "dark" -> true
             "dragon" -> true
@@ -296,11 +312,13 @@ class Stats() : Serializable {
             return value.toInt()
         }
 
-        @JvmStatic fun calculateStat(base: Int, iv: Int, ev: Int, niv: Int, nat: Float): Int {
+        @JvmStatic
+        fun calculateStat(base: Int, iv: Int, ev: Int, niv: Int, nat: Float): Int {
             return (((2 * base + iv + ev / 4) * niv / 100 + 5) * nat).toInt()
         }
 
-        @JvmStatic fun calculateHp(base: Int, iv: Int, ev: Int, niv: Int): Int {
+        @JvmStatic
+        fun calculateHp(base: Int, iv: Int, ev: Int, niv: Int): Int {
             return (2 * base + iv + ev / 4) * niv / 100 + niv + 10
         }
 

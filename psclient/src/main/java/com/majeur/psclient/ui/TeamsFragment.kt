@@ -20,7 +20,7 @@ import com.majeur.psclient.io.TeamsStore
 import com.majeur.psclient.model.common.BattleFormat
 import com.majeur.psclient.model.common.Team
 import com.majeur.psclient.model.common.toId
-import com.majeur.psclient.ui.teambuilder.EditTeamActivity
+import com.majeur.psclient.ui.teambuilder.TeamBuilderActivity
 import com.majeur.psclient.util.toId
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -74,11 +74,7 @@ class TeamsFragment : BaseFragment() {
         binding.teamList.setAdapter(listAdapter)
         binding.teamList.setOnChildClickListener { _, _, groupPosition, childPosition, _ ->
             val team = listAdapter.getChild(groupPosition, childPosition)
-            val intent = Intent(context, EditTeamActivity::class.java)
-            val battleFormats = service!!.getSharedData<List<BattleFormat.Category>>("formats")!!
-            intent.putExtra(EditTeamActivity.INTENT_EXTRA_FORMATS, battleFormats as Serializable)
-            intent.putExtra(EditTeamActivity.INTENT_EXTRA_TEAM, team)
-            startActivityForResult(intent, EditTeamActivity.INTENT_REQUEST_CODE)
+            startTeamBuilderActivity(team)
             true
         }
         binding.teamList.setOnCreateContextMenuListener { contextMenu, _, contextMenuInfo ->
@@ -88,10 +84,7 @@ class TeamsFragment : BaseFragment() {
                 requireActivity().menuInflater.inflate(R.menu.context_menu_team, contextMenu)
         }
         binding.importFab.setOnClickListener {
-            val fm = requireFragmentManager()
-            if (fm.findFragmentByTag(ImportTeamDialog.FRAGMENT_TAG) == null)
-                ImportTeamDialog.newInstance(this@TeamsFragment)
-                        .show(fm, ImportTeamDialog.FRAGMENT_TAG)
+            startTeamBuilderActivity()
         }
         binding.teamList.setOnScrollListener(object : AbsListView.OnScrollListener {
             var state = AbsListView.OnScrollListener.SCROLL_STATE_IDLE
@@ -109,6 +102,15 @@ class TeamsFragment : BaseFragment() {
                     }
             }
         })
+    }
+
+    private fun startTeamBuilderActivity(team: Team? = null) {
+        val intent = Intent(context, TeamBuilderActivity::class.java)
+        val battleFormats = service!!.getSharedData<List<BattleFormat.Category>>("formats")!!
+        intent.putExtra(TeamBuilderActivity.INTENT_EXTRA_FORMATS, battleFormats as Serializable)
+        if (team != null)
+            intent.putExtra(TeamBuilderActivity.INTENT_EXTRA_TEAM, team)
+        startActivityForResult(intent, TeamBuilderActivity.INTENT_REQUEST_CODE)
     }
 
     override fun onContextItemSelected(item: MenuItem): Boolean {
@@ -161,8 +163,8 @@ class TeamsFragment : BaseFragment() {
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (requestCode == EditTeamActivity.INTENT_REQUEST_CODE && resultCode == Activity.RESULT_OK && data != null) {
-            val team = data.getSerializableExtra(EditTeamActivity.INTENT_EXTRA_TEAM) as Team
+        if (requestCode == TeamBuilderActivity.INTENT_REQUEST_CODE && resultCode == Activity.RESULT_OK && data != null) {
+            val team = data.getSerializableExtra(TeamBuilderActivity.INTENT_EXTRA_TEAM) as Team
             addOrUpdateTeam(team)
             persistUserTeams()
         }

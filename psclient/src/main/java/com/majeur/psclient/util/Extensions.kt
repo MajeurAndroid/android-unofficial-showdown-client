@@ -2,6 +2,7 @@ package com.majeur.psclient.util
 
 import android.graphics.Typeface
 import android.text.Spannable
+import android.text.TextUtils
 import android.text.style.BackgroundColorSpan
 import android.text.style.ForegroundColorSpan
 import android.text.style.RelativeSizeSpan
@@ -12,6 +13,8 @@ import java.util.*
 private val ID_REGEX = "[^a-z0-9]".toRegex()
 
 fun String.toId(): String = this.toLowerCase(Locale.ROOT).replace(ID_REGEX, "")
+
+operator fun CharSequence.plus(other: CharSequence): CharSequence = TextUtils.concat(this, other)
 
 fun CharSequence.bold() = toSpannable().bold()
 
@@ -55,3 +58,5 @@ fun Spannable.bg(color: Int): Spannable {
     setSpan(BackgroundColorSpan(color), 0, length, Spannable.SPAN_INCLUSIVE_EXCLUSIVE)
     return this
 }
+
+fun String.or(or: String) : String = if (isBlank()) or else this

@@ -8,8 +8,11 @@ open class BasePokemon : Serializable {
 
     var species: String = ""
         set(value) {
-            computeForme(value)
             field = value
+            baseSpecies = ""
+            forme = null
+            spriteId = ""
+            computeForme(value)
         }
 
     var baseSpecies: String = ""

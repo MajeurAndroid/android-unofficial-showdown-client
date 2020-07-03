@@ -138,13 +138,16 @@
             app:layout_constraintStart_toStartOf="@+id/textView7"
             app:layout_constraintTop_toBottomOf="@+id/textView7"/>
 
-        <AutoCompleteTextView
+        <TextView
             android:id="@+id/itemInput"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
-            android:selectAllOnFocus="true"
+            android:background="?attr/editTextBackground"
+            android:textColor="?attr/editTextColor"
+            android:textAppearance="?android:attr/textAppearanceMediumInverse"
             android:singleLine="true"
+            android:text="Sitrus Berry"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="@+id/textView8"
             app:layout_constraintTop_toBottomOf="@+id/textView8"/>
@@ -209,48 +212,56 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/divider2"/>
 
-        <AutoCompleteTextView
+        <TextView
             android:id="@+id/move1Input"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginEnd="4dp"
-            android:selectAllOnFocus="true"
+            android:background="?attr/editTextBackground"
+            android:textColor="?attr/editTextColor"
+            android:textAppearance="?android:attr/textAppearanceMediumInverse"
             app:layout_constraintEnd_toStartOf="@+id/guideline"
             app:layout_constraintStart_toStartOf="@+id/textView9"
             app:layout_constraintTop_toBottomOf="@+id/textView9"/>
 
-        <AutoCompleteTextView
+        <TextView
             android:id="@+id/move2Input"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="4dp"
             android:layout_marginEnd="8dp"
-            android:selectAllOnFocus="true"
+            android:background="?attr/editTextBackground"
+            android:textColor="?attr/editTextColor"
+            android:textAppearance="?android:attr/textAppearanceMediumInverse"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="1.0"
             app:layout_constraintStart_toStartOf="@+id/guideline"
             app:layout_constraintTop_toBottomOf="@+id/textView9"/>
 
-        <AutoCompleteTextView
+        <TextView
             android:id="@+id/move4Input"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="4dp"
             android:layout_marginTop="8dp"
             android:layout_marginEnd="8dp"
-            android:selectAllOnFocus="true"
+            android:background="?attr/editTextBackground"
+            android:textColor="?attr/editTextColor"
+            android:textAppearance="?android:attr/textAppearanceMediumInverse"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="@+id/guideline"
             app:layout_constraintTop_toBottomOf="@+id/move2Input"/>
 
-        <AutoCompleteTextView
+        <TextView
             android:id="@+id/move3Input"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:layout_marginEnd="4dp"
-            android:selectAllOnFocus="true"
+            android:background="?attr/editTextBackground"
+            android:textColor="?attr/editTextColor"
+            android:textAppearance="?android:attr/textAppearanceMediumInverse"
             app:layout_constraintEnd_toStartOf="@+id/guideline"
             app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="@+id/textView9"
@@ -327,57 +338,6 @@
             app:layout_constraintBottom_toBottomOf="@+id/hpTypeSelector"
             app:layout_constraintEnd_toStartOf="@+id/hpTypeSelector"
             app:layout_constraintTop_toTopOf="@+id/hpTypeSelector"/>
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/clear_button"
-            style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="end"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="4dp"
-            android:text="Clear"
-            app:icon="@drawable/ic_clear"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/divider5"/>
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/export_button"
-            style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="end"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="4dp"
-            android:text="Export"
-            app:icon="@drawable/ic_export"
-            app:layout_constraintStart_toEndOf="@+id/clear_button"
-            app:layout_constraintTop_toBottomOf="@+id/divider5"/>
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/import_button"
-            style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="end"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="4dp"
-            android:text="Import"
-            app:icon="@drawable/ic_import"
-            app:layout_constraintStart_toEndOf="@+id/export_button"
-            app:layout_constraintTop_toBottomOf="@+id/divider5"/>
-
-        <View
-            android:id="@+id/divider5"
-            android:layout_width="395dp"
-            android:layout_height="1dp"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginEnd="8dp"
-            android:background="?android:attr/listDivider"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/hpTypeSelector"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

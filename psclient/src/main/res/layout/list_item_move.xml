@@ -3,7 +3,9 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="4dp">
+    android:paddingVertical="8dp"
+    android:paddingHorizontal="16dp"
+    android:background="?selectableItemBackground">
 
     <ImageView
         android:id="@+id/type_view"
@@ -25,7 +27,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_toStartOf="@id/type_view"
-        style="@style/TextAppearance.MaterialComponents.Subtitle2"/>
+        style="@style/TextAppearance.MaterialComponents.Subtitle1"/>
 
 
     <TextView

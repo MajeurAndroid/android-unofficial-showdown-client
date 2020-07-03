@@ -1,5 +1,7 @@
 package com.majeur.psclient.model.common
 
+import com.majeur.psclient.util.toId
+
 
 class Nature private constructor(val name: String, val plus: String, val minus: String) {
 
@@ -35,6 +37,8 @@ class Nature private constructor(val name: String, val plus: String, val minus: 
         val ALL = arrayOf(Serious, Bashful, Bold, Brave, Calm, Careful, Docile,
                 Gentle, Hardy, Hasty, Impish, Jolly, Lax, Lonely, Mild, Modest,
                 Naive, Naughty, Quiet, Quirky, Rash, Relaxed, Sassy, Adamant, Timid)
+
+        fun get(name: String) = ALL.firstOrNull { it.name.toId() == name.toId() } ?: DEFAULT
     }
 
     private var atk = 1f

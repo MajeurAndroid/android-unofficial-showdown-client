@@ -9,6 +9,7 @@
     <color name="onBackground">#333333</color>
     <color name="surfaceBackground">#ffffff</color>
     <color name="onSurfaceBackground">#000000</color>
+    <color name="error">#C62828</color>
 
     <color name="ic_launcher_background">#37474f</color>
 
