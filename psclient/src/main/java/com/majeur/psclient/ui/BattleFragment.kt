@@ -21,6 +21,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.majeur.psclient.R
 import com.majeur.psclient.databinding.FragmentBattleBinding
 import com.majeur.psclient.io.AssetLoader
+import com.majeur.psclient.io.BattleAudioManager
 import com.majeur.psclient.io.GlideHelper
 import com.majeur.psclient.model.battle.*
 import com.majeur.psclient.model.common.Colors.healthColor
@@ -42,7 +43,7 @@ import kotlinx.coroutines.launch
 class BattleFragment : BaseFragment() {
 
     private lateinit var glideHelper: GlideHelper
-    private lateinit var audioManager: AudioBattleManager
+    private lateinit var audioManager: BattleAudioManager
     private lateinit var assetLoader: AssetLoader
 
     private lateinit var inactiveBattleOverlayDrawable: InactiveBattleOverlayDrawable
@@ -76,7 +77,7 @@ class BattleFragment : BaseFragment() {
         assetLoader = mainActivity.assetLoader
         battleTipPopup = BattleTipPopup(context)
         battleTipPopup.setOnBindPopupViewListener(mOnBindPopupViewListener)
-        audioManager = AudioBattleManager(context)
+        audioManager = BattleAudioManager(context)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {

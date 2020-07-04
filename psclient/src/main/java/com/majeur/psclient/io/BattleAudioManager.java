@@ -1,4 +1,4 @@
-package com.majeur.psclient.util;
+package com.majeur.psclient.io;
 
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -15,7 +15,7 @@ import java.io.IOException;
 
 import static com.majeur.psclient.util.ExtensionsKt.toId;
 
-public class AudioBattleManager implements AudioManager.OnAudioFocusChangeListener {
+public class BattleAudioManager implements AudioManager.OnAudioFocusChangeListener {
 
     private final boolean mCompatAudio = Build.VERSION.SDK_INT < Build.VERSION_CODES.O;
 
@@ -30,7 +30,7 @@ public class AudioBattleManager implements AudioManager.OnAudioFocusChangeListen
     private boolean mResumeOnFocusGain;
     private boolean mUserHasPaused;
 
-    public AudioBattleManager(Context context) {
+    public BattleAudioManager(Context context) {
         mContext = context;
         mAudioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
         mMusicAudioAttrs = new AudioAttributes.Builder()
