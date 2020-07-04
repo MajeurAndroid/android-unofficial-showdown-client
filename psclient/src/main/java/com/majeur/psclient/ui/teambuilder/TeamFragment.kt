@@ -256,10 +256,11 @@ class TeamFragment : Fragment() {
                 name.text = if (p.name.isBlank()) p.species else "${p.name} (${p.species})"
                 holder.job = fragmentScope.launch {
                     val dexPokemon = assetLoader.dexPokemon(p.species.toId()) ?: return@launch
-                    val gender = when (dexPokemon.gender?.toId() ?: p.gender.or("m")) {
+                    val gender = when (dexPokemon.gender?.toId() ?: p.gender) {
                         "m" -> "♂"
                         "f" -> "♀"
-                        else -> "Undefined"
+                        "n" -> "Undefined"
+                        else -> "—"
                     }
                     details.text = "Level: ".small() + "${p.level}" + ", Gender: ".small() + gender
                     ability.text = "Ability: ".small() + dexPokemon.matchingAbility(p.ability.or("None"))
