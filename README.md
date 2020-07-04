@@ -12,7 +12,7 @@
 
 ## Introduction
 This repo contains source code for **unofficial** **P**okemon**S**howdown Client app. 
-This client is written in native java and works through android/java framework.
+This client is now written mostly in kotlin and works through android framework. It was formerly written in java so you'll still encounter some objects written in java.
 > **Why developing a native app when _play.pokemonshowdown.com_ is supporting mobile devices ?**
 *Well, web client does its best to support small screen sizes (and it does it pretty well) but the user experience is far away from what a native app is able to provide.*
 #### What Android PS Client is ?
@@ -27,44 +27,56 @@ Here I will briefly describe packages along with their main components to help y
 
 #### Tree:
 `com.majeur.psclient`
- - [*`(root)`*](app/src/main/java/com/majeur/psclient)
-	- [`.MainActivity.java`](app/src/main/java/com/majeur/psclient/MainActivity.java)
-	*In charge of setting up fragments and managing connection with ShowdownService.*
-	- [`.*Fragment.java`](app/src/main/java/com/majeur/psclient)
-	*Responsible of UI management by implementing their associate [`.*MessageObserver.java`](app/src/main/java/com/majeur/psclient/service) callbacks.*
-	- [`.*Dialog.java`](app/src/main/java/com/majeur/psclient)
+ - [`.ui`](psclient/src/main/java/com/majeur/psclient/ui)
+ 	- [`.teambuilder`](psclient/src/main/java/com/majeur/psclient/ui/teambuilder)
+	 	- [`.TeamBuilderActivity.kt`](psclient/src/main/java/com/majeur/psclient/ui/teambuilder/TeamBuilderActivity.kt)
+			*Regular android activity in charge of setting up navigation framework.*
+	 	- [`.*Fragment.kt`](psclient/src/main/java/com/majeur/psclient/ui/teambuilder)
+			*Self explanatory name.*
+	- [`.MainActivity.kt`](psclient/src/main/java/com/majeur/psclient/ui/MainActivity.kt)
+		*In charge of setting up fragments and managing connection with ShowdownService.*
+	- [`.*Fragment.kt`](psclient/src/main/java/com/majeur/psclient/ui)
+		*Responsible of UI management by implementing their associate [`*MessageObserver`](psclient/src/main/java/com/majeur/psclient/service) callbacks (except for [`TeamsFragment`](psclient/src/main/java/com/majeur/psclient/ui/TeamsFragment.kt) that works without registering any observer to [`ShowdownService`](psclient/src/main/java/com/majeur/psclient/service/ShowdownService.kt)).*
+	- [`.*Dialog.kt`](psclient/src/main/java/com/majeur/psclient)
 	*Self explanatory name.*
-	- *[...]*
- - [`.service`](app/src/main/java/com/majeur/psclient/service)
+ - [`.service`](psclient/src/main/java/com/majeur/psclient/service)
 	*Everything related to Showdown's protocol will be found in this package. From shodown server communication to handling and processing of incoming data.*
-	- [`.ShowdownService.kt`](app/src/main/java/com/majeur/psclient/service/ShowdownService.kt)
+	- [`.ShowdownService.kt`](psclient/src/main/java/com/majeur/psclient/service/ShowdownService.kt)
 		*Responsible of all interactions with showdown server, including authentication.*
-	- [`.AbsMessageObserver.kt`](app/src/main/java/com/majeur/psclient/service/AbsMessageObserver.kt)
+	- [`.AbsMessageObserver.kt`](psclient/src/main/java/com/majeur/psclient/service/AbsMessageObserver.kt)
 		*Base definition for a component that would handle messages from showdown server.*
-	- [`.GlobalMessageObserver.kt`](app/src/main/java/com/majeur/psclient/service/GlobalMessageObserver.kt)
+	- [`.GlobalMessageObserver.kt`](psclient/src/main/java/com/majeur/psclient/service/GlobalMessageObserver.kt)
 		*In charge of handling global server messages such as '|challstr|', '|popup|', '|formats|' etc... and rooms initialization.*
-	- [`.RoomMessageObserver.kt`](app/src/main/java/com/majeur/psclient/service/RoomMessageObserver.kt)
+	- [`.RoomMessageObserver.kt`](psclient/src/main/java/com/majeur/psclient/service/RoomMessageObserver.kt)
 		*Handles everything for a chat room to work.*
-	- [`.BattleMessageObserver.kt`](app/src/main/java/com/majeur/psclient/service/BattleMessageObserver.kt)
+	- [`.BattleMessageObserver.kt`](psclient/src/main/java/com/majeur/psclient/service/BattleMessageObserver.kt)
 		*Extends from `.RoomMessageObserver.kt` and adds support for battle commands.*
 	- *[...]*
- - [`.io`](app/src/main/java/com/majeur/psclient/io)
+ - [`.io`](psclient/src/main/java/com/majeur/psclient/io)
 	*Contains everything involving loading content (eg. from disk for dex/move/poke details and dex icons or from web for sprites).*
-	- [`.BattleTextBuilder.java`](app/src/main/java/com/majeur/psclient/io/BattleTextBuilder.java)
+	- [`.AssetLoader.kt`](psclient/src/main/java/com/majeur/psclient/io/AssetLoader.kt)
+		*Helper class for loading content easily, with caching etc... Defines suspend functions for loading any type of asset using Kotlin coroutines.*
+	- [`.BattleTextBuilder.java`](psclient/src/main/java/com/majeur/psclient/io/BattleTextBuilder.java)
 		*Provides formatted text according to an action and its effect (and/or its origin).*
-	- [`.AbsDataLoader.java`](app/src/main/java/com/majeur/psclient/io/AbsDataLoader.java)
-		*Base helper class for loading content easily, with caching etc...*
+	- [`.BattleAudioManager.java`](psclient/src/main/java/com/majeur/psclient/io/BattleAudioManager.java)
+		*Handles everything related to audio playback during a battle.*
 	- *[...]*
- - [`.model`](app/src/main/java/com/majeur/psclient/model)
-	*Contains every class representing data.*
+ - [`.model`](psclient/src/main/java/com/majeur/psclient/model)
+	*Contains every classes representing data.*
 	- *[...]*
- - [`.widget`](app/src/main/java/com/majeur/psclient/widget)
+ - [`.widget`](psclient/src/main/java/com/majeur/psclient/widget)
 	*Contains every custom android UI components.*
 	- *[...]*
-- [`.util`](app/src/main/java/com/majeur/psclient/util)
+- [`.util`](psclient/src/main/java/com/majeur/psclient/util)
 	*Contains various utility classes.*
-	- [`.ShowdownTeamParser.java`](app/src/main/java/com/majeur/psclient/util/ShowdownTeamParser.java)
+	- [`.html`](psclient/src/main/java/com/majeur/psclient/util/html)
+		*Utilities for displaying basic html using native android text framework. Mainly used for |html| and |raw| room messages.*
+		- [`.Html.java`](psclient/src/main/java/com/majeur/psclient/util/html/Html.java)
+			*Entry point for using html utilities*
+	- [`.SmogonTeamParser.kt`](psclient/src/main/java/com/majeur/psclient/util/SmogonTeamParser.kt)
 		*Responsible for parsing raw text teams formatted with Smogon standards.*
+	- [`.SmogonTeamBuilder.kt`](psclient/src/main/java/com/majeur/psclient/util/SmogonTeamBuilder.kt)
+		*Responsible for building text teams formatted with Smogon standards.*
 	- *[...]*
 ### Core mechanisms
 I'll describe here some of the core mechanisms through quick flow graphs.
@@ -92,9 +104,9 @@ Any help is very welcomed! Please make sure you are respecting the coding patter
  - Submit a bug report: [here](https://forms.gle/tqSeeZ9De3ik97CK8)
  - Reported bugs tracking: [here](https://docs.google.com/spreadsheets/d/1oC0m5SJEqx9HMXOAIHcgoa92B2CP69SmSuwHKR7v-X0/edit?usp=sharing)
 ## Credits
- - Everybody on our [Somogon thread](https://www.smogon.com/forums/threads/alpha02-need-testers-unofficial-showdown-android-client.3654298): For the huge help with bug reporting
+ - Everybody on our [Smogon thread](https://www.smogon.com/forums/threads/alpha02-need-testers-unofficial-showdown-android-client.3654298): For the huge help with bug reporting
  - [Zarel](https://github.com/Zarel): For PokemonShowdown itself.
- - [NamTThai](https://github.com/NamTThai): For some piece of java code translated from js I reuse here (such as team parser).
+ - [NamTThai](https://github.com/NamTThai): For some piece of java code translated from js ~~I reuse here~~.
  - [http://pokemonshowdown.com/credits](http://pokemonshowdown.com/credits)
  - Type icons: [DevianArt](https://www.deviantart.com/majeur01/art/Pokemon-Types-Icons-819866719)
 ## Licence
