@@ -148,7 +148,6 @@
             android:textColor="?attr/editTextColor"
             android:textAppearance="?android:attr/textAppearanceMediumInverse"
             android:singleLine="true"
-            android:text="Sitrus Berry"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="@+id/textView8"
             app:layout_constraintTop_toBottomOf="@+id/textView8"/>
