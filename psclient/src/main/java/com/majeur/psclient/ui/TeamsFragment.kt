@@ -263,7 +263,7 @@ class TeamsFragment : BaseFragment(), OnItemClickListener {
         private val VIEW_TYPE_ITEM = 1
 
         inner class CategoryHolder(val binding: ListCategoryTeamBinding) : RecyclerView.ViewHolder(binding.root)
-        inner class ItemHolder(val binding: ListItemTeamBinding, var job: Job? = null) : RecyclerView.ViewHolder(binding.root), View.OnClickListener {
+        inner class ItemHolder(val binding: ListItemTeamBinding, var job: Job? = null) : RecyclerView.ViewHolder(binding.root), View.OnClickListener, View.OnLongClickListener {
             val pokemonViews = binding.run {
                 listOf(imageViewPokemon1, imageViewPokemon2, imageViewPokemon3,
                         imageViewPokemon4, imageViewPokemon5, imageViewPokemon6)
@@ -272,6 +272,7 @@ class TeamsFragment : BaseFragment(), OnItemClickListener {
             init {
                 binding.copyButton.setOnClickListener(this)
                 binding.root.setOnClickListener(this)
+                binding.root.setOnLongClickListener(this)
             }
 
             override fun onClick(v: View?) {
@@ -280,6 +281,11 @@ class TeamsFragment : BaseFragment(), OnItemClickListener {
                 } else {
                     itemClickListener.onItemClick(itemView, this, adapterPosition)
                 }
+            }
+
+            override fun onLongClick(v: View?): Boolean {
+                makeSnackbar("Swipe to the left to remove a team from the list")
+                return true
             }
         }
 
