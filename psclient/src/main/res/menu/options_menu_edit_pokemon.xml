@@ -4,16 +4,16 @@
         xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
-            android:id="@+id/action_import"
-            android:title="Import"
-            android:icon="@drawable/ic_import"
+            android:id="@+id/action_paste"
+            android:title="Paste"
+            android:icon="@drawable/ic_paste"
             app:showAsAction="ifRoom"
             app:iconTint="@android:color/white"/>
 
     <item
-            android:id="@+id/action_export"
-            android:title="Export"
-            android:icon="@drawable/ic_export"
+            android:id="@+id/action_copy"
+            android:title="Copy"
+            android:icon="@drawable/ic_copy"
             app:showAsAction="ifRoom"
             app:iconTint="@android:color/white"/>
 

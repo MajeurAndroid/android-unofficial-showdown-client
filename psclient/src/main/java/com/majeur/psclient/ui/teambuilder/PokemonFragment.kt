@@ -111,48 +111,51 @@ class PokemonFragment : Fragment() {
     }
 
     override fun onOptionsItemSelected(menuItem: MenuItem) = when (menuItem.itemId) {
-        R.id.action_import -> run {
+        R.id.action_paste -> run {
             val clip = clipboardManager.primaryClip
             if (clip == null || !clip.description.hasMimeType(ClipDescription.MIMETYPE_TEXT_PLAIN) || clip.itemCount == 0) {
                 makeSnackbar("There is nothing that looks like a Pokemon in clipboard")
                 return@run true
             }
-            val poke = ShowdownTeamParser.parsePokemon(clip.getItemAt(0).text.toString()) { name: String ->
-                assetLoader.dexPokemonNonSuspend(name.toId())
+            fragmentScope.launch {
+                val rawPokemon = clip.getItemAt(0).text.toString()
+                val poke = SmogonTeamParser.parsePokemon(rawPokemon, assetLoader)
+                if (poke == null) {
+                    makeSnackbar("Could not parse pokemon from clipboard data")
+                    return@launch
+                }
+                pokemon.apply {
+                    species = poke.species
+                    name = poke.name
+                    item = poke.item
+                    ability = poke.ability
+                    moves = poke.moves
+                    nature = poke.nature
+                    evs = poke.evs
+                    gender = poke.gender
+                    ivs = poke.ivs
+                    shiny = poke.shiny
+                    level = poke.level
+                    happiness = poke.happiness
+                    hpType = poke.hpType
+                    pokeball = poke.pokeball
+                }
+                toggleInputViewsEnabled(false)
+                bindToPokemon()
+                trySpecies(poke.species, poke.ability, poke.moves)
             }
-            if (poke == null) {
-                makeSnackbar("Could not parse pokemon from clipboard data")
-                return@run true
-            }
-            pokemon.apply {
-                species = poke.species
-                name = poke.name
-                item = poke.item
-                ability = poke.ability
-                moves = poke.moves
-                nature = poke.nature
-                evs = poke.evs
-                gender = poke.gender
-                ivs = poke.ivs
-                shiny = poke.shiny
-                level = poke.level
-                happiness = poke.happiness
-                hpType = poke.hpType
-                pokeball = poke.pokeball
-            }
-            toggleInputViewsEnabled(false)
-            bindToPokemon()
-            trySpecies(poke.species, poke.ability, poke.moves)
             true
         }
-        R.id.action_export -> {
+        R.id.action_copy -> {
             if (pokemon.species.isBlank()) {
                 makeSnackbar("Choose a species first")
             } else {
-                val text = ShowdownTeamParser.fromPokemon(pokemon)
-                val clip = ClipData.newPlainText("Exported Pokemon", text)
-                clipboardManager.setPrimaryClip(clip)
-                makeSnackbar("${pokemon.species} exported to clipboard")
+                fragmentScope.launch {
+                    val text = SmogonTeamBuilder.buildPokemon(assetLoader, pokemon)
+                    val clip = ClipData.newPlainText(pokemon.species, text)
+                    clipboardManager.setPrimaryClip(clip)
+                    makeSnackbar("${pokemon.species} copied to clipboard")
+                }
             }
             true
         }
