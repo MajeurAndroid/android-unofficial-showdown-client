@@ -662,18 +662,18 @@ class BattleFragment : BaseFragment() {
                     binding.battleActionWidget.notifyDetailsUpdated()
                 }
                 fragmentScope.launch {
-                    val zMoves = moves.map { it.zName?.toId() }
-                    if (zMoves.all { it == null } == false) {
-                        assetLoader.movesDetails().forEachIndexed { index, details ->
+                    val zMoves = moves.map { it.zName?.toId() ?: "" }
+                    if (!zMoves.all { it.isBlank() }) {
+                        assetLoader.movesDetails(*zMoves.toTypedArray()).forEachIndexed { index, details ->
                             moves[index].zDetails = details
                         }
                         binding.battleActionWidget.notifyDetailsUpdated()
                     }
                 }
                 fragmentScope.launch {
-                    val maxMoves = moves.map { it.maxMoveId?.toId() }
-                    if (maxMoves.all { it == null } == false) {
-                        assetLoader.movesDetails().forEachIndexed { index, details ->
+                    val maxMoves = moves.map { it.maxMoveId?.toId() ?: "" }
+                    if (!maxMoves.all { it.isBlank() }) {
+                        assetLoader.movesDetails(*maxMoves.toTypedArray()).forEachIndexed { index, details ->
                             moves[index].maxDetails = details
                         }
                         binding.battleActionWidget.notifyMaxDetailsUpdated()

@@ -571,6 +571,7 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
                         );
                     else button.getBackground().clearColorFilter();
                     move.setMaxflag(true);
+                    setMoveButtonEnabled(button, true);
                 } else {
                     button.setText("—");
                     setMoveButtonEnabled(button, false);
@@ -583,7 +584,7 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
                                     move.getDetails().getColor(), BlendModeCompat.MODULATE)
                     );
                 else button.getBackground().clearColorFilter();
-                setMoveButtonEnabled(button, true);
+                setMoveButtonEnabled(button, !move.getDisabled());
                 move.setMaxflag(false);
             }
             // battleTipPopup.addTippedView(button);
