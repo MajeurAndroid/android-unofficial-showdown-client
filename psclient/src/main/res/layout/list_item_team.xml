@@ -6,7 +6,7 @@
         android:minHeight="?attr/listPreferredItemHeightLarge"
         android:paddingStart="32dp"
         android:paddingEnd="16dp"
-        android:background="?attr/selectableItemBackground">
+        android:background="@drawable/background_selectable_item_solid">
 
     <TextView
             android:id="@+id/text_view_title"
