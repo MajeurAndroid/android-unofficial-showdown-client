@@ -36,7 +36,7 @@ open class BaseFragment : Fragment(), MainActivity.Callbacks {
         requireFragmentManager().findFragmentById(R.id.fragment_teams) as TeamsFragment
     }
 
-    protected val mainActivity: MainActivity
+    val mainActivity: MainActivity
         get() = requireActivity() as MainActivity
 
     override fun onCreate(savedInstanceState: Bundle?) {

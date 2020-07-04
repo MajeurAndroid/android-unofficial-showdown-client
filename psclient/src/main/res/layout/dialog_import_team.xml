@@ -1,121 +1,117 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:padding="12dp">
-
-    <LinearLayout android:id="@+id/teamBuilderStub"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-          android:orientation="vertical">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Create new team"
-            android:layout_marginBottom="16dp"
-            android:layout_marginStart="10dp"
-            android:textAppearance="@style/TextAppearance.MaterialComponents.Headline5"/>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
-            android:text="Build a new team from scratch. Some features are not available here, so you might have to import your team from showdown. See below."/>
-
-
-        <Button
-            android:id="@+id/teambuilder_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="12dp"
-            android:layout_gravity="center_horizontal"
-            android:text="Open teambuilder"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
-
-    </LinearLayout>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:layout_marginStart="10dp"
-        android:textAppearance="@style/TextAppearance.MaterialComponents.Headline5"
-        android:text="Import new team(s)"/>
-
-    <com.majeur.psclient.widget.SwitchLayout
-        android:id="@+id/switch_layout"
+<androidx.constraintlayout.widget.ConstraintLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <RadioGroup
-            android:id="@+id/radio_group"
-            android:layout_width="match_parent"
+    <TextView
+            android:text="Import existing team(s)"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:id="@+id/textView3"
+            android:gravity="center_vertical"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:layout_marginStart="16dp"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium"/>
 
-            <TextView
+    <RadioGroup
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintTop_toBottomOf="@+id/textView3"
+            android:layout_marginTop="16dp"
+            android:id="@+id/radioGroup"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginStart="16dp">
+
+        <RadioButton
+                android:id="@+id/clipboard_radio"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
-                android:text="I personally recommand you yo copy paste your team from showdown to pastebin, and the entering the pastebin paste key here."/>
+                android:text="Clipboard"
+                android:checked="true"/>
 
-            <RadioButton
-                android:id="@+id/radio_import_pastebin"
+        <RadioButton
+                android:id="@+id/pastebin_radio"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
-                android:text="From Pastebin"/>
+                android:text="Pastebin"/>
 
-            <RadioButton
-                android:id="@+id/radio_import_clipboard"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
-                android:text="From clipboard"/>
+    </RadioGroup>
 
-            <RadioButton
-                android:id="@+id/radio_import_manually"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
-                android:text="Type manually"/>
-
-        </RadioGroup>
-
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <ProgressBar
-                android:id="@+id/progress_bar"
-                android:layout_width="match_parent"
-                android:layout_height="8dp"
-                android:indeterminate="true"
-                android:visibility="visible"
-                style="@style/Base.Widget.AppCompat.ProgressBar.Horizontal"/>
-
-            <EditText
-                android:layout_marginTop="8dp"
-                android:id="@+id/edit_text_import"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textSize="12sp"
-                android:maxHeight="280dp"/>
-
-        </FrameLayout>
-
-    </com.majeur.psclient.widget.SwitchLayout>
+    <EditText
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:inputType="textNoSuggestions"
+            android:ems="10"
+            android:hint="Url or key"
+            android:lines="1"
+            android:id="@+id/url_input"
+            app:layout_constraintBottom_toBottomOf="@+id/radioGroup"
+            app:layout_constraintStart_toEndOf="@+id/radioGroup"
+            android:layout_marginStart="16dp"/>
 
     <Button
-        android:id="@+id/button_"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:layout_gravity="center_horizontal"
-        android:text="Import"
-        style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+            android:text="Import"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/import_button"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="8dp"
+            app:layout_constraintTop_toBottomOf="@+id/radioGroup"
+            app:layout_constraintEnd_toEndOf="parent"
+            style="@style/Widget.MaterialComponents.Button.TextButton.Dialog"
+            android:layout_marginTop="16dp"/>
 
-</LinearLayout>
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/error"
+            app:layout_constraintEnd_toStartOf="@+id/import_button"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/import_button"
+            app:layout_constraintBottom_toBottomOf="@+id/import_button"
+            android:layout_marginEnd="16dp"
+            android:layout_marginStart="16dp"
+            android:textColor="@color/error"/>
+
+    <View
+            android:id="@+id/divider5"
+            android:background="@color/divider"
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            app:layout_constraintTop_toBottomOf="@+id/import_button"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="8dp"/>
+
+    <TextView
+            android:text="Export all teams"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/textView4"
+            android:gravity="center_vertical"
+            app:layout_constraintTop_toBottomOf="@id/divider5"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"
+            android:layout_marginStart="16dp"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium"/>
+
+    <Button
+            android:text="Export"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/export_button"
+            style="@style/Widget.MaterialComponents.Button.TextButton.Dialog"
+            android:layout_marginBottom="8dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textView4"
+            android:layout_marginTop="16dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginEnd="8dp"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

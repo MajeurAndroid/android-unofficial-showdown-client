@@ -18,10 +18,10 @@ class DexPokemon : BasePokemon() {
     var gender: String? = null
     var tier: String? = null
 
-    fun matchingAbility(abilityId: String): String {
+    fun matchingAbility(abilityId: String, or: String = abilityId): String {
         abilities.forEach { a -> if (a.toId() == abilityId) return a }
         if (hiddenAbility?.toId() == abilityId) return hiddenAbility!!
-        return abilityId
+        return or
     }
 
 }
