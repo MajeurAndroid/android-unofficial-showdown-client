@@ -18,16 +18,13 @@
         android:gravity="center"
         android:text="Teams"/>
 
-    <ExpandableListView
+    <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/team_list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/title"
-        android:paddingHorizontal="12dp"
         android:clipToPadding="false"
-        android:divider="@null"
-        android:childDivider="@null"
-        android:paddingBottom="74dp"/>
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
     <!-- <TextView
         android:id="@+id/empty_hint_view"
@@ -38,14 +35,26 @@
         android:textSize="16sp"
         android:text="Tap the add button to create\nor import a team"/> -->
 
-    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-        android:id="@+id/importFab"
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/importFab"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_alignParentEnd="true"
+            android:layout_above="@id/buildFab"
+            android:src="@drawable/ic_import_export"
+            app:tint="@color/secondary"
+            app:backgroundTint="@color/surfaceBackground"
+            app:backgroundTintMode="src_in"
+            app:borderWidth="0dp"/>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/buildFab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
-        android:layout_centerHorizontal="true"
+        android:layout_alignParentEnd="true"
         android:layout_alignParentBottom="true"
-        android:text="Create or import"
-        app:icon="@drawable/ic_new"/>
+        android:src="@drawable/ic_build"/>
 
 </RelativeLayout>

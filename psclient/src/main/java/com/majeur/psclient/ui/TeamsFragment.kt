@@ -1,26 +1,31 @@
 package com.majeur.psclient.ui
 
 import android.app.Activity
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import android.widget.*
-import android.widget.ExpandableListView.ExpandableListContextMenuInfo
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
-import com.majeur.psclient.R
 import com.majeur.psclient.databinding.FragmentTeamsBinding
+import com.majeur.psclient.databinding.ListCategoryTeamBinding
+import com.majeur.psclient.databinding.ListItemTeamBinding
 import com.majeur.psclient.io.AssetLoader
 import com.majeur.psclient.io.TeamsStore
 import com.majeur.psclient.model.common.BattleFormat
 import com.majeur.psclient.model.common.Team
 import com.majeur.psclient.model.common.toId
 import com.majeur.psclient.ui.teambuilder.TeamBuilderActivity
+import com.majeur.psclient.util.SmogonTeamBuilder
+import com.majeur.psclient.util.recyclerview.DividerItemDecoration
+import com.majeur.psclient.util.recyclerview.ItemTouchHelperCallbacks
+import com.majeur.psclient.util.recyclerview.OnItemClickListener
 import com.majeur.psclient.util.toId
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -28,7 +33,7 @@ import java.io.Serializable
 import java.util.*
 
 
-class TeamsFragment : BaseFragment() {
+class TeamsFragment : BaseFragment(), OnItemClickListener {
 
     val teams: List<Team.Group> get() = groups
 
@@ -42,6 +47,11 @@ class TeamsFragment : BaseFragment() {
     private var _binding: FragmentTeamsBinding? = null
     private val binding get() = _binding!!
 
+    private val clipboardManager
+        get() = requireActivity().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+    private val battleFormats
+        get() = service?.getSharedData<List<BattleFormat.Category>>("formats")
+
     override fun onAttach(context: Context) {
         super.onAttach(context)
         teamsStore = TeamsStore(context)
@@ -53,8 +63,13 @@ class TeamsFragment : BaseFragment() {
         fragmentScope.launch {
             val storedGroups = teamsStore.get()
             groups.clear()
-            groups.addAll(storedGroups)
-            notifyGroupChanged()
+            groups.addAll(storedGroups.sortedWith(Comparator<Team.Group> { g1, g2 ->
+                BattleFormat.compare(battleFormats, g1.format, g2.format)
+            }))
+            groups.forEach { g -> g.teams.sort() }
+            if (this@TeamsFragment::listAdapter.isInitialized) {
+                listAdapter.notifyDataSetChanged()
+            }
         }
     }
 
@@ -70,170 +85,156 @@ class TeamsFragment : BaseFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        listAdapter = TeamListAdapter()
-        binding.teamList.setAdapter(listAdapter)
-        binding.teamList.setOnChildClickListener { _, _, groupPosition, childPosition, _ ->
-            val team = listAdapter.getChild(groupPosition, childPosition)
-            startTeamBuilderActivity(team)
-            true
+        binding.teamList.apply {
+            listAdapter = TeamListAdapter(this@TeamsFragment)
+            adapter = listAdapter
+            addItemDecoration(object : DividerItemDecoration(view.context) {
+                override fun shouldDrawDivider(parent: RecyclerView, child: View) =
+                        parent.findContainingViewHolder(child) is TeamsFragment.TeamListAdapter.CategoryHolder
+            })
+            addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    binding.apply {
+                        if (dy > 0) {
+                            importFab.hide()
+                            buildFab.hide()
+                        } else {
+                            importFab.show()
+                            buildFab.show()
+                        }
+                    }
+                }
+            })
+            ItemTouchHelper(object : ItemTouchHelperCallbacks(context, allowDeletion = true) {
+                override fun onRemoveItem(position: Int) {
+                    val team = listAdapter.getItem(position) as Team
+                    removeTeam(team)
+                    Snackbar.make(binding.root, "${team.label} removed", Snackbar.LENGTH_LONG)
+                            .setAction("Undo") {
+                                addOrUpdateTeam(team)
+                            }.show()
+                }
+            }).attachToRecyclerView(this)
         }
-        binding.teamList.setOnCreateContextMenuListener { contextMenu, _, contextMenuInfo ->
-            val info = contextMenuInfo as ExpandableListContextMenuInfo
-            val type = ExpandableListView.getPackedPositionType(info.packedPosition)
-            if (type == ExpandableListView.PACKED_POSITION_TYPE_CHILD)
-                requireActivity().menuInflater.inflate(R.menu.context_menu_team, contextMenu)
-        }
-        binding.importFab.setOnClickListener {
+        binding.buildFab.setOnClickListener {
             startTeamBuilderActivity()
         }
-        binding.teamList.setOnScrollListener(object : AbsListView.OnScrollListener {
-            var state = AbsListView.OnScrollListener.SCROLL_STATE_IDLE
-            val showFab = Runnable { binding.importFab.show() }
-            override fun onScrollStateChanged(view: AbsListView, scrollState: Int) {
-                state = scrollState
-                if (scrollState == AbsListView.OnScrollListener.SCROLL_STATE_IDLE) view.postDelayed(showFab, 500)
-            }
+        binding.importFab.setOnClickListener {
+            if (childFragmentManager.findFragmentByTag(ImportTeamDialog.FRAGMENT_TAG) == null)
+                ImportTeamDialog().show(childFragmentManager, ImportTeamDialog.FRAGMENT_TAG)
+        }
+    }
 
-            override fun onScroll(view: AbsListView, firstVisibleItem: Int, visibleItemCount: Int, totalItemCount: Int) {
-                if (state == AbsListView.OnScrollListener.SCROLL_STATE_TOUCH_SCROLL && totalItemCount > visibleItemCount
-                        && firstVisibleItem + visibleItemCount < totalItemCount)
-                    binding.importFab.apply {
-                        if (isShown) hide() else removeCallbacks(showFab)
-                    }
-            }
-        })
+    fun makeSnackbar(message: String) {
+        Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG).show()
+    }
+
+    override fun onItemClick(itemView: View, holder: RecyclerView.ViewHolder, position: Int) {
+        val team = listAdapter.getItem(position) as Team
+        startTeamBuilderActivity(team)
     }
 
     private fun startTeamBuilderActivity(team: Team? = null) {
         val intent = Intent(context, TeamBuilderActivity::class.java)
-        val battleFormats = service!!.getSharedData<List<BattleFormat.Category>>("formats")!!
+        val battleFormats = battleFormats
         intent.putExtra(TeamBuilderActivity.INTENT_EXTRA_FORMATS, battleFormats as Serializable)
         if (team != null)
             intent.putExtra(TeamBuilderActivity.INTENT_EXTRA_TEAM, team)
         startActivityForResult(intent, TeamBuilderActivity.INTENT_REQUEST_CODE)
     }
 
-    override fun onContextItemSelected(item: MenuItem): Boolean {
-        if (item.menuInfo !is ExpandableListContextMenuInfo) return false
-        val info = item.menuInfo as ExpandableListContextMenuInfo
-        val groupPos = ExpandableListView.getPackedPositionGroup(info.packedPosition)
-        val childPos = ExpandableListView.getPackedPositionChild(info.packedPosition)
-        val team = listAdapter.getChild(groupPos, childPos)
-        return when (item.itemId) {
-            R.id.action_rename -> {
-                val dialogView = layoutInflater.inflate(R.layout.dialog_team_name, null)
-                val editText = dialogView.findViewById<EditText>(R.id.edit_text_team_name)
-                editText.setText(team.label)
-                MaterialAlertDialogBuilder(requireActivity())
-                        .setTitle("Rename team")
-                        .setPositiveButton("Done") { _, _ ->
-                            val regex = "[{}:\",|\\[\\]]".toRegex()
-                            var input = editText.text.toString().replace(regex, "")
-                            if (input.isBlank()) input = "Unnamed team"
-                            team.label = input
-                            notifyGroupChanged()
-                            persistUserTeams()
-                        }
-                        .setNegativeButton("Cancel", null)
-                        .setView(dialogView)
-                        .show()
-                editText.requestFocus()
-                true
-            }
-            R.id.action_duplicate -> {
-                val copy = Team(team)
-                addOrUpdateTeam(copy)
-                persistUserTeams()
-                true
-            }
-            R.id.action_delete -> {
-                MaterialAlertDialogBuilder(requireActivity())
-                        .setTitle("Are you sure you want to delete this team ?")
-                        .setMessage("This action can't be undone.")
-                        .setPositiveButton("Yes") { _, _ ->
-                            removeTeam(team)
-                            persistUserTeams()
-                        }
-                        .setNegativeButton("No", null)
-                        .show()
-                true
-            }
-            else -> false
-        }
-    }
-
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (requestCode == TeamBuilderActivity.INTENT_REQUEST_CODE && resultCode == Activity.RESULT_OK && data != null) {
             val team = data.getSerializableExtra(TeamBuilderActivity.INTENT_EXTRA_TEAM) as Team
             addOrUpdateTeam(team)
-            persistUserTeams()
         }
     }
 
     fun onBattleFormatsChanged() {
-        notifyGroupChanged() // Update order and formats labels
+        groups.sortWith(Comparator<Team.Group> { g1, g2 ->
+            BattleFormat.compare(battleFormats, g1.format, g2.format)
+        })
+        listAdapter.notifyDataSetChanged() // Update and sorts formats labels
     }
 
     fun onTeamsImported(teams: List<Team>) {
-        for (team in teams) addOrUpdateTeam(team)
+        for (team in teams) addOrUpdateTeam(team, persistTeams = false)
         persistUserTeams()
+        makeSnackbar("Successfully imported ${teams.size} team(s)")
     }
 
-    private fun addOrUpdateTeam(newTeam: Team) {
+    private fun addOrUpdateTeam(newTeam: Team, persistTeams: Boolean = true) {
         if (newTeam.format == null) newTeam.format = fallbackFormat.toId()
         var teamAdded = false
         for (group in groups) {
             val oldTeam = group.teams.firstOrNull { it.uniqueId == newTeam.uniqueId }
             if (oldTeam != null) { // Its an update
                 if (oldTeam.format == newTeam.format) { // Format has not changed so we just replace item
-                    group.teams[group.teams.indexOf(oldTeam)] = newTeam
+                    val adapterPosition = listAdapter.getItemPosition(oldTeam)
+                    val indexInGroup = group.teams.indexOf(oldTeam)
+                    group.teams[indexInGroup] = newTeam
+                    listAdapter.notifyItemChanged(adapterPosition)
                     teamAdded = true
+                    if (oldTeam.label != newTeam.label) { // Label changed, move team to correct position
+                        val newIndex = group.teams.sorted().indexOf(newTeam)
+                        group.teams.add(newIndex, group.teams.removeAt(indexInGroup))
+                        listAdapter.notifyItemMoved(adapterPosition, listAdapter.getItemPosition(newTeam))
+                    }
                 } else { // Format has changed so we need to remove team from its previous group
+                    var adapterPosition = listAdapter.getItemPosition(oldTeam)
                     group.teams.remove(oldTeam)
-                    if (group.teams.isEmpty()) groups.remove(group)
+                    listAdapter.notifyItemRemoved(adapterPosition)
+                    if (group.teams.isEmpty()) {
+                        adapterPosition = listAdapter.getItemPosition(group)
+                        groups.remove(group)
+                        listAdapter.notifyItemRemoved(adapterPosition)
+                    }
                 }
                 break
             }
             if (group.format == newTeam.format) {
-                group.teams.add(newTeam)
+                val index = group.teams.plus(newTeam).sorted().indexOf(newTeam)
+                group.teams.add(index, newTeam)
+                val adapterPosition = listAdapter.getItemPosition(newTeam)
+                listAdapter.notifyItemInserted(adapterPosition)
                 teamAdded = true
             }
         }
         if (!teamAdded) { // No group matched our team format
             val newGroup = Team.Group(newTeam.format!!)
-            groups.add(newGroup)
+            val index = groups.plus(newGroup).sortedWith(Comparator<Team.Group> { g1, g2 ->
+                BattleFormat.compare(battleFormats, g1.format, g2.format)
+            }).indexOf(newGroup)
+            groups.add(index, newGroup)
+            var adapterPosition = listAdapter.getItemPosition(newGroup)
+            listAdapter.notifyItemInserted(adapterPosition)
             newGroup.teams.add(newTeam)
+            adapterPosition = listAdapter.getItemPosition(newTeam)
+            listAdapter.notifyItemInserted(adapterPosition)
         }
-        notifyGroupChanged()
+        homeFragment.updateTeamSpinner()
+        if (persistTeams) persistUserTeams()
     }
 
     private fun removeTeam(team: Team) {
         for (group in groups) {
-            val t = group.teams.firstOrNull { it.uniqueId == team.uniqueId } ?: continue
-            group.teams.remove(t)
-            if (group.teams.isEmpty()) groups.remove(group)
+            val matchingTeam = group.teams.firstOrNull { it.uniqueId == team.uniqueId } ?: continue
+            var adapterPosition = listAdapter.getItemPosition(matchingTeam)
+            group.teams.remove(matchingTeam)
+            listAdapter.notifyItemRemoved(adapterPosition)
+            if (group.teams.isEmpty()) {
+                adapterPosition = listAdapter.getItemPosition(group)
+                groups.remove(group)
+                listAdapter.notifyItemRemoved(adapterPosition)
+            }
             break
         }
-        notifyGroupChanged()
-    }
-
-    private fun notifyGroupChanged() {
-        groups.sortWith(object : Comparator<Team.Group> {
-            override fun compare(g1: Team.Group, g2: Team.Group): Int {
-                if (service != null) {
-                    val formats = service!!.getSharedData<List<BattleFormat.Category>>("formats")
-                    if (formats != null) return BattleFormat.compare(formats, g1.format, g2.format)
-                }
-                return g1.format.compareTo(g2.format)
-            }
-        })
-        groups.forEach { it.teams.sort() }
-        listAdapter.notifyDataSetChanged()
         homeFragment.updateTeamSpinner()
+        persistUserTeams()
     }
 
     private fun resolveFormatName(formatId: String): String {
-        service?.getSharedData<List<BattleFormat.Category>>("formats")?.let {
+        battleFormats?.let {
             return BattleFormat.resolveName(it, formatId)
         }
         return formatId
@@ -246,58 +247,88 @@ class TeamsFragment : BaseFragment() {
         }
     }
 
-    private inner class TeamListAdapter : BaseExpandableListAdapter() {
-
-        override fun getGroupCount() = groups.size
-
-        override fun getChildrenCount(i: Int) = getGroup(i).teams.size
-
-        override fun getGroup(i: Int) = groups[i]
-
-        override fun getChild(i: Int, j: Int): Team = getGroup(i).teams[j]
-
-        override fun getGroupView(i: Int, b: Boolean, view: View?, parent: ViewGroup): View {
-            val convertView = view ?: layoutInflater.inflate(R.layout.list_category_team, parent, false)
-            (convertView as TextView).text = resolveFormatName(getGroup(i).format)
-            return convertView
+    private fun exportTeamToClipboard(team: Team) {
+        fragmentScope.launch {
+            val result = SmogonTeamBuilder.buildTeams(assetLoader, listOf(team))
+            clipboardManager.setPrimaryClip(ClipData.newPlainText("Exported Teams", result))
+            makeSnackbar("${team.label} copied to clipboard")
         }
+    }
 
-        internal inner class ViewHolder(view: View) {
-            var job: Job? = null
-            val labelView: TextView = view.findViewById(R.id.text_view_title)
-            val pokemonViews = listOf(
-                    R.id.image_view_pokemon1, R.id.image_view_pokemon2, R.id.image_view_pokemon3,
-                    R.id.image_view_pokemon4, R.id.image_view_pokemon5, R.id.image_view_pokemon6
-            ).map { view.findViewById<ImageView>(it) }
-        }
+    private inner class TeamListAdapter(
+            private val itemClickListener: OnItemClickListener
+    ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-        override fun getChildView(i: Int, j: Int, b: Boolean, view: View?, parent: ViewGroup): View {
-            val convertView = view ?: layoutInflater.inflate(R.layout.list_item_team, parent, false).apply {
-                tag = ViewHolder(this)
+        private val VIEW_TYPE_CATEGORY = 0
+        private val VIEW_TYPE_ITEM = 1
+
+        inner class CategoryHolder(val binding: ListCategoryTeamBinding) : RecyclerView.ViewHolder(binding.root)
+        inner class ItemHolder(val binding: ListItemTeamBinding, var job: Job? = null) : RecyclerView.ViewHolder(binding.root), View.OnClickListener {
+            val pokemonViews = binding.run {
+                listOf(imageViewPokemon1, imageViewPokemon2, imageViewPokemon3,
+                        imageViewPokemon4, imageViewPokemon5, imageViewPokemon6)
             }
-            val viewHolder = convertView.tag as ViewHolder
 
-            val team = getChild(i, j)
-            viewHolder.labelView.text = team.label
-            viewHolder.pokemonViews.forEach { it.setImageDrawable(null) }
-            if (team.pokemons.isEmpty()) return convertView
+            init {
+                binding.copyButton.setOnClickListener(this)
+                binding.root.setOnClickListener(this)
+            }
 
-            viewHolder.job?.cancel()
-            viewHolder.job = fragmentScope.launch {
-                assetLoader.dexIcons(*team.pokemons.map { it.species.toId() }.toTypedArray()).forEachIndexed { index, bitmap ->
-                    val drawable = BitmapDrawable(convertView.resources, bitmap)
-                    viewHolder.pokemonViews[index].setImageDrawable(drawable)
+            override fun onClick(v: View?) {
+                if (v == binding.copyButton) {
+                    exportTeamToClipboard(getItem(adapterPosition) as Team)
+                } else {
+                    itemClickListener.onItemClick(itemView, this, adapterPosition)
                 }
             }
-            return convertView
         }
 
-        override fun getGroupId(i: Int) = 0L
+        override fun getItemCount(): Int {
+            var count = 0
+            groups.forEach { g -> count += 1 + g.teams.size }
+            return count
+        }
 
-        override fun getChildId(i: Int, i1: Int) = 0L
+        fun getItem(position: Int): Any? {
+            var count = -1
+            groups.forEach { g -> if (++count == position) return g else g.teams.forEach { if (++count == position) return it } }
+            return null
+        }
 
-        override fun hasStableIds() = false
+        fun getItemPosition(item: Any): Int {
+            var count = -1
+            groups.forEach { g -> ++count; if (g == item) return count else g.teams.forEach { ++count; if (it == item) return count } }
+            return -1
+        }
 
-        override fun isChildSelectable(i: Int, i1: Int) = true
+        override fun getItemViewType(position: Int) = if (getItem(position) is Team) VIEW_TYPE_ITEM else VIEW_TYPE_CATEGORY
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = when (viewType) {
+            VIEW_TYPE_CATEGORY -> CategoryHolder(ListCategoryTeamBinding.inflate(layoutInflater, parent, false))
+            else -> ItemHolder(ListItemTeamBinding.inflate(layoutInflater, parent, false))
+        }
+
+        override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+            if (holder is CategoryHolder) {
+                val group = getItem(position) as Team.Group
+                holder.binding.text1.text = resolveFormatName(group.format)
+            } else if (holder is ItemHolder) {
+                val team = getItem(position) as Team
+                holder.binding.textViewTitle.text = team.label
+                holder.pokemonViews.forEach { it.setImageDrawable(null) }
+                holder.job?.cancel()
+                if (team.pokemons.isNotEmpty()) {
+                    holder.job = fragmentScope.launch {
+                        assetLoader.dexIcons(*team.pokemons.map { it.species.toId() }.toTypedArray()).forEachIndexed { index, bitmap ->
+                            val drawable = BitmapDrawable(resources, bitmap)
+                            holder.pokemonViews[index].setImageDrawable(drawable)
+                        }
+                    }
+                }
+
+            }
+        }
     }
+
+
 }

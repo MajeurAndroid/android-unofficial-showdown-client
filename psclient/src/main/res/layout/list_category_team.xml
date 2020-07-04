@@ -3,9 +3,9 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@android:id/text1"
     android:layout_width="match_parent"
-    android:layout_height="?android:attr/listPreferredItemHeight"
-    android:paddingStart="?android:attr/expandableListPreferredItemPaddingLeft"
-    android:textAppearance="@style/TextAppearance.MaterialComponents.Button"
-    android:gravity="center_vertical"
-    android:textAlignment="viewStart"
-    android:text="[gen6] OverUsed"/>
+    android:layout_height="?android:attr/listPreferredItemHeightSmall"
+    android:textAppearance="@style/TextAppearance.MaterialComponents.Subtitle2"
+    android:textColor="@color/primary"
+    android:paddingStart="?attr/listPreferredItemPaddingStart"
+    android:paddingEnd="?attr/listPreferredItemPaddingEnd"
+    android:gravity="center_vertical"/>

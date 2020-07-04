@@ -1,13 +1,82 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    app:cardUseCompatPadding="true"
-    app:contentPadding="8dp"
-    app:cardElevation="2dp">
+<RelativeLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="?attr/listPreferredItemHeightLarge"
+        android:paddingStart="32dp"
+        android:paddingEnd="16dp"
+        android:background="?attr/selectableItemBackground">
 
-    <include layout="@layout/dropdown_item_team"/>
+    <TextView
+            android:id="@+id/text_view_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:textAppearance="?attr/textAppearanceListItem"/>
 
-</com.google.android.material.card.MaterialCardView>
+    <ImageView
+            android:id="@+id/image_view_pokemon1"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_below="@+id/text_view_title"
+            android:layout_marginStart="8dp"
+            android:scaleType="fitCenter"/>
+
+    <ImageView
+            android:id="@+id/image_view_pokemon2"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_below="@id/text_view_title"
+            android:layout_toEndOf="@+id/image_view_pokemon1"
+            android:layout_marginStart="8dp"
+            android:scaleType="fitCenter"/>
+
+    <ImageView
+            android:id="@+id/image_view_pokemon3"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_below="@id/text_view_title"
+            android:layout_toEndOf="@+id/image_view_pokemon2"
+            android:layout_marginStart="8dp"
+            android:scaleType="fitCenter"/>
+
+    <ImageView
+            android:id="@+id/image_view_pokemon4"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_below="@id/text_view_title"
+            android:layout_toEndOf="@+id/image_view_pokemon3"
+            android:layout_marginStart="8dp"
+            android:scaleType="fitCenter"/>
+
+    <ImageView
+            android:id="@+id/image_view_pokemon5"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_below="@id/text_view_title"
+            android:layout_toEndOf="@+id/image_view_pokemon4"
+            android:layout_marginStart="8dp"
+            android:scaleType="fitCenter"/>
+
+    <ImageView
+            android:id="@+id/image_view_pokemon6"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_below="@id/text_view_title"
+            android:layout_toEndOf="@+id/image_view_pokemon5"
+            android:layout_marginStart="8dp"
+            android:scaleType="fitCenter"/>
+
+    <ImageButton
+            android:id="@+id/copy_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:padding="8dp"
+            android:src="@drawable/ic_copy"
+            android:background="?selectableItemBackgroundBorderless"
+            android:tint="@color/divider"/>
+
+</RelativeLayout>
