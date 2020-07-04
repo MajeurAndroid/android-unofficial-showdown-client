@@ -137,7 +137,8 @@ class TeamsFragment : BaseFragment(), OnItemClickListener {
     private fun startTeamBuilderActivity(team: Team? = null) {
         val intent = Intent(context, TeamBuilderActivity::class.java)
         val battleFormats = battleFormats
-        intent.putExtra(TeamBuilderActivity.INTENT_EXTRA_FORMATS, battleFormats as Serializable)
+        if (battleFormats != null)
+            intent.putExtra(TeamBuilderActivity.INTENT_EXTRA_FORMATS, battleFormats as Serializable)
         if (team != null)
             intent.putExtra(TeamBuilderActivity.INTENT_EXTRA_TEAM, team)
         startActivityForResult(intent, TeamBuilderActivity.INTENT_REQUEST_CODE)
