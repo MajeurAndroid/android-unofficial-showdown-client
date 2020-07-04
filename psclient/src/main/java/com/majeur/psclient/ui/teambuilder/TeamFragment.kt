@@ -63,7 +63,7 @@ class TeamFragment : Fragment() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        inflater.inflate(R.menu.options_menu_edit_team, menu)
+        inflater.inflate(R.menu.options_menu_tb_team, menu)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {

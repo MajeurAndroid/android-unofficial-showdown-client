@@ -107,7 +107,7 @@ class PokemonFragment : Fragment() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        inflater.inflate(R.menu.options_menu_edit_pokemon, menu)
+        inflater.inflate(R.menu.options_menu_tb_pokemon, menu)
     }
 
     override fun onOptionsItemSelected(menuItem: MenuItem) = when (menuItem.itemId) {
