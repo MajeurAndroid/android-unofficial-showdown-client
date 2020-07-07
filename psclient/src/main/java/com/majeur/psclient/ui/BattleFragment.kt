@@ -32,7 +32,7 @@ import com.majeur.psclient.model.pokemon.BasePokemon
 import com.majeur.psclient.model.pokemon.BattlingPokemon
 import com.majeur.psclient.model.pokemon.SidePokemon
 import com.majeur.psclient.service.ShowdownService
-import com.majeur.psclient.service.observer.BattleMessageObserver
+import com.majeur.psclient.service.observer.BattleRoomMessageObserver
 import com.majeur.psclient.util.*
 import com.majeur.psclient.util.html.Html
 import com.majeur.psclient.widget.BattleLayout
@@ -40,7 +40,7 @@ import com.majeur.psclient.widget.BattleTipPopup
 import com.majeur.psclient.widget.BattleTipPopup.OnBindPopupViewListener
 import kotlinx.coroutines.launch
 
-class BattleFragment : BaseFragment(), BattleMessageObserver.UiCallbacks {
+class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
 
     private val observer get() = service!!.battleMessageObserver
 

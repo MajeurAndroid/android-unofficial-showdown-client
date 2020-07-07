@@ -17,8 +17,8 @@ import java.util.*
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-class BattleMessageObserver(service: ShowdownService)
-    : RoomMessageObserver<BattleMessageObserver.UiCallbacks>(service) {
+class BattleRoomMessageObserver(service: ShowdownService)
+    : RoomMessageObserver<BattleRoomMessageObserver.UiCallbacks>(service) {
 
     override var uiCallbacks: UiCallbacks? = null
 
@@ -273,7 +273,7 @@ class BattleMessageObserver(service: ShowdownService)
         val text = " — Turn ${msg.nextArg} — ".bold().big()
         actionQueue.enqueueTurnAction {
             // super prevents from queuing message print
-            super@BattleMessageObserver.printMessage(text)
+            super@BattleRoomMessageObserver.printMessage(text)
         }
     }
 
@@ -802,12 +802,12 @@ class BattleMessageObserver(service: ShowdownService)
 
     override fun printMessage(text: CharSequence) {
         // Include eventual message prints from super class in the action queue.
-        actionQueue.enqueueAction { super@BattleMessageObserver.printMessage(text) }
+        actionQueue.enqueueAction { super@BattleRoomMessageObserver.printMessage(text) }
     }
 
     override fun printHtml(html: String) {
         // Include eventual html prints from super class in the action queue.
-        actionQueue.enqueueAction { super@BattleMessageObserver.printHtml(html) }
+        actionQueue.enqueueAction { super@BattleRoomMessageObserver.printHtml(html) }
     }
 
     private fun onMarkBreak() = uiCallbacks?.onMarkBreak()
