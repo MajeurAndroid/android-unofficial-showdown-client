@@ -1,13 +1,18 @@
-package com.majeur.psclient.service
+package com.majeur.psclient.service.observer
 
 import android.graphics.Color
 import android.text.Spannable
 import android.text.style.BackgroundColorSpan
 import android.text.style.ForegroundColorSpan
+import com.majeur.psclient.service.ServerMessage
+import com.majeur.psclient.service.ShowdownService
 import com.majeur.psclient.util.*
 import com.majeur.psclient.util.html.UsernameSpan
 
-abstract class RoomMessageObserver : AbsMessageObserver() {
+abstract class RoomMessageObserver<C : RoomMessageObserver.UiCallbacks>(service: ShowdownService)
+    : AbsMessageObserver<C>(service) {
+
+    override var uiCallbacks: C? = null
 
     var roomJoined = false
         private set
@@ -148,10 +153,19 @@ abstract class RoomMessageObserver : AbsMessageObserver() {
 
     protected open fun printHtml(html: String) = onPrintHtml(html)
 
-    protected abstract fun onRoomInit()
-    protected abstract fun onRoomTitleChanged(title: String)
-    protected abstract fun onUpdateUsers(users: List<String>)
-    protected abstract fun onPrintText(text: CharSequence)
-    protected abstract fun onPrintHtml(html: String)
-    protected abstract fun onRoomDeInit()
+    protected open fun onRoomInit() = uiCallbacks?.onRoomInit()
+    protected open fun onRoomTitleChanged(title: String) = uiCallbacks?.onRoomTitleChanged(title)
+    protected open fun onUpdateUsers(users: List<String>) = uiCallbacks?.onUpdateUsers(users)
+    protected open fun onPrintText(text: CharSequence) = uiCallbacks?.onPrintText(text)
+    protected open fun onPrintHtml(html: String) = uiCallbacks?.onPrintHtml(html)
+    protected open fun onRoomDeInit() = uiCallbacks?.onRoomDeInit()
+
+    interface UiCallbacks : AbsMessageObserver.UiCallbacks {
+        fun onRoomInit()
+        fun onRoomTitleChanged(title: String)
+        fun onUpdateUsers(users: List<String>)
+        fun onPrintText(text: CharSequence)
+        fun onPrintHtml(html: String)
+        fun onRoomDeInit()
+    }
 }

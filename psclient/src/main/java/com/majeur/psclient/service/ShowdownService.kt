@@ -6,6 +6,9 @@ import android.content.Intent
 import android.os.Handler
 import android.os.Looper
 import android.util.Base64
+import com.majeur.psclient.service.observer.BattleMessageObserver
+import com.majeur.psclient.service.observer.ChatRoomMessageObserver
+import com.majeur.psclient.service.observer.GlobalMessageObserver
 import com.majeur.psclient.util.S
 import okhttp3.*
 import org.json.JSONException
@@ -17,10 +20,10 @@ import java.util.concurrent.atomic.AtomicBoolean
 class ShowdownService : Service() {
 
     companion object {
-        private const val WS_CLOSE_NORMAL: Int = 1000
-        private const val WS_CLOSE_GOING_AWAY: Int = 1001
-        private const val WS_CLOSE_NETWORK_ERROR: Int = 4001
-        private const val SHOWDOWN_SOCKET_URL: String = "wss://sim3.psim.us/showdown/websocket"
+        private const val WS_CLOSE_NORMAL = 1000
+        private const val WS_CLOSE_GOING_AWAY = 1001
+        private const val WS_CLOSE_NETWORK_ERROR = 4001
+        private const val SHOWDOWN_SOCKET_URL = "wss://sim3.psim.us/showdown/websocket"
     }
 
     lateinit var okHttpClient: OkHttpClient
@@ -29,10 +32,13 @@ class ShowdownService : Service() {
     private lateinit var binder: Binder
     private lateinit var uiHandler: Handler
 
-    private val messageObservers = mutableListOf<AbsMessageObserver>()
+    val globalMessageObserver by lazy { GlobalMessageObserver(this) }
+    val chatMessageObserver by lazy { ChatRoomMessageObserver(this) }
+    val battleMessageObserver by lazy { BattleMessageObserver(this) }
+    private val messageObservers get() = listOf(globalMessageObserver, chatMessageObserver, battleMessageObserver)
+
     private val sharedData = mutableMapOf<String, Any>()
     private var webSocket: WebSocket? = null
-    private var messageCache = mutableListOf<String>()
     private var _connected = AtomicBoolean(false)
 
     var isConnected: Boolean
@@ -100,16 +106,6 @@ class ShowdownService : Service() {
         }
     }
 
-    fun registerMessageObserver(observer: AbsMessageObserver) {
-        messageObservers.add(observer)
-        observer.service = this
-    }
-
-    fun unregisterMessageObserver(observer: AbsMessageObserver) {
-        messageObservers.remove(observer)
-        observer.service = null
-    }
-
     private fun processServerData(data: String) {
         if (data[0] == '>') dispatchServerData(data.removePrefix(">").substringBefore("\n"),
                 data.substringAfter("\n"))
@@ -123,13 +119,19 @@ class ShowdownService : Service() {
     }
 
     private fun dispatchMessage(msg: ServerMessage) {
-        messageObservers
+        val observers = messageObservers
+        val observersInterceptingBefore = observers
                 .filter { it.interceptCommandBefore.contains(msg.command) }
-                .forEach { it.postMessage(msg, forcePost = true) }
-        messageObservers
-                .forEach { it.postMessage(msg) }
-        messageObservers
+        val observersInterceptingAfter = observers
                 .filter { it.interceptCommandAfter.contains(msg.command) }
+
+        observersInterceptingBefore
+                .forEach { it.postMessage(msg, forcePost = true) }
+        observers
+                .minus(observersInterceptingBefore)
+                .forEach { it.postMessage(msg) }
+        observersInterceptingAfter
+                .minus(observersInterceptingBefore)
                 .forEach { it.postMessage(msg, forcePost = true) }
     }
 
@@ -140,7 +142,7 @@ class ShowdownService : Service() {
 
     private val webSocketListener = object : WebSocketListener() {
         override fun onOpen(webSocket: WebSocket, response: Response) {
-            Timber.tag("WebSocket[OPEN]").i("Host: " + response.request().url().host())
+            Timber.tag("WebSocket[OPEN]").i("Host: ${response.request().url().host()}")
             isConnected = true
             uiHandler.post {
                 dispatchMessage(ServerMessage("lobby", "|connected|"))
@@ -150,12 +152,7 @@ class ShowdownService : Service() {
         override fun onMessage(webSocket: WebSocket, data: String) {
             Timber.tag("WebSocket[RECEIVE]").i(data)
             uiHandler.post {
-                if (messageObservers.isEmpty()) {
-                    messageCache.add(data)
-                } else {
-                    while (messageCache.isNotEmpty()) processServerData(messageCache.removeAt(0))
-                    processServerData(data)
-                }
+                processServerData(data)
             }
         }
 

@@ -33,17 +33,20 @@ import com.majeur.psclient.model.ChatRoomInfo
 import com.majeur.psclient.model.common.BattleFormat
 import com.majeur.psclient.model.common.Team
 import com.majeur.psclient.model.common.toId
-import com.majeur.psclient.service.GlobalMessageObserver
 import com.majeur.psclient.service.ShowdownService
+import com.majeur.psclient.service.observer.GlobalMessageObserver
 import com.majeur.psclient.util.*
 import com.majeur.psclient.widget.CategoryAdapter
 import com.majeur.psclient.widget.PrivateMessagesOverviewWidget
 import com.majeur.psclient.widget.PrivateMessagesOverviewWidget.OnItemButtonClickListener
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.util.*
 
-class HomeFragment : BaseFragment(), View.OnClickListener {
+class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnClickListener {
+
+    private val observer get() = service!!.globalMessageObserver
 
     private lateinit var assetLoader: AssetLoader
 
@@ -419,7 +422,7 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
 
     override fun onServiceBound(service: ShowdownService) {
         super.onServiceBound(service)
-        service.registerMessageObserver(observer)
+        service.globalMessageObserver.uiCallbacks = this
         if (!service.isConnected) {
             makeSnackbar("Connecting to Showdown server...", indefinite = true)
             service.connectToServer()
@@ -428,228 +431,225 @@ class HomeFragment : BaseFragment(), View.OnClickListener {
 
     override fun onServiceWillUnbound(service: ShowdownService) {
         super.onServiceWillUnbound(service)
-        service.unregisterMessageObserver(observer)
+        service.globalMessageObserver.uiCallbacks = null
     }
 
-    private val observer: GlobalMessageObserver = object : GlobalMessageObserver() {
+    override fun onConnectedToServer() {
+        if (battleFragment.observedRoomId != null) battleFragment.observedRoomId = null
+        if (chatFragment.observedRoomId != null) chatFragment.observedRoomId = null
+    }
 
-        override fun onConnectedToServer() {
-            if (battleFragment.observedRoomId != null) battleFragment.observedRoomId = null
-            if (chatFragment.observedRoomId != null) chatFragment.observedRoomId = null
+    override fun onUserChanged(userName: String, isGuest: Boolean, avatarId: String) {
+        binding.username.apply {
+            text = "Connected as\n".small()
+            append(Utils.truncate(userName, 10).bold())
         }
-
-        override fun onUserChanged(userName: String, isGuest: Boolean, avatarId: String) {
-            binding.username.apply {
-                text = "Connected as\n".small()
-                append(Utils.truncate(userName, 10).bold())
-            }
-            binding.loginButton.isEnabled = true
-            if (isGuest) {
-                makeSnackbar("Connected as guest !")
-                binding.loginButton.setImageResource(R.drawable.ic_login)
-            } else {
-                makeSnackbar("Connected as $userName")
-                binding.loginButton.setImageResource(R.drawable.ic_logout)
-            }
-            val signInDialog = requireFragmentManager().findFragmentByTag(SignInDialog.FRAGMENT_TAG) as SignInDialog?
-            signInDialog?.dismissAllowingStateLoss()
+        binding.loginButton.isEnabled = true
+        if (isGuest) {
+            makeSnackbar("Connected as guest !")
+            binding.loginButton.setImageResource(R.drawable.ic_login)
+        } else {
+            makeSnackbar("Connected as $userName")
+            binding.loginButton.setImageResource(R.drawable.ic_logout)
         }
+        val signInDialog = requireFragmentManager().findFragmentByTag(SignInDialog.FRAGMENT_TAG) as SignInDialog?
+        signInDialog?.dismissAllowingStateLoss()
+    }
 
-        override fun onUpdateCounts(userCount: Int, battleCount: Int) {
-            binding.usersCount.apply {
-                text = userCount.toString().bold()
-                append("\nusers online".small())
-            }
-            binding.battlesCount.apply {
-                text = battleCount.toString().bold()
-                append("\nactive battles".small())
+    override fun onUpdateCounts(userCount: Int, battleCount: Int) {
+        binding.usersCount.apply {
+            text = userCount.toString().bold()
+            append("\nusers online".small())
+        }
+        binding.battlesCount.apply {
+            text = battleCount.toString().bold()
+            append("\nactive battles".small())
+        }
+    }
+
+    override fun onBattleFormatsChanged(battleFormats: List<BattleFormat.Category>) {
+        this@HomeFragment.battleFormats = battleFormats
+        showSearchableFormatsOnly(true)
+        teamsFragment.onBattleFormatsChanged()
+    }
+
+    override fun onSearchBattlesChanged(searching: List<String>, games: Map<String, String>) {
+        isSearchingBattle = searching.isNotEmpty()
+        when {
+            isSearchingBattle -> setBattleButtonUIState("Searching...", enabled = false, showCancel = true, tintCard = false)
+            !isChallengingSomeone -> setBattleButtonUIState("Battle !", enabled = true, showCancel = false, tintCard = false)
+        }
+        binding.joinContainer.visibility = if (games.isEmpty()) View.GONE else View.VISIBLE
+        binding.searchContainer.visibility = if (games.isNotEmpty()) View.GONE else View.VISIBLE
+
+        binding.joinedBattlesContainer.removeAllViews()
+        for ((roomId, value) in games) {
+            layoutInflater.inflate(R.layout.button_joined_battle, binding.joinedBattlesContainer)
+            (binding.joinedBattlesContainer.children.last() as MaterialButton).apply {
+                text = value
+                tag = roomId
+                isEnabled = roomId != battleFragment.observedRoomId
+                setOnClickListener { tryJoinBattleRoom(roomId) }
             }
         }
+    }
 
-        override fun onBattleFormatsChanged(battleFormats: List<BattleFormat.Category>) {
-            this@HomeFragment.battleFormats = battleFormats
+    override fun onUserDetails(id: String, name: String, online: Boolean, group: String,
+                               rooms: List<String>, battles: List<String>) {
+        val builder = SpannableStringBuilder()
+        builder.append("Group: ".italic()).append(group.replace(" ", "␣")).append("\n")
+        builder.append("Battles: ".italic())
+        if (battles.isNotEmpty()) {
+            val stringBuilder = StringBuilder()
+            for (battle in battles) stringBuilder.append(battle).append(", ")
+            stringBuilder.deleteCharAt(stringBuilder.length - 2)
+            builder.append(stringBuilder.toString().small())
+        } else {
+            builder.append("None".small()).append("\n")
+        }
+        builder.append("Chatrooms: ".italic())
+        if (rooms.isNotEmpty()) {
+            val stringBuilder = StringBuilder()
+            for (room in rooms) stringBuilder.append(room).append(", ")
+            stringBuilder.deleteCharAt(stringBuilder.length - 2)
+            builder.append(stringBuilder.toString().small())
+        } else {
+            builder.append("None".small()).append("\n")
+        }
+        if (!online) builder.append("(Offline)".color(Color.RED))
+        AlertDialog.Builder(requireActivity())
+                .setTitle(name)
+                .setMessage(builder)
+                .setPositiveButton("Challenge") { _: DialogInterface?, _: Int -> challengeSomeone(name) }
+                .setNegativeButton("Chat") { _: DialogInterface?, _: Int -> startPrivateChat(name) }
+                .show()
+    }
+
+    override fun onShowPopup(message: String) {
+        val snackbar = Snackbar.make(binding.root, message, Snackbar.LENGTH_INDEFINITE)
+        val view = snackbar.view
+        val textView = view.findViewById<TextView?>(com.google.android.material.R.id.snackbar_text)
+        textView!!.maxLines = 5
+        snackbar.setAction("Ok") { }
+        snackbar.show()
+        if (isChallengingSomeone) { // Resetting pending challenges
+            isChallengingSomeone = false
+            waitingForChallenge = isChallengingSomeone
+            challengeTo = null
+            setBattleButtonUIState("Battle !")
             showSearchableFormatsOnly(true)
-            teamsFragment.onBattleFormatsChanged()
+        } else if (isAcceptingChallenge) {
+            isAcceptingChallenge = false
+            isAcceptingFrom = null
+            setBattleButtonUIState("Battle !", enabled = true, showCancel = false, tintCard = false)
+            showSearchableFormatsOnly(true)
+            binding.formatsSelector.isEnabled = true
         }
 
-        override fun onSearchBattlesChanged(searching: List<String>, games: Map<String, String>) {
-            isSearchingBattle = searching.isNotEmpty()
-            when {
-                isSearchingBattle -> setBattleButtonUIState("Searching...", enabled = false, showCancel = true, tintCard = false)
-                !isChallengingSomeone -> setBattleButtonUIState("Battle !", enabled = true, showCancel = false, tintCard = false)
-            }
-            binding.joinContainer.visibility = if (games.isEmpty()) View.GONE else View.VISIBLE
-            binding.searchContainer.visibility = if (games.isNotEmpty()) View.GONE else View.VISIBLE
+        // Closing pm dialog to see this popup
+        val dialog = requireFragmentManager().findFragmentByTag(PrivateChatDialog.FRAGMENT_TAG) as PrivateChatDialog?
+        if (dialog != null && dialog.isVisible) dialog.dismiss()
+    }
 
-            binding.joinedBattlesContainer.removeAllViews()
-            for ((roomId, value) in games) {
-                layoutInflater.inflate(R.layout.button_joined_battle, binding.joinedBattlesContainer)
-                (binding.joinedBattlesContainer.children.last() as MaterialButton).apply {
-                    text = value
-                    tag = roomId
-                    isEnabled = roomId != battleFragment.observedRoomId
-                    setOnClickListener { tryJoinBattleRoom(roomId) }
-                }
+    override fun onAvailableRoomsChanged(officialRooms: List<ChatRoomInfo>, chatRooms: List<ChatRoomInfo>) {
+        chatFragment.onAvailableRoomsChanged(officialRooms, chatRooms)
+    }
+
+    override fun onAvailableBattleRoomsChanged(availableRoomsInfo: AvailableBattleRoomsInfo) {}
+
+    override fun onNewPrivateMessage(with: String, message: String) {
+        binding.pmsOverview.incrementPmCount(with)
+        if (!binding.pmsOverview.isEmpty) binding.pmsContainer.visibility = View.VISIBLE
+        val dialog = requireFragmentManager().findFragmentByTag(PrivateChatDialog.FRAGMENT_TAG) as PrivateChatDialog?
+        if (dialog?.chatWith == with) dialog.onNewMessage(message) else notifyNewMessageReceived()
+    }
+
+    override fun onChallengesChange(to: String?, format: String?, from: Map<String, String>) {
+        binding.pmsOverview.apply {
+            updateChallengeTo(to, format)
+            updateChallengesFrom(from.keys.toTypedArray(), from.values.toTypedArray())
+        }
+        if (binding.pmsOverview.isEmpty) {
+            binding.pmsContainer.visibility = View.GONE
+        } else {
+            binding.pmsContainer.visibility = View.VISIBLE
+            notifyNewMessageReceived()
+        }
+        if (isAcceptingChallenge) {
+            var done = true
+            for (user in from.keys) if (isAcceptingFrom == user) {
+                done = false
+                break
+            }
+            if (done) {
+                isAcceptingChallenge = false
+                isAcceptingFrom = null
+                setBattleButtonUIState("Battle !")
+                showSearchableFormatsOnly(true)
+                binding.formatsSelector.isEnabled = true
             }
         }
-
-        override fun onUserDetails(id: String, name: String, online: Boolean, group: String,
-                                   rooms: List<String>, battles: List<String>) {
-            val builder = SpannableStringBuilder()
-            builder.append("Group: ".italic()).append(group.replace(" ", "␣")).append("\n")
-            builder.append("Battles: ".italic())
-            if (battles.isNotEmpty()) {
-                val stringBuilder = StringBuilder()
-                for (battle in battles) stringBuilder.append(battle).append(", ")
-                stringBuilder.deleteCharAt(stringBuilder.length - 2)
-                builder.append(stringBuilder.toString().small())
+        if (isChallengingSomeone) {
+            if (to != null) {
+                waitingForChallenge = true
+                setBattleButtonUIState("Waiting for\n$to...", enabled = false, showCancel = true, tintCard = true)
             } else {
-                builder.append("None".small()).append("\n")
-            }
-            builder.append("Chatrooms: ".italic())
-            if (rooms.isNotEmpty()) {
-                val stringBuilder = StringBuilder()
-                for (room in rooms) stringBuilder.append(room).append(", ")
-                stringBuilder.deleteCharAt(stringBuilder.length - 2)
-                builder.append(stringBuilder.toString().small())
-            } else {
-                builder.append("None".small()).append("\n")
-            }
-            if (!online) builder.append("(Offline)".color(Color.RED))
-            AlertDialog.Builder(requireActivity())
-                    .setTitle(name)
-                    .setMessage(builder)
-                    .setPositiveButton("Challenge") { _: DialogInterface?, _: Int -> challengeSomeone(name) }
-                    .setNegativeButton("Chat") { _: DialogInterface?, _: Int -> startPrivateChat(name) }
-                    .show()
-        }
-
-        override fun onShowPopup(message: String) {
-            val snackbar = Snackbar.make(binding.root, message, Snackbar.LENGTH_INDEFINITE)
-            val view = snackbar.view
-            val textView = view.findViewById<TextView?>(com.google.android.material.R.id.snackbar_text)
-            textView!!.maxLines = 5
-            snackbar.setAction("Ok") { }
-            snackbar.show()
-            if (isChallengingSomeone) { // Resetting pending challenges
                 isChallengingSomeone = false
                 waitingForChallenge = isChallengingSomeone
                 challengeTo = null
                 setBattleButtonUIState("Battle !")
                 showSearchableFormatsOnly(true)
-            } else if (isAcceptingChallenge) {
-                isAcceptingChallenge = false
-                isAcceptingFrom = null
-                setBattleButtonUIState("Battle !", enabled = true, showCancel = false, tintCard = false)
-                showSearchableFormatsOnly(true)
-                binding.formatsSelector.isEnabled = true
             }
-
-            // Closing pm dialog to see this popup
-            val dialog = requireFragmentManager().findFragmentByTag(PrivateChatDialog.FRAGMENT_TAG) as PrivateChatDialog?
-            if (dialog != null && dialog.isVisible) dialog.dismiss()
         }
+    }
 
-        override fun onAvailableRoomsChanged(officialRooms: List<ChatRoomInfo>, chatRooms: List<ChatRoomInfo>) {
-            chatFragment.onAvailableRoomsChanged(officialRooms, chatRooms)
-        }
-
-        override fun onAvailableBattleRoomsChanged(availableRoomsInfo: AvailableBattleRoomsInfo) {}
-
-        override fun onNewPrivateMessage(with: String, message: String) {
-            binding.pmsOverview.incrementPmCount(with)
-            if (!binding.pmsOverview.isEmpty) binding.pmsContainer.visibility = View.VISIBLE
-            val dialog = requireFragmentManager().findFragmentByTag(PrivateChatDialog.FRAGMENT_TAG) as PrivateChatDialog?
-            if (dialog?.chatWith == with) dialog.onNewMessage(message) else notifyNewMessageReceived()
-        }
-
-        override fun onChallengesChange(to: String?, format: String?, from: Map<String, String>) {
-            binding.pmsOverview.apply {
-                updateChallengeTo(to, format)
-                updateChallengesFrom(from.keys.toTypedArray(), from.values.toTypedArray())
-            }
-            if (binding.pmsOverview.isEmpty) {
-                binding.pmsContainer.visibility = View.GONE
-            } else {
-                binding.pmsContainer.visibility = View.VISIBLE
-                notifyNewMessageReceived()
-            }
-            if (isAcceptingChallenge) {
-                var done = true
-                for (user in from.keys) if (isAcceptingFrom == user) {
-                    done = false
-                    break
-                }
-                if (done) {
-                    isAcceptingChallenge = false
-                    isAcceptingFrom = null
-                    setBattleButtonUIState("Battle !")
-                    showSearchableFormatsOnly(true)
-                    binding.formatsSelector.isEnabled = true
-                }
-            }
-            if (isChallengingSomeone) {
-                if (to != null) {
-                    waitingForChallenge = true
-                    setBattleButtonUIState("Waiting for\n$to...", enabled = false, showCancel = true, tintCard = true)
+    override fun onRoomInit(roomId: String, type: String) {
+        when (type) {
+            "battle" -> {
+                if (battleFragment.observedRoomId == null || !battleFragment.battleRunning()) {
+                    battleFragment.observedRoomId = roomId
+                    mainActivity.showBattleFragment()
                 } else {
-                    isChallengingSomeone = false
-                    waitingForChallenge = isChallengingSomeone
-                    challengeTo = null
-                    setBattleButtonUIState("Battle !")
-                    showSearchableFormatsOnly(true)
+                    // Most of the time this is an auto joined battle coming from a new search, let's
+                    // just leave it silently. If the user wants to join it deliberately, he will
+                    // be able to do that from the "you're currently in" menu.
+                    this@HomeFragment.service!!.sendRoomCommand(roomId, "leave")
+                }
+                binding.joinedBattlesContainer.children.forEach { button ->
+                    // Disable the corresponding button if battle is already joined
+                    button.isEnabled = button.tag as String != battleFragment.observedRoomId
                 }
             }
-        }
+            "chat" -> {
+                // lobby init can trigger this two times, make sure to avoid that
+                if (chatFragment.observedRoomId == roomId) return
 
-        override fun onRoomInit(roomId: String, type: String) {
-            when (type) {
-                "battle" -> {
-                    if (battleFragment.observedRoomId == null || !battleFragment.battleRunning()) {
-                        battleFragment.observedRoomId = roomId
-                        mainActivity.showBattleFragment()
-                    } else {
-                        // Most of the time this is an auto joined battle coming from a new search, let's
-                        // just leave it silently. If the user wants to join it deliberately, he will
-                        // be able to do that from the "you're currently in" menu.
-                        this@HomeFragment.service!!.sendRoomCommand(roomId, "leave")
-                    }
-                    binding.joinedBattlesContainer.children.forEach { button ->
-                        // Disable the corresponding button if battle is already joined
-                        button.isEnabled = button.tag as String != battleFragment.observedRoomId
-                    }
+                if (chatFragment.observedRoomId != null) {
+                    this@HomeFragment.service!!.sendRoomCommand(roomId, "leave")
                 }
-                "chat" -> {
-                    // lobby init can trigger this two times, make sure to avoid that
-                    if (chatFragment.observedRoomId == roomId) return
-
-                    if (chatFragment.observedRoomId != null) {
-                        this@HomeFragment.service!!.sendRoomCommand(roomId, "leave")
-                    }
-                    chatFragment.observedRoomId = roomId
-                }
+                chatFragment.observedRoomId = roomId
             }
         }
+    }
 
-        override fun onRoomDeinit(roomId: String) {
-            if (battleFragment.observedRoomId == roomId) {
-                battleFragment.observedRoomId = null
-                if (pendingBattleToJoin != null) {
-                    this@HomeFragment.service?.sendGlobalCommand("join", pendingBattleToJoin!!)
-                    pendingBattleToJoin = null
-                }
+    override fun onRoomDeinit(roomId: String) {
+        if (battleFragment.observedRoomId == roomId) {
+            battleFragment.observedRoomId = null
+            if (pendingBattleToJoin != null) {
+                this@HomeFragment.service?.sendGlobalCommand("join", pendingBattleToJoin!!)
+                pendingBattleToJoin = null
             }
-            if (chatFragment.observedRoomId == roomId) chatFragment.observedRoomId = null
         }
+        if (chatFragment.observedRoomId == roomId) chatFragment.observedRoomId = null
+    }
 
-        override fun onNetworkError() {
-            Snackbar.make(requireView(), "Unable to reach Showdown server", Snackbar.LENGTH_INDEFINITE)
-                    .setAction("Retry") {
-                        makeSnackbar("Reconnecting to Showdown server...", indefinite = true)
-                        service!!.reconnectToServer()
-                    }
-                    .show()
-        }
+    override fun onNetworkError() {
+        Snackbar.make(requireView(), "Unable to reach Showdown server", Snackbar.LENGTH_INDEFINITE)
+                .setAction("Retry") {
+                    makeSnackbar("Reconnecting to Showdown server...", indefinite = true)
+                    service!!.reconnectToServer()
+                }
+                .show()
     }
 
     private inner class TeamsAdapter : CategoryAdapter(context) {

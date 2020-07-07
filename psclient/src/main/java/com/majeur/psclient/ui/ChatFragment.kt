@@ -16,15 +16,17 @@ import com.majeur.psclient.databinding.FragmentChatBinding
 import com.majeur.psclient.io.AssetLoader
 import com.majeur.psclient.io.GlideHelper
 import com.majeur.psclient.model.ChatRoomInfo
-import com.majeur.psclient.service.RoomMessageObserver
 import com.majeur.psclient.service.ShowdownService
+import com.majeur.psclient.service.observer.ChatRoomMessageObserver
 import com.majeur.psclient.util.Callback
 import com.majeur.psclient.util.Utils
 import com.majeur.psclient.util.html.Html
 import com.majeur.psclient.util.toId
 
 
-class ChatFragment : BaseFragment() {
+class ChatFragment : BaseFragment(), ChatRoomMessageObserver.UiCallbacks {
+
+    private val observer get() = service!!.chatMessageObserver
 
     private lateinit var inputMethodManager: InputMethodManager
     private lateinit var glideHelper: GlideHelper
@@ -132,12 +134,12 @@ class ChatFragment : BaseFragment() {
 
     override fun onServiceBound(service: ShowdownService) {
         super.onServiceBound(service)
-        service.registerMessageObserver(observer)
+        service.chatMessageObserver.uiCallbacks = this
     }
 
     override fun onServiceWillUnbound(service: ShowdownService) {
         super.onServiceWillUnbound(service)
-        service.unregisterMessageObserver(observer)
+        service.chatMessageObserver.uiCallbacks = null
     }
 
     fun onAvailableRoomsChanged(officialRooms: List<ChatRoomInfo>, chatRooms: List<ChatRoomInfo>) {
@@ -154,50 +156,48 @@ class ChatFragment : BaseFragment() {
         binding.chatLogContainer.post { binding.chatLogContainer.fullScroll(View.FOCUS_DOWN) }
     }
 
-    private val observer: RoomMessageObserver = object : RoomMessageObserver() {
 
-        public override fun onRoomInit() {
-            setUiState(roomJoined = true)
-        }
+    override fun onRoomInit() {
+        setUiState(roomJoined = true)
+    }
 
-        public override fun onRoomDeInit() {
-            setUiState(roomJoined = false)
-        }
+    override fun onRoomDeInit() {
+        setUiState(roomJoined = false)
+    }
 
-        public override fun onPrintText(text: CharSequence) {
-            val fullScrolled = Utils.fullScrolled(binding.chatLogContainer)
-            if (binding.chatLog.length() > 0) binding.chatLog.append("\n")
-            binding.chatLog.append(text)
-            notifyNewMessageReceived()
-            if (fullScrolled) postFullScroll()
-        }
+    override fun onPrintText(text: CharSequence) {
+        val fullScrolled = Utils.fullScrolled(binding.chatLogContainer)
+        if (binding.chatLog.length() > 0) binding.chatLog.append("\n")
+        binding.chatLog.append(text)
+        notifyNewMessageReceived()
+        if (fullScrolled) postFullScroll()
+    }
 
-        override fun onPrintHtml(html: String) {
-            val mark = Any()
-            val l = binding.chatLog.length()
-            binding.chatLog.append("\u200C")
-            binding.chatLog.editableText.setSpan(mark, l, l + 1, Spanned.SPAN_MARK_MARK)
-            Html.fromHtml(html,
-                    Html.FROM_HTML_MODE_COMPACT,
-                    glideHelper.getHtmlImageGetter(assetLoader, binding.chatLog.width),
-                    Callback { spanned: Spanned? ->
-                        val at = binding.chatLog.editableText.getSpanStart(mark)
-                        if (at == -1) return@Callback // Check if text has been cleared
-                        val fullScrolled = Utils.fullScrolled(binding.chatLogContainer)
-                        binding.chatLog.editableText
-                                .insert(at, "\n")
-                                .insert(at + 1, spanned)
-                        notifyNewMessageReceived()
-                        if (fullScrolled) postFullScroll()
-                    })
-        }
+    override fun onPrintHtml(html: String) {
+        val mark = Any()
+        val l = binding.chatLog.length()
+        binding.chatLog.append("\u200C")
+        binding.chatLog.editableText.setSpan(mark, l, l + 1, Spanned.SPAN_MARK_MARK)
+        Html.fromHtml(html,
+                Html.FROM_HTML_MODE_COMPACT,
+                glideHelper.getHtmlImageGetter(assetLoader, binding.chatLog.width),
+                Callback { spanned: Spanned? ->
+                    val at = binding.chatLog.editableText.getSpanStart(mark)
+                    if (at == -1) return@Callback // Check if text has been cleared
+                    val fullScrolled = Utils.fullScrolled(binding.chatLogContainer)
+                    binding.chatLog.editableText
+                            .insert(at, "\n")
+                            .insert(at + 1, spanned)
+                    notifyNewMessageReceived()
+                    if (fullScrolled) postFullScroll()
+                })
+    }
 
-        public override fun onRoomTitleChanged(title: String) {
-            binding.roomTitle.text = title
-        }
+    override fun onRoomTitleChanged(title: String) {
+        binding.roomTitle.text = title
+    }
 
-        public override fun onUpdateUsers(users: List<String>) {
-            binding.usersCount.text = "${users.size} users"
-        }
+    override fun onUpdateUsers(users: List<String>) {
+        binding.usersCount.text = "${users.size} users"
     }
 }

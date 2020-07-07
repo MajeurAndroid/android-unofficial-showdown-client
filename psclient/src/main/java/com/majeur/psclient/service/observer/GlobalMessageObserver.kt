@@ -1,15 +1,20 @@
-package com.majeur.psclient.service
+package com.majeur.psclient.service.observer
 
 import com.majeur.psclient.model.AvailableBattleRoomsInfo
 import com.majeur.psclient.model.ChatRoomInfo
 import com.majeur.psclient.model.common.BattleFormat
+import com.majeur.psclient.service.ServerMessage
+import com.majeur.psclient.service.ShowdownService
 import com.majeur.psclient.util.Utils
 import org.json.JSONException
 import org.json.JSONObject
 import timber.log.Timber
 import java.util.*
 
-abstract class GlobalMessageObserver : AbsMessageObserver() {
+class GlobalMessageObserver(service: ShowdownService)
+    : AbsMessageObserver<GlobalMessageObserver.UiCallbacks>(service) {
+
+    override var uiCallbacks: UiCallbacks? = null
 
     override var observedRoomId: String? = "lobby"
 
@@ -239,19 +244,36 @@ abstract class GlobalMessageObserver : AbsMessageObserver() {
         return privateMessages[with]
     }
 
-    protected abstract fun onConnectedToServer()
-    protected abstract fun onUserChanged(userName: String, isGuest: Boolean, avatarId: String)
-    protected abstract fun onUpdateCounts(userCount: Int, battleCount: Int)
-    protected abstract fun onBattleFormatsChanged(battleFormats: List<@JvmSuppressWildcards BattleFormat.Category>)
-    protected abstract fun onSearchBattlesChanged(searching: List<String>, games: Map<String, String>)
-    protected abstract fun onUserDetails(id: String, name: String, online: Boolean, group: String, rooms: List<String>, battles: List<String>)
-    protected abstract fun onShowPopup(message: String)
-    protected abstract fun onAvailableRoomsChanged(officialRooms: List<ChatRoomInfo>, chatRooms: List<ChatRoomInfo>)
-    protected abstract fun onAvailableBattleRoomsChanged(availableRoomsInfo: AvailableBattleRoomsInfo)
-    protected abstract fun onNewPrivateMessage(with: String, message: String)
-    protected abstract fun onChallengesChange(to: String?, format: String?, from: Map<String, String>)
-    protected abstract fun onRoomInit(roomId: String, type: String)
-    protected abstract fun onRoomDeinit(roomId: String)
-    protected abstract fun onNetworkError()
+    protected fun onConnectedToServer() = uiCallbacks?.onConnectedToServer()
+    protected fun onUserChanged(userName: String, isGuest: Boolean, avatarId: String) = uiCallbacks?.onUserChanged(userName, isGuest, avatarId)
+    protected fun onUpdateCounts(userCount: Int, battleCount: Int) = uiCallbacks?.onUpdateCounts(userCount, battleCount)
+    protected fun onBattleFormatsChanged(battleFormats: List<BattleFormat.Category>) = uiCallbacks?.onBattleFormatsChanged(battleFormats)
+    protected fun onSearchBattlesChanged(searching: List<String>, games: Map<String, String>) = uiCallbacks?.onSearchBattlesChanged(searching, games)
+    protected fun onUserDetails(id: String, name: String, online: Boolean, group: String, rooms: List<String>, battles: List<String>) = uiCallbacks?.onUserDetails(id, name, online, group, rooms, battles)
+    protected fun onShowPopup(message: String) = uiCallbacks?.onShowPopup(message)
+    protected fun onAvailableRoomsChanged(officialRooms: List<ChatRoomInfo>, chatRooms: List<ChatRoomInfo>) = uiCallbacks?.onAvailableRoomsChanged(officialRooms, chatRooms)
+    protected fun onAvailableBattleRoomsChanged(availableRoomsInfo: AvailableBattleRoomsInfo) = uiCallbacks?.onAvailableBattleRoomsChanged(availableRoomsInfo)
+    protected fun onNewPrivateMessage(with: String, message: String) = uiCallbacks?.onNewPrivateMessage(with, message)
+    protected fun onChallengesChange(to: String?, format: String?, from: Map<String, String>) = uiCallbacks?.onChallengesChange(to, format, from)
+    protected fun onRoomInit(roomId: String, type: String) = uiCallbacks?.onRoomInit(roomId, type)
+    protected fun onRoomDeinit(roomId: String) = uiCallbacks?.onRoomDeinit(roomId)
+    protected fun onNetworkError() = uiCallbacks?.onNetworkError()
+
+    interface UiCallbacks : AbsMessageObserver.UiCallbacks {
+        fun onConnectedToServer()
+        fun onUserChanged(userName: String, isGuest: Boolean, avatarId: String)
+        fun onUpdateCounts(userCount: Int, battleCount: Int)
+        fun onBattleFormatsChanged(battleFormats: List<@JvmSuppressWildcards BattleFormat.Category>)
+        fun onSearchBattlesChanged(searching: List<String>, games: Map<String, String>)
+        fun onUserDetails(id: String, name: String, online: Boolean, group: String, rooms: List<String>, battles: List<String>)
+        fun onShowPopup(message: String)
+        fun onAvailableRoomsChanged(officialRooms: List<ChatRoomInfo>, chatRooms: List<ChatRoomInfo>)
+        fun onAvailableBattleRoomsChanged(availableRoomsInfo: AvailableBattleRoomsInfo)
+        fun onNewPrivateMessage(with: String, message: String)
+        fun onChallengesChange(to: String?, format: String?, from: Map<String, String>)
+        fun onRoomInit(roomId: String, type: String)
+        fun onRoomDeinit(roomId: String)
+        fun onNetworkError()
+    }
 }
 

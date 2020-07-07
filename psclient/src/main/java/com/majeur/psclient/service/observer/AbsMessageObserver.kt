@@ -1,6 +1,13 @@
-package com.majeur.psclient.service
+package com.majeur.psclient.service.observer
 
-abstract class AbsMessageObserver {
+import com.majeur.psclient.service.ServerMessage
+import com.majeur.psclient.service.ShowdownService
+
+abstract class AbsMessageObserver<C : AbsMessageObserver.UiCallbacks>(
+        val service: ShowdownService
+) {
+
+    open var uiCallbacks: C? = null
 
     open var observedRoomId: String? = null
 
@@ -10,11 +17,13 @@ abstract class AbsMessageObserver {
     var interceptCommandAfter = setOf<String>()
         protected set
 
-    var service: ShowdownService? = null
-
     fun postMessage(message: ServerMessage, forcePost: Boolean = false) {
         if (forcePost || observedRoomId == message.roomId) onMessage(message)
     }
 
     protected abstract fun onMessage(message: ServerMessage)
+
+    interface UiCallbacks {
+
+    }
 }

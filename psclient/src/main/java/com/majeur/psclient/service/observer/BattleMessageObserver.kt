@@ -1,12 +1,14 @@
-package com.majeur.psclient.service
+package com.majeur.psclient.service.observer
 
-import android.content.Context
 import android.os.Looper
 import com.majeur.psclient.io.BattleTextBuilder
 import com.majeur.psclient.model.battle.*
 import com.majeur.psclient.model.common.Colors
 import com.majeur.psclient.model.pokemon.BasePokemon
 import com.majeur.psclient.model.pokemon.BattlingPokemon
+import com.majeur.psclient.service.ActionQueue
+import com.majeur.psclient.service.ServerMessage
+import com.majeur.psclient.service.ShowdownService
 import com.majeur.psclient.util.*
 import org.json.JSONException
 import org.json.JSONObject
@@ -15,7 +17,10 @@ import java.util.*
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-abstract class BattleMessageObserver : RoomMessageObserver() {
+class BattleMessageObserver(service: ShowdownService)
+    : RoomMessageObserver<BattleMessageObserver.UiCallbacks>(service) {
+
+    override var uiCallbacks: UiCallbacks? = null
 
     var gameType: GameType? = null
         private set
@@ -25,11 +30,10 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
 
     var gen: Int = 0
 
-    private lateinit var battleTextBuilder: BattleTextBuilder
+    private val battleTextBuilder: BattleTextBuilder
     private val actionQueue = ActionQueue(Looper.getMainLooper())
     private var p1Username: String? = null
     private var p2Username: String? = null
-
 
     private var previewPokemonIndexes = IntArray(2)
     private var lastActionRequest: BattleActionRequest? = null
@@ -39,8 +43,8 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
     private val activeFieldEffects = LinkedList<String>() // We use LinkedList specific methods.
     private var lastMove: String? = null
 
-    fun gotContext(context: Context?) {
-        battleTextBuilder = BattleTextBuilder(context)
+    init {
+        battleTextBuilder = BattleTextBuilder(service)
         battleTextBuilder.setPokemonIdFactory { rawString: String ->
             try {
                 return@setPokemonIdFactory PokemonId(getPlayer(rawString), rawString)
@@ -53,6 +57,7 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
     }
 
     public override fun onRoomInit() {
+        super.onRoomInit()
         p1Username = null
         p2Username = null
         gameType = null
@@ -66,6 +71,7 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
     }
 
     public override fun onRoomDeInit() {
+        super.onRoomDeInit()
         p1Username = null
         p2Username = null
         gameType = null
@@ -105,7 +111,7 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
 
     private fun handleRegularCommand(message: ServerMessage) = when (message.command) {
         "gen" -> gen = message.nextArg.toInt()
-        "break" -> onMarkBreak()
+        "break" -> handleBreak()
         "move" -> handleMove(message)
         "switch" -> handleSwitch(message)
         "drag" -> handleDrag(message)
@@ -141,6 +147,9 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
         else -> Unit
     }
 
+    private fun handleBreak() {
+        actionQueue.enqueueMinorAction { onMarkBreak() }
+    }
 
     // |move|p2a: Pinsir|Close Combat|p1a: Latias|[miss]
     // |move|p2a: Dialga|Flash Cannon|p1: Shiftry|[notarget]
@@ -801,33 +810,51 @@ abstract class BattleMessageObserver : RoomMessageObserver() {
         actionQueue.enqueueAction { super@BattleMessageObserver.printHtml(html) }
     }
 
-    protected abstract fun onPlayerInit(playerUsername: String, foeUsername: String)
-    protected abstract fun onFaint(id: PokemonId)
-    protected abstract fun onTeamSize(player: Player, size: Int)
-    protected abstract fun onBattleStarted()
-    protected abstract fun onBattleEnded(winner: String)
-    protected abstract fun onTimerEnabled(enabled: Boolean)
-    protected abstract fun onPreviewStarted()
-    protected abstract fun onAddPreviewPokemon(id: PokemonId, pokemon: BasePokemon, hasItem: Boolean)
-    protected abstract fun onSwitch(newPokemon: BattlingPokemon)
-    protected abstract fun onDetailsChanged(newPokemon: BattlingPokemon)
-    protected abstract fun onMove(sourceId: PokemonId, targetId: PokemonId?, moveName: String, shouldAnim: Boolean)
-    protected abstract fun onSwap(id: PokemonId, targetIndex: Int)
-    protected abstract fun onRequestAsked(request: BattleActionRequest)
-    protected abstract fun onHealthChanged(id: PokemonId, condition: Condition)
-    protected abstract fun onStatusChanged(id: PokemonId, status: String?)
-    protected abstract fun onStatChanged(id: PokemonId)
-    protected abstract fun onDisplayBattleToast(id: PokemonId, text: String, color: Int)
-    protected abstract fun onFieldEffectChanged(weather: String?)
-    protected abstract fun onSideChanged(player: Player, side: String, start: Boolean)
-    protected abstract fun onVolatileStatusChanged(id: PokemonId, vStatus: String, start: Boolean)
-    protected abstract fun onPrintBattleMessage(message: CharSequence)
-    protected open fun onMarkBreak() {
-//        mActionQueue.enqueueMinorAction(new Runnable() {
-//            @Override
-//            public void run() {
-//                printMessage("");
-//            }
-//        });
+    private fun onMarkBreak() = uiCallbacks?.onMarkBreak()
+    private fun onPlayerInit(playerUsername: String, foeUsername: String) = uiCallbacks?.onPlayerInit(playerUsername, foeUsername)
+    private fun onFaint(id: PokemonId) = uiCallbacks?.onFaint(id)
+    private fun onTeamSize(player: Player, size: Int) = uiCallbacks?.onTeamSize(player, size)
+    private fun onBattleStarted() = uiCallbacks?.onBattleStarted()
+    private fun onBattleEnded(winner: String) = uiCallbacks?.onBattleEnded(winner)
+    private fun onTimerEnabled(enabled: Boolean) = uiCallbacks?.onTimerEnabled(enabled)
+    private fun onPreviewStarted() = uiCallbacks?.onPreviewStarted()
+    private fun onAddPreviewPokemon(id: PokemonId, pokemon: BasePokemon, hasItem: Boolean) = uiCallbacks?.onAddPreviewPokemon(id, pokemon, hasItem)
+    private fun onSwitch(newPokemon: BattlingPokemon) = uiCallbacks?.onSwitch(newPokemon)
+    private fun onDetailsChanged(newPokemon: BattlingPokemon) = uiCallbacks?.onDetailsChanged(newPokemon)
+    private fun onMove(sourceId: PokemonId, targetId: PokemonId?, moveName: String, shouldAnim: Boolean) = uiCallbacks?.onMove(sourceId, targetId, moveName, shouldAnim)
+    private fun onSwap(id: PokemonId, targetIndex: Int) = uiCallbacks?.onSwap(id, targetIndex)
+    private fun onRequestAsked(request: BattleActionRequest) = uiCallbacks?.onRequestAsked(request)
+    private fun onHealthChanged(id: PokemonId, condition: Condition) = uiCallbacks?.onHealthChanged(id, condition)
+    private fun onStatusChanged(id: PokemonId, status: String?) = uiCallbacks?.onStatusChanged(id, status)
+    private fun onStatChanged(id: PokemonId) = uiCallbacks?.onStatChanged(id)
+    private fun onDisplayBattleToast(id: PokemonId, text: String, color: Int) = uiCallbacks?.onDisplayBattleToast(id, text, color)
+    private fun onFieldEffectChanged(weather: String?) = uiCallbacks?.onFieldEffectChanged(weather)
+    private fun onSideChanged(player: Player, side: String, start: Boolean) = uiCallbacks?.onSideChanged(player, side, start)
+    private fun onVolatileStatusChanged(id: PokemonId, vStatus: String, start: Boolean) = uiCallbacks?.onVolatileStatusChanged(id, vStatus, start)
+    private fun onPrintBattleMessage(message: CharSequence) = uiCallbacks?.onPrintBattleMessage(message)
+
+    interface UiCallbacks : RoomMessageObserver.UiCallbacks {
+        fun onMarkBreak()
+        fun onPlayerInit(playerUsername: String, foeUsername: String)
+        fun onFaint(id: PokemonId)
+        fun onTeamSize(player: Player, size: Int)
+        fun onBattleStarted()
+        fun onBattleEnded(winner: String)
+        fun onTimerEnabled(enabled: Boolean)
+        fun onPreviewStarted()
+        fun onAddPreviewPokemon(id: PokemonId, pokemon: BasePokemon, hasItem: Boolean)
+        fun onSwitch(newPokemon: BattlingPokemon)
+        fun onDetailsChanged(newPokemon: BattlingPokemon)
+        fun onMove(sourceId: PokemonId, targetId: PokemonId?, moveName: String, shouldAnim: Boolean)
+        fun onSwap(id: PokemonId, targetIndex: Int)
+        fun onRequestAsked(request: BattleActionRequest)
+        fun onHealthChanged(id: PokemonId, condition: Condition)
+        fun onStatusChanged(id: PokemonId, status: String?)
+        fun onStatChanged(id: PokemonId)
+        fun onDisplayBattleToast(id: PokemonId, text: String, color: Int)
+        fun onFieldEffectChanged(weather: String?)
+        fun onSideChanged(player: Player, side: String, start: Boolean)
+        fun onVolatileStatusChanged(id: PokemonId, vStatus: String, start: Boolean)
+        fun onPrintBattleMessage(message: CharSequence)
     }
 }
