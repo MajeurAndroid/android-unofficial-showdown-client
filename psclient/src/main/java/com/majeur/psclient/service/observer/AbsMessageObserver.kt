@@ -7,15 +7,19 @@ abstract class AbsMessageObserver<C : AbsMessageObserver.UiCallbacks>(
         val service: ShowdownService
 ) {
 
-    open var uiCallbacks: C? = null
+    var uiCallbacks: C? = null
+        set(value) {
+            field = value
+            if (value != null) onUiCallbacksAttached()
+        }
+
+    protected abstract fun onUiCallbacksAttached()
 
     open var observedRoomId: String? = null
 
-    var interceptCommandBefore = setOf<String>()
-        protected set
+    open val interceptCommandBefore = emptySet<String>()
 
-    var interceptCommandAfter = setOf<String>()
-        protected set
+    open val interceptCommandAfter = emptySet<String>()
 
     fun postMessage(message: ServerMessage, forcePost: Boolean = false) {
         if (forcePost || observedRoomId == message.roomId) onMessage(message)

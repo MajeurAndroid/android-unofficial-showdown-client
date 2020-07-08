@@ -20,8 +20,6 @@ import kotlin.math.roundToInt
 class BattleRoomMessageObserver(service: ShowdownService)
     : RoomMessageObserver<BattleRoomMessageObserver.UiCallbacks>(service) {
 
-    override var uiCallbacks: UiCallbacks? = null
-
     var gameType: GameType? = null
         private set
 

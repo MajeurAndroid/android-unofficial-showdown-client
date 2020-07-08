@@ -34,6 +34,10 @@ abstract class RoomMessageObserver<C : RoomMessageObserver.UiCallbacks>(service:
     val users: List<String>
         get() = currentUsers.toList()
 
+    override fun onUiCallbacksAttached() {
+
+    }
+
     override fun onMessage(message: ServerMessage) {
         message.newArgsIteration()
         when (message.command) {

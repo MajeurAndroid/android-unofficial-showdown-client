@@ -14,20 +14,33 @@ import java.util.*
 class GlobalMessageObserver(service: ShowdownService)
     : AbsMessageObserver<GlobalMessageObserver.UiCallbacks>(service) {
 
-    override var uiCallbacks: UiCallbacks? = null
-
     override var observedRoomId: String? = "lobby"
-
-    init {
-        interceptCommandBefore = setOf("init", "noinit")
-        interceptCommandAfter = setOf("deinit")
-    }
+    override val interceptCommandBefore = setOf("init", "noinit")
+    override val interceptCommandAfter = setOf("deinit")
 
     var isUserGuest: Boolean = true
         private set
 
     private var requestServerCountsOnly = false
     private val privateMessages = mutableMapOf<String, MutableList<String>>()
+
+    override fun onUiCallbacksAttached() {
+        // If we did not stored at least username, we will not have anything else
+        val username = service.getSharedData<String>("myusername") ?: return
+
+        onUserChanged(username, isUserGuest, /* TODO */ "000")
+        onUpdateCounts(service.getSharedData("users") ?: -1,
+                service.getSharedData("battles") ?: -1)
+
+        onBattleFormatsChanged(service.getSharedData("formats") ?: emptyList())
+
+        onSearchBattlesChanged(service.getSharedData("searching") ?: emptyList(),
+                service.getSharedData("games") ?: emptyMap())
+
+        onChallengesChange(service.getSharedData("challenge_to"),
+                service.getSharedData("challenge_to_format"),
+                service.getSharedData("challenge_from") ?: emptyMap())
+    }
 
     public override fun onMessage(message: ServerMessage) {
         message.newArgsIteration()
@@ -100,7 +113,9 @@ class GlobalMessageObserver(service: ShowdownService)
         try {
             val jsonObject = JSONObject(queryContent)
             val userCount = jsonObject.getInt("userCount")
+            service.putSharedData("users", userCount)
             val battleCount = jsonObject.getInt("battleCount")
+            service.putSharedData("battles", battleCount)
             onUpdateCounts(userCount, battleCount)
             if (requestServerCountsOnly) {
                 requestServerCountsOnly = false
@@ -179,7 +194,7 @@ class GlobalMessageObserver(service: ShowdownService)
                 categories.add(it)
             }
         }
-        service?.putSharedData("formats", categories)
+        service.putSharedData("formats", categories)
         onBattleFormatsChanged(categories)
     }
 
@@ -198,17 +213,17 @@ class GlobalMessageObserver(service: ShowdownService)
         val games = mutableMapOf<String, String>()
         val gamesJson = jsonObject.optJSONObject("games")
         gamesJson?.let {
-            gamesJson.keys().forEach {
-                games.put(it, gamesJson.getString(it))
-            }
+            gamesJson.keys().forEach { key -> games[key] = gamesJson.getString(key) }
         }
+        service.putSharedData("searching", searching)
+        service.putSharedData("games", games)
         onSearchBattlesChanged(searching, games)
     }
 
     private fun handlePm(msg: ServerMessage) {
         val from = msg.nextArg.substring(1)
         val to = msg.nextArg.substring(1)
-        val myUsername = service?.getSharedData<String>("myusername")?.substring(1)
+        val myUsername = service.getSharedData<String>("myusername")?.substring(1)
         val with = if (myUsername == from) to else from
         var content = msg.nextArgSafe
         if (content != null && (content.startsWith("/raw") || content.startsWith("/html") || content.startsWith("/uhtml")))
@@ -237,6 +252,9 @@ class GlobalMessageObserver(service: ShowdownService)
                 from[key] = challengesFrom.getString(key)
             }
         }
+        service.putSharedData("challenge_to", to)
+        service.putSharedData("challenge_to_format", format)
+        service.putSharedData("challenge_from", from)
         onChallengesChange(to, format, from)
     }
 
