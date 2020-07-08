@@ -5,7 +5,6 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.OnLifecycleEvent
-import com.majeur.psclient.R
 import com.majeur.psclient.service.ShowdownService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -20,21 +19,10 @@ open class BaseFragment : Fragment(), MainActivity.Callbacks {
     protected val service get() = _service
     protected val fragmentScope = FragmentScope()
 
-    protected val homeFragment by lazy {
-        requireFragmentManager().findFragmentById(R.id.fragment_home) as HomeFragment
-    }
-
-    protected val battleFragment by lazy {
-        requireFragmentManager().findFragmentById(R.id.fragment_battle) as BattleFragment
-    }
-
-    protected val chatFragment by lazy {
-        requireFragmentManager().findFragmentById(R.id.fragment_chat) as ChatFragment
-    }
-
-    protected val teamsFragment by lazy {
-        requireFragmentManager().findFragmentById(R.id.fragment_teams) as TeamsFragment
-    }
+    protected val homeFragment get() = mainActivity.homeFragment
+    protected val battleFragment get() = mainActivity.battleFragment
+    protected val chatFragment get() = mainActivity.chatFragment
+    protected val teamsFragment get() = mainActivity.teamsFragment
 
     val mainActivity: MainActivity
         get() = requireActivity() as MainActivity
