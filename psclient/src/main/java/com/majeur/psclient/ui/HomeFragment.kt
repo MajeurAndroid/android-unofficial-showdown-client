@@ -23,6 +23,7 @@ import androidx.core.graphics.ColorUtils
 import androidx.core.view.children
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.snackbar.BaseTransientBottomBar
 import com.google.android.material.snackbar.Snackbar
 import com.majeur.psclient.R
 import com.majeur.psclient.databinding.DialogBattleMessageBinding
@@ -63,6 +64,13 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
 
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
+    private var activeSnackbar: Snackbar? = null
+    private val snackbarCallbacks = object : BaseTransientBottomBar.BaseCallback<Snackbar>() {
+        override fun onDismissed(snackbar: Snackbar?, event: Int) {
+            activeSnackbar?.removeCallback(this)
+            if (activeSnackbar == snackbar) activeSnackbar = null
+        }
+    }
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -75,6 +83,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
             container: ViewGroup?,
             savedInstanceState: Bundle?
     ): View? {
+        Timber.d(container.toString())
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -85,11 +94,13 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
     }
 
     private fun makeSnackbar(message: String, indefinite: Boolean = false) {
-        Snackbar.make(binding.root, message, if (indefinite) Snackbar.LENGTH_INDEFINITE else Snackbar.LENGTH_LONG).show()
+        activeSnackbar = Snackbar.make(binding.root, message, if (indefinite) Snackbar.LENGTH_INDEFINITE else Snackbar.LENGTH_LONG)
+                .addCallback(snackbarCallbacks)
+        activeSnackbar!!.show()
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        if (view.background == null) view.background = BackgroundBitmapDrawable(resources, R.drawable.client_bg)
+        binding.root.background = BackgroundBitmapDrawable(resources, R.drawable.client_bg)
         binding.usersCount.apply {
             text = "-".bold()
             append("\nusers online".small())
@@ -435,6 +446,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
     }
 
     override fun onConnectedToServer() {
+        activeSnackbar?.dismiss()
         if (battleFragment.observedRoomId != null) battleFragment.observedRoomId = null
         if (chatFragment.observedRoomId != null) chatFragment.observedRoomId = null
     }
@@ -446,11 +458,10 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         }
         binding.loginButton.isEnabled = true
         if (isGuest) {
-            makeSnackbar("Connected as guest !")
             binding.loginButton.setImageResource(R.drawable.ic_login)
         } else {
-            makeSnackbar("Connected as $userName")
             binding.loginButton.setImageResource(R.drawable.ic_logout)
+            makeSnackbar("Connected as $userName")
         }
         val signInDialog = requireFragmentManager().findFragmentByTag(SignInDialog.FRAGMENT_TAG) as SignInDialog?
         signInDialog?.dismissAllowingStateLoss()
@@ -458,11 +469,11 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
 
     override fun onUpdateCounts(userCount: Int, battleCount: Int) {
         binding.usersCount.apply {
-            text = userCount.toString().bold()
+            text = (if (userCount >= 0) userCount.toString() else "-").bold()
             append("\nusers online".small())
         }
         binding.battlesCount.apply {
-            text = battleCount.toString().bold()
+            text = (if (battleCount >= 0) battleCount.toString() else "-").bold()
             append("\nactive battles".small())
         }
     }
