@@ -30,7 +30,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
 
     var gen: Int = 0
 
-    private val battleTextBuilder: BattleTextBuilder
+    private val battleTextBuilder = BattleTextBuilder(service)
     private val actionQueue = ActionQueue(Looper.getMainLooper())
     private var p1Username: String? = null
     private var p2Username: String? = null
@@ -44,7 +44,6 @@ class BattleRoomMessageObserver(service: ShowdownService)
     private var lastMove: String? = null
 
     init {
-        battleTextBuilder = BattleTextBuilder(service)
         battleTextBuilder.setPokemonIdFactory { rawString: String ->
             try {
                 return@setPokemonIdFactory PokemonId(getPlayer(rawString), rawString)
@@ -82,7 +81,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
         activeFieldEffects.clear()
     }
 
-    private fun myUsername(): String = service?.getSharedData("username") ?: ""
+    private fun myUsername(): String = service.getSharedData("username") ?: ""
 
     private fun getPlayer(rawId: String) = Player.get(rawId, p1Username, p2Username, myUsername())
 

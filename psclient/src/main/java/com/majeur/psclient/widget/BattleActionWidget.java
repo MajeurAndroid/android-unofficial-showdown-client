@@ -35,7 +35,7 @@ import com.majeur.psclient.model.battle.Player;
 import com.majeur.psclient.model.battle.PokemonId;
 import com.majeur.psclient.model.pokemon.BattlingPokemon;
 import com.majeur.psclient.model.pokemon.SidePokemon;
-import com.majeur.psclient.service.BattleMessageObserver;
+import com.majeur.psclient.service.observer.BattleRoomMessageObserver;
 import com.majeur.psclient.util.SimpleAnimatorListener;
 import com.majeur.psclient.util.Utils;
 
@@ -75,7 +75,7 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
     private final CheckBox mMovesCheckBox;
     private final List<SwitchButton> mSwitchButtons;
 
-    private BattleMessageObserver mObserver;
+    private BattleRoomMessageObserver mObserver;
     private int mCurrentPrompt;
     private BattleTipPopup mBattleTipPopup;
     private BattleActionRequest mRequest;
@@ -311,7 +311,7 @@ public class BattleActionWidget extends FrameLayout implements View.OnClickListe
         }
     }
 
-    public void promptDecision(BattleMessageObserver observer, BattleTipPopup battleTipPopup, BattleActionRequest request,
+    public void promptDecision(BattleRoomMessageObserver observer, BattleTipPopup battleTipPopup, BattleActionRequest request,
                                OnDecisionListener listener) {
         mObserver = observer;
         mBattleTipPopup = battleTipPopup;

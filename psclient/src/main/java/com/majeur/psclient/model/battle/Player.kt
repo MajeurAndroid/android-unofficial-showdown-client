@@ -16,7 +16,7 @@ enum class Player {
     }
 
     companion object {
-        operator fun get(playerId: String, username1: String?, username2: String?, myUsername: String): Player {
+        fun get(playerId: String, username1: String?, username2: String?, myUsername: String): Player {
             val isOne = playerId.take(2).contains("p1", ignoreCase = true)
             val watching = username1 != myUsername && username2 != myUsername
             if (watching) return if (isOne) TRAINER else FOE
