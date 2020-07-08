@@ -4,18 +4,21 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:orientation="horizontal">
 
-    <androidx.coordinatorlayout.widget.CoordinatorLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
+    <fragment
+        android:id="@+id/fragment_home"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="5"
+        android:name="com.majeur.psclient.ui.HomeFragment"/>
 
-        <fragment
-            android:id="@+id/fragment_home"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:name="com.majeur.psclient.ui.HomeFragment"/>
+    <FrameLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="6"
+        android:elevation="4dp"
+        android:background="@color/background">
 
         <fragment
             android:id="@+id/fragment_battle"
@@ -35,12 +38,13 @@
             android:layout_height="match_parent"
             android:name="com.majeur.psclient.ui.TeamsFragment"/>
 
-    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+    </FrameLayout>
 
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottom_navigation"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:menu="@menu/menu_navigation_main" />
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/navigation_view"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="2"
+        app:menu="@menu/menu_navigation_main"/>
 
 </LinearLayout>

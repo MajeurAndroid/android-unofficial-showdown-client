@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+      android:checkableBehavior="single">
+
+    <group android:checkableBehavior="single">
+
+        <item
+                android:id="@+id/fragment_battle"
+                android:enabled="true"
+                android:icon="@drawable/ic_battle"
+                android:title="Battle" />
+
+        <item
+                android:id="@+id/fragment_chat"
+                android:enabled="true"
+                android:icon="@drawable/ic_chat"
+                android:title="Chat" />
+
+        <item
+                android:id="@+id/fragment_teams"
+                android:enabled="true"
+                android:icon="@drawable/ic_pokeball"
+                android:title="Teams" />
+
+    </group>
+
+</menu>

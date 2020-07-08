@@ -196,8 +196,8 @@ public class BattleLayout extends ViewGroup {
 
         int widthSize = MeasureSpec.getSize(widthMeasureSpec);
         int widthMode = MeasureSpec.getMode(widthMeasureSpec);
-        if (widthMode == MeasureSpec.UNSPECIFIED)
-            throw new IllegalStateException("Fixed parent width required");
+        //if (widthMode == MeasureSpec.UNSPECIFIED)
+        //    throw new IllegalStateException("Fixed parent width required");
         measuredWidth = widthSize;
 
         int heightSize = MeasureSpec.getSize(heightMeasureSpec);
