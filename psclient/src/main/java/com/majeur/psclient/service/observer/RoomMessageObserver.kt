@@ -12,8 +12,6 @@ import com.majeur.psclient.util.html.UsernameSpan
 abstract class RoomMessageObserver<C : RoomMessageObserver.UiCallbacks>(service: ShowdownService)
     : AbsMessageObserver<C>(service) {
 
-    override var uiCallbacks: C? = null
-
     var roomJoined = false
         private set
 
