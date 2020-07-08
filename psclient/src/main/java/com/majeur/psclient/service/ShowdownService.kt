@@ -6,7 +6,7 @@ import android.content.Intent
 import android.os.Handler
 import android.os.Looper
 import android.util.Base64
-import com.majeur.psclient.service.observer.BattleMessageObserver
+import com.majeur.psclient.service.observer.BattleRoomMessageObserver
 import com.majeur.psclient.service.observer.ChatRoomMessageObserver
 import com.majeur.psclient.service.observer.GlobalMessageObserver
 import com.majeur.psclient.util.S
@@ -34,34 +34,64 @@ class ShowdownService : Service() {
 
     val globalMessageObserver by lazy { GlobalMessageObserver(this) }
     val chatMessageObserver by lazy { ChatRoomMessageObserver(this) }
-    val battleMessageObserver by lazy { BattleMessageObserver(this) }
+    val battleMessageObserver by lazy { BattleRoomMessageObserver(this) }
     private val messageObservers get() = listOf(globalMessageObserver, chatMessageObserver, battleMessageObserver)
+    private var previousChatRoomId: String? = null
+    private var previousBattleRoomId: String? = null
 
-    private val sharedData = mutableMapOf<String, Any>()
+    private val sharedData = mutableMapOf<String, Any?>()
     private var webSocket: WebSocket? = null
     private var _connected = AtomicBoolean(false)
+
+    @Suppress("ObjectLiteralToLambda")
+    private val stopSelfRunnable = object : Runnable {
+        override fun run() = stopSelf()
+    }
 
     var isConnected: Boolean
         private set(value) = _connected.set(value)
         get() = _connected.get()
 
     override fun onCreate() {
+        Timber.d("(${hashCode()}) Lifecycle: onCreate")
         super.onCreate()
-        Timber.d("Lifecycle: onCreate()")
         uiHandler = Handler(Looper.getMainLooper())
         binder = Binder()
         okHttpClient = OkHttpClient.Builder()
                 .build()
     }
 
-    override fun onBind(intent: Intent) = binder
+    override fun onBind(intent: Intent): Binder {
+        Timber.d("(${hashCode()}) Lifecycle: onBind")
+        uiHandler.removeCallbacks(stopSelfRunnable)
+        return binder
+    }
+
+    override fun onRebind(intent: Intent?) {
+        Timber.d("(${hashCode()}) Lifecycle: onRebind")
+        super.onRebind(intent)
+        // We try to rejoin previously leaved rooms
+        if (previousBattleRoomId != null)
+            sendGlobalCommand("join", previousBattleRoomId!!)
+        if (previousChatRoomId != null)
+            sendGlobalCommand("join", previousChatRoomId!!)
+        uiHandler.removeCallbacks(stopSelfRunnable)
+    }
 
     override fun onUnbind(intent: Intent): Boolean {
-        disconnectFromServer()
+        Timber.d("(${hashCode()}) Lifecycle: onUnbind")
+        // If no activity is bound we leave every room we were into and keep their ids to rejoin them on next bind
+        previousBattleRoomId = battleMessageObserver.observedRoomId
+        if (previousBattleRoomId != null) sendRoomCommand(previousBattleRoomId, "leave")
+        previousChatRoomId = chatMessageObserver.observedRoomId
+        if (previousChatRoomId != null) sendRoomCommand(previousChatRoomId, "leave")
+        // We stop our service (and close our WS connection) after 30 seconds with no activity bound
+        uiHandler.postDelayed(stopSelfRunnable, 30000)
         return true
     }
 
     override fun onDestroy() {
+        Timber.d("(${hashCode()}) Lifecycle: onDestroy")
         super.onDestroy()
         if (isConnected) webSocket?.close(WS_CLOSE_GOING_AWAY, null)
     }
@@ -74,7 +104,7 @@ class ShowdownService : Service() {
     }
 
     fun reconnectToServer() {
-        disconnectFromServer()
+        if (isConnected) return
         connectToServer()
     }
 
@@ -332,7 +362,7 @@ class ShowdownService : Service() {
 
     fun forgetUserLoginInfos() = getSharedPreferences("user", Context.MODE_PRIVATE).edit().clear().apply()
 
-    fun putSharedData(key: String, data: Any) {
+    fun putSharedData(key: String, data: Any?) {
         sharedData[key] = data
     }
 
