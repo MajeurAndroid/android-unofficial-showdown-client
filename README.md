@@ -1,4 +1,4 @@
-# <img alt="Unofficial PS client icon" src="web/icon-psclient.png" width="48"></img>Android PS Client
+# <img alt="Unofficial PS client icon" src="web/icon-psclient.png" width="48"></img>Unofficial Showdown! Client
 [![Actions Status](https://github.com/MajeurAndroid/Android-Unofficial-Showdown-Client/workflows/Build/badge.svg)](https://github.com/MajeurAndroid/Android-Unofficial-Showdown-Client/actions)
 
 ![Demo Image](web/demo-psclient.png)
