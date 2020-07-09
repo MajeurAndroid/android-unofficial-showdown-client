@@ -1,5 +1,7 @@
-# <img alt="Unofficial PS client icon" src="web/ic_launcher-web.png" width="48"></img>Android PS Client
+# <img alt="Unofficial PS client icon" src="web/icon-psclient.png" width="48"></img>Android PS Client
 [![Actions Status](https://github.com/MajeurAndroid/Android-Unofficial-Showdown-Client/workflows/Build/badge.svg)](https://github.com/MajeurAndroid/Android-Unofficial-Showdown-Client/actions)
+
+![Demo Image](web/demo-psclient.png)
 
 ## Content
 * [Introduction](#introduction)
@@ -43,14 +45,16 @@ Here I will briefly describe packages along with their main components to help y
 	*Everything related to Showdown's protocol will be found in this package. From shodown server communication to handling and processing of incoming data.*
 	- [`.ShowdownService.kt`](psclient/src/main/java/com/majeur/psclient/service/ShowdownService.kt)
 		*Responsible of all interactions with showdown server, including authentication.*
-	- [`.AbsMessageObserver.kt`](psclient/src/main/java/com/majeur/psclient/service/AbsMessageObserver.kt)
-		*Base definition for a component that would handle messages from showdown server.*
-	- [`.GlobalMessageObserver.kt`](psclient/src/main/java/com/majeur/psclient/service/GlobalMessageObserver.kt)
-		*In charge of handling global server messages such as '|challstr|', '|popup|', '|formats|' etc... and rooms initialization.*
-	- [`.RoomMessageObserver.kt`](psclient/src/main/java/com/majeur/psclient/service/RoomMessageObserver.kt)
-		*Handles everything for a chat room to work.*
-	- [`.BattleMessageObserver.kt`](psclient/src/main/java/com/majeur/psclient/service/BattleMessageObserver.kt)
-		*Extends from `.RoomMessageObserver.kt` and adds support for battle commands.*
+	- [`.observer`](psclient/src/main/java/com/majeur/psclient/service/observer)
+		- [`.AbsMessageObserver.kt`](psclient/src/main/java/com/majeur/psclient/service/observer/AbsMessageObserver.kt)
+            		*Base definition for a component that would handle messages from showdown server.*
+		- [`.GlobalMessageObserver.kt`](psclient/src/main/java/com/majeur/psclient/service/observer/GlobalMessageObserver.kt)
+            		*In charge of handling global server messages such as '|challstr|', '|popup|', '|formats|' etc... and rooms initialization.*
+		- [`.RoomMessageObserver.kt`](psclient/src/main/java/com/majeur/psclient/service/observer/RoomMessageObserver.kt)
+            		*Handles everything for a basic room to work.*
+		- [`.BattleRoomMessageObserver.kt`](psclient/src/main/java/com/majeur/psclient/service/observer/BattleRoomMessageObserver.kt)
+            		*Extends from `.RoomMessageObserver.kt` and adds support for battle commands.*
+		- [`.ChatRoomMessageObserver.kt`](psclient/src/main/java/com/majeur/psclient/service/observer/ChatRoomMessageObserver.kt)
 	- *[...]*
  - [`.io`](psclient/src/main/java/com/majeur/psclient/io)
 	*Contains everything involving loading content (eg. from disk for dex/move/poke details and dex icons or from web for sprites).*
@@ -82,6 +86,7 @@ Here I will briefly describe packages along with their main components to help y
 I'll describe here some of the core mechanisms through quick flow graphs.
 #### Incomming data flow
 ![Basic incomming data flow](https://g.gravizo.com/svg?%20digraph%20G%20%7B%0A%20%20%20%20rankdir%3DLR%3B%0A%20%20%20%20node%20%5Bshape%3Dbox%5D%3B%0A%20%20%20%20n1%20%5Blabel%3D%22Showdown%5Cnserver%22%20style%3Ddotted%5D%3B%0A%20%20%20%20n2%20%5Blabel%3D%22Showdown%20service%5Cn%E2%80%94%5CnReads%20raw%20data%20from%20socket%2C%20then%5Cncreates%20ServerMessage%20object%20and%5Cndispatch%20it%20to%20observers%22%5D%20%3B%0A%20%20%20%20n3%20%5Blabel%3D%22Message%20observers%5Cn%E2%80%94%5CnProcesses%20server's%20messages%20and%20define%5Cnabstract%20methods%20for%20UI%20updates%22%5D%20%3B%0A%20%20%20%20n4%20%5Blabel%3D%22Fragments%5Cn%E2%80%94%5CnImplements%20observer's%20abstract%5Cnmethods%20to%20update%20UI%20state%22%5D%20%3B%0A%0A%20%20%20%20n1%20-%3E%20n2%20%5Blabel%3D%22ws%5Cnprotocol%22%20dir%3Dboth%20style%3Ddotted%5D%3B%0A%20%20%20%20n2%20-%3E%20n3%20%5Blabel%3D%22registration%5Cnmechanism%22%5D%3B%0A%20%20%20%20n3%20-%3E%20n4%20%5Blabel%3D%22abstract%5Cnmethods%22%5D%3B%0A%7D)
+*For ui updates, abstract methods are now replaced by interfaces (See: [05bbad5](https://github.com/MajeurAndroid/Android-Unofficial-Showdown-Client/commit/05bbad5a4f6f58dab04367ba9a314cbedbb97373)).*
 #### Outcomming data flow
 ![Basic outcomming data flow](https://g.gravizo.com/svg?%20digraph%20G%20%7B%0Arankdir%3DLR%3B%0Anode%20%5Bshape%3Dbox%5D%3B%0An1%20%5Blabel%3D%22Showdown%5Cnserver%22%20style%3Ddotted%5D%3B%0An2%20%5Blabel%3D%22Showdown%20service%5Cn%E2%80%94%5CnFormats%20and%20sends%5Cndata%20to%20server%20through%20the%20socket%22%5D%20%3B%0An3%20%5Blabel%3D%22Fragments%5Cn%E2%80%94%5CnCreates%20appropriate%20command%5Cnwith%20its%20arguments%22%5D%20%3B%0An4%20%5Blabel%3D%22UI%5Cn%E2%80%94%5CnReacts%20to%20user's%20inputs%22%5D%20%3B%0An5%20%5Blabel%3D%22Initialization%5Cn%E2%80%94%5CnMakes%20authentication%20related%5Cncommands%20at%20launch%22%5D%20%3B%0An5%20-%3E%20n3%20%5Blabel%3D%22%22%5D%3B%0An4%20-%3E%20n3%20%5Blabel%3D%22view%20callbacks%22%5D%3B%0An3%20-%3E%20n2%20%5Blabel%3D%22direct%20call%5Cn(bound%20service)%22%5D%3B%0An2%20-%3E%20n1%20%5Blabel%3D%22ws%5Cnprotocol%22%20dir%3Dboth%20style%3Ddotted%5D%3B%0A%7D)
 ## Notes
