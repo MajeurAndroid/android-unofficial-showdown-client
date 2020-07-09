@@ -26,7 +26,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
     var battleRunning = false
         private set
 
-    var gen: Int = 0
+    var gen = 0
 
     private val battleTextBuilder = BattleTextBuilder(service)
     private val actionQueue = ActionQueue(Looper.getMainLooper())
@@ -38,7 +38,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
     private var trainerPokemons: Array<BattlingPokemon?> = emptyArray()
     private var foePokemons: Array<BattlingPokemon?> = emptyArray()
     private var activeWeather: String? = null
-    private val activeFieldEffects = LinkedList<String>() // We use LinkedList specific methods.
+    private val activeFieldEffects = mutableListOf<String>()
     private var lastMove: String? = null
 
     init {
@@ -540,7 +540,12 @@ class BattleRoomMessageObserver(service: ShowdownService)
                 msg.kwargs["from"], msg.kwargs["of"], msg.kwargs["upkeep"])
         actionQueue.enqueueMinorAction {
             activeWeather = if ("none" == weather) null else weather
-            if (activeWeather != null) onFieldEffectChanged(weather) else if (activeFieldEffects.size > 0) onFieldEffectChanged(activeFieldEffects[0]) else onFieldEffectChanged(null)
+            val nextEffect = when {
+                activeWeather != null -> weather
+                activeFieldEffects.isNotEmpty() -> activeFieldEffects.last()
+                else -> null
+            }
+            onFieldEffectChanged(nextEffect)
             displayMinorActionMessage(text)
         }
     }
@@ -555,12 +560,16 @@ class BattleRoomMessageObserver(service: ShowdownService)
             if (start) {
                 activeFieldEffects.add(fieldEffect)
                 if (activeWeather == null) {
-                    if (activeFieldEffects.size == 1) onFieldEffectChanged(fieldEffect)
+                    onFieldEffectChanged(fieldEffect)
                 }
             } else {
                 activeFieldEffects.remove(fieldEffect)
                 if (activeWeather == null) {
-                    if (activeFieldEffects.size > 0) onFieldEffectChanged(activeFieldEffects[0]) else onFieldEffectChanged(null)
+                    if (activeFieldEffects.isNotEmpty()) {
+                        onFieldEffectChanged(activeFieldEffects.last())
+                    } else {
+                        onFieldEffectChanged(null)
+                    }
                 }
             }
             displayMinorActionMessage(text)
