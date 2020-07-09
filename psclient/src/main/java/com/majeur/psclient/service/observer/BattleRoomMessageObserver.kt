@@ -13,7 +13,6 @@ import com.majeur.psclient.util.*
 import org.json.JSONException
 import org.json.JSONObject
 import timber.log.Timber
-import java.util.*
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -79,7 +78,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
         activeFieldEffects.clear()
     }
 
-    private fun myUsername(): String = service.getSharedData("username") ?: ""
+    private fun myUsername(): String = service.getSharedData<String>("username")?.drop(1) ?: ""
 
     private fun getPlayer(rawId: String) = Player.get(rawId, p1Username, p2Username, myUsername())
 
