@@ -1,5 +1,6 @@
 package com.majeur.psclient.service.observer
 
+import android.graphics.Color
 import android.os.Looper
 import com.majeur.psclient.io.BattleTextBuilder
 import com.majeur.psclient.model.battle.*
@@ -119,9 +120,9 @@ class BattleRoomMessageObserver(service: ShowdownService)
         "faint" -> handleFaint(message)
         "teamsize" -> handleTeamSize(message)
         "gametype" -> handleGameType(message)
-        "tier" -> printMessage(Utils.boldText(message.nextArg))
-        "rated" -> printMessage(Utils.tagText("Rated battle"))
-        "rule" -> printMessage(Utils.italicText(message.nextArg))
+        "tier" -> printMessage(message.nextArg.bold())
+        "rated" -> printMessage("Rated battle".tag(Color.GRAY))
+        "rule" -> printMessage(message.nextArg.italic())
         "clearpoke" -> {
             previewPokemonIndexes[0] = 0
             previewPokemonIndexes[1] = 0
@@ -266,7 +267,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
     }
 
     private fun handleTurn(msg: ServerMessage) {
-        val text = " — Turn ${msg.nextArg} — ".bold().big()
+        val text = "\n" concat " — Turn ${msg.nextArg} — ".bold().big()
         actionQueue.enqueueTurnAction {
             // super prevents from queuing message print
             super@BattleRoomMessageObserver.printMessage(text)

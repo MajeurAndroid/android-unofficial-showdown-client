@@ -232,47 +232,37 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
         placeHolderBottom.setImageDrawable(null)
 
         titleView.apply {
-            text = pokemon.name
-            append(" ")
-            append(pokemon.gender.small())
-            append(" l.")
-            append(pokemon.level.toString())
+            text = pokemon.name concat " " concat pokemon.gender.small() concat " l." concat pokemon.level.toString()
         }
 
         descView.apply {
-            text = ""
-            if (pokemon.species != pokemon.name) append(pokemon.species)
+            text = if (pokemon.species != pokemon.name) pokemon.species else ""
 
             pokemon.condition?.let { condition ->
                 append("HP: ".small())
                 append("%.1f%% ".format(condition.health * 100).bold().color(healthColor(condition.health)))
                 if (pokemon.trainer) append("(${condition.hp}/${condition.maxHp})".small())
-                condition.status?.let { append(it.toUpperCase().small().bg(statusColor(it))) }
-                descView.append("\n")
+                condition.status?.let { append(it.toUpperCase().small().tag(statusColor(it))) }
+                append("\n")
             }
 
             var ability: String? = null
             if (pokemon.trainer && lastActionRequest?.side != null) {
                 val sidePokemon = lastActionRequest!!.side[pokemon.position]
                 if (pokemon.transformSpecies == null) { // Ditto case
-                    append("Atk:".small())
-                    append(pokemon.statModifiers.calcReadableStat("atk", sidePokemon.stats.atk))
-                    append(" Def:".small())
-                    append(pokemon.statModifiers.calcReadableStat("def", sidePokemon.stats.def))
-                    append(" Spa:".small())
-                    append(pokemon.statModifiers.calcReadableStat("spa", sidePokemon.stats.spa))
-                    append(" Spd:".small())
-                    append(pokemon.statModifiers.calcReadableStat("spd", sidePokemon.stats.spd))
-                    append(" Spe:".small())
-                    append(pokemon.statModifiers.calcReadableStat("spe", sidePokemon.stats.spe))
-                    append("\n")
+                    pokemon.statModifiers.apply {
+                        append("Atk:".small() concat calcReadableStat("atk", sidePokemon.stats.atk) concat
+                                " Def:".small() concat calcReadableStat("def", sidePokemon.stats.def) concat
+                                " Spa:".small() concat calcReadableStat("spa", sidePokemon.stats.spa) concat
+                                " Spd:".small() concat calcReadableStat("spd", sidePokemon.stats.spd) concat
+                                " Spe:".small() concat calcReadableStat("spe", sidePokemon.stats.spe) concat
+                                "\n")
+                    }
                 }
-                append("Ability: ".small())
+                append("Ability: ".small() concat sidePokemon.ability concat "\n")
                 ability = sidePokemon.ability
-                append(sidePokemon.ability)
-                append("\n")
-                descView.append("Item: ".small())
-                descView.append(sidePokemon.item)
+
+                append("Item: ".small() concat sidePokemon.item)
                 fragmentScope.launch {
                     assetLoader.item(sidePokemon.item.toId())?.let { item ->
                         Utils.replace(descView.editableText, sidePokemon.item, item.name)
@@ -307,9 +297,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
                     append("\n")
                 }
                 val speedRange = Stats.calculateSpeedRange(pokemon.level, dexPokemon.baseStats.spe, "Random Battle", observer.gen)
-                append("Speed: ".small())
-                append("${speedRange[0]} to ${speedRange[1]}")
-                append(" (before items/abilities/modifiers)".small())
+                append("Speed: ".small() concat "${speedRange[0]} to ${speedRange[1]}" concat " (before items/abilities/modifiers)".small())
             }
         }
     }
@@ -328,16 +316,13 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
         if (priority == -20) priority = move.details?.priority ?: 0
         when {
             priority > 1 -> {
-                descView.append("Nearly always moves first ")
-                descView.append(Utils.italicText(Utils.toStringSigned(priority)))
+                descView.append("Nearly always moves first " concat Utils.toStringSigned(priority).italic())
             }
             priority <= -1 -> {
-                descView.append("Nearly always moves last ")
-                descView.append(Utils.italicText(Utils.toStringSigned(priority)))
+                descView.append("Nearly always moves last " concat Utils.toStringSigned(priority).italic())
             }
             priority == 1 -> {
-                descView.append("Usually moves first ")
-                descView.append(Utils.italicText(Utils.toStringSigned(priority)))
+                descView.append("Usually moves first " concat Utils.toStringSigned(priority).italic())
             }
 
 //        if (move.zflag) {
@@ -384,7 +369,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
         if (accuracy == -20) accuracy = move.details?.accuracy ?: 0
         if (accuracy != 0) {
             descView.append("Accuracy: ")
-            if (accuracy == -1) descView.append("can't miss") else descView.append(Utils.str(accuracy))
+            if (accuracy == -1) descView.append("can't miss") else descView.append(accuracy.toString())
             descView.append("\n")
         }
         var desc: String? = null
@@ -437,40 +422,32 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
     private fun bindSidePokemonPopup(pokemon: SidePokemon, titleView: TextView,
                                      descView: TextView, placeHolderTop: ImageView, placeHolderBottom: ImageView) {
         titleView.text = pokemon.name
-        descView.text = Utils.smallText("HP: ")
-        val healthText = String.format("%.1f%% ", pokemon.condition.health * 100)
-        descView.append(Utils.boldText(healthText, healthColor(pokemon.condition.health)))
-        descView.append(Utils.smallText("(" + pokemon.condition.hp + "/" + pokemon.condition.maxHp + ")"))
-        if (pokemon.condition.status != null) descView.append(Utils.smallText(Utils.tagText(pokemon.condition.status!!.toUpperCase(),
-                statusColor(pokemon.condition.status))))
-        descView.append("\n")
-        descView.append(Utils.smallText("Atk:"))
-        descView.append(Utils.str(pokemon.stats.atk))
-        descView.append(Utils.smallText(" Def:"))
-        descView.append(Utils.str(pokemon.stats.def))
-        descView.append(Utils.smallText(" Spa:"))
-        descView.append(Utils.str(pokemon.stats.spa))
-        descView.append(Utils.smallText(" Spd:"))
-        descView.append(Utils.str(pokemon.stats.spd))
-        descView.append(Utils.smallText(" Spe:"))
-        descView.append(Utils.str(pokemon.stats.spe))
-        descView.append("\n")
-        descView.append(Utils.smallText("Ability: "))
-        descView.append(pokemon.ability)
-        descView.append("\n")
-        descView.append(Utils.smallText("Item: "))
-        descView.append(pokemon.item)
-        fragmentScope.launch {
-            assetLoader.item(pokemon.item.toId())?.let { item ->
-                Utils.replace(descView.editableText, pokemon.item, item.name)
-            }
+        descView.apply {
+            text = "HP: ".small() concat String.format("%.1f%% ", pokemon.condition.health * 100).bold().color(healthColor(pokemon.condition.health)) concat
+                    "(" + pokemon.condition.hp + "/" + pokemon.condition.maxHp + ")"
+            if (pokemon.condition.status != null)
+                append(pokemon.condition.status!!.toUpperCase().small().tag(statusColor(pokemon.condition.status)))
+
+            append("\n" concat
+                    "Atk:".small() concat pokemon.stats.atk.toString() concat
+                    " Def:".small() concat pokemon.stats.def.toString() concat
+                    " Spa:".small() concat pokemon.stats.spa.toString() concat
+                    " Spd:".small() concat pokemon.stats.spd.toString() concat
+                    " Spe:".small() concat pokemon.stats.spe.toString() concat
+                    "\n" concat
+                    "Ability: ".small() concat pokemon.ability concat "\n" concat
+                    "Item: ".small() concat pokemon.item concat "\n" concat
+                    "Moves: ".small())
         }
-        descView.append("\n")
-        descView.append(Utils.smallText("Moves:"))
         fragmentScope.launch {
             assetLoader.movesDetails(*pokemon.moves.map { it.toId() }.toTypedArray()).forEachIndexed { index, details ->
                 descView.append("\n\t")
                 descView.append(details?.name ?: pokemon.moves[index])
+            }
+        }
+        fragmentScope.launch {
+            assetLoader.item(pokemon.item.toId())?.let { item ->
+                Utils.replace(descView.editableText, pokemon.item, item.name)
             }
         }
         placeHolderTop.setImageDrawable(null)
@@ -479,11 +456,8 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
             assetLoader.dexPokemon(pokemon.species.toId())?.let {dexPokemon ->
                 placeHolderTop.setImageResource(Type.getResId(dexPokemon.firstType))
                 if (dexPokemon.secondType != null) placeHolderBottom.setImageResource(Type.getResId(dexPokemon.secondType))
-                if (pokemon.ability == null) return@let
-                var abilityName: String? = null
-                if (pokemon.ability == dexPokemon.hiddenAbility?.toId()) abilityName = dexPokemon.hiddenAbility
-                else for (ab in dexPokemon.abilities) if (ab.toId() == pokemon.ability) abilityName = ab
-                if (abilityName != null) Utils.replace(descView.editableText, pokemon.ability, abilityName)
+                val abilityName = dexPokemon.matchingAbility(pokemon.ability, or = "")
+                if (abilityName.isNotEmpty()) Utils.replace(descView.editableText, pokemon.ability, abilityName)
             }
         }
     }

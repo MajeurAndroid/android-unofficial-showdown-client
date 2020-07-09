@@ -262,16 +262,16 @@ class TeamFragment : Fragment() {
                         "n" -> "Undefined"
                         else -> "—"
                     }
-                    details.text = "Level: ".small() + "${p.level}" + ", Gender: ".small() + gender
-                    ability.text = "Ability: ".small() + dexPokemon.matchingAbility(p.ability.or("None"))
+                    details.text = "Level: ".small() concat "${p.level}" concat ", Gender: ".small() concat gender
+                    ability.text = "Ability: ".small() concat dexPokemon.matchingAbility(p.ability.or("None"))
                     val itemObject = if (p.item.isNotBlank()) assetLoader.item(p.item) else null
-                    item.text = "Item: ".small() + (itemObject?.name ?: p.item.or("None"))
+                    item.text = "Item: ".small() concat (itemObject?.name ?: p.item.or("None"))
                     val moveStrings = (0 until 4).map {
                         val moveId = p.moves.getOrNull(it)
                         if (moveId == null) "None" else assetLoader.moveDetails(moveId)?.name ?: "None"
                     }
-                    moves.text = "Moves: ".small() + moveStrings.joinToString(", ")
-                    evs.text = "Evs: ".small() + p.evs.summaryText(Nature.get(p.nature))
+                    moves.text = "Moves: ".small() concat moveStrings.joinToString(", ")
+                    evs.text = "Evs: ".small() concat p.evs.summaryText(Nature.get(p.nature))
                 }
 
                 ViewCompat.setTransitionName(root, "content_$position")

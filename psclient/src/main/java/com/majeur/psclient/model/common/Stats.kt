@@ -1,8 +1,7 @@
 package com.majeur.psclient.model.common
 
 import android.text.SpannableStringBuilder
-import androidx.core.text.toSpanned
-import com.majeur.psclient.util.plus
+import com.majeur.psclient.util.concat
 import com.majeur.psclient.util.small
 import com.majeur.psclient.util.toId
 import org.json.JSONObject
@@ -251,7 +250,7 @@ class Stats() : Serializable {
                 .joinTo(SpannableStringBuilder()) { i ->
                     val name = getName(i)!!
                     val natSign = if (name.toId() == nature.plus) "+" else if (name.toId() == nature.minus) "-" else ""
-                    "${get(i)}".toSpanned() + natSign.small() + name.small()
+                    "${get(i)}" concat  natSign.small()  concat name.small()
                 }
     }
 

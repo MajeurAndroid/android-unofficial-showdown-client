@@ -8,27 +8,26 @@ import android.text.style.ForegroundColorSpan
 import android.text.style.RelativeSizeSpan
 import android.text.style.StyleSpan
 import androidx.core.text.toSpannable
+import androidx.core.text.toSpanned
 import java.util.*
 
 private val ID_REGEX = "[^a-z0-9]".toRegex()
 
 fun String.toId(): String = this.toLowerCase(Locale.ROOT).replace(ID_REGEX, "")
+fun String.or(or: String) : String = if (isBlank()) or else this
 
-operator fun CharSequence.plus(other: CharSequence): CharSequence = TextUtils.concat(this, other)
+// We cannot use a custom "operator fun plus()" because String.plus() override is impossible
+infix fun CharSequence.concat(other: CharSequence): CharSequence = TextUtils.concat(this, other)
 
+fun CharSequence.spanned() = toSpanned()
 fun CharSequence.bold() = toSpannable().bold()
-
 fun CharSequence.italic() = toSpannable().italic()
-
 fun CharSequence.small() = toSpannable().small()
-
 fun CharSequence.big() = toSpannable().big()
-
 fun CharSequence.relSize(relSize: Float) = toSpannable().relSize(relSize)
-
 fun CharSequence.color(color: Int) = toSpannable().color(color)
-
 fun CharSequence.bg(color: Int) = toSpannable().bg(color)
+fun CharSequence.tag(color: Int) = toSpannable().tag(color)
 
 fun Spannable.bold(): Spannable {
     setSpan(StyleSpan(Typeface.BOLD), 0, length, Spannable.SPAN_INCLUSIVE_EXCLUSIVE)
@@ -59,4 +58,7 @@ fun Spannable.bg(color: Int): Spannable {
     return this
 }
 
-fun String.or(or: String) : String = if (isBlank()) or else this
+fun Spannable.tag(color: Int): Spannable {
+    setSpan(TextTagSpan(color), 0, length, Spannable.SPAN_INCLUSIVE_EXCLUSIVE)
+    return this
+}
