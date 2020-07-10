@@ -1,6 +1,9 @@
 package com.majeur.psclient.ui
 
-import android.content.*
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
 import android.content.pm.ActivityInfo
 import android.os.Bundle
 import android.os.IBinder
@@ -23,6 +26,7 @@ class MainActivity : AppCompatActivity() {
     val glideHelper by lazy { GlideHelper(this) }
     val assetLoader by lazy { AssetLoader(this) }
 
+    private lateinit var showdownServiceIntent: Intent
     private val canUseLandscapeLayout by lazy { resources.getBoolean(R.bool.canUseLandscapeLayout) }
     private val useLandscapeLayout by lazy { resources.getBoolean(R.bool.landscape) }
     private val selectedNavigationItemId
@@ -80,7 +84,7 @@ class MainActivity : AppCompatActivity() {
         showFragment(selectedId, now = true, checkAlreadyShown = false)
         setSelectedNavigationItem(selectedId)
 
-        val showdownServiceIntent = Intent(this, ShowdownService::class.java)
+        showdownServiceIntent = Intent(this, ShowdownService::class.java)
         startService(showdownServiceIntent)
         canUnbindService = bindService(showdownServiceIntent, serviceConnection,
                 Context.BIND_AUTO_CREATE)
@@ -134,7 +138,10 @@ class MainActivity : AppCompatActivity() {
             MaterialAlertDialogBuilder(this)
                     .setTitle("Are you sure you want to quit ?")
                     .setMessage("Connection to Showdown server will be closed.")
-                    .setPositiveButton("Yes") { _: DialogInterface?, _: Int -> finish() }
+                    .setPositiveButton("Yes") { _, _ ->
+                        finish()
+                        stopService(showdownServiceIntent)
+                    }
                     .setNegativeButton("No", null)
                     .show()
         }
