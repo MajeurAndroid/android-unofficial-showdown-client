@@ -54,7 +54,7 @@
         android:visibility="invisible"
         android:inputType="textNoSuggestions"
         android:ems="10"
-        android:hint="Enter URL or key"
+        android:hint="Enter Pastebin URL"
         android:lines="1"
         android:id="@+id/pastebin_url_input"
         app:layout_constraintBottom_toTopOf="@+id/pokepaste_url_input"

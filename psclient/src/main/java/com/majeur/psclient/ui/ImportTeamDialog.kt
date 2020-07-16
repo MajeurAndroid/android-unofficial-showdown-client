@@ -22,9 +22,6 @@ import okhttp3.Request
 
 class ImportTeamDialog : BottomSheetDialogFragment() {
 
-    private val _pokepasteRegex = """https:\/\/pokepast.es\/[A-Za-z0-9_]+[\/]?"""
-    private var _pokepastePrefix = "https://pokepast.es/"
-
     private val fragmentScope = BaseFragment.FragmentScope()
 
     private lateinit var clipboardManager: ClipboardManager
@@ -102,7 +99,6 @@ class ImportTeamDialog : BottomSheetDialogFragment() {
         binding.pokepasteUrlInput.visibility = View.INVISIBLE
     }
 
-
     private fun makeSnackbar(msg: String) {
         binding.error.text = msg
     }
@@ -117,53 +113,46 @@ class ImportTeamDialog : BottomSheetDialogFragment() {
         handleRawTeamData(rawTeam)
     }
 
-
     private fun importFromPastebin() {
         val rawPaste = binding.pastebinUrlInput.text.toString()
-
-        val pasteKey = rawPaste.removeSuffix("/").takeLast(8)
-        if (pasteKey.isBlank()) {
-            makeSnackbar("Url field is empty")
+        if (!isValidPastebinUrl(rawPaste)) {
+            makeSnackbar("Not a valid Pastebin URL")
             return
         }
-
+        val rawPastebinKey = rawPaste.substringAfter(PASTEBIN_URL_HOST).removePrefix("/").substringBefore("/")
+        // Builds a URL like https://pastebin.com/raw/F5zLJLAn
         val url = HttpUrl.Builder()
                 .scheme("https")
                 .host("pastebin.com")
                 .addPathSegment("raw")
-                .addPathSegment(pasteKey)
+                .addPathSegment(rawPastebinKey)
                 .build()
-
         launchRawTeamDownloadAndImport(url)
     }
 
     private fun importFromPokepaste() {
         val rawPaste = binding.pokepasteUrlInput.text.toString()
-
-        if (! isValidPokepasteUrl(rawPaste)) {
+        if (!isValidPokepasteUrl(rawPaste)) {
             makeSnackbar("Not a valid Pokepaste URL")
             return
         }
-
-        val url = buildPokepasteUrl(rawPaste)
-
-        launchRawTeamDownloadAndImport(url)
-    }
-
-    private fun isValidPokepasteUrl(url: String): Boolean {
-        return _pokepasteRegex.toRegex().matches(url)
-    }
-
-    private fun buildPokepasteUrl(url: String): HttpUrl {
-        var rawPokepasteKey = url.removeSuffix("/").substringAfter(_pokepastePrefix)
-
+        val rawPokepasteKey = rawPaste.substringAfter(POKEPASTE_URL_HOST).removePrefix("/").substringBefore("/")
         // Builds a URL like https://pokepast.es/0123456789abcdef/raw
-        return HttpUrl.Builder()
+        val url = HttpUrl.Builder()
                 .scheme("https")
                 .host("pokepast.es")
                 .addPathSegment(rawPokepasteKey)
                 .addPathSegment("raw")
                 .build()
+        launchRawTeamDownloadAndImport(url)
+    }
+
+    private fun isValidPokepasteUrl(url: String): Boolean {
+        return POKEPASTE_URL_REGEX.matches(url)
+    }
+
+    private fun isValidPastebinUrl(url: String): Boolean {
+        return PASTEBIN_URL_REGEX.matches(url)
     }
 
     private fun launchRawTeamDownloadAndImport(url: HttpUrl) {
@@ -205,5 +194,10 @@ class ImportTeamDialog : BottomSheetDialogFragment() {
 
     companion object {
         const val FRAGMENT_TAG = "import-team-dialog"
+
+        private const val PASTEBIN_URL_HOST = "pastebin.com"
+        private const val POKEPASTE_URL_HOST = "pokepast.es"
+        private val PASTEBIN_URL_REGEX = """https?://pastebin\.com/[a-zA-Z0-9]{8}/?""".toRegex()
+        private val POKEPASTE_URL_REGEX = """https?://pokepast\.es/[a-z0-9]{16}/?""".toRegex()
     }
 }
