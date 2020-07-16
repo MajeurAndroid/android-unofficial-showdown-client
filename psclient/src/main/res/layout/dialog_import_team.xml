@@ -40,20 +40,40 @@
                 android:layout_height="wrap_content"
                 android:text="Pastebin"/>
 
+        <RadioButton
+                android:id="@+id/pokepaste_radio"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Pokepaste"/>
+
     </RadioGroup>
 
     <EditText
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:visibility="gone"
-            android:inputType="textNoSuggestions"
-            android:ems="10"
-            android:hint="Url or key"
-            android:lines="1"
-            android:id="@+id/url_input"
-            app:layout_constraintBottom_toBottomOf="@+id/radioGroup"
-            app:layout_constraintStart_toEndOf="@+id/radioGroup"
-            android:layout_marginStart="16dp"/>
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="invisible"
+        android:inputType="textNoSuggestions"
+        android:ems="10"
+        android:hint="Enter URL or key"
+        android:lines="1"
+        android:id="@+id/pastebin_url_input"
+        app:layout_constraintBottom_toTopOf="@+id/pokepaste_url_input"
+        app:layout_constraintLeft_toLeftOf="@+id/pokepaste_url_input"
+        app:layout_constraintRight_toRightOf="@+id/pokepaste_url_input"
+        android:layout_marginStart="16dp"/>
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="invisible"
+        android:inputType="textNoSuggestions"
+        android:ems="10"
+        android:hint="Enter Pokepaste URL"
+        android:lines="1"
+        android:id="@+id/pokepaste_url_input"
+        app:layout_constraintBottom_toBottomOf="@+id/radioGroup"
+        app:layout_constraintStart_toEndOf="@+id/radioGroup"
+        android:layout_marginStart="16dp"/>
 
     <Button
             android:text="Import"

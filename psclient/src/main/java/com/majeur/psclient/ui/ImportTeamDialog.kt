@@ -22,6 +22,9 @@ import okhttp3.Request
 
 class ImportTeamDialog : BottomSheetDialogFragment() {
 
+    private val _pokepasteRegex = """https:\/\/pokepast.es\/[A-Za-z0-9_]+[\/]?"""
+    private var _pokepastePrefix = "https://pokepast.es/"
+
     private val fragmentScope = BaseFragment.FragmentScope()
 
     private lateinit var clipboardManager: ClipboardManager
@@ -60,14 +63,16 @@ class ImportTeamDialog : BottomSheetDialogFragment() {
         binding.radioGroup.setOnCheckedChangeListener { _, checkedId ->
             binding.error.text = ""
             when (checkedId) {
-                R.id.clipboard_radio -> binding.urlInput.visibility = View.GONE
-                R.id.pastebin_radio -> binding.urlInput.visibility = View.VISIBLE
+                R.id.clipboard_radio -> hideAllUrlInputTextViews()
+                R.id.pastebin_radio -> showPastebinTextViewHideOthers()
+                R.id.pokepaste_radio -> showPokepasteTextViewHideOthers()
             }
         }
         binding.importButton.setOnClickListener {
             when (binding.radioGroup.checkedRadioButtonId) {
                 R.id.clipboard_radio -> importFromClipboard()
                 R.id.pastebin_radio -> importFromPastebin()
+                R.id.pokepaste_radio -> importFromPokepaste()
             }
         }
         binding.exportButton.setOnClickListener {
@@ -81,6 +86,22 @@ class ImportTeamDialog : BottomSheetDialogFragment() {
             }
         }
     }
+
+    private fun hideAllUrlInputTextViews() {
+        binding.pastebinUrlInput.visibility = View.INVISIBLE
+        binding.pokepasteUrlInput.visibility = View.INVISIBLE
+    }
+
+    private fun showPokepasteTextViewHideOthers() {
+        binding.pastebinUrlInput.visibility = View.INVISIBLE
+        binding.pokepasteUrlInput.visibility = View.VISIBLE
+    }
+
+    private fun showPastebinTextViewHideOthers() {
+        binding.pastebinUrlInput.visibility = View.VISIBLE
+        binding.pokepasteUrlInput.visibility = View.INVISIBLE
+    }
+
 
     private fun makeSnackbar(msg: String) {
         binding.error.text = msg
@@ -98,24 +119,62 @@ class ImportTeamDialog : BottomSheetDialogFragment() {
 
 
     private fun importFromPastebin() {
-        val pasteKey = binding.urlInput.text.toString().removeSuffix("/").takeLast(8)
+        val rawPaste = binding.pastebinUrlInput.text.toString()
+
+        val pasteKey = rawPaste.removeSuffix("/").takeLast(8)
         if (pasteKey.isBlank()) {
             makeSnackbar("Url field is empty")
             return
         }
+
+        val url = HttpUrl.Builder()
+                .scheme("https")
+                .host("pastebin.com")
+                .addPathSegment("raw")
+                .addPathSegment(pasteKey)
+                .build()
+
+        launchRawTeamDownloadAndImport(url)
+    }
+
+    private fun importFromPokepaste() {
+        val rawPaste = binding.pokepasteUrlInput.text.toString()
+
+        if (! isValidPokepasteUrl(rawPaste)) {
+            makeSnackbar("Not a valid Pokepaste URL")
+            return
+        }
+
+        val url = buildPokepasteUrl(rawPaste)
+
+        launchRawTeamDownloadAndImport(url)
+    }
+
+    private fun isValidPokepasteUrl(url: String): Boolean {
+        return _pokepasteRegex.toRegex().matches(url)
+    }
+
+    private fun buildPokepasteUrl(url: String): HttpUrl {
+        var rawPokepasteKey = url.removeSuffix("/").substringAfter(_pokepastePrefix)
+
+        // Builds a URL like https://pokepast.es/0123456789abcdef/raw
+        return HttpUrl.Builder()
+                .scheme("https")
+                .host("pokepast.es")
+                .addPathSegment(rawPokepasteKey)
+                .addPathSegment("raw")
+                .build()
+    }
+
+    private fun launchRawTeamDownloadAndImport(url: HttpUrl) {
         val showdownService = teamFragment.mainActivity.service
         if (showdownService == null) {
             makeSnackbar("Cannot retrieve showdown service")
             return
         }
+
         fragmentScope.launch {
             binding.importButton.isEnabled = false
-            val url = HttpUrl.Builder()
-                    .scheme("https")
-                    .host("pastebin.com")
-                    .addPathSegment("raw")
-                    .addPathSegment(pasteKey)
-                    .build()
             val request = Request.Builder()
                     .url(url)
                     .build()
@@ -130,7 +189,6 @@ class ImportTeamDialog : BottomSheetDialogFragment() {
             }
             handleRawTeamData(rawTeam)
         }
-
     }
 
     private fun handleRawTeamData(data: String) {
