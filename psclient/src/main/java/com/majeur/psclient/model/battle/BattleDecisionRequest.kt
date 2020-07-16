@@ -4,7 +4,7 @@ import com.majeur.psclient.model.pokemon.SidePokemon
 import org.json.JSONObject
 
 
-class BattleActionRequest(json: JSONObject, var gameType: GameType?) {
+class BattleDecisionRequest(json: JSONObject, var gameType: GameType?) {
 
     val count: Int
         get() = when (gameType) {

@@ -4,8 +4,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.majeur.psclient.widget.BattleActionWidget
-        android:id="@+id/battle_action_widget"
+    <com.majeur.psclient.widget.BattleDecisionWidget
+        android:id="@+id/battle_decision_widget"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@id/trainer_info"

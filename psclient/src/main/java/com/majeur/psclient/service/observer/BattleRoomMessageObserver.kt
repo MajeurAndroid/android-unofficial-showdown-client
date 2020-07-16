@@ -34,7 +34,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
     private var p2Username: String? = null
 
     private var previewPokemonIndexes = IntArray(2)
-    private var lastActionRequest: BattleActionRequest? = null
+    private var lastDecisionRequest: BattleDecisionRequest? = null
     private var trainerPokemons: Array<BattlingPokemon?> = emptyArray()
     private var foePokemons: Array<BattlingPokemon?> = emptyArray()
     private var activeWeather: String? = null
@@ -62,7 +62,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
         battleRunning = true
         previewPokemonIndexes[0] = 0
         previewPokemonIndexes[1] = 0
-        lastActionRequest = null
+        lastDecisionRequest = null
         activeWeather = null
         activeFieldEffects.clear()
     }
@@ -85,8 +85,8 @@ class BattleRoomMessageObserver(service: ShowdownService)
 
     private fun getPokemonId(rawId: String) = PokemonId(getPlayer(rawId), rawId)
 
-    fun reAskForRequest() = lastActionRequest?.let {
-        onRequestAsked(it)
+    fun reAskForRequest() = lastDecisionRequest?.let {
+        onDecisionRequest(it)
     }
 
     fun getBattlingPokemon(id: PokemonId): BattlingPokemon? {
@@ -211,7 +211,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
                 foePokemons = arrayOfNulls(1)
             }
         }
-        lastActionRequest?.gameType = gameType!!
+        lastDecisionRequest?.gameType = gameType!!
     }
 
     private fun handleSwitch(msg: ServerMessage) {
@@ -279,9 +279,9 @@ class BattleRoomMessageObserver(service: ShowdownService)
         if (rawJson.isEmpty()) return
         try {
             val jsonObject = JSONObject(rawJson)
-            val request = BattleActionRequest(jsonObject, gameType)
-            lastActionRequest = request
-            actionQueue.setLastAction { onRequestAsked(request) }
+            val request = BattleDecisionRequest(jsonObject, gameType)
+            lastDecisionRequest = request
+            actionQueue.setLastAction { onDecisionRequest(request) }
         } catch (e: JSONException) {
             Timber.e(e, "Error while parsing request json")
             printErrorMessage("An error has occurred while receiving choices.")
@@ -829,7 +829,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
     private fun onDetailsChanged(newPokemon: BattlingPokemon) = uiCallbacks?.onDetailsChanged(newPokemon)
     private fun onMove(sourceId: PokemonId, targetId: PokemonId?, moveName: String, shouldAnim: Boolean) = uiCallbacks?.onMove(sourceId, targetId, moveName, shouldAnim)
     private fun onSwap(id: PokemonId, targetIndex: Int) = uiCallbacks?.onSwap(id, targetIndex)
-    private fun onRequestAsked(request: BattleActionRequest) = uiCallbacks?.onRequestAsked(request)
+    private fun onDecisionRequest(request: BattleDecisionRequest) = uiCallbacks?.onDecisionRequest(request)
     private fun onHealthChanged(id: PokemonId, condition: Condition) = uiCallbacks?.onHealthChanged(id, condition)
     private fun onStatusChanged(id: PokemonId, status: String?) = uiCallbacks?.onStatusChanged(id, status)
     private fun onStatChanged(id: PokemonId) = uiCallbacks?.onStatChanged(id)
@@ -853,7 +853,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
         fun onDetailsChanged(newPokemon: BattlingPokemon)
         fun onMove(sourceId: PokemonId, targetId: PokemonId?, moveName: String, shouldAnim: Boolean)
         fun onSwap(id: PokemonId, targetIndex: Int)
-        fun onRequestAsked(request: BattleActionRequest)
+        fun onDecisionRequest(request: BattleDecisionRequest)
         fun onHealthChanged(id: PokemonId, condition: Condition)
         fun onStatusChanged(id: PokemonId, status: String?)
         fun onStatChanged(id: PokemonId)

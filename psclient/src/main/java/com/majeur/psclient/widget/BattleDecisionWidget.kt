@@ -36,7 +36,7 @@ import java.util.*
 import kotlin.math.hypot
 import kotlin.math.roundToInt
 
-class BattleActionWidget @JvmOverloads constructor(context: Context?, attrs: AttributeSet? = null, defStyleAttr: Int = 0)
+class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: AttributeSet? = null, defStyleAttr: Int = 0)
     : FrameLayout(context!!, attrs, defStyleAttr), View.OnClickListener {
 
     var onRevealListener: ((Boolean) -> Unit)? = null
@@ -60,7 +60,7 @@ class BattleActionWidget @JvmOverloads constructor(context: Context?, attrs: Att
     private val observer get() = _observer!!
     private var _battleTipPopup: BattleTipPopup? = null
     private val battleTipPopup get() = _battleTipPopup!!
-    private var _request: BattleActionRequest? = null
+    private var _request: BattleDecisionRequest? = null
     private val request get() = _request!!
     private var _decision: BattleDecision? = null
     private val decision get() = _decision!!
@@ -76,7 +76,7 @@ class BattleActionWidget @JvmOverloads constructor(context: Context?, attrs: Att
         }
         alphaAnimator = ObjectAnimator().apply {
             interpolator = DecelerateInterpolator()
-            target = this@BattleActionWidget
+            target = this@BattleDecisionWidget
             setProperty(CONTENT_ALPHA_PROPERTY)
         }
         repeat(4) {
@@ -85,7 +85,7 @@ class BattleActionWidget @JvmOverloads constructor(context: Context?, attrs: Att
                 setTextColor(Color.WHITE)
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
                 setPadding(dp(6f), dp(6f), dp(6f), dp(6f))
-                setOnClickListener(this@BattleActionWidget)
+                setOnClickListener(this@BattleDecisionWidget)
             }.also {
                 addView(it)
                 moveButtons.add(it)
@@ -98,7 +98,7 @@ class BattleActionWidget @JvmOverloads constructor(context: Context?, attrs: Att
         val inflater = LayoutInflater.from(context)
         repeat(6) {
             (inflater.inflate(R.layout.button_switch, this, false) as SwitchButton).apply {
-                setOnClickListener(this@BattleActionWidget)
+                setOnClickListener(this@BattleDecisionWidget)
             }.also {
                 addView(it)
                 switchButtons.add(it)
@@ -205,7 +205,7 @@ class BattleActionWidget @JvmOverloads constructor(context: Context?, attrs: Att
 
     /* Decision making methods */
 
-    fun promptDecision(observer: BattleRoomMessageObserver, battleTipPopup: BattleTipPopup, request: BattleActionRequest,
+    fun promptDecision(observer: BattleRoomMessageObserver, battleTipPopup: BattleTipPopup, request: BattleDecisionRequest,
                        listener: (BattleDecision) -> Unit) {
         promptStage = -1
         targetToChoose = null
@@ -627,11 +627,11 @@ class BattleActionWidget @JvmOverloads constructor(context: Context?, attrs: Att
 
     companion object {
 
-        private val CONTENT_ALPHA_PROPERTY = object : Property<BattleActionWidget, Float>(Float::class.java, "contentAlpha") {
+        private val CONTENT_ALPHA_PROPERTY = object : Property<BattleDecisionWidget, Float>(Float::class.java, "contentAlpha") {
 
-            override fun get(widget: BattleActionWidget) = widget.contentAlpha
+            override fun get(widget: BattleDecisionWidget) = widget.contentAlpha
 
-            override fun set(widget: BattleActionWidget, value: Float) {
+            override fun set(widget: BattleDecisionWidget, value: Float) {
                 widget.contentAlpha = value
             }
         }

@@ -52,7 +52,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
     private lateinit var inactiveBattleOverlayDrawable: InactiveBattleOverlayDrawable
 
     private lateinit var battleTipPopup: BattleTipPopup
-    private var lastActionRequest: BattleActionRequest? = null
+    private var lastDecisionRequest: BattleDecisionRequest? = null
     private var timerEnabled = false
     private var soundEnabled = false
     private var wasPlayingBattleMusicWhenPaused = false
@@ -100,7 +100,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
             actionContainer.actionContainer.animate().interpolator = OvershootInterpolator(1.4f)
             actionContainer.actionContainer.animate().duration = 500
             overlayImage.setImageDrawable(inactiveBattleOverlayDrawable)
-            battleActionWidget.onRevealListener = { reveal ->
+            battleDecisionWidget.onRevealListener = { reveal ->
                 actionContainer.actionContainer.animate()
                         .setStartDelay(if (reveal) 0L else 350L)
                         .translationY(if (reveal) 3 * binding.battleLogContainer.height / 5f else 0f)
@@ -247,8 +247,8 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
             }
 
             var ability: String? = null
-            if (pokemon.trainer && lastActionRequest?.side != null) {
-                val sidePokemon = lastActionRequest!!.side[pokemon.position]
+            if (pokemon.trainer && lastDecisionRequest?.side != null) {
+                val sidePokemon = lastDecisionRequest!!.side[pokemon.position]
                 if (pokemon.transformSpecies == null) { // Ditto case
                     pokemon.statModifiers.apply {
                         append("Atk:".small() concat calcReadableStat("atk", sidePokemon.stats.atk) concat
@@ -619,10 +619,10 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
         statusView?.updateModifier(statModifiers)
     }
 
-    override fun onRequestAsked(request: BattleActionRequest) {
-        lastActionRequest = request
+    override fun onDecisionRequest(request: BattleDecisionRequest) {
+        lastDecisionRequest = request
         if (request.shouldWait) return
-        binding.battleActionWidget.promptDecision(observer, battleTipPopup, request) { decision ->
+        binding.battleDecisionWidget.promptDecision(observer, battleTipPopup, request) { decision ->
             sendDecision(request.id, decision)
         }
         var hideSwitch = true
@@ -635,7 +635,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
                 assetLoader.movesDetails(*moves.map { it.id }.toTypedArray()).forEachIndexed { index, details ->
                     moves[index].details = details
                 }
-                binding.battleActionWidget.notifyDetailsUpdated()
+                binding.battleDecisionWidget.notifyDetailsUpdated()
             }
             fragmentScope.launch {
                 val zMoves = moves.map { it.zName?.toId() ?: "" }
@@ -643,7 +643,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
                     assetLoader.movesDetails(*zMoves.toTypedArray()).forEachIndexed { index, details ->
                         moves[index].zDetails = details
                     }
-                    binding.battleActionWidget.notifyDetailsUpdated()
+                    binding.battleDecisionWidget.notifyDetailsUpdated()
                 }
             }
             fragmentScope.launch {
@@ -652,7 +652,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
                     assetLoader.movesDetails(*maxMoves.toTypedArray()).forEachIndexed { index, details ->
                         moves[index].maxDetails = details
                     }
-                    binding.battleActionWidget.notifyMaxDetailsUpdated()
+                    binding.battleDecisionWidget.notifyMaxDetailsUpdated()
                 }
             }
         }
@@ -662,7 +662,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
                 assetLoader.dexIcons(*team.map { it.species.toId() }.toTypedArray()).forEachIndexed { index, bitmap ->
                     team[index].icon = bitmap
                 }
-                binding.battleActionWidget.notifyDexIconsUpdated()
+                binding.battleDecisionWidget.notifyDexIconsUpdated()
             }
         }
     }
@@ -704,7 +704,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
 
     override fun onMarkBreak() {
         binding.apply {
-           battleActionWidget.dismiss()
+           battleDecisionWidget.dismiss()
            undoContainer.undoButton.isEnabled = false
            undoContainer.undoContainer.animate()
                     .setStartDelay(0)
@@ -770,8 +770,8 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
     override fun onRoomInit() {
         soundEnabled = Preferences.getBoolPreference(context, "sound")
         binding.battleLog.setText("", TextView.BufferType.EDITABLE)
-        lastActionRequest = null
-        binding.battleActionWidget.dismissNow()
+        lastDecisionRequest = null
+        binding.battleDecisionWidget.dismissNow()
         onTimerEnabled(false)
         binding.backgroundImage.animate()
                 .setDuration(100)
@@ -793,9 +793,8 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
     override fun onRoomDeInit() {
         mainActivity.setKeepScreenOn(false)
         binding.apply {
-            battleActionWidget.dismiss()
+            battleDecisionWidget.dismiss()
             battleLog.text = ""
-            battleActionWidget.dismiss()
             undoContainer.undoButton.isEnabled = false
             undoContainer.undoContainer.animate()
                     .setStartDelay(0)
@@ -807,7 +806,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
         audioManager.stopBattleMusic()
         inactiveBattleOverlayDrawable.setWinner(null)
         clearBattleFieldUi()
-        lastActionRequest = null
+        lastDecisionRequest = null
 
     }
 }
