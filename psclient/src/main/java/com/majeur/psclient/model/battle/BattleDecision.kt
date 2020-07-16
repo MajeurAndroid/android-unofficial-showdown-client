@@ -20,17 +20,20 @@ class BattleDecision {
             var target: Int = 0
     )
 
+    /* 1 based index */
     fun addSwitchChoice(who: Int) {
         _command = CMD_CHOOSE
         choices.add(Choice(action = ACTION_SWITCH, index = who))
     }
 
+    /* 1 based index */
     fun addMoveChoice(which: Int, mega: Boolean, zmove: Boolean, dynamax: Boolean) {
         _command = CMD_CHOOSE
         val extra = if (mega) EXTRA_MEGA else if (zmove) EXTRA_ZMOVE else if (dynamax) EXTRA_DYNAMAX else null
         choices.add(Choice(action = ACTION_MOVE, index = which, extra = extra))
     }
 
+    /* 1 based index */
     fun setLastMoveTarget(target: Int) {
         choices.last().target = target
     }
@@ -40,17 +43,19 @@ class BattleDecision {
         choices.add(Choice(action = ACTION_PASS))
     }
 
+    /* 1 based index */
     fun addLeadChoice(first: Int, teamSize: Int) {
         _command = CMD_TEAM
         this.teamSize = teamSize
         choices.add(Choice(index = first))
     }
 
-    fun leadChoicesCount() = choices.filter { it.action.isEmpty() }.size
+    fun leadChoicesCount() = choices.count { it.action.isEmpty() }
 
-    fun switchChoicesCount() = choices.filter { it.action == ACTION_SWITCH }.size
+    fun switchChoicesCount() = choices.count { it.action == ACTION_SWITCH }
 
-    fun hasSwitchChoice(which: Int) = choices.filter { it.action == ACTION_SWITCH && it.index == which }.isNotEmpty()
+    /* 1 based index */
+    fun hasSwitchChoice(which: Int) = choices.any { it.action == ACTION_SWITCH && it.index == which }
 
     fun hasOnlyPassChoice() = choices.all { it.action == ACTION_PASS }
 
