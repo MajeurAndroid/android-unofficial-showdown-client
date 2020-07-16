@@ -1,330 +1,275 @@
-package com.majeur.psclient.widget;
+package com.majeur.psclient.widget
 
-import android.animation.ObjectAnimator;
-import android.content.Context;
-import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.Point;
-import android.graphics.Rect;
-import android.graphics.Typeface;
-import android.text.TextUtils;
-import android.util.Property;
-import android.view.View;
-import android.view.animation.DecelerateInterpolator;
-import androidx.collection.ArrayMap;
-import com.majeur.psclient.model.battle.StatModifiers;
-import com.majeur.psclient.model.battle.VolatileStatus;
-import com.majeur.psclient.model.common.Colors;
-import com.majeur.psclient.model.pokemon.BattlingPokemon;
-import com.majeur.psclient.util.Utils;
+import android.animation.ObjectAnimator
+import android.content.Context
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Rect
+import android.graphics.Typeface
+import android.util.Property
+import android.view.View
+import android.view.animation.DecelerateInterpolator
+import androidx.collection.ArrayMap
+import com.majeur.psclient.model.battle.StatModifiers
+import com.majeur.psclient.model.battle.StatModifiers.Companion.STAT_KEYS
+import com.majeur.psclient.model.battle.VolatileStatus
+import com.majeur.psclient.model.battle.VolatileStatus.Companion.getForId
+import com.majeur.psclient.model.common.Colors
+import com.majeur.psclient.model.common.Colors.healthColor
+import com.majeur.psclient.model.common.Colors.statusColor
+import com.majeur.psclient.model.pokemon.BattlingPokemon
+import com.majeur.psclient.util.*
+import java.text.DecimalFormat
+import kotlin.math.ceil
+import kotlin.math.roundToInt
 
-import java.text.DecimalFormat;
-import java.util.Map;
-import java.util.Objects;
+class StatusView(context: Context?) : View(context) {
 
-import static com.majeur.psclient.util.ExtensionsKt.toId;
+    private var label = ""
+    private var health = 0f
+    private var status = ""
+    private val volatileStatus = ArrayMap<String, VolatileStatus>()
+    private val statsModifiers = ArrayMap<String, Float>()
 
-public class StatusView extends View {
+    private val healthAnimator = ObjectAnimator()
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val drawingRect by lazy { Rect() }
+    private val textBounds by lazy { Rect() }
+    private val tempRect by lazy { Rect() }
+    private val tempRect2 by lazy { Rect() }
+    private val tempRect3 by lazy { Rect() }
+    private val defaultTypeFace by lazy { Typeface.create(Typeface.DEFAULT, Typeface.NORMAL) }
+    private val boldTypeFace by lazy { Typeface.create("sans-serif-medium", Typeface.NORMAL) }
 
-    private static final Property<StatusView, Float> HEALTH_PROP =
-            new Property<StatusView, Float>(Float.class, "health") {
-                @Override
-                public void set(StatusView statusView, Float health) {
-                    statusView.mHealth = health;
-                    statusView.invalidate();
-                }
+    private val labelTextSize = sp(14f)
+    private val tagTextSize = sp(9f)
+    private val tagCornerRadius = dp(2f)
+    private val verticalSpacing = dp(3.5f)
+    private val horizontalSpacing = dp(3f)
+    private val healthBarWidth = dp(126f)
+    private val healthBarHeight = dp(5f)
+    private val healthBarStrokeWidth = dp(1f)
+    private val shadowRadius = dp(4f).toFloat()
+    private val shadowDy = shadowRadius / 4f
 
-                @Override
-                public Float get(StatusView statusView) {
-                    return statusView.mHealth;
-                }
-            };
-    private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("0.##");
+    private val maxTagLineWidth = healthBarWidth + healthBarStrokeWidth
 
-    private String mLabel = "";
-    private float mHealth = 0f;
-    private String mStatus;
-    private final Map<String, VolatileStatus> mVolatileStatus;
-    private final Map<String, Float> mStatsModifiers;
-    private final ObjectAnimator mHealthAnimator;
-
-    private final Paint mPaint;
-    private final Rect mTempRect;
-    private final Rect mTempRect2;
-    private final Rect mMeasureRect;
-    private final Canvas mMockCanvas;
-    private final Point mMeasurePoint;
-    private final Typeface mDefaultTypeFace;
-    private final Typeface mBoldTypeFace;
-
-    private final int mLabelsWidthLimit;
-
-    private final int mShadowRadius;
-    private final int mHorizontalMargin;
-
-    private final int mVerticalMargin;
-    private final int mLabelTextSize;
-
-    private final int mHealthBarWidth;
-    private final int mHealthBarHeight;
-    private final int mHealthBarStrokeWidth;
-    private final int mRectRadius;
-    private final int mExtraTextSize;
-    private final int mExtraMargin;
-
-
-    public StatusView(Context context) {
-        super(context);
-        setLayerType(View.LAYER_TYPE_SOFTWARE, null);
-        mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        mTempRect = new Rect();
-        mTempRect2 = new Rect();
-        mMeasureRect = new Rect();
-        mMockCanvas = new Canvas();
-        mMeasurePoint = new Point();
-
-        mHealthAnimator = new ObjectAnimator();
-        mHealthAnimator.setInterpolator(new DecelerateInterpolator());
-        mHealthAnimator.setDuration(500);
-        mHealthAnimator.setTarget(this);
-        mHealthAnimator.setProperty(HEALTH_PROP);
-
-        mShadowRadius = Utils.dpToPx(4);
-        mHorizontalMargin = Utils.dpToPx(4);
-        mVerticalMargin = Utils.dpToPx(4);
-        mExtraMargin = Utils.dpToPx(1.5f);
-
-        mLabelTextSize = Utils.dpToPx(14);
-
-        mHealthBarWidth = Utils.dpToPx(126);
-        mHealthBarHeight = Utils.dpToPx(5);
-        mHealthBarStrokeWidth = Utils.dpToPx(1);
-
-        mRectRadius = Utils.dpToPx(2);
-        mExtraTextSize = Utils.dpToPx(9);
-
-        mLabelsWidthLimit = mHealthBarWidth + mHealthBarStrokeWidth + mShadowRadius;
-
-        mDefaultTypeFace = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL);
-        mBoldTypeFace = Typeface.create("sans-serif-medium", Typeface.NORMAL);
-
-        mStatsModifiers = new ArrayMap<>();
-        mStatsModifiers.put("atk", 1f);
-        mStatsModifiers.put("def", 1f);
-        mStatsModifiers.put("spa", 1f);
-        mStatsModifiers.put("spd", 1f);
-        mStatsModifiers.put("spe", 1f);
-        mStatsModifiers.put("eva", 1f);
-
-        mVolatileStatus = new ArrayMap<>();
-
+    init {
+        setPadding(shadowRadius.toInt(), (shadowRadius - shadowDy).roundToInt(), shadowRadius.toInt(),
+                (shadowRadius + shadowDy).roundToInt())
+        setLayerType(LAYER_TYPE_SOFTWARE, null)
+        healthAnimator.interpolator = DecelerateInterpolator()
+        healthAnimator.duration = 500
+        healthAnimator.target = this
+        healthAnimator.setProperty(HEALTH_PROP)
+        statsModifiers["atk"] = 1f
+        statsModifiers["def"] = 1f
+        statsModifiers["spa"] = 1f
+        statsModifiers["spd"] = 1f
+        statsModifiers["spe"] = 1f
+        statsModifiers["eva"] = 1f
     }
 
-    public void setPokemon(BattlingPokemon pokemon) {
-        mLabel = pokemon.getName() + " " + Objects.toString(pokemon.getGender(), "") + " l." + pokemon.getLevel();
-        mHealth = pokemon.getCondition().getHealth();
-        mStatus = pokemon.getCondition().status;
-        mVolatileStatus.clear();
-        updateModifier(pokemon.getStatModifiers());
+    fun setPokemon(pokemon: BattlingPokemon) {
+        label = "${pokemon.name} ${pokemon.gender ?: ""} l.${pokemon.level}"
+        health = pokemon.condition?.health ?: 0f
+        status = pokemon.condition?.status ?: ""
+        volatileStatus.clear()
+        updateModifier(pokemon.statModifiers)
     }
 
-    public void setHealth(float health) {
-        if (mHealthAnimator.isStarted())
-            mHealthAnimator.cancel();
-        mHealthAnimator.setFloatValues(health);
-        mHealthAnimator.start();
+    fun setHealth(health: Float) {
+        if (healthAnimator.isStarted) healthAnimator.cancel()
+        healthAnimator.setFloatValues(health)
+        healthAnimator.start()
     }
 
-    public void setStatus(String status) {
-        mStatus = status;
-        requestLayout();
-        invalidate();
+    fun setStatus(status: String?) {
+        this.status = status ?: ""
+        requestLayout()
+        invalidate()
     }
 
-    public void clear() {
-        mLabel = "";
-        mHealth = 0f;
-        mStatus = null;
-        mVolatileStatus.clear();
-        mStatsModifiers.put("atk", 1f);
-        mStatsModifiers.put("def", 1f);
-        mStatsModifiers.put("spa", 1f);
-        mStatsModifiers.put("spd", 1f);
-        mStatsModifiers.put("spe", 1f);
-        mStatsModifiers.put("eva", 1f);
-        invalidate();
+    fun clear() {
+        label = ""
+        health = 0f
+        status = ""
+        volatileStatus.clear()
+        statsModifiers["atk"] = 1f
+        statsModifiers["def"] = 1f
+        statsModifiers["spa"] = 1f
+        statsModifiers["spd"] = 1f
+        statsModifiers["spe"] = 1f
+        statsModifiers["eva"] = 1f
+        invalidate()
     }
 
-    public void updateModifier(StatModifiers statModifiers) {
-        for (String statKey : StatModifiers.getSTAT_KEYS())
-            mStatsModifiers.put(statKey, statModifiers.modifier(statKey));
-        requestLayout();
-        invalidate();
+    fun updateModifier(statModifiers: StatModifiers) {
+        for (statKey in STAT_KEYS) statsModifiers[statKey] = statModifiers.modifier(statKey)
+        requestLayout()
+        invalidate()
     }
 
-    public void addVolatileStatus(String vStatus) {
-        VolatileStatus vs = VolatileStatus.getForId(vStatus);
-        if (vs == null) return;
-        mVolatileStatus.put(vs.getId(), vs);
-        requestLayout();
-        invalidate();
+    fun addVolatileStatus(vStatus: String?) {
+        val vs = getForId(vStatus) ?: return
+        volatileStatus[vs.id] = vs
+        requestLayout()
+        invalidate()
     }
 
-    public void removeVolatileStatus(String vStatus) {
-        VolatileStatus vs = VolatileStatus.getForId(vStatus);
-        if (vs == null) return;
-        mVolatileStatus.remove(vs.getId());
-        requestLayout();
-        invalidate();
+    fun removeVolatileStatus(vStatus: String?) {
+        val vs = getForId(vStatus) ?: return
+        volatileStatus.remove(vs.id)
+        requestLayout()
+        invalidate()
     }
 
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        mMeasurePoint.set(0, 0);
-        drawContent(mMockCanvas, mMeasurePoint);
-        setMeasuredDimension(mMeasurePoint.x, mMeasurePoint.y);
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        drawingRect.setEmpty()
+        drawContent(null, drawingRect)
+        setMeasuredDimension(drawingRect.width() + paddingLeft + paddingRight,
+                drawingRect.height() + paddingTop + paddingBottom)
     }
 
-    @Override
-    protected void onDraw(Canvas canvas) {
-        super.onDraw(canvas);
-        drawContent(canvas, null);
+    override fun onDraw(canvas: Canvas?) {
+        super.onDraw(canvas)
+        drawingRect.setEmpty()
+        drawContent(canvas, drawingRect)
     }
 
-    private void drawContent(Canvas canvas, Point measurePoint) {
-        Rect measureRect = mMeasureRect;
-        measureRect.setEmpty();
+    private fun drawContent(canvas: Canvas?, drawingRect: Rect) {
+        if (label.isBlank()) return  // Nothing to draw
+        drawLabelText(canvas, paddingLeft, paddingTop, tempRect.apply { setEmpty() })
+        drawingRect.set(tempRect)
 
-        if (TextUtils.isEmpty(mLabel)) return; // Nothing to draw
+        drawHealthBar(canvas, paddingLeft, tempRect.bottom + verticalSpacing / 2, tempRect.apply { setEmpty() })
+        drawingRect.union(tempRect)
 
-        drawLabelText(canvas, measureRect);
-        updateMeasurePoint(measurePoint, measureRect);
+        drawTags(canvas, paddingLeft, tempRect.bottom + verticalSpacing, tempRect.apply { setEmpty() })
+        drawingRect.union(tempRect)
+    }
 
-        drawHealthBar(canvas, measureRect);
-        updateMeasurePoint(measurePoint, measureRect);
+    private fun drawLabelText(canvas: Canvas?, minLeft: Int, minTop: Int, drawingRect: Rect) {
+        val left = minLeft
+        val top = minTop
+        paint.apply {
+            typeface = boldTypeFace
+            color = Colors.WHITE
+            textSize = labelTextSize.toFloat()
+            getTextBounds(label, 0, label.length, textBounds)
+            setShadowLayer(shadowRadius, 0f, shadowDy, Colors.BLACK)
+        }
+        canvas?.drawText(label, textBounds.xForLeft(left).toFloat(), textBounds.yForTop(top).toFloat(), paint)
+        drawingRect.set(left, top, left + textBounds.width(), top + textBounds.height())
+        paint.clearShadowLayer()
+    }
 
-        int y = measureRect.bottom;
-        drawStatus(canvas, measureRect);
-        updateMeasurePoint(measurePoint, measureRect);
+    private fun drawHealthBar(canvas: Canvas?, minLeft: Int, minTop: Int, drawingRect: Rect) {
+        val left = minLeft
+        val top = minTop
+        paint.apply {
+            strokeWidth = healthBarStrokeWidth.toFloat()
+            color = Colors.WHITE
+            style = Paint.Style.FILL_AND_STROKE
+            setShadowLayer(shadowRadius, 0f, shadowDy, Colors.BLACK)
+        }
+        canvas?.drawRoundRect(left.toFloat(), top.toFloat(),
+                left + healthBarWidth.toFloat(),
+                top + healthBarHeight.toFloat(),
+                tagCornerRadius.toFloat(), tagCornerRadius.toFloat(), paint)
+        drawingRect.set(left, top, left + healthBarWidth , top + healthBarHeight)
+        paint.apply {
+            paint.color = healthColor(health)
+            paint.style = Paint.Style.FILL
+            paint.clearShadowLayer()
+        }
+        canvas?.drawRoundRect(left.toFloat(), top.toFloat(),
+                left + ceil(healthBarWidth * health),
+                top + healthBarHeight.toFloat(),
+                tagCornerRadius.toFloat(), tagCornerRadius.toFloat(), paint)
+    }
 
-        for (VolatileStatus vStatus : mVolatileStatus.values()) {
-            if (vStatus.getLabel() == null) continue;
+    private fun drawTags(canvas: Canvas?, minLeft: Int, minTop: Int, drawingRect: Rect) {
+        var left = minLeft
+        val top = minTop
 
-            mTempRect2.set(measureRect);
-            drawVolatileStatus(mMockCanvas, measureRect, y, vStatus.getLabel(), vStatus.getColor());
-            if (measureRect.right > mLabelsWidthLimit) {
-                y = measureRect.bottom + measureRect.height() / 2 - mShadowRadius - mExtraMargin;
-                measureRect.set(mHorizontalMargin, y, mHorizontalMargin, y);
-            } else {
-                measureRect.set(mTempRect2);
+        val totalText = status + volatileStatus.values.filter { it.label != null }.joinToString(separator = "") +
+                statsModifiers.map { DECIMAL_FORMAT.format(it.value) + Utils.firstCharUpperCase(it.key) }.joinToString(separator = "")
+        paint.apply {
+            typeface = defaultTypeFace
+            textSize = tagTextSize.toFloat()
+            getTextBounds(totalText, 0, totalText.length, textBounds)
+        }
+        val lineHeight = textBounds.height()
+        var cY = (top + lineHeight / 2f).roundToInt()
+
+        if (status.isNotBlank()) {
+            drawTag(canvas, left, cY, status.toUpperCase(), Colors.WHITE, statusColor(status.toId()), tempRect2)
+            drawingRect.set(tempRect2)
+            left += tempRect2.width() + horizontalSpacing
+        }
+        for (vStatus in volatileStatus.values) {
+            if (vStatus.label == null) continue
+            tempRect3.set(tempRect2)
+            drawTag(null, left, cY, vStatus.label, vStatus.color, Colors.WHITE, tempRect3)
+            if (tempRect3.right > maxTagLineWidth + paddingLeft) { // Our tag will not fit, break line
+                left = minLeft
+                cY += lineHeight + verticalSpacing
+            }
+            drawTag(canvas, left, cY, vStatus.label, vStatus.color, Colors.WHITE, tempRect2)
+            if (drawingRect.isEmpty) drawingRect.set(tempRect2) else drawingRect.union(tempRect2)
+            left += tempRect2.width() + horizontalSpacing
+        }
+        for (entry in statsModifiers.entries) {
+            if (entry.value == 1f) continue
+            val text = DECIMAL_FORMAT.format(entry.value) + Utils.firstCharUpperCase(entry.key)
+            tempRect3.set(tempRect2)
+            drawTag(null, left, cY, text, if (entry.value < 1f) Colors.STAT_UNBOOST else Colors.STAT_BOOST,
+                    Colors.WHITE, tempRect3)
+            if (tempRect3.right > maxTagLineWidth + paddingLeft) { // Our tag will not fit, break line
+                left = minLeft
+                cY += lineHeight + verticalSpacing
+            }
+            drawTag(canvas, left, cY, text, if (entry.value < 1f) Colors.STAT_UNBOOST else Colors.STAT_BOOST,
+                    Colors.WHITE, tempRect2)
+            if (drawingRect.isEmpty) drawingRect.set(tempRect2) else drawingRect.union(tempRect2)
+            left += tempRect2.width() + horizontalSpacing
+        }
+    }
+
+    private fun drawTag(canvas: Canvas?, x: Int, cY: Int, text: String, textColor: Int, bgColor: Int, drawingRect: Rect) {
+        paint.apply {
+            color = bgColor
+            typeface = defaultTypeFace
+            textSize = tagTextSize.toFloat()
+            getTextBounds(text, 0, text.length, textBounds)
+            setShadowLayer(shadowRadius, 0f, shadowDy, Colors.BLACK)
+        }
+        val w = textBounds.width() + 2 * tagCornerRadius
+        val h = textBounds.height() + 2 * tagCornerRadius
+        canvas?.drawRoundRect(x.toFloat(), cY - h / 2f, x + w.toFloat(), cY + h / 2f,
+                tagCornerRadius.toFloat(), tagCornerRadius.toFloat(), paint)
+        drawingRect.set(x, cY - h / 2, x + w, cY + h / 2)
+        paint.apply {
+            color = textColor
+            clearShadowLayer()
+        }
+        canvas?.drawText(text, textBounds.xForLeft(x + tagCornerRadius).toFloat(),
+                textBounds.yForTop(cY - textBounds.height() / 2).toFloat(), paint)
+    }
+
+    companion object {
+        private val DECIMAL_FORMAT = DecimalFormat("0.##")
+        private val HEALTH_PROP = object : Property<StatusView, Float>(Float::class.java, "health") {
+            override fun set(statusView: StatusView, health: Float) {
+                statusView.health = health
+                statusView.invalidate()
             }
 
-            drawVolatileStatus(canvas, measureRect, y, vStatus.getLabel(), vStatus.getColor());
-            updateMeasurePoint(measurePoint, measureRect);
-        }
-
-        for (Map.Entry<String, Float> entry : mStatsModifiers.entrySet()) {
-            if (entry.getValue().equals(1f))
-                continue;
-            mTempRect2.set(measureRect);
-            drawStatModifier(mMockCanvas, measureRect, y, entry);
-            if (measureRect.right > mLabelsWidthLimit) {
-                y = measureRect.bottom + measureRect.height() / 2 - mShadowRadius - mExtraMargin;
-                measureRect.set(mHorizontalMargin, y, mHorizontalMargin, y);
-            } else {
-                measureRect.set(mTempRect2);
+            override fun get(statusView: StatusView): Float {
+                return statusView.health
             }
-            drawStatModifier(canvas, measureRect, y, entry);
-            updateMeasurePoint(measurePoint, measureRect);
         }
     }
-
-
-    private void drawLabelText(Canvas canvas, Rect measureRect) {
-        mPaint.setTypeface(mBoldTypeFace);
-        mPaint.setColor(Colors.WHITE);
-        mPaint.setTextSize(mLabelTextSize);
-        mPaint.getTextBounds(mLabel, 0, mLabel.length(), mTempRect);
-        mPaint.setShadowLayer(mShadowRadius, 0, mShadowRadius / 3f, Colors.BLACK);
-        int y = measureRect.bottom;
-        canvas.drawText(mLabel, mHorizontalMargin, y + mTempRect.height(), mPaint);
-        measureRect.set(mHorizontalMargin,
-                y,
-                2 * mHorizontalMargin + mTempRect.width(),
-                y + mTempRect.height() + mVerticalMargin);
-
-        mPaint.clearShadowLayer();
-    }
-
-    private void drawHealthBar(Canvas canvas, Rect measureRect) {
-        mPaint.setStrokeWidth(mHealthBarStrokeWidth);
-        mPaint.setColor(Colors.WHITE);
-        mPaint.setStyle(Paint.Style.FILL_AND_STROKE);
-        mPaint.setShadowLayer(mShadowRadius, 0, mShadowRadius / 3f, Colors.BLACK);
-        int y = measureRect.bottom;
-        canvas.drawRoundRect(mShadowRadius, y, mShadowRadius + mHealthBarWidth, y + mHealthBarHeight, mRectRadius, mRectRadius, mPaint);
-        measureRect.set(mShadowRadius - mHealthBarStrokeWidth / 2, y - mHealthBarStrokeWidth / 2,
-                mHealthBarWidth + mHealthBarStrokeWidth / 2 + 2 * mShadowRadius,
-                y + mHealthBarHeight + mHealthBarStrokeWidth / 2 + mVerticalMargin);
-        mPaint.clearShadowLayer();
-
-        mPaint.setColor(Colors.healthColor(mHealth));
-        mPaint.setStyle(Paint.Style.FILL);
-        canvas.drawRoundRect(mShadowRadius, y, mShadowRadius + (int) Math.ceil(mHealthBarWidth * mHealth), y + mHealthBarHeight, mRectRadius, mRectRadius, mPaint);
-    }
-
-
-    private void drawStatus(Canvas canvas, Rect measureRect) {
-        int y = measureRect.bottom;
-
-        if (mStatus == null) {
-            measureRect.set(mHorizontalMargin, y, mHorizontalMargin, y);
-            return;
-        }
-
-        drawTextWithBackground(canvas, measureRect, mHorizontalMargin + mShadowRadius,
-                y + mHealthBarStrokeWidth, mStatus.toUpperCase(), mExtraTextSize,
-                Colors.WHITE, Colors.statusColor(toId(mStatus)));
-    }
-
-    private void drawVolatileStatus(Canvas canvas, Rect measureRect, int y, String label, int color) {
-        int x = measureRect.right;
-        drawTextWithBackground(canvas, measureRect, x + mExtraMargin, y + mHealthBarStrokeWidth,
-                label, mExtraTextSize, color, Colors.WHITE);
-    }
-
-    @SuppressWarnings("DefaultLocale")
-    private void drawStatModifier(Canvas canvas, Rect measureRect, int y, Map.Entry<String, Float> entry) {
-        String text = DECIMAL_FORMAT.format(entry.getValue()) + Utils.firstCharUpperCase(entry.getKey());
-
-        int x = measureRect.right;
-        drawTextWithBackground(canvas, measureRect, x + mExtraMargin, y + mHealthBarStrokeWidth,
-                text, mExtraTextSize, entry.getValue() < 1f ? Colors.STAT_UNBOOST : Colors.STAT_BOOST, Colors.WHITE);
-    }
-
-    private void drawTextWithBackground(Canvas canvas, Rect measureRect, int x, int cY,
-                                        String text, int textSize, int color, int bgColor) {
-        mPaint.setTypeface(mDefaultTypeFace);
-        mPaint.setTextSize(textSize);
-        mPaint.getTextBounds(text, 0, text.length(), mTempRect);
-
-        mPaint.setShadowLayer(mShadowRadius, 0, mShadowRadius / 3f, Colors.BLACK);
-        mPaint.setColor(bgColor);
-        int w = mTempRect.width() + 2 * mRectRadius;
-        int h = mTempRect.height() + 2 * mRectRadius;
-        canvas.drawRoundRect(x, cY - h / 2f, x + w, cY + h / 2f, mRectRadius, mRectRadius, mPaint);
-        measureRect.set(x, cY - h / 2, x + w + mShadowRadius, cY + h / 2 + mShadowRadius);
-        mPaint.clearShadowLayer();
-
-        mPaint.setColor(color);
-        canvas.drawText(text, x + mRectRadius, cY - mTempRect.height() / 2f - mTempRect.top, mPaint);
-    }
-
-    private void updateMeasurePoint(Point measurePoint, Rect measureRect) {
-        if (measurePoint == null)
-            return;
-        measurePoint.set(Math.max(measurePoint.x, measureRect.right),
-                Math.max(measurePoint.y, measureRect.bottom));
-    }
-
+    
 }

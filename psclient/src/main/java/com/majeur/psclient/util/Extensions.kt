@@ -1,5 +1,8 @@
 package com.majeur.psclient.util
 
+import android.content.Context
+import android.content.res.Resources
+import android.graphics.Rect
 import android.graphics.Typeface
 import android.text.Spannable
 import android.text.TextUtils
@@ -7,6 +10,8 @@ import android.text.style.BackgroundColorSpan
 import android.text.style.ForegroundColorSpan
 import android.text.style.RelativeSizeSpan
 import android.text.style.StyleSpan
+import android.util.TypedValue
+import android.view.View
 import androidx.core.text.toSpannable
 import androidx.core.text.toSpanned
 import java.util.*
@@ -15,6 +20,8 @@ private val ID_REGEX = "[^a-z0-9]".toRegex()
 
 fun String.toId(): String = this.toLowerCase(Locale.ROOT).replace(ID_REGEX, "")
 fun String.or(or: String) : String = if (isBlank()) or else this
+fun String.toUpperCase() = toUpperCase(Locale.ROOT)
+fun String.toLowerCase() = toLowerCase(Locale.ROOT)
 
 // We cannot use a custom "operator fun plus()" because String.plus() override is impossible
 infix fun CharSequence.concat(other: CharSequence): CharSequence = TextUtils.concat(this, other)
@@ -62,3 +69,16 @@ fun Spannable.tag(color: Int): Spannable {
     setSpan(TextTagSpan(color), 0, length, Spannable.SPAN_INCLUSIVE_EXCLUSIVE)
     return this
 }
+
+fun View.dp(dp: Float) = context.dp(dp)
+fun Context.dp(dp: Float) = resources.dp(dp)
+fun Resources.dp(dp: Float) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp,
+        displayMetrics).toInt()
+
+fun View.sp(sp: Float) = context.sp(sp)
+fun Context.sp(sp: Float) = resources.sp(sp)
+fun Resources.sp(sp: Float) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sp,
+        displayMetrics).toInt()
+
+fun Rect.xForLeft(textLeft: Int) = textLeft - left // Offset by Glyph's AdvanceX value added by Skia
+fun Rect.yForTop(textTop: Int) = textTop - top // Computes text's baseline for a given top

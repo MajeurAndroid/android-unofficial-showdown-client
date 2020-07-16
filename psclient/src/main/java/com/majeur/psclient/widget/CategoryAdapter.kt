@@ -1,133 +1,94 @@
-package com.majeur.psclient.widget;
+package com.majeur.psclient.widget
 
-import android.content.Context;
-import android.graphics.Typeface;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.BaseAdapter;
-import android.widget.TextView;
+import android.content.Context
+import android.graphics.Typeface
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.BaseAdapter
+import android.widget.TextView
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+abstract class CategoryAdapter(context: Context?) : BaseAdapter() {
 
-public abstract class CategoryAdapter extends BaseAdapter {
+    private val mLayoutInflater = LayoutInflater.from(context)
+    private val mSpinnerItems = mutableListOf<Any>()
 
-    private static final int CONVERT_VIEW_TAG_KEY = 0x12345678;
-    private static final Object CONVERT_VIEW_TAG_VALUE_CATEGORY = new Object();
-    private static final Object CONVERT_VIEW_TAG_VALUE_ITEM = new Object();
-
-    private LayoutInflater mLayoutInflater;
-    private List<Object> mSpinnerItems;
-
-    public CategoryAdapter(Context context) {
-        mLayoutInflater = LayoutInflater.from(context);
-        mSpinnerItems = new ArrayList<>();
+    fun addItems(items: Collection<Any>) {
+        mSpinnerItems.addAll(items)
+        notifyDataSetChanged()
     }
 
-    public void addItems(Collection<?> items) {
-        mSpinnerItems.addAll(items);
-        notifyDataSetChanged();
+    fun addItem(item: Any) {
+        mSpinnerItems.add(item)
+        notifyDataSetChanged()
     }
 
-    public void addItem(Object item) {
-        mSpinnerItems.add(item);
-        notifyDataSetChanged();
+    fun clearItems() {
+        mSpinnerItems.clear()
+        notifyDataSetChanged()
     }
 
-    public void clearItems() {
-        mSpinnerItems.clear();
-        notifyDataSetChanged();
-    }
+    override fun getCount() = mSpinnerItems.size
 
-    @Override
-    public int getCount() {
-        return mSpinnerItems.size();
-    }
+    protected abstract fun isCategoryItem(position: Int): Boolean
 
-    protected abstract boolean isCategoryItem(int position);
+    override fun isEnabled(position: Int) = !isCategoryItem(position)
 
-    @Override
-    public boolean isEnabled(int position) {
-        return !isCategoryItem(position);
-    }
+    override fun areAllItemsEnabled() = false
 
-    @Override
-    public boolean areAllItemsEnabled() {
-        return false;
-    }
+    override fun getItem(i: Int) = mSpinnerItems[i]
 
-    @Override
-    public Object getItem(int i) {
-        return mSpinnerItems.get(i);
-    }
+    override fun getItemId(i: Int) = 0L
 
-    @Override
-    public long getItemId(int i) {
-        return 0;
-    }
+    override fun hasStableIds() = false
 
-    @Override
-    public boolean hasStableIds() {
-        return false;
-    }
-
-    @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
+    override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+        val view: View
         if (isCategoryItem(position)) {
-            if (convertView == null || convertView.getTag(CONVERT_VIEW_TAG_KEY) != CONVERT_VIEW_TAG_VALUE_CATEGORY)
-                convertView = getCategoryView(position, null, parent);
+            view = if (convertView == null || convertView.getTag(CONVERT_VIEW_TAG_KEY) != CONVERT_VIEW_TAG_VALUE_CATEGORY)
+                getCategoryView(position, null, parent);
             else
-                convertView = getCategoryView(position, convertView, parent);
+                getCategoryView(position, convertView, parent);
 
-            convertView.setTag(CONVERT_VIEW_TAG_KEY, CONVERT_VIEW_TAG_VALUE_CATEGORY);
-            return convertView;
+            view.setTag(CONVERT_VIEW_TAG_KEY, CONVERT_VIEW_TAG_VALUE_CATEGORY);
+            return view;
         } else {
-            if (convertView == null || convertView.getTag(CONVERT_VIEW_TAG_KEY) != CONVERT_VIEW_TAG_VALUE_ITEM)
-                convertView = getItemView(position, null, parent);
+            view = if (convertView == null || convertView.getTag(CONVERT_VIEW_TAG_KEY) != CONVERT_VIEW_TAG_VALUE_ITEM)
+                getItemView(position, null, parent);
             else
-                convertView = getItemView(position, convertView, parent);
+                getItemView(position, convertView, parent);
 
-            convertView.setTag(CONVERT_VIEW_TAG_KEY, CONVERT_VIEW_TAG_VALUE_ITEM);
-            return convertView;
+            view.setTag(CONVERT_VIEW_TAG_KEY, CONVERT_VIEW_TAG_VALUE_ITEM);
+            return view;
         }
     }
 
-    protected View getCategoryView(int position, View convertView, ViewGroup parent) {
-        TextView textView;
-        if (convertView == null) {
-            convertView = mLayoutInflater.inflate(android.R.layout.simple_list_item_1, parent, false);
-            textView = (TextView) convertView;
-            textView.setSingleLine();
-            textView.setTypeface(null, Typeface.BOLD);
-        } else {
-            textView = (TextView) convertView;
+    protected fun getCategoryView(position: Int, convertView: View?, parent: ViewGroup?): View {
+        val textView = convertView as? TextView ?:
+            (mLayoutInflater.inflate(android.R.layout.simple_list_item_1, parent, false) as TextView).apply {
+                setSingleLine()
+                setTypeface(null, Typeface.BOLD)
+            }
+        textView.text = getCategoryLabel(position)
+        return textView
+    }
+
+    protected abstract fun getCategoryLabel(position: Int): String?
+
+    protected open fun getItemView(position: Int, convertView: View?, parent: ViewGroup): View {
+        val textView = convertView as? TextView ?:
+        (mLayoutInflater.inflate(android.R.layout.simple_list_item_1, parent, false) as TextView).apply {
+            setSingleLine()
         }
-
-        textView.setText(getCategoryLabel(position));
-
-        return convertView;
+        textView.text = "\t${getItemLabel(position)}"
+        return textView
     }
 
-    protected abstract String getCategoryLabel(int position);
+    protected open fun getItemLabel(position: Int) = getItem(position).toString()
 
-    protected View getItemView(int position, View convertView, ViewGroup parent) {
-        TextView textView;
-        if (convertView == null) {
-            convertView = mLayoutInflater.inflate(android.R.layout.simple_list_item_1, parent, false);
-            textView = (TextView) convertView;
-            textView.setSingleLine();
-        } else {
-            textView = (TextView) convertView;
-        }
-        textView.setText("\t");
-        textView.append(getItemLabel(position));
-        return textView;
+    companion object {
+        private const val CONVERT_VIEW_TAG_KEY = 0x12345678
+        private val CONVERT_VIEW_TAG_VALUE_CATEGORY = Any()
+        private val CONVERT_VIEW_TAG_VALUE_ITEM = Any()
     }
-
-    protected String getItemLabel(int position) {
-        return null;
-    }
-
 }

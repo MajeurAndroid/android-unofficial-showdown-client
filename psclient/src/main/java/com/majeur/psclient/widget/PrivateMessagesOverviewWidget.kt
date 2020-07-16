@@ -1,228 +1,144 @@
-package com.majeur.psclient.widget;
+package com.majeur.psclient.widget
 
-import android.content.Context;
-import android.util.AttributeSet;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.LinearLayout;
-import android.widget.TextView;
-import androidx.annotation.Nullable;
-import com.google.android.material.button.MaterialButton;
-import com.majeur.psclient.R;
-import com.majeur.psclient.model.common.BattleFormat;
-import com.majeur.psclient.ui.MainActivity;
+import android.content.Context
+import android.util.AttributeSet
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.LinearLayout
+import android.widget.TextView
+import androidx.core.content.ContextCompat
+import androidx.core.view.children
+import com.google.android.material.button.MaterialButton
+import com.majeur.psclient.R
+import com.majeur.psclient.model.common.BattleFormat
+import com.majeur.psclient.model.common.BattleFormat.Companion.resolveName
+import com.majeur.psclient.ui.MainActivity
+import com.majeur.psclient.util.*
 
-import java.util.List;
+class PrivateMessagesOverviewWidget @JvmOverloads constructor(context: Context?, attrs: AttributeSet? = null, defStyleAttr: Int = 0) : LinearLayout(context, attrs, defStyleAttr), View.OnClickListener {
 
-import static com.majeur.psclient.util.Utils.boldText;
-import static com.majeur.psclient.util.Utils.coloredText;
-import static com.majeur.psclient.util.Utils.italicText;
-import static com.majeur.psclient.util.Utils.smallText;
+    var onItemClickListener: OnItemClickListener? = null
+    var onItemButtonClickListener: OnItemButtonClickListener? = null
+    val isEmpty: Boolean
+        get() = childCount == 0
 
-public class PrivateMessagesOverviewWidget extends LinearLayout implements View.OnClickListener {
+    private val colorSecondary by lazy { ContextCompat.getColor(context!!, R.color.secondary) }
+    private val layoutInflater by lazy { LayoutInflater.from(context) }
+    private val entries: List<Entry>
+        get() = children.map { it.tag as Entry }.toList()
 
-    private final LayoutInflater mLayoutInflater;
-
-    private OnItemClickListener mOnItemClickListener;
-    private OnItemButtonClickListener mOnItemButtonClickListener;
-
-    public PrivateMessagesOverviewWidget(Context context) {
-        this(context, null);
+    init {
+        orientation = VERTICAL
     }
 
-    public PrivateMessagesOverviewWidget(Context context, @Nullable AttributeSet attrs) {
-        this(context, attrs, 0);
+    fun incrementPmCount(with: String) = getEntryOrCreate(with).run {
+        pmCount += 1
+        updateViewForEntry(this)
     }
 
-    public PrivateMessagesOverviewWidget(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
-        super(context, attrs, defStyleAttr);
-        setOrientation(VERTICAL);
-        mLayoutInflater = LayoutInflater.from(context);
+    fun updateChallengeTo(to: String?, format: String?) = entries.forEach { entry ->
+        if (entry.with == to) { // We are currently challenging this user
+            entry.challengeFormat = format
+            entry.challengeFromMe = true
+            updateViewForEntry(entry)
+        } else if (entry.challengeFromMe) { // We are not challenging this user anymore
+            entry.challengeFormat = null
+            entry.challengeFromMe = false
+            updateViewForEntry(entry)
+        }
     }
 
-    public void incrementPmCount(String with) {
-        Entry entry = getEntryOrCreate(with);
-        entry.pmCount += 1;
-        updateViewForEntry(entry);
-    }
-
-    public void updateChallengeTo(String to, String format) {
-        Entry[] entries = getEntries();
-        for (Entry entry : entries) {
-            if (entry.with.equals(to)) {
-                entry.challengeFormat = format;
-                entry.fromMe = true;
-                updateViewForEntry(entry);
-            } else if (entry.fromMe) {
-                entry.challengeFormat = null;
-                updateViewForEntry(entry);
+    fun updateChallengesFrom(users: Collection<String>, formats: Collection<String>) {
+        if (users.isEmpty()) { // There is nobody challenging us
+            entries.filter { it.challengeFormat != null && !it.challengeFromMe }.forEach { entry ->
+                entry.challengeFormat = null
+                if (entry.pmCount > 0) updateViewForEntry(entry) else removeViewForEntry(entry)
+            }
+            return
+        }
+        users.zip(formats).forEach { (user, format) -> // Adding or updating entries for user challenging us
+            getEntryOrCreate(user).apply {
+                challengeFormat = format
+                challengeFromMe = false
+                updateViewForEntry(this)
+            }
+        }
+        entries.forEach { entry -> // Resetting (or removing) entries that are not challenging us anymore
+            if (!entry.challengeFromMe && !users.contains(entry.with)) {
+                entry.challengeFormat = null
+                entry.challengeFromMe = false
+                if (entry.pmCount > 0) updateViewForEntry(entry) else removeViewForEntry(entry)
             }
         }
     }
 
-    public void updateChallengesFrom(String[] usersFrom, String[] formatsFrom) {
-        Entry[] entries = getEntries();
-        if (usersFrom.length == 0) {
-            for (Entry entry : entries) {
-                if (entry.challengeFormat != null) {
-                    entry.challengeFormat = null;
-                    if (entry.pmCount > 0)
-                        updateViewForEntry(entry);
-                    else
-                        removeViewForEntry(entry);
-                }
+    private fun getEntryOrCreate(with: String) = entries.firstOrNull { it.with == with } ?: Entry(with).also {
+        val view = layoutInflater.inflate(R.layout.list_item_pmentry, this) as ViewGroup
+        view.setOnClickListener(this@PrivateMessagesOverviewWidget)
+        view.findViewById<View>(R.id.button_challenge).setOnClickListener(this@PrivateMessagesOverviewWidget)
+        view.tag = it
+    }
+
+    private fun removeViewForEntry(entry: Entry) = children.firstOrNull { it.tag == entry }?.let { removeView(it) }
+
+    private fun updateViewForEntry(entry: Entry) {
+        val view = children.first { it.tag == entry } as ViewGroup
+        val label = view.findViewById<TextView>(R.id.label)
+        label.text = entry.with.bold()
+        val button = view.findViewById<MaterialButton>(R.id.button_challenge)
+        button.text = "Challenge" // Default behaviour: challenging a user we are private chatting with
+        button.isEnabled = true
+        val hasChallenge = entry.challengeFormat != null
+        if (hasChallenge) { // Second behaviour: waiting for response or send our response to a challenge request
+            if (entry.challengeFromMe) { // Already challenging this user so button should be disabled
+                button.isEnabled = false
+            } else { // This user is challenging us
+                button.text = "Accept"
+                button.isEnabled = true
+                label.append(" is challenging you !".color(colorSecondary).small() concat
+                        "\n" concat resolveFormat(entry.challengeFormat!!).small())
             }
-            return;
         }
-        for (int i = 0; i < usersFrom.length; i++) {
-            boolean hasEntry = false;
-            for (Entry entry : entries) {
-                if (entry.with.equals(usersFrom[i])) {
-                    entry.challengeFormat = formatsFrom[i];
-                    entry.fromMe = false;
-                    updateViewForEntry(entry);
-                    hasEntry = true;
-                    break;
-                } else if (entry.challengeFormat != null && !entry.fromMe) {
-                    entry.challengeFormat = null;
-                    updateViewForEntry(entry);
-                    hasEntry = true;
-                    break;
-                }
-            }
-            if (!hasEntry) {
-                Entry entry = getEntryOrCreate(usersFrom[i]);
-                entry.challengeFormat = formatsFrom[i];
-                entry.fromMe = false;
-                updateViewForEntry(entry);
-            }
+        if (entry.pmCount > 0) { // If we have pms show this in view
+            label.append("\n" concat "${entry.pmCount} message(s)".small().italic())
         }
     }
 
-    private Entry getEntryOrCreate(String with) {
-        for (int i = 0; i < getChildCount(); i++) {
-            View child = getChildAt(i);
-            Entry entry = (Entry) child.getTag();
-            if (entry.with.equals(with))
-                return entry;
-        }
-        ViewGroup view = (ViewGroup) mLayoutInflater.inflate(R.layout.list_item_pmentry, this, false);
-        view.setOnClickListener(this);
-        view.findViewById(R.id.button_challenge).setOnClickListener(this);
-        addView(view);
-        Entry entry = new Entry(with);
-        view.setTag(entry);
-        return entry;
+    private fun resolveFormat(format: String): String { // This can be done in a nicer way
+        val activity = context as MainActivity
+        val formats = activity.service!!.getSharedData<List<BattleFormat.Category>>("formats")
+        return if (formats != null) resolveName(formats, format) else format
     }
 
-    private void removeViewForEntry(Entry entry) {
-        for (int i = 0; i < getChildCount(); i++) {
-            View child = getChildAt(i);
-            Entry e = (Entry) child.getTag();
-            if (e == entry) {
-                removeView(child);
-                break;
-            }
-        }
-    }
-
-    private Entry[] getEntries() {
-        Entry[] entries = new Entry[getChildCount()];
-        for (int i = 0; i < getChildCount(); i++)
-            entries[i] = (Entry) getChildAt(i).getTag();
-        return entries;
-    }
-
-    private void updateViewForEntry(Entry entry) {
-        ViewGroup view = null;
-        for (int i = 0; i < getChildCount(); i++) {
-            View child = getChildAt(i);
-            if (child.getTag().equals(entry)) view = (ViewGroup) child;
-        }
-
-        TextView textView = view.findViewById(R.id.label);
-        textView.setText(boldText(entry.with));
-
-        MaterialButton button = view.findViewById(R.id.button_challenge);
-        button.setText("Challenge");
-        button.setEnabled(true);
-
-        boolean hasChallenge = entry.challengeFormat != null;
-        if (hasChallenge) {
-            if (entry.fromMe) {
-                button.setEnabled(false);
+    override fun onClick(v: View) {
+        if (v is MaterialButton) { // Challenge btn
+            val entry = (v.getParent() as View).tag as Entry
+            if (entry.challengeFormat != null && !entry.challengeFromMe) {
+                onItemButtonClickListener?.onAcceptButtonClick(entry.with, entry.challengeFormat!!)
             } else {
-                button.setText("Accept");
-                button.setEnabled(true);
-                textView.append(smallText(coloredText(" is challenging you !", getResources().getColor(R.color.secondary))));
-                textView.append("\n");
-                textView.append(smallText(resolveFormat(entry.challengeFormat)));
-            }
-        }
-
-        if (entry.pmCount > 0) {
-            textView.append("\n");
-            textView.append(smallText(italicText(entry.pmCount + " message(s)")));
-        }
-    }
-
-    private String resolveFormat(String format) { // This can be done in a nicer way
-        MainActivity activity = (MainActivity) getContext();
-        List<BattleFormat.Category> formats = activity.getService().getSharedData("formats");
-        if (formats != null) return BattleFormat.resolveName(formats, format);
-        return format;
-    }
-
-    @Override
-    public void onClick(View v) {
-        Entry entry;
-        if (v instanceof MaterialButton) { // Challenge btn
-            entry = (Entry) ((View) v.getParent()).getTag();
-            if (entry.challengeFormat != null && !entry.fromMe) {
-                if (mOnItemButtonClickListener != null)
-                    mOnItemButtonClickListener.onAcceptButtonClick(this, entry.with, entry.challengeFormat);
-            } else {
-                if (mOnItemButtonClickListener != null)
-                    mOnItemButtonClickListener.onChallengeButtonClick(this, entry.with);
+                onItemButtonClickListener?.onChallengeButtonClick(entry.with)
             }
         } else {
-            entry = (Entry) v.getTag();
-            if (mOnItemClickListener != null)
-                mOnItemClickListener.onItemClick(this, entry.with);
+            val entry = v.tag as Entry
+            onItemClickListener?.onItemClick(entry.with)
         }
     }
 
-    public boolean isEmpty() {
-        return getChildCount() == 0;
+    interface OnItemClickListener {
+        fun onItemClick(with: String)
     }
 
-    public void setOnItemClickListener(OnItemClickListener listener) {
-        mOnItemClickListener = listener;
+    interface OnItemButtonClickListener {
+        fun onChallengeButtonClick(with: String)
+        fun onAcceptButtonClick(with: String, format: String)
     }
 
-    public void setOnItemButtonClickListener(OnItemButtonClickListener listener) {
-        mOnItemButtonClickListener = listener;
-    }
+    private class Entry(var with: String) {
+        var pmCount = 0 // Private messages count with this user
+        var challengeFormat: String? = null
+        // If challengeFormat is not null, challengeFromMe means that I am challenging 'with', else 'with' is challenging me
+        var challengeFromMe = false
 
-    public interface OnItemClickListener {
-        void onItemClick(PrivateMessagesOverviewWidget p, String with);
-    }
-
-    public interface OnItemButtonClickListener {
-        void onChallengeButtonClick(PrivateMessagesOverviewWidget p, String with);
-        void onAcceptButtonClick(PrivateMessagesOverviewWidget p, String with, String format);
-    }
-
-    private static class Entry {
-
-        public Entry(String with) {
-            this.with = with;
-        }
-
-        String with;
-        int pmCount;
-        boolean fromMe;
-        String challengeFormat;
     }
 }

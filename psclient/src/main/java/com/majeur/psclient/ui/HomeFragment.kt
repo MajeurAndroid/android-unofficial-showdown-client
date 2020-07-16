@@ -38,8 +38,8 @@ import com.majeur.psclient.service.ShowdownService
 import com.majeur.psclient.service.observer.GlobalMessageObserver
 import com.majeur.psclient.util.*
 import com.majeur.psclient.widget.CategoryAdapter
-import com.majeur.psclient.widget.PrivateMessagesOverviewWidget
 import com.majeur.psclient.widget.PrivateMessagesOverviewWidget.OnItemButtonClickListener
+import com.majeur.psclient.widget.PrivateMessagesOverviewWidget.OnItemClickListener
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -156,12 +156,12 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
             }
         }
         binding.pmsOverview.apply {
-            setOnItemClickListener { _, with -> startPrivateChat(with) }
-            setOnItemButtonClickListener(object : OnItemButtonClickListener {
-
-                override fun onChallengeButtonClick(p: PrivateMessagesOverviewWidget, with: String) = challengeSomeone(with)
-
-                override fun onAcceptButtonClick(p: PrivateMessagesOverviewWidget, with: String, format: String) {
+            onItemClickListener = object : OnItemClickListener {
+                override fun onItemClick(with: String) = startPrivateChat(with)
+            }
+            onItemButtonClickListener = object : OnItemButtonClickListener {
+                override fun onChallengeButtonClick(with: String) = challengeSomeone(with)
+                override fun onAcceptButtonClick(with: String, format: String) {
                     when {
                         isSearchingBattle -> makeSnackbar("Cannot accept challenge while searching for battle")
                         isChallengingSomeone -> makeSnackbar("You are already challenging someone")
@@ -179,9 +179,8 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
                             view.post { (view as ScrollView).fullScroll(View.FOCUS_UP) }
                         }
                     }
-
                 }
-            })
+            }
         }
         binding.cancelButton.setOnClickListener(this)
         binding.searchButton.setOnClickListener(this)
@@ -193,6 +192,9 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         if (service?.isConnected != true) return
         when (view) {
             binding.loginButton -> {
+                battleFragment.observedRoomId = "battle"
+                service?.fakeBattle()
+                if (true) return
                 val myUsername = service?.getSharedData<String?>("myusername")?.substring(1)
                 if (myUsername?.toLowerCase()?.startsWith("guest") == true) {
                     if (fragmentManager?.findFragmentByTag(SignInDialog.FRAGMENT_TAG) == null)
@@ -578,7 +580,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
     override fun onChallengesChange(to: String?, format: String?, from: Map<String, String>) {
         binding.pmsOverview.apply {
             updateChallengeTo(to, format)
-            updateChallengesFrom(from.keys.toTypedArray(), from.values.toTypedArray())
+            updateChallengesFrom(from.keys, from.values)
         }
         if (binding.pmsOverview.isEmpty) {
             binding.pmsContainer.visibility = View.GONE
@@ -681,7 +683,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
             ).map { view.findViewById<ImageView>(it) }
         }
 
-        override fun getItemView(position: Int, view: View?, parent: ViewGroup?): View? {
+        override fun getItemView(position: Int, view: View?, parent: ViewGroup): View {
             val convertView = view ?: layoutInflater.inflate(R.layout.dropdown_item_team, parent, false).apply {
                 tag = ViewHolder(this)
             }

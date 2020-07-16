@@ -1,51 +1,38 @@
-package com.majeur.psclient.widget;
+package com.majeur.psclient.widget
 
-import android.content.Context;
-import android.graphics.drawable.Drawable;
-import android.util.AttributeSet;
-import android.view.View;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.TextView;
-import androidx.annotation.Nullable;
-import com.majeur.psclient.R;
+import android.content.Context
+import android.graphics.drawable.Drawable
+import android.util.AttributeSet
+import android.view.View
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
+import com.majeur.psclient.R
 
-public class SwitchButton extends LinearLayout {
+class SwitchButton @JvmOverloads constructor(context: Context?, attrs: AttributeSet? = null, defStyleAttr: Int = 0) : LinearLayout(context, attrs, defStyleAttr) {
 
-    private TextView mNameView;
-    private ImageView mIconView;
+    private lateinit var nameView: TextView
+    private lateinit var iconView: ImageView
 
-    public SwitchButton(Context context, @Nullable AttributeSet attrs) {
-        super(context, attrs);
+    override fun onViewAdded(child: View) {
+        super.onViewAdded(child)
+        when (child.id) {
+            R.id.name_view -> nameView = child as TextView
+            R.id.dex_icon_view -> iconView = child as ImageView
+        }
     }
 
-    public SwitchButton(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
-        super(context, attrs, defStyleAttr);
+    override fun setEnabled(enabled: Boolean) {
+        super.setEnabled(enabled)
+        nameView.isEnabled = enabled
+        iconView.alpha = if (enabled) 1f else 0.65f
     }
 
-    @Override
-    public void onViewAdded(View child) {
-        super.onViewAdded(child);
-        if (child.getId() == R.id.name_view)
-            mNameView = (TextView) child;
-        else if (child.getId() == R.id.dex_icon_view)
-            mIconView = (ImageView) child;
-        else
-            throw new IllegalStateException("SwitchButton is missing its two children in XML declaration");
+    fun setDexIcon(dexIcon: Drawable?) {
+        iconView.setImageDrawable(dexIcon)
     }
 
-    @Override
-    public void setEnabled(boolean enabled) {
-        super.setEnabled(enabled);
-        mNameView.setEnabled(enabled);
-        mIconView.setAlpha(enabled ? 1f : 0.65f);
-    }
-
-    public void setDexIcon(Drawable dexIcon) {
-        mIconView.setImageDrawable(dexIcon);
-    }
-
-    public void setPokemonName(String name) {
-        mNameView.setText(name);
+    fun setPokemonName(name: String?) {
+        nameView.text = name
     }
 }

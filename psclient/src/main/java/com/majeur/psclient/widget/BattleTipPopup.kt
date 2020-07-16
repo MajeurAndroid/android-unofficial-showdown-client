@@ -1,242 +1,165 @@
-package com.majeur.psclient.widget;
+package com.majeur.psclient.widget
 
-import android.content.Context;
-import android.graphics.Rect;
-import android.os.Build;
-import android.util.AttributeSet;
-import android.util.TypedValue;
-import android.view.Gravity;
-import android.view.LayoutInflater;
-import android.view.MotionEvent;
-import android.view.View;
-import android.view.ViewConfiguration;
-import android.view.ViewGroup;
-import android.widget.ImageView;
-import android.widget.PopupWindow;
-import android.widget.TextView;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import com.majeur.psclient.R;
-import com.majeur.psclient.util.Utils;
+import android.content.Context
+import android.graphics.Rect
+import android.os.Build
+import android.util.AttributeSet
+import android.view.*
+import android.view.View.MeasureSpec
+import android.view.View.OnTouchListener
+import android.widget.ImageView
+import android.widget.PopupWindow
+import android.widget.TextView
+import com.majeur.psclient.R
+import com.majeur.psclient.databinding.PopupBattleTipsBinding
+import com.majeur.psclient.util.dp
+import kotlin.math.max
 
-import static android.view.View.MeasureSpec.getSize;
-import static android.view.View.MeasureSpec.makeMeasureSpec;
-import static java.lang.Math.max;
+class BattleTipPopup(context: Context) : PopupWindow(context), OnTouchListener {
 
-public class BattleTipPopup extends PopupWindow implements View.OnTouchListener {
+    var bindPopupListener: ((anchorView: View, titleView: TextView, descView: TextView, placeHolderTop: ImageView, placeHolderBottom: ImageView) -> Unit)? = null
 
-    public interface OnBindPopupViewListener {
-        public void onBindPopupView(View anchorView, TextView titleView, TextView descView,
-                                    ImageView placeHolderTop, ImageView placeHolderBottom);
+    private val binding: PopupBattleTipsBinding
+    private var currentAnchorView: View? = null
+
+    private val thumbOffset = context.dp(8f)
+    private var downY = 0
+    private var isUserTouching = false
+    private var longPressPerformed = false
+    private val tempArr = IntArray(2)
+    private val tempRect = Rect()
+
+    private val longPressTimeout
+        get() = ViewConfiguration.getLongPressTimeout().toLong()
+    private val topWindowInset
+        get() = if (Build.VERSION.SDK_INT > Build.VERSION_CODES.M) currentAnchorView!!.rootWindowInsets.stableInsetTop else 0
+
+    init {
+        setBackgroundDrawable(null)
+        animationStyle = R.style.Animation_PSClient_TipPopup
+        binding = PopupBattleTipsBinding.inflate(LayoutInflater.from(context))
+        contentView = binding.root
     }
 
-    private int mThumbOffset;
-    private boolean mIsUserTouching;
-    private boolean mLongPressPerformed;
-    private int mDownY;
-    private View mAnchorView;
-    private final int[] mTempArr = new int[2];
-    private final Rect mTempRect = new Rect();
+    fun addTippedView(view: View) = view.setOnTouchListener(this)
 
-    private OnBindPopupViewListener mOnBindPopupViewListener;
+    fun removeTippedView(view: View) = view.setOnTouchListener(null)
 
-    private final TextView mTitleView;
-    private final TextView mDescView;
-    private final ImageView mPlaceHolderTop;
-    private final ImageView mPlaceHolderBottom;
-
-    public BattleTipPopup(Context context) {
-        super(context);
-        setBackgroundDrawable(null);
-        setAnimationStyle(R.style.Animation_PSClient_TipPopup);
-
-        View contentView = LayoutInflater.from(context).inflate(R.layout.popup_battle_tips, null);
-        mTitleView = contentView.findViewById(R.id.popup_title);
-        mDescView = contentView.findViewById(R.id.popup_content);
-        mPlaceHolderTop = contentView.findViewById(R.id.popup_im1);
-        mPlaceHolderBottom = contentView.findViewById(R.id.popup_im2);
-        setContentView(contentView);
-
-        mThumbOffset = Utils.dpToPx(8);
+    private val longPressCheckRunnable = Runnable {
+        if (!isUserTouching) return@Runnable
+        longPressPerformed = true
+        bindPopupListener?.invoke(currentAnchorView!!, binding.title, binding.content, binding.im1, binding.im2)
+        showPopup()
     }
-
-    public void addTippedView(View view) {
-        view.setOnTouchListener(this);
-    }
-
-    public void removeTippedView(View view) {
-        view.setOnTouchListener(null);
-    }
-
-    public void setOnBindPopupViewListener(OnBindPopupViewListener onBindPopupViewListener) {
-        mOnBindPopupViewListener = onBindPopupViewListener;
-    }
-
-    private final Runnable mLongPressCheckRunnable = new Runnable() {
-        @Override
-        public void run() {
-            if (!mIsUserTouching)
-                return;
-            mLongPressPerformed = true;
-
-            if (mOnBindPopupViewListener != null)
-                mOnBindPopupViewListener.onBindPopupView(mAnchorView, mTitleView, mDescView, mPlaceHolderTop, mPlaceHolderBottom);
-
-            showPopup();
-        }
-    };
 
     // This one is a bit tricky. PopupWindow does not provide any support for showing a popup above a view.
     // We have to measure our content view ourselves (assuming our content view is the Popup's view itself, which
     // is the case when Popup's background is null). Then the Window created for the Popup is fullscreen with the
     // content view container using setFitsSystemWindows, so we have to offset our y coordinate to avoid issue
     // in measurement due to window inset.
-    private void showPopup() {
-        measureContentView(mTempRect);
-        mAnchorView.getLocationInWindow(mTempArr);
-        int x = mTempArr[0] + mAnchorView.getWidth() / 2 - mTempRect.width() / 2;
-        int windowInsetTop = getTopWindowInset();
-        int y = max(windowInsetTop, windowInsetTop + mTempArr[1] + mDownY - mTempRect.height() - mThumbOffset);
-        showAtLocation(mAnchorView, Gravity.NO_GRAVITY, x, y);
+    private fun showPopup() {
+        measureContentView(tempRect)
+        currentAnchorView!!.getLocationInWindow(tempArr)
+        val x = tempArr[0] + currentAnchorView!!.width / 2 - tempRect.width() / 2
+        val windowInsetTop = topWindowInset
+        val y = max(windowInsetTop, windowInsetTop + tempArr[1] + downY - tempRect.height() - thumbOffset)
+        showAtLocation(currentAnchorView, Gravity.NO_GRAVITY, x, y)
     }
 
-    @Override
-    public boolean onTouch(View view, MotionEvent motionEvent) {
-        final int action = motionEvent.getAction();
-        switch (action) {
-            case MotionEvent.ACTION_DOWN:
-                mAnchorView = view;
-                mDownY = (int) motionEvent.getY();
-                mIsUserTouching = true;
-                if (view.isClickable())
-                    view.postDelayed(mLongPressCheckRunnable, ViewConfiguration.getLongPressTimeout());
-                else
-                    mLongPressCheckRunnable.run();
-                return true;
-
-            case MotionEvent.ACTION_CANCEL:
-            case MotionEvent.ACTION_UP:
-                mIsUserTouching = false;
-                mAnchorView = null;
-                if (mLongPressPerformed) {
-                    mLongPressPerformed = false;
-                    dismiss();
-                } else {
-                    view.performClick();
-                }
-                return true;
-
-            default:
-                return false;
+    override fun onTouch(view: View, motionEvent: MotionEvent) = when (motionEvent.action) {
+        MotionEvent.ACTION_DOWN -> {
+            currentAnchorView = view
+            downY = motionEvent.y.toInt()
+            isUserTouching = true
+            // If view is clickable, we wait for a long press to be done before triggering popup, if not, we show immediately
+            if (view.isClickable) view.postDelayed(longPressCheckRunnable, longPressTimeout)
+            else longPressCheckRunnable.run()
+            true
         }
+        MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_UP -> {
+            isUserTouching = false
+            currentAnchorView = null
+            if (longPressPerformed) {
+                longPressPerformed = false
+                dismiss()
+            } else { // If pointer is up before long press timeout, perform a regular click
+                view.performClick()
+            }
+            true
+        }
+        else -> false
     }
 
-    private void measureContentView(Rect out) {
-        Rect displayFrame = out;
-        mAnchorView.getWindowVisibleDisplayFrame(displayFrame);
-        int wSpec = View.MeasureSpec.makeMeasureSpec(displayFrame.width(), View.MeasureSpec.AT_MOST);
-        int hSpec = View.MeasureSpec.makeMeasureSpec(displayFrame.height(), View.MeasureSpec.AT_MOST);
-        getContentView().measure(wSpec, hSpec);
-        out.set(0, 0, getContentView().getMeasuredWidth(), getContentView().getMeasuredHeight());
-    }
-
-    private int getTopWindowInset() {
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.M)
-            return mAnchorView.getRootWindowInsets().getStableInsetTop();
-        return 0;
+    private fun measureContentView(out: Rect) {
+        currentAnchorView!!.getWindowVisibleDisplayFrame(out)
+        val wSpec = MeasureSpec.makeMeasureSpec(out.width(), MeasureSpec.AT_MOST)
+        val hSpec = MeasureSpec.makeMeasureSpec(out.height(), MeasureSpec.AT_MOST)
+        contentView.measure(wSpec, hSpec)
+        out.set(0, 0, contentView.measuredWidth, contentView.measuredHeight)
     }
 
     // Really faster than its only equivalent using ConstraintLayout
-    public static final class Layout extends ViewGroup {
+    class Layout @JvmOverloads constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int = 0) : ViewGroup(context, attrs, defStyleAttr) {
 
-        private final int mImageSpacing;
+        private val imageSpacing = dp(2f)
+        private lateinit var title: View
+        private lateinit var content: View
+        private lateinit var image1: View
+        private lateinit var image2: View
 
-        private View mTitle;
-        private View mContent;
-        private View mImage1;
-        private View mImage2;
-
-        public Layout(@NonNull Context context, @Nullable AttributeSet attrs) {
-            this(context, attrs, 0);
-        }
-
-        public Layout(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
-            super(context, attrs, defStyleAttr);
-            mImageSpacing = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2f,
-                    getResources().getDisplayMetrics());
-        }
-
-        @Override
-        public void onViewAdded(View child) {
-            super.onViewAdded(child);
-            switch (child.getId()) {
-                case R.id.popup_title:
-                    mTitle = child;
-                    break;
-                case R.id.popup_content:
-                    mContent = child;
-                    break;
-                case R.id.popup_im1:
-                    mImage1 = child;
-                    break;
-                case R.id.popup_im2:
-                    mImage2 = child;
-                    break;
+        override fun onViewAdded(child: View) {
+            super.onViewAdded(child)
+            when (child.id) {
+                R.id.title -> title = child
+                R.id.content -> content = child
+                R.id.im1 -> image1 = child
+                R.id.im2 -> image2 = child
             }
         }
 
-        @Override
-        protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-            int width = getSize(widthMeasureSpec);
-            int height = getSize(heightMeasureSpec);
-
-            LayoutParams lp = mImage1.getLayoutParams();
-            if (lp.width < 0 || lp.height < 0) throw new UnsupportedOperationException("popup_im1 must have explicit width and height");
-            mImage1.measure(makeMeasureSpec(lp.width, MeasureSpec.EXACTLY),
-                    makeMeasureSpec(lp.height, MeasureSpec.EXACTLY));
-            lp = mImage2.getLayoutParams();
-            if (lp.width < 0 || lp.height < 0) throw new UnsupportedOperationException("popup_im2 must have explicit width and height");
-            mImage2.measure(makeMeasureSpec(lp.width, MeasureSpec.EXACTLY),
-                    makeMeasureSpec(lp.height, MeasureSpec.EXACTLY));
-
-            int imagesWidth = max(mImage1.getMeasuredWidth(), mImage2.getMeasuredWidth());
-
-            mTitle.measure(makeMeasureSpec(width - imagesWidth, MeasureSpec.AT_MOST),
-                    makeMeasureSpec(height, MeasureSpec.AT_MOST));
-            mContent.measure(makeMeasureSpec(width, MeasureSpec.AT_MOST),
-                    makeMeasureSpec(height - mTitle.getMeasuredHeight(), MeasureSpec.AT_MOST));
-
-            int measuredWidth = max(mTitle.getMeasuredWidth() + imagesWidth, mContent.getMeasuredWidth());
-            int measuredHeight = mTitle.getMeasuredHeight() + mContent.getMeasuredHeight();
-            setMeasuredDimension(measuredWidth, measuredHeight);
+        override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+            val width = MeasureSpec.getSize(widthMeasureSpec)
+            val height = MeasureSpec.getSize(heightMeasureSpec)
+            var lp = image1.layoutParams
+            if (lp.width < 0 || lp.height < 0) throw UnsupportedOperationException("popup_im1 must have explicit width and height")
+            image1.measure(MeasureSpec.makeMeasureSpec(lp.width, MeasureSpec.EXACTLY),
+                    MeasureSpec.makeMeasureSpec(lp.height, MeasureSpec.EXACTLY))
+            lp = image2.layoutParams
+            if (lp.width < 0 || lp.height < 0) throw UnsupportedOperationException("popup_im2 must have explicit width and height")
+            image2.measure(MeasureSpec.makeMeasureSpec(lp.width, MeasureSpec.EXACTLY),
+                    MeasureSpec.makeMeasureSpec(lp.height, MeasureSpec.EXACTLY))
+            val imagesWidth = Math.max(image1.measuredWidth, image2.measuredWidth)
+            title.measure(MeasureSpec.makeMeasureSpec(width - imagesWidth, MeasureSpec.AT_MOST),
+                    MeasureSpec.makeMeasureSpec(height, MeasureSpec.AT_MOST))
+            content.measure(MeasureSpec.makeMeasureSpec(width, MeasureSpec.AT_MOST),
+                    MeasureSpec.makeMeasureSpec(height - title.measuredHeight, MeasureSpec.AT_MOST))
+            val measuredWidth = Math.max(title.measuredWidth + imagesWidth, content.measuredWidth)
+            val measuredHeight = title.measuredHeight + content.measuredHeight
+            setMeasuredDimension(measuredWidth, measuredHeight)
         }
 
-        @Override
-        protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
-            final int parentLeft = getPaddingLeft();
-            final int parentRight = right - left - getPaddingRight();
-            final int parentTop = getPaddingTop();
-            final int parentBottom = bottom - top - getPaddingBottom();
-
-            mTitle.layout(parentLeft,
+        override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+            val parentLeft = paddingLeft
+            val parentRight = right - left - paddingRight
+            val parentTop = paddingTop
+            val parentBottom = bottom - top - paddingBottom
+            title.layout(parentLeft,
                     parentTop,
-                    parentLeft + mTitle.getMeasuredWidth(),
-                    parentTop + mTitle.getMeasuredHeight());
-
-            mContent.layout(parentLeft,
-                    mTitle.getBottom(),
-                    parentLeft + mContent.getMeasuredWidth(),
-                    mTitle.getBottom() + mContent.getMeasuredHeight());
-
-            mImage1.layout(parentRight - mImage1.getMeasuredWidth(),
+                    parentLeft + title.measuredWidth,
+                    parentTop + title.measuredHeight)
+            content.layout(parentLeft,
+                    title.bottom,
+                    parentLeft + content.measuredWidth,
+                    title.bottom + content.measuredHeight)
+            image1.layout(parentRight - image1.measuredWidth,
                     parentTop,
                     parentRight,
-                    parentTop + mImage1.getMeasuredHeight());
-
-            mImage2.layout(parentRight - mImage2.getMeasuredWidth(),
-                    mImage1.getBottom() + mImageSpacing,
+                    parentTop + image1.measuredHeight)
+            image2.layout(parentRight - image2.measuredWidth,
+                    image1.bottom + imageSpacing,
                     parentRight,
-                    mImage1.getBottom() + mImageSpacing + mImage2.getMeasuredHeight());
+                    image1.bottom + imageSpacing + image2.measuredHeight)
         }
     }
+
 }

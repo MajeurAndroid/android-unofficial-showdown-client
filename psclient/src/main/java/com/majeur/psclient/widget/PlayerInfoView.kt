@@ -1,188 +1,147 @@
-package com.majeur.psclient.widget;
+package com.majeur.psclient.widget
 
-import android.content.Context;
-import android.graphics.ColorMatrix;
-import android.graphics.ColorMatrixColorFilter;
-import android.graphics.Typeface;
-import android.graphics.drawable.Drawable;
-import android.text.SpannableStringBuilder;
-import android.text.Spanned;
-import android.text.style.ImageSpan;
-import android.text.style.StyleSpan;
-import android.util.AttributeSet;
-import android.util.TypedValue;
-import android.view.Gravity;
-import androidx.appcompat.widget.AppCompatTextView;
-import com.majeur.psclient.R;
-import com.majeur.psclient.model.pokemon.BasePokemon;
+import android.content.Context
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
+import android.graphics.Typeface
+import android.graphics.drawable.Drawable
+import android.text.SpannableStringBuilder
+import android.text.Spanned
+import android.text.style.ImageSpan
+import android.text.style.StyleSpan
+import android.util.AttributeSet
+import android.view.Gravity
+import androidx.appcompat.widget.AppCompatTextView
+import androidx.collection.ArraySet
+import androidx.core.content.ContextCompat
+import com.majeur.psclient.R
+import com.majeur.psclient.model.pokemon.BasePokemon
+import com.majeur.psclient.util.sp
+import com.majeur.psclient.util.toId
+import kotlin.math.roundToInt
 
-import java.util.LinkedHashSet;
-import java.util.Set;
+class PlayerInfoView @JvmOverloads constructor(context: Context?, attrs: AttributeSet? = null, defStyleAttr: Int = 0) : AppCompatTextView(context, attrs, defStyleAttr) {
 
-import static com.majeur.psclient.util.ExtensionsKt.toId;
+    private val dexIconSize = sp(16f)
+    private val spannableBuilder: SpannableStringBuilder
+    private val pokeballDrawable: Drawable
+    private val emptyPokeballDrawable: Drawable
 
+    private val pokemonIds: MutableSet<String> = ArraySet()
 
-public class PlayerInfoView extends AppCompatTextView {
-
-    private static final String SUFFIX_PATTERN = "  ------  ";
-    private static final int SUFFIX_OFFSET = 2;
-    private static final int MAX_TEAM_SIZE = 6;
-
-    private int mDexIconSize;
-    private SpannableStringBuilder mSpannableBuilder;
-    private Drawable mPokeballDrawable;
-    private Drawable mEmptyPokeballDrawable;
-
-    private Set<String> mPokemonIds;
-
-    public PlayerInfoView(Context context) {
-        this(context, null);
+    init {
+        spannableBuilder = SpannableStringBuilder(SUFFIX_PATTERN)
+        pokeballDrawable = ContextCompat.getDrawable(context!!, R.drawable.ic_team_poke)!!
+        pokeballDrawable.setBounds(0, 0, dexIconSize, dexIconSize)
+        emptyPokeballDrawable = ContextCompat.getDrawable(context, R.drawable.ic_team_poke_empty)!!
+        emptyPokeballDrawable.setBounds(0, 0, dexIconSize, dexIconSize)
     }
 
-    public PlayerInfoView(Context context, AttributeSet attrs) {
-        this(context, attrs, 0);
+    fun clear() {
+        pokemonIds.clear()
+        spannableBuilder.clear()
+        spannableBuilder.clearSpans()
+        spannableBuilder.append(SUFFIX_PATTERN)
+        text = null
     }
 
-    public PlayerInfoView(Context context, AttributeSet attrs, int defStyleAttr) {
-        super(context, attrs, defStyleAttr);
-        mPokemonIds = new LinkedHashSet<>();
-        mSpannableBuilder = new SpannableStringBuilder(SUFFIX_PATTERN);
-        mDexIconSize = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 16, getResources().getDisplayMetrics());
-        int size = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 16, getResources().getDisplayMetrics());
-        mPokeballDrawable = getResources().getDrawable(R.drawable.ic_team_poke);
-        mPokeballDrawable.setBounds(0, 0, size, size);
-        mEmptyPokeballDrawable = getResources().getDrawable(R.drawable.ic_team_poke_empty);
-        mEmptyPokeballDrawable.setBounds(0, 0, size, size);
-    }
-
-    public void clear() {
-        mPokemonIds.clear();
-        mSpannableBuilder.clear();
-        mSpannableBuilder.clearSpans();
-        mSpannableBuilder.append(SUFFIX_PATTERN);
-        setText(null);
-    }
-
-    public void setUsername(String username) {
-        int k = mSpannableBuilder.length() - SUFFIX_PATTERN.length();
-        int start;
-        if ((getGravity() & Gravity.END) == Gravity.END) {
+    fun setUsername(username: String) {
+        val k = spannableBuilder.length - SUFFIX_PATTERN.length
+        val start: Int
+        if (gravity and Gravity.END == Gravity.END) {
             if (k != 0) {
-                start = SUFFIX_PATTERN.length() - 1;
-                mSpannableBuilder.replace(start, mSpannableBuilder.length(), username);
+                start = SUFFIX_PATTERN.length - 1
+                spannableBuilder.replace(start, spannableBuilder.length, username)
             } else {
-                mSpannableBuilder.append(username);
-                start = mSpannableBuilder.length() - username.length();
+                spannableBuilder.append(username)
+                start = spannableBuilder.length - username.length
             }
         } else {
-            if (k != 0) {
-                mSpannableBuilder.replace(0, k, username);
-                start = 0;
+            start = if (k != 0) {
+                spannableBuilder.replace(0, k, username)
+                0
             } else {
-                mSpannableBuilder.insert(0, username);
-                start = 0;
+                spannableBuilder.insert(0, username)
+                0
             }
         }
-
-        StyleSpan[] potentialStyleSpans = mSpannableBuilder.getSpans(0, mSpannableBuilder.length(), StyleSpan.class);
-        if (potentialStyleSpans != null && potentialStyleSpans.length > 0)
-            mSpannableBuilder.removeSpan(potentialStyleSpans[0]);
-        mSpannableBuilder.setSpan(new StyleSpan(Typeface.BOLD), start, start + username.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
-
-        invalidateText();
+        val potentialStyleSpans = spannableBuilder.getSpans(0, spannableBuilder.length, StyleSpan::class.java)
+        if (potentialStyleSpans != null && potentialStyleSpans.isNotEmpty()) spannableBuilder.removeSpan(potentialStyleSpans[0])
+        spannableBuilder.setSpan(StyleSpan(Typeface.BOLD), start, start + username.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+        invalidateText()
     }
 
-    public void setTeamSize(int teamSize) {
-        mPokemonIds.clear();
-        int l = mSpannableBuilder.length();
-        for (ImageSpan span : mSpannableBuilder.getSpans(0, l, ImageSpan.class))
-            mSpannableBuilder.removeSpan(span);
-        int k = mSpannableBuilder.length() - MAX_TEAM_SIZE - SUFFIX_OFFSET;
-        if ((getGravity() & Gravity.END) == Gravity.END) {
-            for (int i = SUFFIX_OFFSET; i < SUFFIX_OFFSET + teamSize; i++)
-                mSpannableBuilder.setSpan(new ImageSpan(mPokeballDrawable), i, i + 1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
-
-            for (int i = SUFFIX_OFFSET + teamSize; i < SUFFIX_OFFSET + MAX_TEAM_SIZE; i++)
-                mSpannableBuilder.setSpan(new ImageSpan(mEmptyPokeballDrawable), i, i + 1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
+    fun setTeamSize(teamSize: Int) {
+        pokemonIds.clear()
+        val l = spannableBuilder.length
+        for (span in spannableBuilder.getSpans(0, l, ImageSpan::class.java)) spannableBuilder.removeSpan(span)
+        val k = spannableBuilder.length - MAX_TEAM_SIZE - SUFFIX_OFFSET
+        if (gravity and Gravity.END == Gravity.END) {
+            for (i in SUFFIX_OFFSET until SUFFIX_OFFSET + teamSize) spannableBuilder.setSpan(ImageSpan(pokeballDrawable), i, i + 1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+            for (i in SUFFIX_OFFSET + teamSize until SUFFIX_OFFSET + MAX_TEAM_SIZE) spannableBuilder.setSpan(ImageSpan(emptyPokeballDrawable), i, i + 1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
         } else {
-            for (int i = k; i < k + teamSize; i++)
-                mSpannableBuilder.setSpan(new ImageSpan(mPokeballDrawable), i, i + 1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
-
-            for (int i = k + teamSize; i < l - SUFFIX_OFFSET; i++)
-                mSpannableBuilder.setSpan(new ImageSpan(mEmptyPokeballDrawable), i, i + 1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
+            for (i in k until k + teamSize) spannableBuilder.setSpan(ImageSpan(pokeballDrawable), i, i + 1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+            for (i in k + teamSize until l - SUFFIX_OFFSET) spannableBuilder.setSpan(ImageSpan(emptyPokeballDrawable), i, i + 1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
         }
-        invalidateText();
+        invalidateText()
     }
 
-    public void appendPokemon(BasePokemon pokemon, Drawable dexIcon) {
-        if (!mPokemonIds.add(toId(pokemon.getBaseSpecies())))
-            return;
-
-        int i;
-        if ((getGravity() & Gravity.END) == Gravity.END)
-            i = SUFFIX_OFFSET + MAX_TEAM_SIZE - mPokemonIds.size();
-        else
-            i = mSpannableBuilder.length() - MAX_TEAM_SIZE - SUFFIX_OFFSET + mPokemonIds.size() - 1;
-
-        ImageSpan previousSpan = mSpannableBuilder.getSpans(i , i + 1, ImageSpan.class)[0];
-        mSpannableBuilder.removeSpan(previousSpan);
-        float aspectRatio = dexIcon.getIntrinsicWidth() / (float)  dexIcon.getIntrinsicHeight();
-        dexIcon.setBounds(0, 0, Math.round(aspectRatio * mDexIconSize), mDexIconSize);
-        mSpannableBuilder.setSpan(new ImageSpan(dexIcon), i, i + 1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
-        invalidateText();
+    fun appendPokemon(pokemon: BasePokemon, dexIcon: Drawable) {
+        if (!pokemonIds.add(pokemon.baseSpecies.toId())) return
+        val i = if (gravity and Gravity.END == Gravity.END) SUFFIX_OFFSET + MAX_TEAM_SIZE - pokemonIds.size else spannableBuilder.length - MAX_TEAM_SIZE - SUFFIX_OFFSET + pokemonIds.size - 1
+        val previousSpan = spannableBuilder.getSpans(i, i + 1, ImageSpan::class.java)[0]
+        spannableBuilder.removeSpan(previousSpan)
+        val aspectRatio = dexIcon.intrinsicWidth / dexIcon.intrinsicHeight.toFloat()
+        dexIcon.setBounds(0, 0, (aspectRatio * dexIconSize).roundToInt(), dexIconSize)
+        spannableBuilder.setSpan(ImageSpan(dexIcon), i, i + 1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+        invalidateText()
     }
 
-    public void updatePokemon(BasePokemon pokemon, Drawable dexIcon) {
-        if (!mPokemonIds.contains(toId(pokemon.getBaseSpecies()))) {
-            appendPokemon(pokemon, dexIcon);
-            return;
+    fun updatePokemon(pokemon: BasePokemon, dexIcon: Drawable) {
+        if (!pokemonIds.contains(pokemon.baseSpecies.toId())) {
+            appendPokemon(pokemon, dexIcon)
+            return
         }
-
-        int index = 0;
-        for (String id : mPokemonIds) {
-            if (id.equals(toId(pokemon.getBaseSpecies()))) break;
-            index++;
+        var index = 0
+        for (id in pokemonIds) {
+            if (id == pokemon.baseSpecies.toId()) break
+            index++
         }
-
-        int i;
-        if ((getGravity() & Gravity.END) == Gravity.END)
-            i = SUFFIX_OFFSET + MAX_TEAM_SIZE - (index + 1);
-        else
-            i = mSpannableBuilder.length() - MAX_TEAM_SIZE - SUFFIX_OFFSET + index;
-
-        ImageSpan previousSpan = mSpannableBuilder.getSpans(i , i + 1, ImageSpan.class)[0];
-        mSpannableBuilder.removeSpan(previousSpan);
-        float aspectRatio = dexIcon.getIntrinsicWidth() / (float)  dexIcon.getIntrinsicHeight();
-        dexIcon.setBounds(0, 0, Math.round(aspectRatio * mDexIconSize), mDexIconSize);
-        mSpannableBuilder.setSpan(new ImageSpan(dexIcon), i, i + 1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
-        invalidateText();
+        val i: Int
+        i = if (gravity and Gravity.END == Gravity.END) SUFFIX_OFFSET + MAX_TEAM_SIZE - (index + 1) else spannableBuilder.length - MAX_TEAM_SIZE - SUFFIX_OFFSET + index
+        val previousSpan = spannableBuilder.getSpans(i, i + 1, ImageSpan::class.java)[0]
+        spannableBuilder.removeSpan(previousSpan)
+        val aspectRatio = dexIcon.intrinsicWidth / dexIcon.intrinsicHeight.toFloat()
+        dexIcon.setBounds(0, 0, (aspectRatio * dexIconSize).roundToInt(), dexIconSize)
+        spannableBuilder.setSpan(ImageSpan(dexIcon), i, i + 1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+        invalidateText()
     }
 
-    public void setPokemonFainted(BasePokemon pokemon) {
-        if (!mPokemonIds.contains(toId(pokemon.getBaseSpecies())))
-            return;
-
-        int index = 0;
-        for (String id : mPokemonIds) {
-            if (id.equals(toId(pokemon.getBaseSpecies()))) break;
-            index++;
+    fun setPokemonFainted(pokemon: BasePokemon?) {
+        if (pokemon == null || !pokemonIds.contains(pokemon.baseSpecies.toId())) return
+        var index = 0
+        for (id in pokemonIds) {
+            if (id == pokemon.baseSpecies.toId()) break
+            index++
         }
-
-        int i;
-        if ((getGravity() & Gravity.END) == Gravity.END)
-            i = SUFFIX_OFFSET + MAX_TEAM_SIZE - (index + 1);
-        else
-            i = mSpannableBuilder.length() - MAX_TEAM_SIZE - SUFFIX_OFFSET + index;
-
-        ImageSpan previousSpan = mSpannableBuilder.getSpans(i , i + 1, ImageSpan.class)[0];
-        ColorMatrix matrix = new ColorMatrix();
-        matrix.setSaturation(0);
-        ColorMatrixColorFilter filter = new ColorMatrixColorFilter(matrix);
-        previousSpan.getDrawable().setColorFilter(filter);
-        invalidateText();
+        val i: Int
+        i = if (gravity and Gravity.END == Gravity.END) SUFFIX_OFFSET + MAX_TEAM_SIZE - (index + 1) else spannableBuilder.length - MAX_TEAM_SIZE - SUFFIX_OFFSET + index
+        val previousSpan = spannableBuilder.getSpans(i, i + 1, ImageSpan::class.java)[0]
+        val matrix = ColorMatrix()
+        matrix.setSaturation(0f)
+        val filter = ColorMatrixColorFilter(matrix)
+        previousSpan.drawable.colorFilter = filter
+        invalidateText()
     }
 
-    private void invalidateText() {
-        setText(mSpannableBuilder);
+    private fun invalidateText() {
+        text = spannableBuilder
     }
+
+    companion object {
+        private const val SUFFIX_PATTERN = "  ------  "
+        private const val SUFFIX_OFFSET = 2
+        private const val MAX_TEAM_SIZE = 6
+    }
+
 }

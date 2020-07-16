@@ -1,147 +1,124 @@
-package com.majeur.psclient.widget;
+package com.majeur.psclient.widget
 
-import android.content.Context;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.Rect;
-import android.view.Gravity;
-import android.view.View;
-import android.view.animation.AccelerateDecelerateInterpolator;
-import android.widget.FrameLayout;
-import com.majeur.psclient.util.Utils;
+import android.content.Context
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Rect
+import android.view.Gravity
+import android.view.View
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.widget.FrameLayout
+import androidx.collection.ArraySet
+import com.majeur.psclient.util.dp
+import com.majeur.psclient.util.sp
+import com.majeur.psclient.util.xForLeft
+import com.majeur.psclient.util.yForTop
 
-import java.util.LinkedList;
-import java.util.Queue;
+class ToasterView(context: Context) : FrameLayout(context) {
 
-public class ToasterView extends FrameLayout {
+    private val maxToastViewCacheSize = 6
+    private val toastViewCache = ArraySet<ToastView>()
 
-    private Queue<ToastView> mToastViewCache;
-
-    public ToasterView(Context context) {
-        super(context);
-        mToastViewCache = new LinkedList<>();
+    fun makeToast(text: String?, color: Int) {
+        if (text == null) return
+        obtainToastView().apply {
+            toastText = text
+            toastColor = color
+            addView(this)
+            post { startToastAnimation(this) }
+        }
     }
 
-    public void makeToast(String text, int color) {
-        if (text == null) return;
-        final ToastView toastView = obtainToastView();
-        addView(toastView);
-        toastView.setText(text);
-        toastView.setColor(color);
-        post(new Runnable() {
-            @Override
-            public void run() {
-                startToastAnimation(toastView);
-            }
-        });
+    override fun onViewRemoved(child: View) {
+        super.onViewRemoved(child)
+        if (toastViewCache.size < maxToastViewCacheSize)
+            toastViewCache.add(child as ToastView)
     }
 
-    @Override
-    public void onViewRemoved(View child) {
-        super.onViewRemoved(child);
-        mToastViewCache.add((ToastView) child);
-    }
-
-    private void startToastAnimation(final ToastView toastView) {
-        toastView.setTranslationY(0);
-        toastView.setAlpha(1f);
-        toastView.animate()
+    private fun startToastAnimation(toastView: ToastView) {
+        toastView.apply {
+            translationY = 0f
+            alpha = 1f
+            animate()
                 .setDuration(1000)
-                .setInterpolator(new AccelerateDecelerateInterpolator())
-                .translationY(-toastView.getHeight())
+                .setInterpolator(AccelerateDecelerateInterpolator())
+                .translationY(-toastView.height.toFloat())
                 .alpha(0f)
-                .withEndAction(new Runnable() {
-                    @Override
-                    public void run() {
-                        removeView(toastView);
-                    }
-                })
-                .start();
+                .withEndAction { removeView(toastView) }
+                .start()
+        }
     }
 
-    private ToastView obtainToastView() {
-        if (!mToastViewCache.isEmpty())
-            return mToastViewCache.poll();
-
-        ToastView toastView = new ToastView(getContext());
-        LayoutParams layoutParams = new LayoutParams(LayoutParams.WRAP_CONTENT,
-                LayoutParams.WRAP_CONTENT,
-                Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
-        toastView.setLayoutParams(layoutParams);
-        return toastView;
+    private fun obtainToastView(): ToastView {
+        if (toastViewCache.isNotEmpty()) return toastViewCache.first().also { toastViewCache.remove(it) }
+        return ToastView(context).apply {
+            layoutParams = LayoutParams(LayoutParams.WRAP_CONTENT,
+                    LayoutParams.WRAP_CONTENT,
+                    Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL)
+        }
     }
 
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        final int childCount = getChildCount();
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        val childCount = childCount
         if (childCount == 0) {
-            super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-            return;
+            super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+            return
         }
-
-        int childWidthSpec = MeasureSpec.makeMeasureSpec(
-                MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.AT_MOST);
-        int childHeightSpec = MeasureSpec.makeMeasureSpec(
-                MeasureSpec.getSize(heightMeasureSpec), MeasureSpec.AT_MOST);
-        int maxWidth = 0;
-        int maxHeight = 0;
-        for (int i = 0; i < childCount; i++) {
-            View child = getChildAt(i);
-            child.measure(childWidthSpec, childHeightSpec);
-            maxWidth = Math.max(maxWidth, child.getMeasuredWidth());
-            maxHeight = Math.max(maxHeight, child.getMeasuredHeight());
+        val childWidthSpec = MeasureSpec.makeMeasureSpec(
+                MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.AT_MOST)
+        val childHeightSpec = MeasureSpec.makeMeasureSpec(
+                MeasureSpec.getSize(heightMeasureSpec), MeasureSpec.AT_MOST)
+        var maxWidth = 0
+        var maxHeight = 0
+        for (i in 0 until childCount) {
+            val child = getChildAt(i)
+            child.measure(childWidthSpec, childHeightSpec)
+            maxWidth = maxWidth.coerceAtLeast(child.measuredWidth)
+            maxHeight = maxHeight.coerceAtLeast(child.measuredHeight)
         }
-
-        setMeasuredDimension(maxWidth, maxHeight * 2);
+        setMeasuredDimension(maxWidth, maxHeight * 2)
     }
 
-    private static class ToastView extends View {
+    private class ToastView(context: Context?) : View(context) {
 
-        private Paint mPaint;
-        private Rect mRect;
-        private int mCornerRadius;
-        private int mShadowRadius;
+        var toastText = ""
+        var toastColor = 0
 
-        private String mText;
-        private int mColor;
+        private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        private val textBounds = Rect()
+        private val cornerRadius = dp(5f)
+        private val shadowRadius = dp(4f)
+        private val shadowDy = shadowRadius / 4f
 
-        public ToastView(Context context) {
-            super(context);
-            mPaint = new Paint();
-            mRect = new Rect();
-            setLayerType(LAYER_TYPE_HARDWARE, null);
-            mCornerRadius = Utils.dpToPx(5);
-            mShadowRadius = Utils.dpToPx(4);
-            mPaint.setTextSize(Utils.dpToPx(14));
+        init {
+            setLayerType(LAYER_TYPE_HARDWARE, null)
+            paint.textSize = sp(14f).toFloat()
         }
 
-        @Override
-        protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-            super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-            mPaint.getTextBounds(mText, 0, mText.length(), mRect);
-            setMeasuredDimension(mRect.width() + 2 * mCornerRadius + 2 * mShadowRadius,
-                    mRect.height() + 2 * mCornerRadius + mShadowRadius);
+        override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+            super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+            paint.getTextBounds(toastText, 0, toastText!!.length, textBounds)
+            setMeasuredDimension(textBounds.width() + 2 * cornerRadius + 2 * shadowRadius,
+                    textBounds.height() + 2 * cornerRadius + shadowRadius)
         }
 
-        @Override
-        protected void onDraw(Canvas canvas) {
-            super.onDraw(canvas);
-            mPaint.setColor(mColor);
-            mPaint.setShadowLayer(mShadowRadius, 0, mShadowRadius / 3, Color.BLACK);
-            canvas.drawRoundRect(mShadowRadius, 0, getWidth() - mShadowRadius, getHeight() - mShadowRadius,
-                    mCornerRadius, mCornerRadius, mPaint);
-            mPaint.setColor(Color.WHITE);
-            mPaint.clearShadowLayer();
-            canvas.drawText(mText, mShadowRadius + mCornerRadius, mCornerRadius + mRect.height(), mPaint);
-        }
-
-        public void setText(String text) {
-            mText = text;
-        }
-
-        public void setColor(int color) {
-            mColor = color;
+        override fun onDraw(canvas: Canvas) {
+            super.onDraw(canvas)
+            paint.apply {
+                color = toastColor
+                setShadowLayer(shadowRadius.toFloat(), 0f, shadowDy, Color.BLACK)
+            }
+           canvas.drawRoundRect(shadowRadius.toFloat(), 0f,
+                   width - shadowRadius.toFloat(),
+                   height - shadowRadius.toFloat(),
+                    cornerRadius.toFloat(), cornerRadius.toFloat(), paint)
+            paint.apply {
+                color = Color.WHITE
+                clearShadowLayer()
+            }
+            canvas.drawText(toastText, textBounds.xForLeft(shadowRadius + cornerRadius).toFloat(),
+                    textBounds.yForTop(cornerRadius).toFloat(), paint)
         }
     }
 }
