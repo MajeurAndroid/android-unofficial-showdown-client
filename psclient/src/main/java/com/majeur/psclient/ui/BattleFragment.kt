@@ -3,7 +3,6 @@ package com.majeur.psclient.ui
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.DialogInterface
-import android.graphics.PorterDuff
 import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
 import android.text.Spanned
@@ -17,6 +16,9 @@ import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.BlendModeColorFilterCompat
+import androidx.core.graphics.BlendModeCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.majeur.psclient.R
 import com.majeur.psclient.databinding.FragmentBattleBinding
@@ -37,7 +39,6 @@ import com.majeur.psclient.util.*
 import com.majeur.psclient.util.html.Html
 import com.majeur.psclient.widget.BattleLayout
 import com.majeur.psclient.widget.BattleTipPopup
-import com.majeur.psclient.widget.BattleTipPopup.OnBindPopupViewListener
 import kotlinx.coroutines.launch
 
 class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
@@ -77,7 +78,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
         glideHelper = mainActivity.glideHelper
         assetLoader = mainActivity.assetLoader
         battleTipPopup = BattleTipPopup(context)
-        battleTipPopup.setOnBindPopupViewListener(mOnBindPopupViewListener)
+        battleTipPopup.bindPopupListener = mOnBindPopupViewListener
         audioManager = BattleAudioManager(context)
     }
 
@@ -99,12 +100,11 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
             actionContainer.actionContainer.animate().interpolator = OvershootInterpolator(1.4f)
             actionContainer.actionContainer.animate().duration = 500
             overlayImage.setImageDrawable(inactiveBattleOverlayDrawable)
-            battleActionWidget.setOnRevealListener { reveal ->
+            battleActionWidget.onRevealListener = { reveal ->
                 actionContainer.actionContainer.animate()
                         .setStartDelay(if (reveal) 0L else 350L)
-                        .translationY(if (reveal) 3 * binding.battleLogContainer.getHeight() / 5f else 0f)
+                        .translationY(if (reveal) 3 * binding.battleLogContainer.height / 5f else 0f)
                         .start()
-
                 if (reveal) undoContainer.undoContainer.apply {
                         translationX = binding.actionContainer.actionContainer.width.toFloat()
                         alpha = 0f
@@ -217,7 +217,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
         }
     }
 
-    private val mOnBindPopupViewListener = OnBindPopupViewListener { anchorView: View, titleView: TextView, descView: TextView, placeHolderTop: ImageView, placeHolderBottom: ImageView ->
+    private val mOnBindPopupViewListener = { anchorView: View, titleView: TextView, descView: TextView, placeHolderTop: ImageView, placeHolderBottom: ImageView ->
         when (val data = anchorView.getTag(R.id.battle_data_tag)) {
             is BattlingPokemon -> bindBattlingPokemonTipPopup(data, titleView, descView, placeHolderTop, placeHolderBottom)
             is Move -> bindMoveTipPopup(data, titleView, descView, placeHolderTop, placeHolderBottom)
@@ -480,9 +480,10 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
 
     override fun onTimerEnabled(enabled: Boolean) {
         timerEnabled = enabled
-        val color = resources.getColor(R.color.secondary)
+        val color = ContextCompat.getColor(requireActivity(), R.color.secondary)
         binding.actionContainer.timerButton.apply {
-            if (enabled) drawable.setColorFilter(color, PorterDuff.Mode.SRC_IN)
+            if (enabled) drawable.colorFilter = BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
+                    color, BlendModeCompat.MODULATE)
             else drawable.clearColorFilter()
         }
     }
@@ -524,7 +525,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
         fragmentScope.launch {
             assetLoader.dexIcon(pokemon.species.toId())?.let {
                 val infoView = if (!id.foe) binding.trainerInfo else binding.foeInfo
-                infoView.appendPokemon(pokemon, BitmapDrawable(it))
+                infoView.appendPokemon(pokemon, BitmapDrawable(resources, it))
             }
         }
     }
@@ -562,14 +563,15 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
         }
     }
 
+    @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
     @SuppressLint("ClickableViewAccessibility")
     override fun onSwitch(pokemon: BattlingPokemon) {
         if (!pokemon.id.isInBattle) return
-        binding.battleLayout.getStatusView(pokemon.id).apply {
+        binding.battleLayout.getStatusView(pokemon.id)?.apply {
             setPokemon(pokemon)
             animate().alpha(1f).start()
         }
-        binding.battleLayout.getPokemonView(pokemon.id).apply {
+        binding.battleLayout.getPokemonView(pokemon.id)?.apply {
             setTag(R.id.battle_data_tag, pokemon)
             battleTipPopup.addTippedView(this)
             glideHelper.loadSprite(pokemon, this, binding.battleLayout.width)
@@ -577,12 +579,13 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
         fragmentScope.launch {
             assetLoader.dexIcon(pokemon.species.toId())?.let {
                 val infoView = if (!pokemon.foe) binding.trainerInfo else binding.foeInfo
-                infoView.updatePokemon(pokemon, BitmapDrawable(it))
+                infoView.updatePokemon(pokemon, BitmapDrawable(resources, it))
             }
         }
         if (soundEnabled) audioManager.playPokemonCry(pokemon, false)
     }
 
+    @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
     override fun onDetailsChanged(pokemon: BattlingPokemon) {
         binding.battleLayout.getPokemonView(pokemon.id).let {
             glideHelper.loadSprite(pokemon, it, binding.battleLayout.width)
@@ -590,7 +593,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
         fragmentScope.launch {
             assetLoader.dexIcon(pokemon.species.toId())?.let {
                 val infoView = if (!pokemon.foe) binding.trainerInfo else binding.foeInfo
-                infoView.updatePokemon(pokemon, BitmapDrawable(it))
+                infoView.updatePokemon(pokemon, BitmapDrawable(resources, it))
             }
         }
         if (soundEnabled && "mega" == pokemon.forme) audioManager.playPokemonCry(pokemon, false)
@@ -602,18 +605,18 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
 
     override fun onHealthChanged(id: PokemonId, condition: Condition) {
         val statusView = binding.battleLayout.getStatusView(id)
-        statusView.setHealth(condition.health)
+        statusView?.setHealth(condition.health)
     }
 
     override fun onStatusChanged(id: PokemonId, status: String?) {
         val statusView = binding.battleLayout.getStatusView(id)
-        statusView.setStatus(status)
+        statusView?.setStatus(status)
     }
 
     override fun onStatChanged(id: PokemonId) {
         val statModifiers = observer.getBattlingPokemon(id)!!.statModifiers
         val statusView = binding.battleLayout.getStatusView(id)
-        statusView.updateModifier(statModifiers)
+        statusView?.updateModifier(statModifiers)
     }
 
     override fun onRequestAsked(request: BattleActionRequest) {
@@ -666,9 +669,10 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
 
     override fun onDisplayBattleToast(id: PokemonId, text: String, color: Int) {
         val toasterView = binding.battleLayout.getToasterView(id)
-        toasterView.makeToast(text, color)
+        toasterView?.makeToast(text, color)
     }
 
+    @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
     override fun onFieldEffectChanged(name: String?) {
         val resId = FieldEffects.getDrawableResourceId(name)
         if (resId == binding.overlayImage.tag) return
@@ -693,7 +697,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
     }
 
     override fun onVolatileStatusChanged(id: PokemonId, vStatus: String, start: Boolean) {
-        binding.battleLayout.getStatusView(id).apply {
+        binding.battleLayout.getStatusView(id)?.apply {
             if (start) addVolatileStatus(vStatus) else removeVolatileStatus(vStatus)
         }
     }
@@ -719,6 +723,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
         if (fullScrolled) postFullScroll()
     }
 
+    @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
     override fun onPrintBattleMessage(text: CharSequence) {
         binding.battleMessage.text = text
         binding.battleMessage.animate().cancel()

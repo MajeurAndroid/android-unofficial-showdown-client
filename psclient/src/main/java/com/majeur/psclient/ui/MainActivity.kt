@@ -10,6 +10,7 @@ import android.os.IBinder
 import android.view.MenuItem
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -158,7 +159,7 @@ class MainActivity : AppCompatActivity() {
         if (useLandscapeLayout) return // For now NavigationView cannot display badges natively
         if (selectedNavigationItemId != navigationItemId) {
             val badge = binding.bottomNavigation!!.getOrCreateBadge(navigationItemId)
-            badge.backgroundColor = resources.getColor(R.color.secondary)
+            badge.backgroundColor = ContextCompat.getColor(this, R.color.secondary)
         }
     }
 

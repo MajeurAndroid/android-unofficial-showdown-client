@@ -1,5 +1,6 @@
 package com.majeur.psclient.ui
 
+import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.DialogInterface
@@ -99,6 +100,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         activeSnackbar!!.show()
     }
 
+    @SuppressLint("SetTextI18n")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         binding.root.background = BackgroundBitmapDrawable(resources, R.drawable.client_bg)
         binding.usersCount.apply {
@@ -106,12 +108,10 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
             append("\nusers online".small())
         }
         binding.battlesCount.apply {
-            text = "-".bold()
-            append("\nactive battles".small())
+            text = "-".bold() concat "\nactive battles".small()
         }
         binding.username.apply {
-            text = "Connected as\n".small()
-            append("-".bold())
+            text = "Connected as\n".small() concat "-".bold()
         }
         binding.loginButton.apply {
             isEnabled = false
@@ -197,8 +197,8 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
                 if (true) return
                 val myUsername = service?.getSharedData<String?>("myusername")?.substring(1)
                 if (myUsername?.toLowerCase()?.startsWith("guest") == true) {
-                    if (fragmentManager?.findFragmentByTag(SignInDialog.FRAGMENT_TAG) == null)
-                        SignInDialog.newInstance().show(fragmentManager!!, SignInDialog.FRAGMENT_TAG)
+                    if (parentFragmentManager.findFragmentByTag(SignInDialog.FRAGMENT_TAG) == null)
+                        SignInDialog.newInstance().show(parentFragmentManager, SignInDialog.FRAGMENT_TAG)
                 } else {
                     service?.sendGlobalCommand("logout")
                     service?.forgetUserLoginInfos()
@@ -206,8 +206,8 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
             }
             binding.searchButton -> {
                 if (observer.isUserGuest) {
-                    if (requireFragmentManager().findFragmentByTag(SignInDialog.FRAGMENT_TAG) == null)
-                        SignInDialog.newInstance().show(requireFragmentManager(), SignInDialog.FRAGMENT_TAG)
+                    if (parentFragmentManager.findFragmentByTag(SignInDialog.FRAGMENT_TAG) == null)
+                        SignInDialog.newInstance().show(parentFragmentManager, SignInDialog.FRAGMENT_TAG)
                 } else {
                     if (battleFragment.battleRunning())
                         makeSnackbar("A battle is already running")
@@ -359,9 +359,9 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
             makeSnackbar("Cannot talk to yourself")
             return
         }
-        if (requireFragmentManager().findFragmentByTag(PrivateChatDialog.FRAGMENT_TAG) != null) return
+        if (parentFragmentManager.findFragmentByTag(PrivateChatDialog.FRAGMENT_TAG) != null) return
         val dialog = PrivateChatDialog.newInstance(user)
-        dialog.show(requireFragmentManager(), PrivateChatDialog.FRAGMENT_TAG)
+        dialog.show(parentFragmentManager, PrivateChatDialog.FRAGMENT_TAG)
     }
 
     fun getPrivateMessages(with: String?): List<String>? {
@@ -465,7 +465,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
             binding.loginButton.setImageResource(R.drawable.ic_logout)
             makeSnackbar("Connected as $userName")
         }
-        val signInDialog = requireFragmentManager().findFragmentByTag(SignInDialog.FRAGMENT_TAG) as SignInDialog?
+        val signInDialog = parentFragmentManager.findFragmentByTag(SignInDialog.FRAGMENT_TAG) as SignInDialog?
         signInDialog?.dismissAllowingStateLoss()
     }
 
@@ -560,7 +560,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         }
 
         // Closing pm dialog to see this popup
-        val dialog = requireFragmentManager().findFragmentByTag(PrivateChatDialog.FRAGMENT_TAG) as PrivateChatDialog?
+        val dialog = parentFragmentManager.findFragmentByTag(PrivateChatDialog.FRAGMENT_TAG) as PrivateChatDialog?
         if (dialog != null && dialog.isVisible) dialog.dismiss()
     }
 
@@ -573,7 +573,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
     override fun onNewPrivateMessage(with: String, message: String) {
         binding.pmsOverview.incrementPmCount(with)
         if (!binding.pmsOverview.isEmpty) binding.pmsContainer.visibility = View.VISIBLE
-        val dialog = requireFragmentManager().findFragmentByTag(PrivateChatDialog.FRAGMENT_TAG) as PrivateChatDialog?
+        val dialog = parentFragmentManager.findFragmentByTag(PrivateChatDialog.FRAGMENT_TAG) as PrivateChatDialog?
         if (dialog?.chatWith == with) dialog.onNewMessage(message) else notifyNewMessageReceived()
     }
 
@@ -683,8 +683,8 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
             ).map { view.findViewById<ImageView>(it) }
         }
 
-        override fun getItemView(position: Int, view: View?, parent: ViewGroup): View {
-            val convertView = view ?: layoutInflater.inflate(R.layout.dropdown_item_team, parent, false).apply {
+        override fun getItemView(position: Int, convertView: View?, parent: ViewGroup): View {
+            val convertView = convertView ?: layoutInflater.inflate(R.layout.dropdown_item_team, parent, false).apply {
                 tag = ViewHolder(this)
             }
             val viewHolder = convertView.tag as ViewHolder
