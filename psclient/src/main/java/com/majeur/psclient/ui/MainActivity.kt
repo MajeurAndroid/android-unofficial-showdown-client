@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.ActivityInfo
+import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
 import android.view.MenuItem
@@ -89,6 +90,9 @@ class MainActivity : AppCompatActivity() {
         startService(showdownServiceIntent)
         canUnbindService = bindService(showdownServiceIntent, serviceConnection,
                 Context.BIND_AUTO_CREATE)
+
+        val uri = intent?.data ?: return
+        handleUriNavigation(uri)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -189,9 +193,27 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
-    fun showHomeFragment() = setSelectedNavigationItem(R.id.fragment_home)
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        val uri = intent?.data ?: return
+        handleUriNavigation(uri)
+    }
 
+    private fun handleUriNavigation(uri: Uri) {
+        when (uri.host) {
+            "play.pokemonshowdown.com" -> {
+                val roomId = uri.pathSegments.firstOrNull() ?: return
+                homeFragment.requestRoomJoin(roomId)
+            }
+            "replay.pokemonshowdown.com" -> {
+                TODO("Replays aren't implemented yet")
+            }
+        }
+    }
+
+    fun showHomeFragment() = setSelectedNavigationItem(R.id.fragment_home)
     fun showBattleFragment() = setSelectedNavigationItem(R.id.fragment_battle)
+    fun showChatFragment() = setSelectedNavigationItem(R.id.fragment_chat)
 
     fun setKeepScreenOn(keep: Boolean) {
         if (keep) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)

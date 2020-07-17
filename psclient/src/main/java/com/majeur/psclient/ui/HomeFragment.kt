@@ -54,7 +54,6 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
 
     private var currentBattleFormat: BattleFormat? = null
     private var battleFormats: List<BattleFormat.Category>? = null
-    private var pendingBattleToJoin: String? = null
     private var soundEnabled = false
     private var isSearchingBattle = false
     private var isChallengingSomeone = false
@@ -62,6 +61,8 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
     private var challengeTo: String? = null
     private var isAcceptingChallenge = false
     private var isAcceptingFrom: String? = null
+    private var onConnectedListener: (() -> Unit)? = null
+    private var nextDeinitListener: ((String) -> Unit)? = null
 
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
@@ -192,9 +193,6 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         if (service?.isConnected != true) return
         when (view) {
             binding.loginButton -> {
-                battleFragment.observedRoomId = "battle"
-                service?.fakeBattle()
-                if (true) return
                 val myUsername = service?.getSharedData<String?>("myusername")?.substring(1)
                 if (myUsername?.toLowerCase()?.startsWith("guest") == true) {
                     if (parentFragmentManager.findFragmentByTag(SignInDialog.FRAGMENT_TAG) == null)
@@ -343,14 +341,32 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         }
     }
 
-    private fun tryJoinBattleRoom(roomId: String) {
-        if (service?.isConnected != true) return
-        battleFragment.observedRoomId?.let {
-            if (it == roomId) return
-            service?.sendRoomCommand(it, "leave")
+    fun requestRoomJoin(roomId: String) {
+        val isWaitingForConnection = onConnectedListener != null
+        if (isWaitingForConnection) return
+        if (service?.isConnected != true) {
+            onConnectedListener = {
+                onConnectedListener = null
+                requestRoomJoin(roomId)
+            }
+            return
         }
-        service?.sendGlobalCommand("join", roomId)
-        mainActivity.showBattleFragment()
+        val isWaitingForRoomToDeinit = nextDeinitListener != null
+        if (isWaitingForRoomToDeinit) return
+
+        val isBattle = roomId.startsWith("battle-", ignoreCase = true)
+        val currentRoomId = if (isBattle) battleFragment.observedRoomId else chatFragment.observedRoomId
+        if (currentRoomId != null) {
+            service?.sendRoomCommand(currentRoomId, "leave")
+            nextDeinitListener = { deinitRoomId ->
+                if (deinitRoomId == currentRoomId) { // Now that previous room is safely leaved, join the new one
+                    service?.sendGlobalCommand("join", roomId)
+                    nextDeinitListener = null
+                }
+            }
+        } else {
+            service?.sendGlobalCommand("join", roomId)
+        }
     }
 
     fun startPrivateChat(user: String) {
@@ -451,6 +467,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         activeSnackbar?.dismiss()
         if (battleFragment.observedRoomId != null) battleFragment.observedRoomId = null
         if (chatFragment.observedRoomId != null) chatFragment.observedRoomId = null
+        onConnectedListener?.invoke()
     }
 
     override fun onUserChanged(userName: String, isGuest: Boolean, avatarId: String) {
@@ -502,7 +519,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
                 text = value
                 tag = roomId
                 isEnabled = roomId != battleFragment.observedRoomId
-                setOnClickListener { tryJoinBattleRoom(roomId) }
+                setOnClickListener { requestRoomJoin(roomId) }
             }
         }
     }
@@ -637,23 +654,22 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
                 // lobby init can trigger this two times, make sure to avoid that
                 if (chatFragment.observedRoomId == roomId) return
 
-                if (chatFragment.observedRoomId != null) {
+                if (chatFragment.observedRoomId == null) {
+                    chatFragment.observedRoomId = roomId
+                    mainActivity.showChatFragment()
+                } else {
                     this@HomeFragment.service!!.sendRoomCommand(roomId, "leave")
                 }
-                chatFragment.observedRoomId = roomId
             }
         }
     }
 
     override fun onRoomDeinit(roomId: String) {
-        if (battleFragment.observedRoomId == roomId) {
-            battleFragment.observedRoomId = null
-            if (pendingBattleToJoin != null) {
-                this@HomeFragment.service?.sendGlobalCommand("join", pendingBattleToJoin!!)
-                pendingBattleToJoin = null
-            }
+        when (roomId) {
+            battleFragment.observedRoomId -> battleFragment.observedRoomId = null
+            chatFragment.observedRoomId -> chatFragment.observedRoomId = null
         }
-        if (chatFragment.observedRoomId == roomId) chatFragment.observedRoomId = null
+        nextDeinitListener?.invoke(roomId)
     }
 
     override fun onNetworkError() {
