@@ -31,6 +31,8 @@ import com.majeur.psclient.model.common.Type
 import com.majeur.psclient.model.common.Type.getResId
 import com.majeur.psclient.ui.BaseFragment
 import com.majeur.psclient.util.*
+import com.majeur.psclient.util.smogon.SmogonTeamBuilder
+import com.majeur.psclient.util.smogon.SmogonTeamParser
 import com.majeur.psclient.widget.StatsTable
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch

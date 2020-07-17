@@ -22,10 +22,10 @@ import com.majeur.psclient.model.common.BattleFormat
 import com.majeur.psclient.model.common.Team
 import com.majeur.psclient.model.common.toId
 import com.majeur.psclient.ui.teambuilder.TeamBuilderActivity
-import com.majeur.psclient.util.SmogonTeamBuilder
 import com.majeur.psclient.util.recyclerview.DividerItemDecoration
 import com.majeur.psclient.util.recyclerview.ItemTouchHelperCallbacks
 import com.majeur.psclient.util.recyclerview.OnItemClickListener
+import com.majeur.psclient.util.smogon.SmogonTeamBuilder
 import com.majeur.psclient.util.toId
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch

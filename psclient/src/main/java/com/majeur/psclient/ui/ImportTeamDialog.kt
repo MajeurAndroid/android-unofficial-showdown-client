@@ -12,8 +12,8 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.majeur.psclient.R
 import com.majeur.psclient.databinding.DialogImportTeamBinding
 import com.majeur.psclient.io.AssetLoader
-import com.majeur.psclient.util.SmogonTeamBuilder
-import com.majeur.psclient.util.SmogonTeamParser
+import com.majeur.psclient.util.smogon.SmogonTeamBuilder
+import com.majeur.psclient.util.smogon.SmogonTeamParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

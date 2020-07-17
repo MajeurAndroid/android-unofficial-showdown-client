@@ -1,4 +1,4 @@
-package com.majeur.psclientunitest
+package com.majeur.psclienttest
 
 import com.majeur.psclient.io.AssetLoader
 import com.majeur.psclient.model.battle.Move
