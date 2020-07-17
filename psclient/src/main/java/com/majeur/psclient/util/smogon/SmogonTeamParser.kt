@@ -1,33 +1,37 @@
-package com.majeur.psclient.util
+package com.majeur.psclient.util.smogon
 
 import com.majeur.psclient.io.AssetLoader
+import com.majeur.psclient.model.common.BattleFormat
 import com.majeur.psclient.model.common.Team
+import com.majeur.psclient.model.common.toId
 import com.majeur.psclient.model.pokemon.TeamPokemon
-import java.util.*
-import java.util.regex.Pattern
+import com.majeur.psclient.util.or
+import com.majeur.psclient.util.toId
 
 object SmogonTeamParser {
+
+    private val TEAM_HEADER_CONTENT_PATTERN = "(?<=={3}).*(?=={3})".toRegex().toPattern()
+    private val TEAM_HEADER_SPLIT_REGEX = "={3}.*={3}".toRegex()
 
     suspend fun parseTeams(importString: String, assetLoader: AssetLoader): List<Team> {
         val teams = mutableListOf<Team>()
 
-        val pattern = Pattern.compile("(?<====).*?(?====)")
-        val matcher = pattern.matcher(importString)
-        val teamHeaders: Queue<String> = LinkedList()
-        while (matcher.find()) teamHeaders.add(matcher.group().trim())
-        val rawTeams = importString.split("\\===.*?\\===").toTypedArray()
-        if (rawTeams.isEmpty()) return teams
+        val matcher = TEAM_HEADER_CONTENT_PATTERN.matcher(importString)
+        val headers = mutableListOf<String>()
+        while (matcher.find()) headers.add(matcher.group().trim())
 
-        rawTeams.filter { it.isNotBlank() }.forEach { rawTeam ->
-            val teamHeader = teamHeaders.poll()
-            val team = if (teamHeader != null) {
-                val format = getFormatFromHeader(teamHeader) ?: "Other"
-                val teamLabel = getLabelFromHeader(teamHeader).or("Unnamed team")
-                parseTeam(rawTeam, format, teamLabel, assetLoader)
-            } else {
-                parseTeam(rawTeam, "[Other]".toId(), "Unnamed team", assetLoader)
+        if (headers.isEmpty()) { // Single team import
+            parseTeam(importString, BattleFormat.FORMAT_OTHER.toId(), "Unnamed team", assetLoader)?.also {
+                teams.add(it)
             }
-            if (team != null) teams.add(team)
+        } else { // Multiple teams import
+            val rawTeams = importString.split(TEAM_HEADER_SPLIT_REGEX).drop(1)
+            rawTeams.zip(headers).forEach { (rawTeam, header) ->
+                val format = getFormatFromHeader(header) ?: BattleFormat.FORMAT_OTHER.toId()
+                val teamLabel = getLabelFromHeader(header).or("Unnamed team")
+                val team = parseTeam(rawTeam, format, teamLabel, assetLoader)
+                if (team != null) teams.add(team)
+            }
         }
         return teams
     }
@@ -54,7 +58,7 @@ object SmogonTeamParser {
 
     suspend fun parsePokemon(rawPokemon: String, assetLoader: AssetLoader): TeamPokemon? {
         val lines = rawPokemon.trim().split("\n").toTypedArray()
-        if (lines.isEmpty())  return null
+        if (lines.isEmpty()) return null
 
         var firstLine = lines[0] // split 0 is Name @ Item or Name or nickname (Name) or  nickname (Name) @ Item
         val species: String
@@ -132,20 +136,20 @@ object SmogonTeamParser {
                         .map { it.substringAfter(' ') to it.substringBefore(' ').toIntOrNull() }
                 for (pair in evPairs) {
                     when (pair.first) {
-                        "HP" -> p.ivs.hp =   pair.second ?: 0
-                        "Atk" -> p.ivs.atk = pair.second ?: 0
-                        "Def" -> p.ivs.def = pair.second ?: 0
-                        "SpA" -> p.ivs.spa = pair.second ?: 0
-                        "SpD" -> p.ivs.spd = pair.second ?: 0
-                        "Spe" -> p.ivs.spe = pair.second ?: 0
+                        "HP" -> p.evs.hp =   pair.second ?: 0
+                        "Atk" -> p.evs.atk = pair.second ?: 0
+                        "Def" -> p.evs.def = pair.second ?: 0
+                        "SpA" -> p.evs.spa = pair.second ?: 0
+                        "SpD" -> p.evs.spd = pair.second ?: 0
+                        "Spe" -> p.evs.spe = pair.second ?: 0
                     }
                 }
             } else if (line.trim().endsWith("Nature")) {
-                p.nature = line.removeSuffix("Nature").trim()
+                p.nature = line.trim().removeSuffix("Nature").trim()
             } else if (line.startsWith("Ability:")) {
                 val ability = line.removePrefix("Ability:").trim()
                 val dexPokemon = assetLoader.dexPokemon(p.species.toId())
-                val matchingAbility = dexPokemon?.matchingAbility(ability, "") ?: ""
+                val matchingAbility = dexPokemon?.matchingAbility(ability.toId(), "") ?: ""
                 if (matchingAbility.isNotBlank())
                     p.ability = matchingAbility
             } else if (line.startsWith("Level:")) {

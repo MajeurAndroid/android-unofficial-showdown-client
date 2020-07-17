@@ -1,10 +1,11 @@
-package com.majeur.psclient.util
+package com.majeur.psclient.util.smogon
 
 import com.majeur.psclient.io.AssetLoader
 import com.majeur.psclient.model.common.Nature
 import com.majeur.psclient.model.common.Stats
 import com.majeur.psclient.model.common.Team
 import com.majeur.psclient.model.pokemon.TeamPokemon
+import com.majeur.psclient.util.toId
 import java.util.*
 
 object SmogonTeamBuilder {
@@ -83,7 +84,7 @@ object SmogonTeamBuilder {
         if (pokemon.evs.sum() > 0) {
             builder.append("\n")
             builder.append(
-                (0 until 6).filter { i -> pokemon.evs.get(i) > 0 }.joinToString(separator = " / ", prefix = "Evs: ") { i ->
+                (0 until 6).filter { i -> pokemon.evs.get(i) > 0 }.joinToString(separator = " / ", prefix = "EVs: ") { i ->
                     "${pokemon.evs.get(i)} ${Stats.getName(i)}"
                 }
             )
@@ -96,7 +97,7 @@ object SmogonTeamBuilder {
         if (pokemon.ivs.sum() != 6*31) {
             builder.append("\n")
             builder.append(
-                    (0 until 6).filter { i -> pokemon.ivs.get(i) != 31 }.joinToString(separator = " / ", prefix = "Ivs: ") { i ->
+                    (0 until 6).filter { i -> pokemon.ivs.get(i) != 31 }.joinToString(separator = " / ", prefix = "IVs: ") { i ->
                         "${pokemon.ivs.get(i)} ${Stats.getName(i)}"
                     }
             )
