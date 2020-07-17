@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!-- Ignore everything in the test source set -->
+    <issue id="all">
+        <ignore path="\*/test/\*" />
+    </issue>
+
+    <!-- Disable these given checks in this project -->
+    <issue id="RtlSymmetry" severity="ignore" />
+    <issue id="VectorPath" severity="ignore" />
+    <issue id="Autofill" severity="ignore" />
+    <issue id="ContentDescription" severity="ignore" />
+    <issue id="LabelFor" severity="ignore" />
+    <issue id="SetTextI18n" severity="ignore" />
+    <issue id="HardcodedText" severity="ignore" />
+    <!-- For now view binding let lint think that most of the layouts are unused ...-->
+    <issue id="UnusedResources" severity="ignore" />
+
+
+    <!-- Ignore the FragmentTagUsage issue in the given files -->
+    <issue id="FragmentTagUsage">
+        <ignore path="res/layout/activity_main.xml" />
+        <ignore path="res/layout-land/activity_main.xml" />
+        <ignore path="res/layout/activity_team_builder.xml" />
+    </issue>
+</lint>

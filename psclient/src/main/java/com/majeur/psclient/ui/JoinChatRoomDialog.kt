@@ -1,5 +1,6 @@
 package com.majeur.psclient.ui
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.text.Editable
 import android.view.LayoutInflater
@@ -128,6 +129,7 @@ class JoinChatRoomDialog : BottomSheetDialogFragment() {
 
     class NestedScrollLikeTouchListener : View.OnTouchListener {
 
+        @SuppressLint("ClickableViewAccessibility")
         override fun onTouch(view: View, event: MotionEvent): Boolean {
             var preventParentScroll = false
             if ((view as ListView).childCount > 0) {

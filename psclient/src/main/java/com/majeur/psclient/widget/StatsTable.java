@@ -1,5 +1,6 @@
 package com.majeur.psclient.widget;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
@@ -67,6 +68,7 @@ public class StatsTable extends View {
         this(context, attrs, 0);
     }
 
+    @SuppressLint("ResourceType")
     public StatsTable(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         setClickable(true);
@@ -308,6 +310,7 @@ public class StatsTable extends View {
     private Rect mTouchedBounds = new Rect();
     private int mTouchedRowIndex = -1;
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (event.getAction() == MotionEvent.ACTION_DOWN) {

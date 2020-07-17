@@ -1,5 +1,6 @@
 package com.majeur.psclient.widget
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.*
 import android.view.Gravity
@@ -13,6 +14,7 @@ import com.majeur.psclient.util.xForLeft
 import com.majeur.psclient.util.yForTop
 import kotlin.math.roundToInt
 
+@SuppressLint("RtlHardcoded")
 class SideView(context: Context?) : View(context) {
 
     var gravity = Gravity.NO_GRAVITY
