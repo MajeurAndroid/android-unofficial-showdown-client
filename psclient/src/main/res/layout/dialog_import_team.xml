@@ -52,7 +52,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:visibility="invisible"
-        android:inputType="textNoSuggestions"
+        android:inputType="textUri"
         android:ems="10"
         android:hint="Enter Pastebin URL"
         android:lines="1"
@@ -66,7 +66,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:visibility="invisible"
-        android:inputType="textNoSuggestions"
+        android:inputType="textUri"
         android:ems="10"
         android:hint="Enter Pokepaste URL"
         android:lines="1"
@@ -97,7 +97,7 @@
             app:layout_constraintBottom_toBottomOf="@+id/import_button"
             android:layout_marginEnd="16dp"
             android:layout_marginStart="16dp"
-            android:textColor="@color/error"/>
+            android:textColor="?attr/errorTextColor"/>
 
     <View
             android:id="@+id/divider5"
