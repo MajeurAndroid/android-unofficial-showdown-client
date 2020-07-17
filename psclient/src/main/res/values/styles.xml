@@ -10,6 +10,7 @@
         <item name="colorOnBackground">@color/onBackground</item>
         <item name="colorSurface">@color/surfaceBackground</item>
         <item name="colorOnSurface">@color/onSurfaceBackground</item>
+        <item name="errorTextColor">@color/error</item>
         <item name="android:statusBarColor">@color/primaryVariant</item>
     </style>
 
@@ -23,6 +24,7 @@
         <item name="colorOnBackground">@color/onBackground</item>
         <item name="colorSurface">@color/surfaceBackground</item>
         <item name="colorOnSurface">@color/onSurfaceBackground</item>
+        <item name="errorTextColor">@color/error</item>
         <item name="android:statusBarColor">@color/primaryVariant</item>
     </style>
 
