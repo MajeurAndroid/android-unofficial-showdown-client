@@ -93,8 +93,9 @@ class PrivateChatDialog : DialogFragment() {
     }
 
     private fun obtainUsernameColor(username: String): Int {
-        return usernameColorCache.computeIfAbsent(username.toId()) {
-            Utils.hashColor(username.toId())
+
+        return usernameColorCache.getOrElse(username.toId()) {
+            Utils.hashColor(username.toId()).also { usernameColorCache[username.toId()] = it }
         }
     }
 
