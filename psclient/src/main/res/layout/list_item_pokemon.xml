@@ -4,7 +4,7 @@
         xmlns:app="http://schemas.android.com/apk/res-auto"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/background_selectable_item_solid"
+        android:background="@drawable/bg_selectable_item_solid"
         android:padding="8dp">
 
     <ImageView
@@ -32,7 +32,7 @@
             android:id="@+id/details"
             app:layout_constraintTop_toBottomOf="@+id/name"
             app:layout_constraintStart_toStartOf="@+id/name"
-            android:textColor="@color/onBackground"
+            android:textColor="?attr/colorOnBackground"
             app:layout_constraintEnd_toStartOf="@+id/drag"/>
 
     <TextView
@@ -41,7 +41,7 @@
             android:id="@+id/ability"
             app:layout_constraintTop_toBottomOf="@+id/details"
             app:layout_constraintStart_toStartOf="@+id/name"
-            android:textColor="@color/onBackground"
+            android:textColor="?attr/colorOnBackground"
             app:layout_constraintEnd_toStartOf="@+id/drag"/>
 
     <TextView
@@ -50,7 +50,7 @@
             android:id="@+id/item"
             app:layout_constraintTop_toBottomOf="@+id/ability"
             app:layout_constraintStart_toStartOf="@+id/name"
-            android:textColor="@color/onBackground"
+            android:textColor="?attr/colorOnBackground"
             app:layout_constraintEnd_toStartOf="@+id/drag"/>
 
     <TextView
@@ -59,7 +59,7 @@
             android:id="@+id/moves"
             app:layout_constraintTop_toBottomOf="@+id/item"
             app:layout_constraintStart_toStartOf="@+id/name"
-            android:textColor="@color/onBackground"
+            android:textColor="?attr/colorOnBackground"
             app:layout_constraintEnd_toStartOf="@+id/drag"/>
 
     <TextView
@@ -68,7 +68,7 @@
             android:id="@+id/evs"
             app:layout_constraintTop_toBottomOf="@+id/moves"
             app:layout_constraintStart_toStartOf="@+id/name"
-            android:textColor="@color/onBackground"
+            android:textColor="?attr/colorOnBackground"
             app:layout_constraintEnd_toStartOf="@+id/drag"/>
 
     <ImageView

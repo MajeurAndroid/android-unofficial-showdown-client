@@ -18,7 +18,7 @@
         android:layout_height="match_parent"
         android:layout_weight="6"
         android:elevation="4dp"
-        android:background="@color/background">
+        android:background="?attr/colorBackground">
 
         <fragment
             android:id="@+id/fragment_battle"

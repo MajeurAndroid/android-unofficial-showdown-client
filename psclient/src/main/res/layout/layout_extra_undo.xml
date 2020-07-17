@@ -11,7 +11,7 @@
     android:orientation="horizontal"
     android:gravity="center_vertical"
     android:elevation="4dp"
-    android:background="@drawable/battle_extra_actions_bg">
+    android:background="@drawable/bg_battle_extra_actions">
 
     <TextView
         android:layout_width="wrap_content"

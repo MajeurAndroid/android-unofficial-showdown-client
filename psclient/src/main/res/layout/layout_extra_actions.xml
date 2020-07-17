@@ -10,7 +10,7 @@
     android:paddingStart="6dp"
     android:orientation="horizontal"
     android:elevation="4dp"
-    android:background="@drawable/battle_extra_actions_bg">
+    android:background="@drawable/bg_battle_extra_actions">
 
     <ImageButton
         android:id="@+id/send_button"

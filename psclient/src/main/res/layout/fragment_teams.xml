@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="?attr/colorBackground">
+    android:layout_height="match_parent">
 
     <TextView
         android:id="@+id/title"
@@ -43,8 +43,8 @@
             android:layout_alignParentEnd="true"
             android:layout_above="@id/buildFab"
             android:src="@drawable/ic_import_export"
-            app:tint="@color/secondary"
-            app:backgroundTint="@color/surfaceBackground"
+            app:tint="?attr/colorSecondary"
+            app:backgroundTint="?attr/colorSurface"
             app:backgroundTintMode="src_in"
             app:borderWidth="0dp"/>
 

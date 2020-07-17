@@ -67,7 +67,7 @@
         android:paddingStart="8dp"
         android:paddingEnd="8dp"
         android:elevation="4dp"
-        android:background="@drawable/battle_message_bg"
+        android:background="@drawable/bg_battle_message"
         android:textColor="@android:color/white"
         android:alpha="0"/>
 

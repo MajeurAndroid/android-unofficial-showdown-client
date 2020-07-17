@@ -6,8 +6,7 @@
         tools:context=".ui.teambuilder.TeamFragment"
         android:name="com.majeur.psclient.ui.teambuilder.TeamPokemonFragment"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@drawable/background_selectable_item_solid">
+        android:layout_height="match_parent">
 
     <include
             layout="@layout/header_team_fragment"
