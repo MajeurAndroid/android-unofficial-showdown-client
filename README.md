@@ -9,6 +9,7 @@
 * [Notes](#notes)
 * [Contributing](#contributing)
   * [**Report a bug**](#report-a-bug)
+  * [TODO list](#todo-list)
 * [Credits](#credits)
 * [Licence](#licence)
 
@@ -106,8 +107,20 @@ Every single http connection established by this client is using secured http pr
 ## Contributing
 Any help is very welcomed! Please make sure you are respecting the coding patterns and please strongly test your modifications before PR!
 ### Report a bug
+ - Smogon thread: [here](https://www.smogon.com/forums/threads/alpha02-need-testers-unofficial-showdown-android-client.3654298)
  - Submit a bug report: [here](https://forms.gle/tqSeeZ9De3ik97CK8)
  - Reported bugs tracking: [here](https://docs.google.com/spreadsheets/d/1oC0m5SJEqx9HMXOAIHcgoa92B2CP69SmSuwHKR7v-X0/edit?usp=sharing)
+ - Open an issue in this repo
+### TODO list
+For now, there is still a lot of testing to be done, but some new features would be nice and need a bit of thinking on how to integrate them nicely. Here is a non exhaustive list:
+ - **Better handling of 'player as spectator' in battles**: For now, the client assumes the trainer is the player and the foe well.. the foe. But If you just want to watch a battle (eg. being neither the trainer nor the foe), you'll find out that it works, but that tip popups among with other things behave weirdly.
+ - **Support for battle replays**: replays are 'just' battle logs that can be retrieved and played later. There is not a lot of things to do to support them, but thinking on how to integrate them is not that easy. Also, having a control on position in battle log needs to be implemented (thing like previous/next turn), because for now we are just waiting for the server to send us new part of the battle log.
+ - **Better display of room users**: add md5 colors, handle the @! marker and maybe sort them (See [ChatFragment:line74](psclient/src/main/java/com/majeur/psclient/ui/ChatFragment.kt#L74))
+ - **Decision cancelling**: ability to get back to the first choice prompt without needing of terminating the decision and quickly cancel it if possible.
+ - **Test more the challenge accept/request UI in [HomeFragment](psclient/src/main/java/com/majeur/psclient/ui/HomeFragment.kt)**: I've seen it keeping the cancel button shown when coming back from an ended battle.
+ - Think about the possibility of leaving a battle room (goes with second item in this list) if we are a spectator. How would this be coherent with the overall behaviour/design ?
+ - **Add more unit tests**: But this is really not a priority.
+ - Anything else you can think about 🤩, if it can be integrated nicely.
 ## Credits
  - Everybody on our [Smogon thread](https://www.smogon.com/forums/threads/alpha02-need-testers-unofficial-showdown-android-client.3654298): For the huge help with bug reporting
  - [Zarel](https://github.com/Zarel): For PokemonShowdown itself.
