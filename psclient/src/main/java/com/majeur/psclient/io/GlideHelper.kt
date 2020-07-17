@@ -1,229 +1,169 @@
-package com.majeur.psclient.io;
+package com.majeur.psclient.io
 
-import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
-import android.view.ViewGroup;
-import android.view.ViewPropertyAnimator;
-import android.view.animation.AccelerateInterpolator;
-import android.view.animation.DecelerateInterpolator;
-import android.widget.ImageView;
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.RequestBuilder;
-import com.bumptech.glide.RequestManager;
-import com.bumptech.glide.request.RequestOptions;
-import com.bumptech.glide.request.target.Target;
-import com.bumptech.glide.request.target.ViewTarget;
-import com.majeur.psclient.R;
-import com.majeur.psclient.model.battle.Player;
-import com.majeur.psclient.model.pokemon.BasePokemon;
-import com.majeur.psclient.model.pokemon.BattlingPokemon;
-import com.majeur.psclient.util.Utils;
-import com.majeur.psclient.util.html.Html;
+import android.content.Context
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
+import android.net.Uri
+import android.view.ViewGroup
+import android.view.ViewPropertyAnimator
+import android.view.animation.AccelerateInterpolator
+import android.view.animation.DecelerateInterpolator
+import android.widget.ImageView
+import com.bumptech.glide.Glide
+import com.bumptech.glide.RequestBuilder
+import com.bumptech.glide.request.RequestOptions
+import com.bumptech.glide.request.target.Target
+import com.majeur.psclient.R
+import com.majeur.psclient.model.battle.Player
+import com.majeur.psclient.model.pokemon.BasePokemon
+import com.majeur.psclient.model.pokemon.BattlingPokemon
+import com.majeur.psclient.util.Utils
+import com.majeur.psclient.util.glide.AnimatedImageViewTarget
+import com.majeur.psclient.util.html.Html
+import com.majeur.psclient.util.minusFirst
+import java.util.concurrent.ExecutionException
+import kotlin.math.roundToInt
 
-import java.util.concurrent.ExecutionException;
+class GlideHelper(context: Context) {
 
-import static com.majeur.psclient.model.battle.Player.FOE;
+    enum class SpriteType(private val path: String, private val ext: String) {
 
-public class GlideHelper {
+        D3ANIMATED("ani", "gif"), // Gen 6+ 3D animated
+        D2ANIMATED("gen5ani", "gif"), // Gen 5 2D animated
+        D2("gen5", "png"), // Gen 5 2D non animated
+        DEX("dex", "png"),
+        TRAINER("trainers", "png"); // Dex
 
-    static {
-        ViewTarget.setTagId(R.id.glide_tag);
+        fun uri(spriteId: String, shiny: Boolean = false, back: Boolean = false) = baseUri().run {
+            appendPath(segment(shiny, back))
+            appendPath("$spriteId.$ext")
+            build()
+        }
+
+        private fun baseUri(): Uri.Builder {
+            return Uri.Builder()
+                    .scheme("https")
+                    .authority("play.pokemonshowdown.com")
+                    .appendPath("sprites")
+        }
+
+        private fun segment(shiny: Boolean, back: Boolean) = path + if (back) "-back" else "" +
+                if (shiny) "-shiny" else ""
     }
 
-    private final RequestManager mRequestManager;
-
-    public GlideHelper(Context context) {
-        mRequestManager = Glide.with(context);
+    companion object {
+        private const val MAGIC_SCALE = 0.0027777777777778f
     }
 
-    private final float MAGIC_SCALE = 0.0027777777777778f;
+    private val glide = Glide.with(context)
 
-    @SuppressWarnings("CheckResult")
-    public void loadSprite(final BattlingPokemon pokemon, final ImageView imageView, final int fieldWidth) {
-        String spriteId = pokemon.getTransformSpecies() != null ? pokemon.getTransformSpecies() : pokemon.getSpriteId();
-        RequestBuilder<Drawable> request = mRequestManager.load(ani3dSpriteUri(spriteId, pokemon.getFoe(), pokemon.getShiny()));
-        RequestOptions options = new RequestOptions().override(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL);
-        request.apply(options);
-        request.error(
-                mRequestManager.load(ani2dSpriteUri(spriteId, pokemon.getFoe(), pokemon.getShiny()))
-                .error(
-                        mRequestManager.load(fixed2dSpriteUri(spriteId, pokemon.getFoe(), pokemon.getShiny()))
-                        .apply(options.error(R.drawable.missingno))
-                )
-        );
-        request.into(new AnimatedImageViewTarget(imageView) {
-            @Override
-            protected void onInitInAnimation(ViewPropertyAnimator viewPropertyAnimator) {
+    fun loadBattleSprite(pokemon: BattlingPokemon, imageView: ImageView, fieldWidth: Int) {
+        val spriteId = if (pokemon.transformSpecies != null) pokemon.transformSpecies!! else pokemon.spriteId
+        loadSprite(spriteId, pokemon.trainer, pokemon.shiny, true,
+                SpriteType.D3ANIMATED, SpriteType.D2ANIMATED, SpriteType.D2)
+            .into(object : AnimatedImageViewTarget(imageView) {
+            override fun onInitInAnimation(viewPropertyAnimator: ViewPropertyAnimator) {
                 viewPropertyAnimator
                         .setDuration(250)
-                        .setInterpolator(new DecelerateInterpolator())
+                        .setInterpolator(DecelerateInterpolator())
                         .scaleX(0f)
                         .scaleY(0f)
-                        .alpha(0f);
+                        .alpha(0f)
             }
 
-            @Override
-            protected void onInitOutAnimation(ViewPropertyAnimator viewPropertyAnimator) {
+            override fun onInitOutAnimation(viewPropertyAnimator: ViewPropertyAnimator) {
                 viewPropertyAnimator
                         .setDuration(250)
-                        .setInterpolator(new AccelerateInterpolator())
+                        .setInterpolator(AccelerateInterpolator())
                         .scaleX(1f)
                         .scaleY(1f)
-                        .alpha(1f);
+                        .alpha(1f)
             }
 
-            @Override
-            protected void setResource(Drawable resource) {
-                int scale = Math.round(fieldWidth * MAGIC_SCALE);
-                if (!pokemon.getFoe()) scale = Math.round(scale * 1.5f);
-
-                ViewGroup.LayoutParams layoutParams = imageView.getLayoutParams();
-                layoutParams.width = resource.getIntrinsicWidth() * scale;
-                layoutParams.height = resource.getIntrinsicHeight() * scale;
-
-                imageView.setImageDrawable(resource);
-            }
-        });
-    }
-
-    public void loadPreviewSprite(Player player, BasePokemon pokemon, ImageView imageView) {
-        RequestBuilder<Drawable> request = mRequestManager.load(ani3dSpriteUri(pokemon.getSpriteId(), player == FOE, false));
-        RequestOptions options = new RequestOptions().override(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL);
-        request.apply(options);
-        request.error(
-                mRequestManager.load(ani2dSpriteUri(pokemon.getSpriteId(), player == FOE, false))
-                        .error(
-                                mRequestManager.load(fixed2dSpriteUri(pokemon.getSpriteId(), player == FOE, false))
-                                        .apply(options.error(R.drawable.missingno))
-                        )
-        );
-        ViewGroup.LayoutParams layoutParams = imageView.getLayoutParams();
-        layoutParams.width = layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT;
-        request.into(imageView);
-    }
-
-    public void loadDexSprite(BasePokemon pokemon, boolean shiny, ImageView imageView) {
-        RequestBuilder<Drawable> request = mRequestManager.load(dexSpriteUri(pokemon.getSpriteId(), shiny));
-        RequestOptions options = new RequestOptions().override(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL);
-        request.apply(options);
-        request.error(
-                mRequestManager.load(fixed2dSpriteUri(pokemon.getSpriteId(), true, false))
-                        .apply(options.error(R.drawable.placeholder_pokeball))
-        );
-        request.into(imageView);
-    }
-
-    public void loadAvatar(String avatar, ImageView imageView) {
-        RequestBuilder<Drawable> request = mRequestManager.load(avatarSpriteUri(avatar));
-        request.into(imageView);
-    }
-
-    private StringBuilder baseUri() {
-        return new StringBuilder()
-                .append("https://play.pokemonshowdown.com/sprites/");
-    }
-
-    private String ani3dSpriteUri(String spriteId, boolean foe, boolean shiny) {
-        return baseUri()
-                .append(foe ? "ani" : "ani-back")
-                .append(shiny ? "-shiny/" : "/")
-                .append(spriteId)
-                .append(".gif")
-                .toString();
-    }
-
-    private String ani2dSpriteUri(String spriteId, boolean foe, boolean shiny) {
-        return baseUri()
-                .append(foe ? "gen5ani" : "gen5ani-back")
-                .append(shiny ? "-shiny/" : "/")
-                .append(spriteId)
-                .append(".png")
-                .toString();
-    }
-
-    private String fixed2dSpriteUri(String spriteId, boolean foe, boolean shiny) {
-        return baseUri()
-                .append(foe ? "gen5" : "gen5-back")
-                .append(shiny ? "-shiny/" : "/")
-                .append(spriteId)
-                .append(".png")
-                .toString();
-    }
-
-    private String dexSpriteUri(String spriteId, boolean shiny) {
-        return baseUri()
-                .append("dex")
-                .append(shiny ? "-shiny/" : "/")
-                .append(spriteId)
-                .append(".png")
-                .toString();
-    }
-
-    private String typeSpriteUri(String type) {
-        return baseUri()
-                .append("types/")
-                .append(Utils.firstCharUpperCase(type))
-                .append(".png")
-                .toString();
-    }
-
-    private String categorySpriteUri(String category) {
-        return baseUri()
-                .append("categories/")
-                .append(Utils.firstCharUpperCase(category))
-                .append(".png")
-                .toString();
-    }
-
-    private String avatarSpriteUri(String avatar) {
-        return baseUri()
-                .append("trainers/")
-                .append(avatar)
-                .append(".png")
-                .toString();
-    }
-
-    public Html.ImageGetter getHtmlImageGetter(final AssetLoader iconLoader, int maxWidth) {
-        final int mw = maxWidth - Utils.dpToPx(2);
-        return new Html.ImageGetter() {
-            @Override
-            public Drawable getDrawable(final String source, int reqw, int reqh) {
-                try {
-                    Drawable d = null;
-                    if (source.startsWith("content://com.majeur.psclient/dex-icon/")) {
-                        String species = source.substring(source.lastIndexOf('/') + 1, source.length());
-                        Bitmap icon = iconLoader.dexIconNonSuspend(species);
-                        if (icon != null) d = new BitmapDrawable(icon);
-                    } else {
-                        d = mRequestManager.asDrawable().load(source).submit().get();
-                    }
-                    if (d == null) return null;
-                    float r = d.getIntrinsicWidth() / (float) d.getIntrinsicHeight();
-                    int w, h;
-                    if (reqw != 0 && reqh == 0) {
-                        w = reqw;
-                        h = (int) (w / r);
-                    } else if (reqw == 0 && reqh != 0) {
-                        h = reqh;
-                        w = (int) (h * r);
-                    } else {
-                        w = reqw;
-                        h = reqh;
-                    }
-                    float mr = w / (float) mw;
-                    if (mr > 1) {
-                        w = mw;
-                        h /= mr;
-                    }
-                    d.setBounds(0, 0, w, h);
-                    return d;
-                } catch (ExecutionException | InterruptedException e) {
-                    e.printStackTrace();
-                    return null;
+            override fun setResource(resource: Drawable) {
+                var scale = (fieldWidth * MAGIC_SCALE).roundToInt()
+                if (!pokemon.foe) scale = (scale * 1.5f).roundToInt()
+                imageView.layoutParams.apply {
+                    width = resource.intrinsicWidth * scale
+                    height = resource.intrinsicHeight * scale
                 }
+                imageView.setImageDrawable(resource) // Will request a layout
             }
-        };
+        })
+    }
+
+    fun loadPreviewSprite(player: Player, pokemon: BasePokemon, imageView: ImageView) {
+        val layoutParams = imageView.layoutParams
+        layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
+        layoutParams.width = layoutParams.height
+        loadSprite(pokemon.spriteId, player == Player.TRAINER, false, false,
+                SpriteType.D3ANIMATED, SpriteType.D2ANIMATED, SpriteType.D2).into(imageView)
+    }
+
+    fun loadDexSprite(pokemon: BasePokemon, shiny: Boolean, imageView: ImageView?) {
+        loadSprite(pokemon.spriteId, false, shiny, true, SpriteType.DEX, SpriteType.D2)
+                .into(imageView!!)
+    }
+
+    fun loadAvatar(avatar: String, imageView: ImageView) {
+        loadSprite(avatar, false, false, false, SpriteType.TRAINER)
+                .into(imageView)
+    }
+
+    // Load sprite trying with each sprite type if previous has failed
+    private fun loadSprite(spriteId: String, back: Boolean, shiny: Boolean,
+                           overrideSize: Boolean, vararg spriteTypes: SpriteType): RequestBuilder<Drawable> {
+        val options = RequestOptions().apply {
+            if (overrideSize) override(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL)
+            if (spriteTypes.size == 1) error(R.drawable.missingno) // No more sprite types, default fallback
+        }
+        return glide.load(spriteTypes.first().uri(spriteId, shiny, back)).apply {
+            apply(options)
+            if (spriteTypes.size > 1) // There is more sprite types, add an error fallback
+                error(loadSprite(spriteId, back, shiny, overrideSize, *spriteTypes.minusFirst()))
+        }
+    }
+
+    fun getHtmlImageGetter(iconLoader: AssetLoader, maxWidth: Int): Html.ImageGetter {
+        val mw = maxWidth - Utils.dpToPx(2f)
+        return Html.ImageGetter { source, reqw, reqh ->
+            try {
+                var d: Drawable? = null
+                if (source.startsWith("content://com.majeur.psclient/dex-icon/")) {
+                    val species = source.substring(source.lastIndexOf('/') + 1, source.length)
+                    val icon = iconLoader.dexIconNonSuspend(species)
+                    if (icon != null) d = BitmapDrawable(icon)
+                } else {
+                    d = glide.asDrawable().load(source).submit().get()
+                }
+                if (d == null) return@ImageGetter null
+                val r = d.intrinsicWidth / d.intrinsicHeight.toFloat()
+                var w: Int
+                var h: Int
+                if (reqw != 0 && reqh == 0) {
+                    w = reqw
+                    h = (w / r).toInt()
+                } else if (reqw == 0 && reqh != 0) {
+                    h = reqh
+                    w = (h * r).toInt()
+                } else {
+                    w = reqw
+                    h = reqh
+                }
+                val mr = w / mw.toFloat()
+                if (mr > 1) {
+                    w = mw
+                    h /= mr.toInt()
+                }
+                d.setBounds(0, 0, w, h)
+                return@ImageGetter d
+            } catch (e: ExecutionException) {
+                e.printStackTrace()
+                return@ImageGetter null
+            } catch (e: InterruptedException) {
+                e.printStackTrace()
+                return@ImageGetter null
+            }
+        }
     }
 }

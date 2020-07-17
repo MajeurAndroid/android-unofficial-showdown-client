@@ -315,49 +315,11 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
         if (move.zflag) priority = move.zDetails?.priority ?: 0
         if (priority == -20) priority = move.details?.priority ?: 0
         when {
-            priority > 1 -> {
-                descView.append("Nearly always moves first " concat Utils.toStringSigned(priority).italic())
-            }
-            priority <= -1 -> {
-                descView.append("Nearly always moves last " concat Utils.toStringSigned(priority).italic())
-            }
-            priority == 1 -> {
-                descView.append("Usually moves first " concat Utils.toStringSigned(priority).italic())
-            }
-
-//        if (move.zflag) {
-//            titleView.setText(move.zName);
-//            descView.setText("PP: 1/1");
-//            descView.append("\n");
-//            if (move.details != null && move.details.zPower > 0) {
-//                descView.append("Base power: " + move.details.zPower);
-//                descView.append("\n");
-//            }
-//            if (move.details != null && move.details.zEffect != null) {
-//                descView.append("Z-Effect: " + move.details.zEffect);
-//                descView.append("\n");
-//            }
-//            if (move.zDetails != null && move.zDetails.desc != null) {
-//                descView.append(italicText(move.zDetails.desc));
-//            } else if (move.details != null){
-//                descView.append(italicText(move.details.desc));
-//            }
-//        } else if (move.maxflag) {
-//            titleView.setText(move.maxDetails.name);
-//            descView.setText(move.maxDetails.toString());
-//
-//            descView.append("\n");
-//        }
-//        if (move.details == null) return;
-//        if (move.zflag) return;
-//
-//
-//        if (move.details.basePower > 0) {
-//            descView.append("Base power: " + move.details.basePower);
-//            descView.append("\n");
-//        }
-//        descView.append("Accuracy: " + (move.details.accuracy > 0 ? move.details.accuracy : "Can't miss"));
+            priority > 1 -> descView.append("Nearly always moves first " concat priority.toSignedString().italic())
+            priority <= -1 -> descView.append("Nearly always moves last " concat priority.toSignedString().italic())
+            priority == 1 -> descView.append("Usually moves first " concat priority.toSignedString().italic())
         }
+
         var basePower = -1
         if (move.maxflag) basePower = move.details?.maxPower ?: 0
         if (move.zflag) basePower = move.zDetails?.basePower ?: move.details?.zPower ?: 0
@@ -384,39 +346,6 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
         val category = move.details?.category
         val drawable = if (category != null) CategoryDrawable(category) else null
         placeHolderBottom.setImageDrawable(drawable)
-
-//        if (move.zflag) {
-//            titleView.setText(move.zName);
-//            descView.setText("PP: 1/1");
-//            descView.append("\n");
-//            if (move.details != null && move.details.zPower > 0) {
-//                descView.append("Base power: " + move.details.zPower);
-//                descView.append("\n");
-//            }
-//            if (move.details != null && move.details.zEffect != null) {
-//                descView.append("Z-Effect: " + move.details.zEffect);
-//                descView.append("\n");
-//            }
-//            if (move.zDetails != null && move.zDetails.desc != null) {
-//                descView.append(italicText(move.zDetails.desc));
-//            } else if (move.details != null){
-//                descView.append(italicText(move.details.desc));
-//            }
-//        } else if (move.maxflag) {
-//            titleView.setText(move.maxDetails.name);
-//            descView.setText(move.maxDetails.toString());
-//
-//            descView.append("\n");
-//        }
-//        if (move.details == null) return;
-//        if (move.zflag) return;
-//
-//
-//        if (move.details.basePower > 0) {
-//            descView.append("Base power: " + move.details.basePower);
-//            descView.append("\n");
-//        }
-//        descView.append("Accuracy: " + (move.details.accuracy > 0 ? move.details.accuracy : "Can't miss"));
     }
 
     private fun bindSidePokemonPopup(pokemon: SidePokemon, titleView: TextView,
@@ -574,7 +503,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
         binding.battleLayout.getPokemonView(pokemon.id)?.apply {
             setTag(R.id.battle_data_tag, pokemon)
             battleTipPopup.addTippedView(this)
-            glideHelper.loadSprite(pokemon, this, binding.battleLayout.width)
+            glideHelper.loadBattleSprite(pokemon, this, binding.battleLayout.width)
         }
         fragmentScope.launch {
             assetLoader.dexIcon(pokemon.species.toId())?.let {
@@ -587,8 +516,8 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
 
     @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
     override fun onDetailsChanged(pokemon: BattlingPokemon) {
-        binding.battleLayout.getPokemonView(pokemon.id).let {
-            glideHelper.loadSprite(pokemon, it, binding.battleLayout.width)
+        binding.battleLayout.getPokemonView(pokemon.id)?.let {
+            glideHelper.loadBattleSprite(pokemon, it, binding.battleLayout.width)
         }
         fragmentScope.launch {
             assetLoader.dexIcon(pokemon.species.toId())?.let {
