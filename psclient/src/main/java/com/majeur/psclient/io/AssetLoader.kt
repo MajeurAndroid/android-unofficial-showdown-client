@@ -57,9 +57,10 @@ class AssetLoader(val context: Context) {
         allItemsLoader.load(constraint)
     }
 
-    suspend fun allSpecies(constraint: String) = withContext(Dispatchers.IO) {
-        allSpeciesLoader.load(constraint)
-    }
+//    Not used for now
+//    suspend fun allSpecies(constraint: String) = withContext(Dispatchers.IO) {
+//        allSpeciesLoader.load(constraint)
+//    }
 
     suspend fun dexIcon(species: String) = withContext(Dispatchers.IO) {
         species.run {
@@ -103,7 +104,8 @@ class AssetLoader(val context: Context) {
 
     fun dexIconNonSuspend(species: String) = dexIconLoader.load(species)
 
-    fun dexPokemonNonSuspend(species: String) = dexPokemonLoader.load(species)
+//    Not used for now
+//    fun dexPokemonNonSuspend(species: String) = dexPokemonLoader.load(species)
 
     fun allSpeciesNonSuspend(species: String) = allSpeciesLoader.load(species)
 
@@ -136,6 +138,7 @@ class AssetLoader(val context: Context) {
 
     class AllItemsLoader(context: Context) : Loader<List<String>>(context, useCache = false) {
 
+        @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
         @Throws(IOException::class)
         override fun compute(constraint: String): List<String>? {
             val itemNames = mutableListOf<String>()
@@ -171,6 +174,7 @@ class AssetLoader(val context: Context) {
 
     class AllSpeciesLoader(context: Context) : Loader<List<String>>(context, useCache = false) {
 
+        @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
         @Throws(IOException::class)
         override fun compute(constraint: String): List<String>? {
             val species = mutableListOf<String>()
@@ -220,6 +224,7 @@ class AssetLoader(val context: Context) {
                 return BitmapRegionDecoder.newInstance(inputStream, true)
             }
 
+        @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
         @Throws(IOException::class)
         override fun compute(species: String): Bitmap? {
             val index = jsonReader(R.raw.dex_icon_indexes).use { reader ->
@@ -253,6 +258,7 @@ class AssetLoader(val context: Context) {
 
     class DexPokemonLoader(context: Context) : Loader<DexPokemon>(context) {
 
+        @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
         override fun compute(species: String): DexPokemon? {
             return jsonReader(R.raw.dex).use { reader ->
                 reader.beginObject()
@@ -339,6 +345,7 @@ class AssetLoader(val context: Context) {
 
     class ItemLoader(context: Context) : Loader<Item>(context) {
 
+        @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
         override fun compute(itemId: String): Item? {
             return jsonReader(R.raw.items).use {reader ->
                 reader.beginObject()
@@ -374,6 +381,7 @@ class AssetLoader(val context: Context) {
 
     class LearnsetLoader(context: Context) : Loader<List<String>>(context) {
 
+        @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
         override fun compute(species: String): List<String>? {
             val family = mutableListOf(species)
             do {
@@ -440,6 +448,7 @@ class AssetLoader(val context: Context) {
 
     class MoveDetailsLoader(context: Context) : Loader<Move.Details>(context) {
 
+        @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
         override fun compute(moveId: String): Move.Details? {
             return jsonReader(R.raw.moves).use {reader ->
                 reader.beginObject()
