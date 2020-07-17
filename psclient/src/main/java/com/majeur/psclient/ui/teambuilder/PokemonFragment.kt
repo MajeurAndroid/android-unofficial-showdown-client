@@ -179,7 +179,7 @@ class PokemonFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         binding.speciesInput.apply {
             threshold = 1
-            dropDownWidth = Utils.dpToPx(196f)
+            dropDownWidth = dp(196f)
             onItemClickListener = AdapterView.OnItemClickListener { adapterView: AdapterView<*>, _: View?, i: Int, _: Long ->
                 val newSpecies = adapterView.adapter.getItem(i) as String
                 trySpecies(newSpecies.toId())
@@ -406,8 +406,8 @@ class PokemonFragment : Fragment() {
 
     inner class SpeciesAdapter : BaseAdapter(), Filterable {
 
-        private val icWidth = Utils.dpToPx(32f)
-        private val icHeight = Utils.dpToPx(32f * 3f / 4f)
+        private val icWidth by lazy { this@PokemonFragment.dp(32f) }
+        private val icHeight by lazy { this@PokemonFragment.dp(32f * 3f / 4f) }
 
         private var adapterList = emptyList<String>()
 

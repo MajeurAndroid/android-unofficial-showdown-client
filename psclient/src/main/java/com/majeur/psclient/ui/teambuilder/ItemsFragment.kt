@@ -19,6 +19,7 @@ import com.majeur.psclient.databinding.ListItemItemBinding
 import com.majeur.psclient.io.AssetLoader
 import com.majeur.psclient.ui.BaseFragment
 import com.majeur.psclient.util.Utils
+import com.majeur.psclient.util.dp
 import com.majeur.psclient.util.italic
 import com.majeur.psclient.util.recyclerview.OnItemClickListener
 import com.majeur.psclient.util.toId
@@ -115,7 +116,7 @@ class ItemsFragment : ListFragment(), OnItemClickListener {
                 //root.alpha = 0f
                 nameView.text = ""
                 nameView.setCompoundDrawables(null, null, null, null)
-                nameView.compoundDrawablePadding = Utils.dpToPx(4f)
+                nameView.compoundDrawablePadding = nameView.dp(4f)
                 detailsView.text = ""
             }
 
@@ -136,7 +137,8 @@ class ItemsFragment : ListFragment(), OnItemClickListener {
                     highlightMatch(nameView)
                     detailsView.text = item.description?.italic() ?: "No description".italic()
                     val drawable = BitmapDrawable(resources, icon)
-                    drawable.setBounds(0, 0, Utils.dpToPx(24f), Utils.dpToPx(24f))
+                    val size = nameView.dp(24f)
+                    drawable.setBounds(0, 0, size, size)
                     nameView.setCompoundDrawables(drawable, null, null, null)
                     //root.animate().alpha(1f).setDuration(100L).start()
                 }

@@ -22,7 +22,7 @@ import static android.text.TextUtils.isEmpty;
 import static com.majeur.psclient.util.Utils.contains;
 import static com.majeur.psclient.util.Utils.firstCharUpperCase;
 import static com.majeur.psclient.util.Utils.parseBoldTags;
-import static com.majeur.psclient.util.Utils.str;
+
 
 /**
  * This class is a java replica of https://github.com/smogon/pokemon-showdown-client/blob/master/src/battle-text-parser.ts
@@ -44,6 +44,10 @@ public final class BattleTextBuilder {
 
     private static String toIdSafe(String v) {
         return toId(v, "");
+    }
+
+    public static String str(int number) {
+        return com.majeur.psclient.util.ExtensionsKt.toSignedString(number);
     }
 
     /* QUICK FIXES BEFORE KOTLIN */

@@ -194,7 +194,7 @@ class StatusView(context: Context?) : View(context) {
         val top = minTop
 
         val totalText = status + volatileStatus.values.filter { it.label != null }.joinToString(separator = "") +
-                statsModifiers.map { DECIMAL_FORMAT.format(it.value) + Utils.firstCharUpperCase(it.key) }.joinToString(separator = "")
+                statsModifiers.map { DECIMAL_FORMAT.format(it.value) + it.key.capitalize() }.joinToString(separator = "")
         paint.apply {
             typeface = defaultTypeFace
             textSize = tagTextSize.toFloat()
@@ -222,7 +222,7 @@ class StatusView(context: Context?) : View(context) {
         }
         for (entry in statsModifiers.entries) {
             if (entry.value == 1f) continue
-            val text = DECIMAL_FORMAT.format(entry.value) + Utils.firstCharUpperCase(entry.key)
+            val text = DECIMAL_FORMAT.format(entry.value) + entry.key.capitalize()
             tempRect3.set(tempRect2)
             drawTag(null, left, cY, text, if (entry.value < 1f) Colors.STAT_UNBOOST else Colors.STAT_BOOST,
                     Colors.WHITE, tempRect3)

@@ -14,7 +14,9 @@ import android.util.TypedValue
 import android.view.View
 import androidx.core.text.toSpannable
 import androidx.core.text.toSpanned
+import androidx.fragment.app.Fragment
 import java.util.*
+import kotlin.text.Typography.ellipsis
 
 private val ID_REGEX = "[^a-z0-9]".toRegex()
 
@@ -22,6 +24,9 @@ fun String.toId(): String = this.toLowerCase(Locale.ROOT).replace(ID_REGEX, "")
 fun String.or(or: String) : String = if (isBlank()) or else this
 fun String.toUpperCase() = toUpperCase(Locale.ROOT)
 fun String.toLowerCase() = toLowerCase(Locale.ROOT)
+fun String.truncate(n: Int) = if (length > n) take(n) + ellipsis else this
+
+fun Int.toSignedString() = if (this < 0) "-" else "+" + toString()
 
 // We cannot use a custom "operator fun plus()" because String.plus() override is impossible
 infix fun CharSequence.concat(other: CharSequence): CharSequence = TextUtils.concat(this, other)
@@ -71,14 +76,19 @@ fun Spannable.tag(color: Int): Spannable {
 }
 
 fun View.dp(dp: Float) = context.dp(dp)
+fun Fragment.dp(dp: Float) = resources.dp(dp)
 fun Context.dp(dp: Float) = resources.dp(dp)
 fun Resources.dp(dp: Float) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp,
         displayMetrics).toInt()
 
 fun View.sp(sp: Float) = context.sp(sp)
+fun Fragment.sp(sp: Float) = resources.sp(sp)
 fun Context.sp(sp: Float) = resources.sp(sp)
 fun Resources.sp(sp: Float) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sp,
         displayMetrics).toInt()
 
 fun Rect.xForLeft(textLeft: Int) = textLeft - left // Offset by Glyph's AdvanceX value added by Skia
 fun Rect.yForTop(textTop: Int) = textTop - top // Computes text's baseline for a given top
+
+fun <T> Array<T>.minusLast() = copyOfRange(0, size - 1)
+fun <T> Array<T>.minusFirst() = copyOfRange(1, size)

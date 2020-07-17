@@ -10,7 +10,7 @@ import androidx.core.graphics.BlendModeCompat
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.majeur.psclient.R
-import com.majeur.psclient.util.Utils
+import com.majeur.psclient.util.dp
 
 open class ItemTouchHelperCallbacks(
         context: Context,
@@ -26,7 +26,7 @@ open class ItemTouchHelperCallbacks(
                 it.colorFilter = BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
                         Color.WHITE, BlendModeCompat.SRC_IN)
             }
-    private val iconLeftMargin = Utils.dpToPx(12f)
+    private val iconLeftMargin = context.dp(12f)
 
     override fun onMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
         val from = viewHolder.adapterPosition
@@ -49,7 +49,7 @@ open class ItemTouchHelperCallbacks(
         val itemView = viewHolder.itemView
 
         if (dY != 0f) {
-            itemView.elevation = Utils.dpToPx(4f).toFloat()
+            itemView.elevation = itemView.dp(4f).toFloat()
         } else {
             itemView.elevation = 0f
         }

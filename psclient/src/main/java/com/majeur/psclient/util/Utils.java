@@ -1,11 +1,9 @@
 package com.majeur.psclient.util;
 
-import android.app.Activity;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Build;
-import android.os.IBinder;
 import android.text.Editable;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -15,10 +13,8 @@ import android.text.style.StyleSpan;
 import android.text.style.TypefaceSpan;
 import android.text.style.URLSpan;
 import android.view.View;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.ScrollView;
 import com.majeur.psclient.model.common.Colors;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -26,7 +22,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Scanner;
 
@@ -49,13 +44,6 @@ public class Utils {
         int slop = dpToPx(14);
         int diff = (child.getBottom() - slop - (scrollView.getHeight() + scrollView.getScrollY()));
         return diff <= 0;
-    }
-
-    public static void hideSoftInputMethod(Activity activity) {
-        InputMethodManager inputMethodManager =
-                (InputMethodManager) activity.getSystemService(Activity.INPUT_METHOD_SERVICE);
-        IBinder token = activity.getWindow().getDecorView().getWindowToken();
-        inputMethodManager.hideSoftInputFromWindow(token, 0);
     }
 
     public static int hashColor(String string) {
@@ -135,14 +123,6 @@ public class Utils {
                 ((int) (red   * 255.0f + 0.5f) << 16) |
                 ((int) (green * 255.0f + 0.5f) <<  8) |
                 (int) (blue  * 255.0f + 0.5f);
-    }
-
-    @SuppressWarnings("unchecked")
-    public static <T> List<T> getList(JSONArray array) throws JSONException {
-        List<T> list = new LinkedList<>();
-        for (int i = 0; i < array.length(); i++)
-            list.add((T) array.get(i));
-        return list;
     }
 
     public static int parseWithDefault(String s, int defaultValue) {

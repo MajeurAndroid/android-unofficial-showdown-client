@@ -1,6 +1,6 @@
 package com.majeur.psclient.model.battle
 
-import com.majeur.psclient.util.Utils
+import com.majeur.psclient.util.bold
 
 class StatModifiers {
 
@@ -111,9 +111,9 @@ class StatModifiers {
 
     fun calcReadableStat(stat: String?, baseStat: Int): CharSequence {
         val m = modifier(stat)
-        if (m == 1f) return Utils.str(baseStat)
+        if (m == 1f) return baseStat.toString()
         val afterModifier = (baseStat * m).toInt()
-        return Utils.boldText(Utils.str(afterModifier))
+        return afterModifier.toString().bold()
     }
 
     companion object {

@@ -125,7 +125,7 @@ class TeamFragment : Fragment() {
             this.adapter = adapter
             checkFabVisibility()
             val dividerItemDecoration = DividerItemDecoration(context)
-            dividerItemDecoration.startOffset = Utils.dpToPx(8f + 82f + 16f)
+            dividerItemDecoration.startOffset = dp(8f + 82f + 16f)
             addItemDecoration(dividerItemDecoration)
             ItemTouchHelper(object : ItemTouchHelperCallbacks(context, allowReordering = true, allowDeletion = true) {
 

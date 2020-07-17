@@ -473,7 +473,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
     override fun onUserChanged(userName: String, isGuest: Boolean, avatarId: String) {
         binding.username.apply {
             text = "Connected as\n".small()
-            append(Utils.truncate(userName, 10).bold())
+            append(userName.truncate(10).bold())
         }
         binding.loginButton.isEnabled = true
         if (isGuest) {
