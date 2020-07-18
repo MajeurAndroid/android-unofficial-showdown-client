@@ -605,7 +605,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
         val toastText = when (msg.command) {
             "-crit" -> "Critical"
             "-resisted" -> "Resisted" // Gray
-            "-supereffective" -> "Supper-effective"
+            "-supereffective" -> "Super-effective"
             else -> "???${msg.command}???"
         }
         val color = when (msg.command) {
