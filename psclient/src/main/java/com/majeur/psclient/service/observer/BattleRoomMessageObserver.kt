@@ -32,6 +32,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
     private val actionQueue = ActionQueue(Looper.getMainLooper())
     private var p1Username: String? = null
     private var p2Username: String? = null
+    private val myUsername get() = service.getSharedData<String>("myusername")?.drop(1) ?: ""
 
     private var previewPokemonIndexes = IntArray(2)
     private var lastDecisionRequest: BattleDecisionRequest? = null
@@ -79,13 +80,15 @@ class BattleRoomMessageObserver(service: ShowdownService)
         activeFieldEffects.clear()
     }
 
-    private fun myUsername(): String = service.getSharedData<String>("username")?.drop(1) ?: ""
-
-    private fun getPlayer(rawId: String) = Player.get(rawId, p1Username, p2Username, myUsername())
+    private fun getPlayer(rawId: String) = Player.get(rawId, p1Username, p2Username, myUsername)
 
     private fun getPokemonId(rawId: String) = PokemonId(getPlayer(rawId), rawId)
 
-    fun foeUsername() = Player.FOE.username(p1Username!!, p2Username!!, myUsername())
+    val foeUsername get() = Player.FOE.username(p1Username!!, p2Username!!, myUsername)
+
+    val trainerUsername get() = Player.TRAINER.username(p1Username!!, p2Username!!, myUsername)
+
+    val isUserPlaying get() = trainerUsername == myUsername
 
     fun reAskForRequest() = lastDecisionRequest?.let {
         onDecisionRequest(it)
@@ -133,7 +136,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
         "poke" -> handlePreviewPokemon(message)
         "teampreview" -> actionQueue.enqueueAction {} // Used to trigger action looping in case nothing has been posted before
         "start" -> {
-            printMessage("${battleTextBuilder.start(p1Username, p2Username)}")
+            printMessage(battleTextBuilder.start(p1Username, p2Username))
             onBattleStarted()
         }
         "request" -> handleRequest(message)
@@ -175,8 +178,8 @@ class BattleRoomMessageObserver(service: ShowdownService)
         val username = msg.nextArg
         if (playerId.contains("1")) p1Username = username else p2Username = username
         if (p1Username != null && p2Username != null)
-            onPlayerInit(Player.TRAINER.username(p1Username!!, p2Username!!, myUsername()),
-                Player.FOE.username(p1Username!!, p2Username!!, myUsername()))
+            onPlayerInit(Player.TRAINER.username(p1Username!!, p2Username!!, myUsername),
+                Player.FOE.username(p1Username!!, p2Username!!, myUsername))
     }
 
     private fun handleFaint(msg: ServerMessage) {
@@ -221,7 +224,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
         val player = getPlayer(raw)
         val pokemon = BattlingPokemon(player, raw)
         val prevPoke = getBattlingPokemon(pokemon.id)
-        val username = player.username(p1Username!!, p2Username!!, myUsername())
+        val username = player.username(p1Username!!, p2Username!!, myUsername)
         val text1 = battleTextBuilder.switchOut(prevPoke, username, msg.kwargs["from"])
         val text2 = battleTextBuilder.switchIn(pokemon, username)
         actionQueue.enqueueMajorAction {
