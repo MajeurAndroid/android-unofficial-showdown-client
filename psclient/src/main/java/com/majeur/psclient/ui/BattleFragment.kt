@@ -11,7 +11,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
-import android.view.animation.OvershootInterpolator
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
@@ -37,11 +36,12 @@ import com.majeur.psclient.service.ShowdownService
 import com.majeur.psclient.service.observer.BattleRoomMessageObserver
 import com.majeur.psclient.util.*
 import com.majeur.psclient.util.html.Html
+import com.majeur.psclient.widget.BattleDecisionWidget
 import com.majeur.psclient.widget.BattleLayout
 import com.majeur.psclient.widget.BattleTipPopup
 import kotlinx.coroutines.launch
 
-class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
+class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, View.OnClickListener {
 
     private val observer get() = service!!.battleMessageObserver
 
@@ -97,37 +97,22 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
         inactiveBattleOverlayDrawable = InactiveBattleOverlayDrawable(resources)
         binding.apply {
             battleLog.movementMethod = LinkMovementMethod()
-            actionContainer.actionContainer.animate().interpolator = OvershootInterpolator(1.4f)
-            actionContainer.actionContainer.animate().duration = 500
             overlayImage.setImageDrawable(inactiveBattleOverlayDrawable)
             battleDecisionWidget.onRevealListener = { reveal ->
-                actionContainer.actionContainer.animate()
-                        .setStartDelay(if (reveal) 0L else 350L)
-                        .translationY(if (reveal) 3 * binding.battleLogContainer.height / 5f else 0f)
-                        .start()
-                if (reveal) undoContainer.undoContainer.apply {
-                        translationX = binding.actionContainer.actionContainer.width.toFloat()
-                        alpha = 0f
-                    }
-                else undoContainer.apply {
-                    undoButton.isEnabled = true
-                    undoContainer.animate()
-                            .setStartDelay(350)
-                            .translationX(0f)
-                            .alpha(1f)
-                            .start()
+                if (reveal) {
+                    extraActionLayout.hideItem(R.id.undo_button)
+                    extraActionLayout.setTopOffset(3 * battleLogContainer.height / 5)
+                } else {
+                    extraActionLayout.showItem(R.id.undo_button)
+                    extraActionLayout.setTopOffset(0, BattleDecisionWidget.REVEAL_ANIMATION_DURATION)
                 }
             }
-            actionContainer.timerButton.setOnClickListener(extraClickListener)
-            actionContainer.forfeitButton.setOnClickListener(extraClickListener)
-            actionContainer.sendButton.setOnClickListener(extraClickListener)
-            undoContainer.undoButton.setOnClickListener(extraClickListener)
-            undoContainer.undoContainer.post {
-                undoContainer.undoContainer.apply {
-                    translationX = actionContainer.actionContainer.width.toFloat()
-                    alpha = 0f
-                }
-            }
+            extraActions.timerButton.setOnClickListener(this@BattleFragment)
+            extraActions.forfeitButton.setOnClickListener(this@BattleFragment)
+            extraActions.sendButton.setOnClickListener(this@BattleFragment)
+            undoButton.setOnClickListener(this@BattleFragment)
+            rematchButton.setOnClickListener(this@BattleFragment)
+            uploadReplayButton.setOnClickListener(this@BattleFragment)
         }
     }
 
@@ -157,6 +142,20 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
         service.battleMessageObserver.uiCallbacks = null
     }
 
+    fun forfeit() = service?.sendRoomCommand(observedRoomId, "forfeit")
+
+    fun sendDecision(reqId: Int, decision: BattleDecision) {
+        service?.sendRoomCommand(observedRoomId, decision.command, decision.build(), reqId)
+    }
+
+    fun sendTimerCommand(on: Boolean) {
+        service?.sendRoomCommand(observedRoomId, "timer", if (on) "on" else "off")
+    }
+
+    fun sendUndoCommand() = service?.sendRoomCommand(observedRoomId, "undo")
+
+    fun sendSaveReplayCommand() = service?.sendRoomCommand(observedRoomId, "savereplay")
+
     private fun prepareBattleFieldUi() = binding.apply {
         battleLayout.alpha = 1f
         overlayImage.alpha = 1f
@@ -180,10 +179,10 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
         }.start()
     }
 
-    private val extraClickListener = View.OnClickListener { view ->
-        if (observedRoomId == null) return@OnClickListener
+    override fun onClick(v: View?) {
+        if (observedRoomId == null) return
         when (view) {
-            binding.actionContainer.forfeitButton -> {
+            binding.extraActions.forfeitButton -> {
                 if (battleRunning())
                     AlertDialog.Builder(requireActivity())
                         .setMessage("Do you really want to forfeit this battle ?")
@@ -191,7 +190,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
                         .setNegativeButton("Cancel", null)
                         .show()
             }
-            binding.actionContainer.sendButton -> {
+            binding.extraActions.sendButton -> {
                 val dialogView: View = layoutInflater.inflate(R.layout.dialog_battle_message, null)
                 val editText = dialogView.findViewById<EditText>(R.id.edit_text_team_name)
                 MaterialAlertDialogBuilder(requireActivity())
@@ -206,13 +205,20 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
                         .show()
                 editText.requestFocus()
             }
-            binding.actionContainer.timerButton -> {
+            binding.extraActions.timerButton -> {
                 if (battleRunning()) sendTimerCommand(!timerEnabled)
             }
-            binding.undoContainer.undoButton -> {
-                binding.undoContainer.undoButton.isEnabled = false
+            binding.undoButton -> {
+                binding.undoButton.isEnabled = false
                 sendUndoCommand()
                 observer.reAskForRequest()
+            }
+            binding.rematchButton -> {
+
+            }
+            binding.uploadReplayButton -> {
+                binding.uploadReplayButton.isEnabled = false
+                sendSaveReplayCommand()
             }
         }
     }
@@ -391,18 +397,6 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
         }
     }
 
-    fun forfeit() = service?.sendRoomCommand(observedRoomId, "forfeit")
-
-    fun sendDecision(reqId: Int, decision: BattleDecision) {
-        service?.sendRoomCommand(observedRoomId, decision.command, decision.build(), reqId)
-    }
-
-    fun sendTimerCommand(on: Boolean) {
-        service?.sendRoomCommand(observedRoomId, "timer", if (on) "on" else "off")
-    }
-
-    fun sendUndoCommand() = service?.sendRoomCommand(observedRoomId, "undo")
-
     private fun notifyNewMessageReceived() {
         mainActivity.showBadge(id)
     }
@@ -410,7 +404,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
     override fun onTimerEnabled(enabled: Boolean) {
         timerEnabled = enabled
         val color = ContextCompat.getColor(requireActivity(), R.color.secondary)
-        binding.actionContainer.timerButton.apply {
+        binding.extraActions.timerButton.apply {
             if (enabled) drawable.colorFilter = BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
                     color, BlendModeCompat.MODULATE)
             else drawable.clearColorFilter()
@@ -439,6 +433,10 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
         audioManager.stopBattleMusic()
         inactiveBattleOverlayDrawable.setWinner(winner)
         clearBattleFieldUi()
+        binding.extraActionLayout.apply {
+            showItem(R.id.rematch_button)
+            showItem(R.id.upload_replay_button)
+        }
     }
 
     override fun onPreviewStarted() {
@@ -633,13 +631,14 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
 
     override fun onMarkBreak() {
         binding.apply {
-           battleDecisionWidget.dismiss()
-           undoContainer.undoButton.isEnabled = false
-           undoContainer.undoContainer.animate()
-                    .setStartDelay(0)
-                    .translationX(actionContainer.actionContainer.width.toFloat())
-                    .alpha(0f)
-                    .start()
+            battleDecisionWidget.dismiss()
+            extraActionLayout.hideItem(R.id.undo_button)
+//           undoContainer.undoButton.isEnabled = false
+//           undoContainer.undoContainer.animate()
+//                    .setStartDelay(0)
+//                    .translationX(actionContainer.actionContainer.width.toFloat())
+//                    .alpha(0f)
+//                    .start()
         }
     }
 
@@ -715,6 +714,10 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
                             .start()
                 }
                 .start()
+        binding.extraActionLayout.apply {
+            hideItem(R.id.rematch_button)
+            hideItem(R.id.upload_replay_button)
+        }
         // In case of corrupted battle stream make sure we stop music at the next one
         audioManager.stopBattleMusic()
     }
@@ -724,13 +727,14 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
         binding.apply {
             battleDecisionWidget.dismiss()
             battleLog.text = ""
-            undoContainer.undoButton.isEnabled = false
-            undoContainer.undoContainer.animate()
-                    .setStartDelay(0)
-                    .translationX(actionContainer.actionContainer.width.toFloat())
-                    .alpha(0f)
-                    .start()
-            actionContainer.timerButton.drawable.clearColorFilter()
+            extraActionLayout.hideItem(R.id.undo_button)
+//            undoContainer.undoButton.isEnabled = false
+//            undoContainer.undoContainer.animate()
+//                    .setStartDelay(0)
+//                    .translationX(actionContainer.actionContainer.width.toFloat())
+//                    .alpha(0f)
+//                    .start()
+            extraActions.timerButton.drawable.clearColorFilter()
         }
         audioManager.stopBattleMusic()
         inactiveBattleOverlayDrawable.setWinner(null)

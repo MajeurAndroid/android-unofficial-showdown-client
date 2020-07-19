@@ -639,5 +639,7 @@ class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: A
         private const val ANIM_REVEAL_DURATION = 250L
         private const val ANIM_REVEAL_FADE_DURATION = 100L
         private const val ANIM_NEXTCHOICE_FADE_DURATION = 225L
+
+        const val REVEAL_ANIMATION_DURATION = ANIM_REVEAL_DURATION + ANIM_REVEAL_FADE_DURATION
     }
 }

@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+        android:color="@color/divider">
 
     <item>
         <shape android:shape="rectangle">
-            <solid android:color="?attr/colorSurface" />
+            <solid android:color="?attr/colorSurface"/>
+            <padding android:left="8dp" android:top="8dp" android:right="8dp" android:bottom="8dp"/>
             <corners android:topLeftRadius="21dp" android:bottomLeftRadius="21dp" />
         </shape>
     </item>
 
-</layer-list>
+</ripple>

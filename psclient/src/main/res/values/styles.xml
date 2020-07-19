@@ -38,5 +38,14 @@
         <item name="android:textColor">@android:color/white</item>
     </style>
 
+    <style name="Widget.PSClient.ExtraActionButton" parent="Widget.AppCompat.TextView" >
+        <item name="android:background">@drawable/bg_battle_extra_actions</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:drawablePadding">4dp</item>
+        <item name="android:elevation">4dp</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="drawableTint">?attr/colorOnSurface</item>
+    </style>
 
 </resources>
