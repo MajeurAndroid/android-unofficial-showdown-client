@@ -2,6 +2,7 @@ package com.majeur.psclient.util
 
 import android.content.Context
 import android.content.res.Resources
+import android.graphics.Color
 import android.graphics.Rect
 import android.graphics.Typeface
 import android.text.Spannable
@@ -70,8 +71,8 @@ fun Spannable.bg(color: Int): Spannable {
     return this
 }
 
-fun Spannable.tag(color: Int): Spannable {
-    setSpan(TextTagSpan(color), 0, length, Spannable.SPAN_INCLUSIVE_EXCLUSIVE)
+fun Spannable.tag(color: Int, textColor: Int = Color.WHITE): Spannable {
+    setSpan(TextTagSpan(color, textColor), 0, length, Spannable.SPAN_INCLUSIVE_EXCLUSIVE)
     return this
 }
 

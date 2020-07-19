@@ -253,7 +253,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
             pokemon.condition?.let { condition ->
                 append("HP: ".small())
                 append("%.1f%% ".format(condition.health * 100).bold().color(healthColor(condition.health)))
-                if (pokemon.trainer && observer.isUserPlaying) append("(${condition.hp}/${condition.maxHp})".small())
+                if (pokemon.trainer && observer.isUserPlaying) append("(${condition.hp}/${condition.maxHp}) ".small())
                 condition.status?.let { append(it.toUpperCase().small().tag(statusColor(it))) }
                 append("\n")
             }
