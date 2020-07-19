@@ -477,7 +477,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
         val id = getPokemonId(msg.nextArg)
         val stat = msg.nextArgSafe
         val amount = msg.nextArgSafe
-        val amountValue = amount?.toIntOrNull() ?: 0 * if (boost) 1 else -1
+        val amountValue = (amount?.toIntOrNull() ?: 0) * (if (boost) 1 else -1)
         val text = battleTextBuilder.boost(msg.command, id, stat, amount,
                 msg.kwargs["from"], msg.kwargs["of"], msg.kwargs["multiple"], msg.kwargs["zeffect"])
         actionQueue.enqueueMinorAction {
