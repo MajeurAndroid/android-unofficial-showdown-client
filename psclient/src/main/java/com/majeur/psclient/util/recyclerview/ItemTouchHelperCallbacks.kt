@@ -5,8 +5,6 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.BlendModeColorFilterCompat
-import androidx.core.graphics.BlendModeCompat
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.majeur.psclient.R
@@ -23,8 +21,7 @@ open class ItemTouchHelperCallbacks(
     private val background = ColorDrawable(ContextCompat.getColor(context, R.color.error))
     private val icon = ContextCompat.getDrawable(context, R.drawable.ic_delete)!!
             .also {
-                it.colorFilter = BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
-                        Color.WHITE, BlendModeCompat.SRC_IN)
+                it.setTint(Color.WHITE)
             }
     private val iconLeftMargin = context.dp(12f)
 

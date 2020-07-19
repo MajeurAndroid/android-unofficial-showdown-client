@@ -18,8 +18,6 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.BlendModeColorFilterCompat
-import androidx.core.graphics.BlendModeCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.majeur.psclient.R
 import com.majeur.psclient.databinding.FragmentBattleBinding
@@ -409,18 +407,14 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
 
     override fun onTimerEnabled(enabled: Boolean) {
         timerEnabled = enabled
-        val color = ContextCompat.getColor(requireActivity(), R.color.secondary)
-        binding.extraActions.timerButton.apply {
-            if (enabled) drawable.colorFilter = BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
-                    color, BlendModeCompat.MODULATE)
-            else drawable.clearColorFilter()
-        }
+        val color = ContextCompat.getColor(requireActivity(), if (enabled) R.color.secondary else R.color.onSurfaceBackground)
+        binding.extraActions.timerButton.drawable.setTint(color)
     }
 
     override fun onPlayerInit(playerUsername: String, foeUsername: String) {
         binding.trainerInfo.setUsername(playerUsername)
         binding.foeInfo.setUsername(foeUsername)
-        if (!observer.isUserPlaying) { // Spectator cannot forfeit...
+        if (!observer.isUserPlaying) { // Spectator cannot forfeit nor toggle timer
             binding.extraActions.forfeitButton.apply {
                 setImageDrawable(ContextCompat.getDrawable(requireActivity(), R.drawable.ic_exit))
             }
@@ -740,8 +734,8 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
             battleDecisionWidget.dismiss()
             battleLog.text = ""
             extraActionLayout.hideItem(R.id.undo_button)
-            extraActions.timerButton.drawable.clearColorFilter()
         }
+        onTimerEnabled(false)
         audioManager.stopBattleMusic()
         inactiveBattleOverlayDrawable.setWinner(null)
         clearBattleFieldUi()
