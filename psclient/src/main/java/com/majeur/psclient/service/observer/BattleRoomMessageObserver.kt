@@ -85,6 +85,8 @@ class BattleRoomMessageObserver(service: ShowdownService)
 
     private fun getPokemonId(rawId: String) = PokemonId(getPlayer(rawId), rawId)
 
+    fun foeUsername() = Player.FOE.username(p1Username!!, p2Username!!, myUsername())
+
     fun reAskForRequest() = lastDecisionRequest?.let {
         onDecisionRequest(it)
     }

@@ -179,16 +179,16 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
         }.start()
     }
 
-    override fun onClick(v: View?) {
+    override fun onClick(clickedView: View?) {
         if (observedRoomId == null) return
-        when (view) {
+        when (clickedView) {
             binding.extraActions.forfeitButton -> {
-                if (battleRunning())
-                    AlertDialog.Builder(requireActivity())
-                        .setMessage("Do you really want to forfeit this battle ?")
-                        .setPositiveButton("Forfeit") { _: DialogInterface?, _: Int -> forfeit() }
-                        .setNegativeButton("Cancel", null)
-                        .show()
+                if (!battleRunning()) return
+                AlertDialog.Builder(requireActivity())
+                    .setMessage("Do you really want to forfeit this battle ?")
+                    .setPositiveButton("Forfeit") { _: DialogInterface?, _: Int -> forfeit() }
+                    .setNegativeButton("Cancel", null)
+                    .show()
             }
             binding.extraActions.sendButton -> {
                 val dialogView: View = layoutInflater.inflate(R.layout.dialog_battle_message, null)
@@ -214,10 +214,10 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
                 observer.reAskForRequest()
             }
             binding.rematchButton -> {
-
+                homeFragment.challengeSomeone(observer.foeUsername())
             }
             binding.uploadReplayButton -> {
-                binding.uploadReplayButton.isEnabled = false
+                binding.extraActionLayout.hideItem(R.id.upload_replay_button)
                 sendSaveReplayCommand()
             }
         }

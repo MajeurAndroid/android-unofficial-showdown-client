@@ -1,10 +1,7 @@
 package com.majeur.psclient.ui
 
 import android.annotation.SuppressLint
-import android.content.ActivityNotFoundException
-import android.content.Context
-import android.content.DialogInterface
-import android.content.Intent
+import android.content.*
 import android.graphics.Color
 import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
@@ -49,6 +46,8 @@ import java.util.*
 class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnClickListener {
 
     private val observer get() = service!!.globalMessageObserver
+    private val clipboardManager
+        get() = requireActivity().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
 
     private lateinit var assetLoader: AssetLoader
 
@@ -521,6 +520,24 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
                 isEnabled = roomId != battleFragment.observedRoomId
                 setOnClickListener { requestRoomJoin(roomId) }
             }
+        }
+    }
+
+    override fun onReplaySaved(replayId: String, url: String) {
+        clipboardManager.setPrimaryClip(ClipData.newPlainText("Battle replay url", url))
+        MaterialAlertDialogBuilder(requireActivity()).apply {
+            setTitle("Replay saved successfully")
+            setMessage("Your replay has been uploaded! Url has been copied to clipboard.")
+            setPositiveButton("Share") { _, _ ->
+                val intent: Intent = Intent().apply {
+                    action = Intent.ACTION_SEND
+                    putExtra(Intent.EXTRA_TEXT, url)
+                    type = "text/plain"
+                }
+                startActivity(Intent.createChooser(intent, "Share replay"))
+            }
+            setNegativeButton("Close", null)
+            show()
         }
     }
 
