@@ -9,6 +9,8 @@ import android.text.Spanned
 import android.text.method.LinkMovementMethod
 import android.view.LayoutInflater
 import android.view.View
+import android.view.View.GONE
+import android.view.View.VISIBLE
 import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.EditText
@@ -183,12 +185,16 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
         if (observedRoomId == null) return
         when (clickedView) {
             binding.extraActions.forfeitButton -> {
-                if (!battleRunning()) return
-                AlertDialog.Builder(requireActivity())
-                    .setMessage("Do you really want to forfeit this battle ?")
-                    .setPositiveButton("Forfeit") { _: DialogInterface?, _: Int -> forfeit() }
-                    .setNegativeButton("Cancel", null)
-                    .show()
+                if (observer.isUserPlaying) {
+                    if (!battleRunning()) return
+                    AlertDialog.Builder(requireActivity())
+                            .setMessage("Do you really want to forfeit this battle ?")
+                            .setPositiveButton("Forfeit") { _: DialogInterface?, _: Int -> forfeit() }
+                            .setNegativeButton("Cancel", null)
+                            .show()
+                } else { // Act as a leave button when user is spectator
+                    service?.sendRoomCommand(observedRoomId, "leave")
+                }
             }
             binding.extraActions.sendButton -> {
                 val dialogView: View = layoutInflater.inflate(R.layout.dialog_battle_message, null)
@@ -214,7 +220,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
                 observer.reAskForRequest()
             }
             binding.rematchButton -> {
-                homeFragment.challengeSomeone(observer.foeUsername())
+                homeFragment.challengeSomeone(observer.foeUsername)
             }
             binding.uploadReplayButton -> {
                 binding.extraActionLayout.hideItem(R.id.upload_replay_button)
@@ -247,7 +253,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
             pokemon.condition?.let { condition ->
                 append("HP: ".small())
                 append("%.1f%% ".format(condition.health * 100).bold().color(healthColor(condition.health)))
-                if (pokemon.trainer) append("(${condition.hp}/${condition.maxHp})".small())
+                if (pokemon.trainer && observer.isUserPlaying) append("(${condition.hp}/${condition.maxHp})".small())
                 condition.status?.let { append(it.toUpperCase().small().tag(statusColor(it))) }
                 append("\n")
             }
@@ -285,7 +291,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
                 placeHolderTop.setImageResource(Type.getResId(dexPokemon.firstType))
                 dexPokemon.secondType?.let { placeHolderBottom.setImageResource(Type.getResId(it)) }
 
-                if (pokemon.trainer) {
+                if (pokemon.trainer && observer.isUserPlaying) {
                     if (ability == null) return@launch
                     val abilityName = if (dexPokemon.hiddenAbility?.toId() == ability) dexPokemon.hiddenAbility
                     else  dexPokemon.abilities.firstOrNull { it.toId() == ability }
@@ -414,6 +420,12 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
     override fun onPlayerInit(playerUsername: String, foeUsername: String) {
         binding.trainerInfo.setUsername(playerUsername)
         binding.foeInfo.setUsername(foeUsername)
+        if (!observer.isUserPlaying) { // Spectator cannot forfeit...
+            binding.extraActions.forfeitButton.apply {
+                setImageDrawable(ContextCompat.getDrawable(requireActivity(), R.drawable.ic_exit))
+            }
+            binding.extraActions.timerButton.visibility = GONE
+        }
     }
 
     override fun onBattleStarted() {
@@ -433,9 +445,11 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
         audioManager.stopBattleMusic()
         inactiveBattleOverlayDrawable.setWinner(winner)
         clearBattleFieldUi()
-        binding.extraActionLayout.apply {
-            showItem(R.id.rematch_button)
-            showItem(R.id.upload_replay_button)
+        if (observer.isUserPlaying) {
+            binding.extraActionLayout.apply {
+                showItem(R.id.rematch_button)
+                showItem(R.id.upload_replay_button)
+            }
         }
     }
 
@@ -633,12 +647,6 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
         binding.apply {
             battleDecisionWidget.dismiss()
             extraActionLayout.hideItem(R.id.undo_button)
-//           undoContainer.undoButton.isEnabled = false
-//           undoContainer.undoContainer.animate()
-//                    .setStartDelay(0)
-//                    .translationX(actionContainer.actionContainer.width.toFloat())
-//                    .alpha(0f)
-//                    .start()
         }
     }
 
@@ -718,6 +726,10 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
             hideItem(R.id.rematch_button)
             hideItem(R.id.upload_replay_button)
         }
+        binding.extraActions.forfeitButton.apply {
+            setImageDrawable(ContextCompat.getDrawable(requireActivity(), R.drawable.ic_forfeit))
+        }
+        binding.extraActions.timerButton.visibility = VISIBLE
         // In case of corrupted battle stream make sure we stop music at the next one
         audioManager.stopBattleMusic()
     }
@@ -728,18 +740,11 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
             battleDecisionWidget.dismiss()
             battleLog.text = ""
             extraActionLayout.hideItem(R.id.undo_button)
-//            undoContainer.undoButton.isEnabled = false
-//            undoContainer.undoContainer.animate()
-//                    .setStartDelay(0)
-//                    .translationX(actionContainer.actionContainer.width.toFloat())
-//                    .alpha(0f)
-//                    .start()
             extraActions.timerButton.drawable.clearColorFilter()
         }
         audioManager.stopBattleMusic()
         inactiveBattleOverlayDrawable.setWinner(null)
         clearBattleFieldUi()
         lastDecisionRequest = null
-
     }
 }
