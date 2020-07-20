@@ -14,6 +14,7 @@ import android.text.style.RelativeSizeSpan
 import android.text.style.StyleSpan
 import android.util.TypedValue
 import android.view.View
+import android.widget.TextView
 import androidx.core.text.toSpannable
 import androidx.core.text.toSpanned
 import androidx.fragment.app.Fragment
@@ -95,4 +96,13 @@ fun Rect.baselineForTop(textTop: Int) = textTop - top // Offset to text's baseli
 fun <T> Array<T>.minusLast() = copyOfRange(0, size - 1)
 fun <T> Array<T>.minusFirst() = copyOfRange(1, size)
 
-fun Editable.clearText() { clearSpans(); clear() }
+fun TextView.clearText() {
+    // We cannot use editableText.clear()/.clearSpans() because this also removes internal text spans required
+    // for TextView to work properly... So we must do it the ugly way:
+    val bufferType = when (text) {
+        is Editable -> TextView.BufferType.EDITABLE
+        is Spannable -> TextView.BufferType.SPANNABLE
+        else -> TextView.BufferType.NORMAL
+    }
+    setText("", bufferType)
+}

@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.DialogInterface
 import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
-import android.text.Editable
 import android.text.Spanned
 import android.text.method.LinkMovementMethod
 import android.view.LayoutInflater
@@ -96,6 +95,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
         inactiveBattleOverlayDrawable = InactiveBattleOverlayDrawable(resources)
         binding.apply {
             battleLog.movementMethod = LinkMovementMethod()
+            battleLog.setText("", TextView.BufferType.EDITABLE) // Setting the editable buffer type
             overlayImage.setImageDrawable(inactiveBattleOverlayDrawable)
             battleDecisionWidget.onRevealListener = { reveal ->
                 if (reveal) {
@@ -714,8 +714,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
         lastDecisionRequest = null
         onTimerEnabled(false)
         binding.apply {
-            if (battleLog.text is Editable) battleLog.editableText.clearText()
-            else battleLog.setText("", TextView.BufferType.EDITABLE)
+            battleLog.clearText()
             battleDecisionWidget.dismissNow()
             extraActionLayout.apply {
                 hideItem(R.id.rematch_button)
@@ -749,7 +748,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
         clearBattleFieldUi(animate = battleRunning)
         onTimerEnabled(false)
         binding.apply {
-            battleLog.editableText.clearText()
+            battleLog.clearText()
             battleDecisionWidget.dismiss()
             extraActionLayout.apply {
                 hideItem(R.id.rematch_button)
