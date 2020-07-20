@@ -77,7 +77,8 @@
         android:layout_height="match_parent"
         android:layout_below="@id/trainer_info"
         android:background="?attr/colorBackground"
-        android:fillViewport="true">
+        android:fillViewport="true"
+        android:scrollbars="none">
 
         <TextView
             android:id="@+id/battle_log"
