@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.DialogInterface
 import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
+import android.text.Editable
 import android.text.Spanned
 import android.text.method.LinkMovementMethod
 import android.view.LayoutInflater
@@ -69,9 +70,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
             observer.observedRoomId = observedRoomId
         }
 
-    fun battleRunning(): Boolean {
-        return observer.battleRunning
-    }
+    val battleRunning get() = observer.battleRunning
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -162,32 +161,41 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
         overlayImage.setImageDrawable(null)
     }
 
-    private fun clearBattleFieldUi() {
-        binding.battleLayout.animate().alpha(0f).withEndAction {
-            binding.apply {
-                battleLayout.getSideView(Player.TRAINER).clearAllSides()
-                battleLayout.getSideView(Player.FOE).clearAllSides()
-                battleLayout.getStatusViews(Player.TRAINER).forEach { it.clear() }
-                battleLayout.getStatusViews(Player.FOE).forEach { it.clear() }
-                overlayImage.setImageDrawable(null)
-                trainerInfo.clear()
-                foeInfo.clear()
-                overlayImage.alpha = 0f
-                overlayImage.setImageDrawable(inactiveBattleOverlayDrawable)
-                overlayImage.animate().alpha(1f)
+    private fun clearBattleFieldUi(animate: Boolean = true) = binding.apply {
+        val clearUiAction = Runnable {
+            battleLayout.getSideView(Player.TRAINER).clearAllSides()
+            battleLayout.getSideView(Player.FOE).clearAllSides()
+            battleLayout.getStatusViews(Player.TRAINER).forEach { it.clear() }
+            battleLayout.getStatusViews(Player.FOE).forEach { it.clear() }
+            trainerInfo.clear()
+            foeInfo.clear()
+            battleMessage.apply {
+                animate().cancel()
+                alpha = 0f
             }
-        }.start()
+            if (overlayImage.drawable != inactiveBattleOverlayDrawable) {
+                if (animate) {
+                    overlayImage.setImageDrawable(null)
+                    overlayImage.alpha = 0f
+                    overlayImage.setImageDrawable(inactiveBattleOverlayDrawable)
+                    overlayImage.animate().alpha(1f)
+                } else {
+                    overlayImage.setImageDrawable(inactiveBattleOverlayDrawable)
+                }
+            }
+        }
+        if (animate) battleLayout.animate().alpha(0f).withEndAction(clearUiAction).start()
+        else clearUiAction.run()
     }
 
     override fun onClick(clickedView: View?) {
         if (observedRoomId == null) return
         when (clickedView) {
             binding.extraActions.forfeitButton -> {
-                if (observer.isUserPlaying) {
-                    if (!battleRunning()) return
+                if (battleRunning && observer.isUserPlaying) {
                     AlertDialog.Builder(requireActivity())
                             .setMessage("Do you really want to forfeit this battle ?")
-                            .setPositiveButton("Forfeit") { _: DialogInterface?, _: Int -> forfeit() }
+                            .setPositiveButton("Forfeit") { _, _ -> forfeit() }
                             .setNegativeButton("Cancel", null)
                             .show()
                 } else { // Act as a leave button when user is spectator
@@ -210,7 +218,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
                 editText.requestFocus()
             }
             binding.extraActions.timerButton -> {
-                if (battleRunning()) sendTimerCommand(!timerEnabled)
+                if (battleRunning) sendTimerCommand(!timerEnabled)
             }
             binding.undoButton -> {
                 binding.undoButton.isEnabled = false
@@ -444,6 +452,10 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
                 showItem(R.id.rematch_button)
                 showItem(R.id.upload_replay_button)
             }
+            binding.extraActions.forfeitButton.apply {
+                setImageDrawable(ContextCompat.getDrawable(requireActivity(), R.drawable.ic_exit))
+            }
+            binding.extraActions.timerButton.visibility = GONE
         }
     }
 
@@ -699,46 +711,56 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
 
     override fun onRoomInit() {
         soundEnabled = Preferences.getBoolPreference(context, "sound")
-        binding.battleLog.setText("", TextView.BufferType.EDITABLE)
         lastDecisionRequest = null
-        binding.battleDecisionWidget.dismissNow()
         onTimerEnabled(false)
-        binding.backgroundImage.animate()
-                .setDuration(100)
-                .alpha(0f)
-                .withEndAction {
-                    val resId: Int = if (Math.random() > 0.5) R.drawable.battle_bg_1 else R.drawable.battle_bg_2
-                    binding.backgroundImage.setImageResource(resId)
-                    binding.backgroundImage.animate()
-                            .setDuration(100)
-                            .alpha(1f)
-                            .withEndAction(null)
-                            .start()
-                }
-                .start()
-        binding.extraActionLayout.apply {
-            hideItem(R.id.rematch_button)
-            hideItem(R.id.upload_replay_button)
+        binding.apply {
+            if (battleLog.text is Editable) battleLog.editableText.clearText()
+            else battleLog.setText("", TextView.BufferType.EDITABLE)
+            battleDecisionWidget.dismissNow()
+            extraActionLayout.apply {
+                hideItem(R.id.rematch_button)
+                hideItem(R.id.upload_replay_button)
+            }
+            extraActions.apply {
+                forfeitButton.setImageDrawable(ContextCompat.getDrawable(requireActivity(), R.drawable.ic_forfeit))
+                timerButton.visibility = VISIBLE
+            }
+            backgroundImage.animate()
+                    .setDuration(100)
+                    .alpha(0f)
+                    .withEndAction {
+                        val resId = if (Math.random() > 0.5) R.drawable.battle_bg_1 else R.drawable.battle_bg_2
+                        backgroundImage.setImageResource(resId)
+                        backgroundImage.animate()
+                                .alpha(1f)
+                                .withEndAction(null)
+                                .start()
+                    }
+                    .start()
         }
-        binding.extraActions.forfeitButton.apply {
-            setImageDrawable(ContextCompat.getDrawable(requireActivity(), R.drawable.ic_forfeit))
-        }
-        binding.extraActions.timerButton.visibility = VISIBLE
         // In case of corrupted battle stream make sure we stop music at the next one
         audioManager.stopBattleMusic()
     }
 
     override fun onRoomDeInit() {
         mainActivity.setKeepScreenOn(false)
-        binding.apply {
-            battleDecisionWidget.dismiss()
-            battleLog.text = ""
-            extraActionLayout.hideItem(R.id.undo_button)
-        }
-        onTimerEnabled(false)
-        audioManager.stopBattleMusic()
-        inactiveBattleOverlayDrawable.setWinner(null)
-        clearBattleFieldUi()
         lastDecisionRequest = null
+        inactiveBattleOverlayDrawable.setWinner(null)
+        clearBattleFieldUi(animate = battleRunning)
+        onTimerEnabled(false)
+        binding.apply {
+            battleLog.editableText.clearText()
+            battleDecisionWidget.dismiss()
+            extraActionLayout.apply {
+                hideItem(R.id.rematch_button)
+                hideItem(R.id.upload_replay_button)
+                hideItem(R.id.undo_button)
+            }
+            extraActions.apply {
+                forfeitButton.setImageDrawable(ContextCompat.getDrawable(requireActivity(), R.drawable.ic_forfeit))
+                timerButton.visibility = VISIBLE
+            }
+        }
+        audioManager.stopBattleMusic()
     }
 }

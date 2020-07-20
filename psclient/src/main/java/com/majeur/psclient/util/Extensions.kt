@@ -5,6 +5,7 @@ import android.content.res.Resources
 import android.graphics.Color
 import android.graphics.Rect
 import android.graphics.Typeface
+import android.text.Editable
 import android.text.Spannable
 import android.text.TextUtils
 import android.text.style.BackgroundColorSpan
@@ -93,3 +94,5 @@ fun Rect.baselineForTop(textTop: Int) = textTop - top // Offset to text's baseli
 
 fun <T> Array<T>.minusLast() = copyOfRange(0, size - 1)
 fun <T> Array<T>.minusFirst() = copyOfRange(1, size)
+
+fun Editable.clearText() { clearSpans(); clear() }

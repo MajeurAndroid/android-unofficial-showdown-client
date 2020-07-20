@@ -206,7 +206,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
                     if (parentFragmentManager.findFragmentByTag(SignInDialog.FRAGMENT_TAG) == null)
                         SignInDialog.newInstance().show(parentFragmentManager, SignInDialog.FRAGMENT_TAG)
                 } else {
-                    if (battleFragment.battleRunning())
+                    if (battleFragment.battleRunning)
                         makeSnackbar("A battle is already running")
                     else
                         searchForBattle()
@@ -390,7 +390,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
             isChallengingSomeone -> makeSnackbar("You are already challenging someone")
             isSearchingBattle -> makeSnackbar("Cannot challenge someone while searching for battle")
             isAcceptingChallenge -> makeSnackbar("You are already accepting a challenge")
-            battleFragment.battleRunning() -> makeSnackbar("You cannot challenge someone while being in a battle")
+            battleFragment.battleRunning -> makeSnackbar("You cannot challenge someone while being in a battle")
             else -> {
                 isChallengingSomeone = true
                 waitingForChallenge = false
@@ -653,7 +653,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
     override fun onRoomInit(roomId: String, type: String) {
         when (type) {
             "battle" -> {
-                if (battleFragment.observedRoomId == null || !battleFragment.battleRunning()) {
+                if (battleFragment.observedRoomId == null || !battleFragment.battleRunning) {
                     battleFragment.observedRoomId = roomId
                     mainActivity.showBattleFragment()
                 } else {
