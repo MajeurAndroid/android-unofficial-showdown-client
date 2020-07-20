@@ -74,10 +74,11 @@ class PrivateMessagesOverviewWidget @JvmOverloads constructor(context: Context?,
     }
 
     private fun getEntryOrCreate(with: String) = entries.firstOrNull { it.with == with } ?: Entry(with).also {
-        val view = layoutInflater.inflate(R.layout.list_item_pmentry, this) as ViewGroup
-        view.setOnClickListener(this@PrivateMessagesOverviewWidget)
-        view.findViewById<View>(R.id.button_challenge).setOnClickListener(this@PrivateMessagesOverviewWidget)
+        val view = layoutInflater.inflate(R.layout.list_item_pmentry, this, false) as ViewGroup
+        view.setOnClickListener(this)
+        view.findViewById<View>(R.id.button_challenge).setOnClickListener(this)
         view.tag = it
+        addView(view)
     }
 
     private fun removeViewForEntry(entry: Entry) = children.firstOrNull { it.tag == entry }?.let { removeView(it) }
