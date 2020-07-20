@@ -114,6 +114,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setSelectedNavigationItem(itemId: Int) {
         if (useLandscapeLayout) {
+            if (itemId == R.id.fragment_home) return
             binding.navigationView!!.setCheckedItem(itemId)
             // NavigationView do not trigger its NavigationItemSelectedListener by default
             onNavigationItemSelected(binding.navigationView!!.menu.findItem(itemId))
