@@ -2,7 +2,6 @@ package com.majeur.psclient.ui
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.DialogInterface
 import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
 import android.text.Spanned
@@ -13,6 +12,7 @@ import android.view.View.GONE
 import android.view.View.VISIBLE
 import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
@@ -205,17 +205,21 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
             binding.extraActions.sendButton -> {
                 val dialogView: View = layoutInflater.inflate(R.layout.dialog_battle_message, null)
                 val editText = dialogView.findViewById<EditText>(R.id.edit_text_team_name)
-                MaterialAlertDialogBuilder(requireActivity())
-                        .setPositiveButton("Send") { _: DialogInterface?, _: Int ->
-                            val regex = "[{}:\",|\\[\\]]".toRegex()
-                            val input = editText.text.toString().replace(regex, "")
-                            service?.sendRoomMessage(observedRoomId, input)
-                        }
+                val dialog = MaterialAlertDialogBuilder(requireActivity())
+                        .setPositiveButton("Send") { d, _ -> sendChatMessage(editText.text); d.dismiss() }
                         .setNegativeButton("Cancel", null)
-                        .setNeutralButton("\"gg\"") { _: DialogInterface?, _: Int -> service?.sendRoomMessage(observedRoomId, "gg") }
+                        .setNeutralButton("\"gg\"") { d, _ -> sendChatMessage("gg"); d.dismiss() }
                         .setView(dialogView)
                         .show()
                 editText.requestFocus()
+                editText.setOnEditorActionListener { _, actionId, _ ->
+                    if (actionId == EditorInfo.IME_ACTION_SEND) {
+                        sendChatMessage(editText.text)
+                        dialog.dismiss()
+                        return@setOnEditorActionListener true
+                    }
+                    false
+                }
             }
             binding.extraActions.timerButton -> {
                 if (battleRunning) sendTimerCommand(!timerEnabled)
@@ -233,6 +237,12 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
                 sendSaveReplayCommand()
             }
         }
+    }
+
+    private fun sendChatMessage(msg: CharSequence) {
+        val regex = "[{}:\",|\\[\\]]".toRegex()
+        val escaped = msg.toString().replace(regex, "")
+        if (escaped.isNotBlank()) service?.sendRoomMessage(observedRoomId, escaped)
     }
 
     private val mOnBindPopupViewListener = { anchorView: View, titleView: TextView, descView: TextView, placeHolderTop: ImageView, placeHolderBottom: ImageView ->

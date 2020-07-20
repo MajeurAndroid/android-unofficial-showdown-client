@@ -11,7 +11,8 @@
         android:layout_margin="16dp"
         android:maxLines="2"
         android:maxLength="64"
-        android:inputType="textNoSuggestions"
+        android:inputType="textShortMessage"
+        android:imeOptions="actionSend"
         android:hint="Type your message"/>
 
 </FrameLayout>
