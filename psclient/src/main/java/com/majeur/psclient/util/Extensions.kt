@@ -88,8 +88,8 @@ fun Context.sp(sp: Float) = resources.sp(sp)
 fun Resources.sp(sp: Float) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sp,
         displayMetrics).toInt()
 
-fun Rect.xForLeft(textLeft: Int) = textLeft - left // Offset by Glyph's AdvanceX value added by Skia
-fun Rect.yForTop(textTop: Int) = textTop - top // Computes text's baseline for a given top
+fun Rect.startForLeft(textLeft: Int) = textLeft - left // Remove glyph's advanceX value added by Skia
+fun Rect.baselineForTop(textTop: Int) = textTop - top // Offset to text's baseline for a given top
 
 fun <T> Array<T>.minusLast() = copyOfRange(0, size - 1)
 fun <T> Array<T>.minusFirst() = copyOfRange(1, size)

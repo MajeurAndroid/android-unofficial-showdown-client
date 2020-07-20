@@ -8,10 +8,10 @@ import android.view.View
 import androidx.collection.ArrayMap
 import com.majeur.psclient.model.common.Colors
 import com.majeur.psclient.model.common.Colors.sideColor
+import com.majeur.psclient.util.baselineForTop
 import com.majeur.psclient.util.dp
 import com.majeur.psclient.util.sp
-import com.majeur.psclient.util.xForLeft
-import com.majeur.psclient.util.yForTop
+import com.majeur.psclient.util.startForLeft
 import kotlin.math.roundToInt
 
 @SuppressLint("RtlHardcoded")
@@ -119,9 +119,9 @@ class SideView(context: Context?) : View(context) {
                 clearShadowLayer()
             }
             canvas?.drawText(text,
-                    textBounds.xForLeft(
+                    textBounds.startForLeft(
                             if (isGravityRight) widthSize - paddingRight - rectWith + tagRadius else paddingLeft + tagRadius
-                    ).toFloat(), textBounds.yForTop(top + tagRadius).toFloat(), paint)
+                    ).toFloat(), textBounds.baselineForTop(top + tagRadius).toFloat(), paint)
             top += rectHeight + verticalSpacing
         }
     }

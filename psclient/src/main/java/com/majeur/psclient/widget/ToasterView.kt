@@ -10,10 +10,10 @@ import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.FrameLayout
 import androidx.collection.ArraySet
+import com.majeur.psclient.util.baselineForTop
 import com.majeur.psclient.util.dp
 import com.majeur.psclient.util.sp
-import com.majeur.psclient.util.xForLeft
-import com.majeur.psclient.util.yForTop
+import com.majeur.psclient.util.startForLeft
 
 class ToasterView(context: Context) : FrameLayout(context) {
 
@@ -117,8 +117,8 @@ class ToasterView(context: Context) : FrameLayout(context) {
                 color = Color.WHITE
                 clearShadowLayer()
             }
-            canvas.drawText(toastText, textBounds.xForLeft(shadowRadius + cornerRadius).toFloat(),
-                    textBounds.yForTop(cornerRadius).toFloat(), paint)
+            canvas.drawText(toastText, textBounds.startForLeft(shadowRadius + cornerRadius).toFloat(),
+                    textBounds.baselineForTop(cornerRadius).toFloat(), paint)
         }
     }
 }
