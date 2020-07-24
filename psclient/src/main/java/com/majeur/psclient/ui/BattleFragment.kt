@@ -720,8 +720,12 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
     override fun onSetBattleType(type: BattleRoomMessageObserver.BattleType) {
         when (type) {
             BattleRoomMessageObserver.BattleType.REPLAY -> enableReplayControls()
+            BattleRoomMessageObserver.BattleType.LIVE -> enableBattleControls()
         }
-        TODO("Not yet implemented")
+    }
+
+    override fun goToLatest() {
+        postFullScroll()
     }
 
     private fun enableReplayControls() {
@@ -729,6 +733,13 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
 
         binding.actionContainer.actionContainer.visibility = View.GONE
         binding.battleDecisionWidget.visibility = View.GONE
+    }
+
+    private fun enableBattleControls() {
+        binding.replayControlsContainer.replayControlsContainer.visibility = View.GONE
+
+        binding.actionContainer.actionContainer.visibility = View.VISIBLE
+        binding.battleDecisionWidget.visibility = View.VISIBLE
     }
 
     override fun onPrintHtml(html: String) {

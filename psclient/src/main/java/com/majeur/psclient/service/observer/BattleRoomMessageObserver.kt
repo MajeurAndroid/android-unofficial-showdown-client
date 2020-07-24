@@ -824,10 +824,19 @@ class BattleRoomMessageObserver(service: ShowdownService)
         if (this.roomBattleType != BattleType.REPLAY) return
 
         when(replayAction) {
-            ReplayAction.PLAY -> Timber.d("Replay play")
-            ReplayAction.PAUSE -> Timber.d("Replay pause")
-            ReplayAction.NEXT_TURN -> Timber.d("Replay next turn")
-            ReplayAction.PREV_TURN -> Timber.d("Replay previous turn")
+            ReplayAction.PLAY -> {
+                actionQueue.startLoop()
+                uiCallbacks?.goToLatest()
+            }
+            ReplayAction.PAUSE -> actionQueue.stopLoop()
+            ReplayAction.NEXT_TURN -> {
+                Timber.d("Replay next turn")
+                uiCallbacks?.goToLatest()
+            }
+            ReplayAction.PREV_TURN -> {
+                Timber.d("Replay previous turn")
+                uiCallbacks?.goToLatest()
+            }
         }
     }
 
@@ -886,6 +895,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
         fun onVolatileStatusChanged(id: PokemonId, vStatus: String, start: Boolean)
         fun onPrintBattleMessage(message: CharSequence)
         fun onSetBattleType(type: BattleType)
+        fun goToLatest()
     }
 
     enum class BattleType {

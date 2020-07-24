@@ -60,12 +60,12 @@ class ActionQueue(looper: Looper) {
         if (!isLooping) startLoop()
     }
 
-    private fun startLoop() {
+    fun startLoop() {
         isLooping = true
         handler.post(loopRunnable)
     }
 
-    private fun stopLoop() {
+    fun stopLoop() {
         isLooping = false
         handler.removeCallbacks(loopRunnable)
     }
