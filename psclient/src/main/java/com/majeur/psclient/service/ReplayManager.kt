@@ -57,7 +57,7 @@ class ReplayManager(
     }
 
     fun goToNextTurn() {
-        TODO("Go to next turn not yet implemented")
+        replayCallback.onAction(BattleRoomMessageObserver.ReplayAction.NEXT_TURN)
     }
 
     fun goToPreviousTurn() {

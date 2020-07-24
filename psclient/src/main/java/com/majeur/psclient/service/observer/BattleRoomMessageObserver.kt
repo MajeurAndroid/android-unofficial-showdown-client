@@ -831,6 +831,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
             ReplayAction.PAUSE -> actionQueue.stopLoop()
             ReplayAction.NEXT_TURN -> {
                 Timber.d("Replay next turn")
+                actionQueue.skipToNext()
                 uiCallbacks?.goToLatest()
             }
             ReplayAction.PREV_TURN -> {

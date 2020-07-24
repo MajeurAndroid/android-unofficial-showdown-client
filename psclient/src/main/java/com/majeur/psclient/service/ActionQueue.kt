@@ -6,7 +6,7 @@ import com.majeur.psclient.service.observer.BattleRoomMessageObserver
 
 class ActionQueue(looper: Looper) {
 
-    private data class Entry (val action: ()->Unit, val delay: Long)
+    private data class Entry (val action: Action, val delay: Long)
 
     private val handler = Handler(looper)
     private val actions = mutableListOf<Entry>()
@@ -33,7 +33,7 @@ class ActionQueue(looper: Looper) {
     }
 
     fun enqueueTurnAction(action: ()->Unit) {
-        enqueueAction(action)
+        enqueueAction(Action(action, ActionType.START_OF_TURN))
 
         // Only skip to the latest turn if we are watching a live battle.
         // Otherwise, do each turn in the queue one at a time
@@ -44,18 +44,22 @@ class ActionQueue(looper: Looper) {
     }
 
     fun enqueueAction(action: ()->Unit) {
-        enqueue(action, 0)
+        enqueue(Action(action), 0)
     }
 
     fun enqueueMajorAction(action: ()->Unit) {
-        enqueue(action, 1500)
+        enqueue(Action(action), 1500)
     }
 
     fun enqueueMinorAction(action: ()->Unit) {
-        enqueue(action, 750)
+        enqueue(Action(action), 750)
     }
 
-    private fun enqueue(action: ()->Unit, delay: Long) {
+    private fun enqueueAction(action: Action) {
+        enqueue(action, 0)
+    }
+
+    private fun enqueue(action: Action, delay: Long) {
         actions.add(Entry(action, delay))
         if (!isLooping) startLoop()
     }
@@ -70,9 +74,19 @@ class ActionQueue(looper: Looper) {
         handler.removeCallbacks(loopRunnable)
     }
 
+    fun skipToNext() {
+        do {
+            if (actions.isEmpty()) return
+            var thisAction = actions.first().action
+
+            actions.removeAt(0).action.actionUnit.invoke()
+        } while (thisAction.actionType !== ActionType.START_OF_TURN)
+    }
+
     private fun loopTo(action: ()->Unit) {
         stopLoop()
-        while (actions.first().action !== action) actions.removeAt(0).action.invoke()
+        while (actions.first().action.actionUnit !== action)
+            actions.removeAt(0).action.actionUnit.invoke()
         startLoop()
     }
 
@@ -80,7 +94,7 @@ class ActionQueue(looper: Looper) {
 
         override fun run() {
             val entry = actions.removeAt(0)
-            entry.action.invoke()
+            entry.action.actionUnit.invoke()
             if (actions.any()) {
                 handler.postDelayed(this, entry.delay)
             } else {
@@ -91,4 +105,16 @@ class ActionQueue(looper: Looper) {
             }
         }
     }
+
+
+}
+
+enum class ActionType {
+    START_OF_TURN,
+    OTHER
+}
+
+class Action(_action: ()->Unit, _type: ActionType = ActionType.OTHER) {
+    val actionUnit: ()->Unit = _action
+    val actionType: ActionType = _type
 }
