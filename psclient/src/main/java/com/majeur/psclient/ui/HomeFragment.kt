@@ -187,6 +187,8 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         binding.searchButton.setOnClickListener(this)
         binding.userSearchButton.setOnClickListener(this)
         binding.bugReportButton.setOnClickListener(this)
+
+        binding.TODOViewReplayButton.setOnClickListener(this)
     }
 
     override fun onClick(view: View) {
@@ -253,6 +255,12 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
                     .setNeutralButton("Go to smogon thread") { _: DialogInterface?, _: Int -> openUrl(URL_SMOGON_THREAD, false) }
                     .setNegativeButton("Cancel", null)
                     .show()
+
+//           binding.TODOViewReplayButton
+            binding.TODOViewReplayButton -> {
+//                service?.replayManager?.startReplayDownload("https://replay.pokemonshowdown.com/smogtours-ou-39893.json");
+                service?.replayManager?.downloadAndStartReplay("https://replay.pokemonshowdown.com/gen8randombattle-1154942374.json");
+            }
         }
     }
 
@@ -341,6 +349,10 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         }
     }
 
+    private fun viewReplay() {
+
+    }
+
     fun requestRoomJoin(roomId: String) {
         val isWaitingForConnection = onConnectedListener != null
         if (isWaitingForConnection) return
@@ -355,6 +367,8 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         if (isWaitingForRoomToDeinit) return
 
         val isBattle = roomId.startsWith("battle-", ignoreCase = true)
+        val isReplay = roomId.startsWith("replay-", ignoreCase = true)
+
         val currentRoomId = if (isBattle) battleFragment.observedRoomId else chatFragment.observedRoomId
         if (currentRoomId != null) {
             service?.sendRoomCommand(currentRoomId, "leave")

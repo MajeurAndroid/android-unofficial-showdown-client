@@ -77,6 +77,9 @@
     <!-- FIX Same id as parent in included layout (See https://issuetracker.google.com/issues/145687658) -->
     <include android:id="@+id/action_container" layout="@layout/layout_extra_actions" />
 
+    <include android:id="@+id/replay_controls_container" layout="@layout/layout_extra_replay_controls" />
+
+
     <ScrollView
         android:id="@+id/battle_log_container"
         android:layout_width="match_parent"

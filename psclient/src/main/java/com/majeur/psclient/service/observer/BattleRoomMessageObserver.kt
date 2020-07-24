@@ -40,6 +40,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
     private var activeWeather: String? = null
     private val activeFieldEffects = mutableListOf<String>()
     private var lastMove: String? = null
+    private var roomBattleType: BattleType = BattleType.LIVE
 
     init {
         battleTextBuilder.setPokemonIdFactory { rawString: String ->
@@ -175,6 +176,8 @@ class BattleRoomMessageObserver(service: ShowdownService)
         if (p1Username != null && p2Username != null)
             onPlayerInit(Player.TRAINER.username(p1Username!!, p2Username!!, myUsername()),
                 Player.FOE.username(p1Username!!, p2Username!!, myUsername()))
+
+        Timber.d("Player ID %s", playerId)
     }
 
     private fun handleFaint(msg: ServerMessage) {
@@ -816,6 +819,25 @@ class BattleRoomMessageObserver(service: ShowdownService)
         actionQueue.enqueueAction { super@BattleRoomMessageObserver.printHtml(html) }
     }
 
+
+    fun handleReplayAction(replayAction: ReplayAction) {
+        if (this.roomBattleType != BattleType.REPLAY) return
+
+        when(replayAction) {
+            ReplayAction.PLAY -> Timber.d("Replay play")
+            ReplayAction.PAUSE -> Timber.d("Replay pause")
+            ReplayAction.NEXT_TURN -> Timber.d("Replay next turn")
+            ReplayAction.PREV_TURN -> Timber.d("Replay previous turn")
+        }
+    }
+
+    fun onSetBattleType(type: BattleType) {
+        this.roomBattleType = type
+        actionQueue.setBattleType(type)
+        uiCallbacks?.onSetBattleType(type)
+    }
+
+
     private fun onMarkBreak() = uiCallbacks?.onMarkBreak()
     private fun onPlayerInit(playerUsername: String, foeUsername: String) = uiCallbacks?.onPlayerInit(playerUsername, foeUsername)
     private fun onFaint(id: PokemonId) = uiCallbacks?.onFaint(id)
@@ -838,6 +860,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
     private fun onSideChanged(player: Player, side: String, start: Boolean) = uiCallbacks?.onSideChanged(player, side, start)
     private fun onVolatileStatusChanged(id: PokemonId, vStatus: String, start: Boolean) = uiCallbacks?.onVolatileStatusChanged(id, vStatus, start)
     private fun onPrintBattleMessage(message: CharSequence) = uiCallbacks?.onPrintBattleMessage(message)
+
 
     interface UiCallbacks : RoomMessageObserver.UiCallbacks {
         fun onMarkBreak()
@@ -862,5 +885,19 @@ class BattleRoomMessageObserver(service: ShowdownService)
         fun onSideChanged(player: Player, side: String, start: Boolean)
         fun onVolatileStatusChanged(id: PokemonId, vStatus: String, start: Boolean)
         fun onPrintBattleMessage(message: CharSequence)
+        fun onSetBattleType(type: BattleType)
+    }
+
+    enum class BattleType {
+        LIVE,
+        REPLAY
+    }
+
+    enum class ReplayAction {
+        PLAY,
+        PAUSE,
+        NEXT_TURN,
+        PREV_TURN,
+        CLEAR_REPLAY_SETTINGS // TODO
     }
 }

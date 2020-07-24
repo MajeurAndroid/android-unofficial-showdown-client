@@ -9,6 +9,8 @@ import android.text.Spanned
 import android.text.method.LinkMovementMethod
 import android.view.LayoutInflater
 import android.view.View
+import android.view.View.GONE
+import android.view.View.VISIBLE
 import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.OvershootInterpolator
@@ -128,6 +130,13 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
                     alpha = 0f
                 }
             }
+
+            replayControlsContainer.replayControlsContainer.animate().interpolator = OvershootInterpolator(1.4f)
+            replayControlsContainer.replayControlsContainer.animate().duration = 500
+            replayControlsContainer.btnReplayBack.setOnClickListener(replayControlsListener)
+            replayControlsContainer.btnReplayForward.setOnClickListener(replayControlsListener)
+            replayControlsContainer.btnReplayPause.setOnClickListener(replayControlsListener)
+            replayControlsContainer.btnReplayPlay.setOnClickListener(replayControlsListener)
         }
     }
 
@@ -215,6 +224,50 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
                 observer.reAskForRequest()
             }
         }
+    }
+
+    private val replayControlsListener = View.OnClickListener { view ->
+        if (observedRoomId == null) return@OnClickListener
+
+        when (view) {
+            binding.replayControlsContainer.btnReplayForward -> goToNextTurnInReplay()
+            binding.replayControlsContainer.btnReplayBack -> goToPreviousTurnInReplay()
+            binding.replayControlsContainer.btnReplayPause -> pauseReplay()
+            binding.replayControlsContainer.btnReplayPlay -> unpauseReplay()
+        }
+    }
+
+    private fun goToNextTurnInReplay() {
+        hidePauseButtonAndShowPlay()
+        service?.replayManager?.pause()
+        service?.replayManager?.goToNextTurn()
+    }
+
+
+    private fun goToPreviousTurnInReplay() {
+        hidePauseButtonAndShowPlay()
+        service?.replayManager?.pause()
+        service?.replayManager?.goToPreviousTurn()
+    }
+
+    private fun pauseReplay() {
+        hidePauseButtonAndShowPlay()
+        service?.replayManager?.pause()
+    }
+
+    private fun unpauseReplay() {
+        hidePlayButtonAndShowPause()
+        service?.replayManager?.play()
+    }
+
+    private fun hidePauseButtonAndShowPlay() {
+        binding.replayControlsContainer.btnReplayPause.visibility = GONE
+        binding.replayControlsContainer.btnReplayPlay.visibility = VISIBLE
+    }
+
+    private fun hidePlayButtonAndShowPause() {
+        binding.replayControlsContainer.btnReplayPause.visibility = VISIBLE
+        binding.replayControlsContainer.btnReplayPlay.visibility = GONE
     }
 
     private val mOnBindPopupViewListener = { anchorView: View, titleView: TextView, descView: TextView, placeHolderTop: ImageView, placeHolderBottom: ImageView ->
@@ -664,6 +717,20 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
                 .start()
     }
 
+    override fun onSetBattleType(type: BattleRoomMessageObserver.BattleType) {
+        when (type) {
+            BattleRoomMessageObserver.BattleType.REPLAY -> enableReplayControls()
+        }
+        TODO("Not yet implemented")
+    }
+
+    private fun enableReplayControls() {
+        binding.replayControlsContainer.replayControlsContainer.visibility = View.VISIBLE
+
+        binding.actionContainer.actionContainer.visibility = View.GONE
+        binding.battleDecisionWidget.visibility = View.GONE
+    }
+
     override fun onPrintHtml(html: String) {
         val mark = Any()
         val l = binding.battleLog.length()
@@ -736,6 +803,5 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
         inactiveBattleOverlayDrawable.setWinner(null)
         clearBattleFieldUi()
         lastDecisionRequest = null
-
     }
 }
