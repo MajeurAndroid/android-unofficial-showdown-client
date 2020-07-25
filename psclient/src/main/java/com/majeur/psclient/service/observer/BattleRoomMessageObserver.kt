@@ -310,11 +310,11 @@ class BattleRoomMessageObserver(service: ShowdownService)
     }
 
     private fun handleWin(msg: ServerMessage, tie: Boolean) {
-        val username = msg.nextArg
+        val username = msg.nextArgSafe
         val text = if (tie) battleTextBuilder.tie(p1Username, p2Username) else battleTextBuilder.win(username)
         actionQueue.enqueueAction {
             battleRunning = false
-            onBattleEnded(username)
+            onBattleEnded(username.orEmpty())
             displayMajorActionMessage(text)
             actionQueue.setLastAction(null)
         }

@@ -28,6 +28,7 @@ public class InactiveBattleOverlayDrawable extends ColorDrawable {
 
     public void setWinner(String user) {
         if (user == null) mText2 = null;
+        else if (user.isEmpty()) mText2 = "(it's a tie game!)";
         else mText2 = "(" + user + " won !)";
         invalidateSelf();
     }
