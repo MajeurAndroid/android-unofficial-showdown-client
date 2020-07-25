@@ -500,7 +500,7 @@ class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: A
     }
 
     override fun onClick(view: View) {
-        if (revealingIn || revealingOut || isAnimatingContentAlpha) return
+        if (revealingIn || revealingOut || isAnimatingContentAlpha || _decision == null) return // Prevent undesired behaviours
         val data = view.getTag(R.id.battle_data_tag)
         if (data is Move) {
             val which = data.index + 1
