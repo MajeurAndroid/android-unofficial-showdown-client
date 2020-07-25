@@ -5,12 +5,19 @@ import com.majeur.psclient.util.bold
 class StatModifiers {
 
     private var atk = 0
+        set(value) { field = value.coerceIn(-6, 6) }
     private var def = 0
+        set(value) { field = value.coerceIn(-6, 6) }
     private var spa = 0
+        set(value) { field = value.coerceIn(-6, 6) }
     private var spd = 0
+        set(value) { field = value.coerceIn(-6, 6) }
     private var spe = 0
+        set(value) { field = value.coerceIn(-6, 6) }
     private var eva = 0
+        set(value) { field = value.coerceIn(-6, 6) }
     private var acc = 0
+        set(value) { field = value.coerceIn(-6, 6) }
 
     operator fun get(stat: String?) = when (stat) {
         "atk" -> atk
