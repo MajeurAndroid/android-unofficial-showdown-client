@@ -233,6 +233,11 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
                 else -> service?.sendGlobalCommand("cancelsearch")
             }
             binding.userSearchButton -> {
+                if (observer.isUserGuest) {
+                    if (parentFragmentManager.findFragmentByTag(SignInDialog.FRAGMENT_TAG) == null)
+                        SignInDialog.newInstance().show(parentFragmentManager, SignInDialog.FRAGMENT_TAG)
+                    return
+                }
                 val dialogBinding = DialogBattleMessageBinding.inflate(layoutInflater)
                 dialogBinding.editTextTeamName.hint = "Type a username"
                 MaterialAlertDialogBuilder(requireActivity())
@@ -564,12 +569,17 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
             builder.append("None".small()).append("\n")
         }
         if (!online) builder.append("(Offline)".color(Color.RED))
-        AlertDialog.Builder(requireActivity())
-                .setTitle(name)
-                .setMessage(builder)
-                .setPositiveButton("Challenge") { _: DialogInterface?, _: Int -> challengeSomeone(name) }
-                .setNegativeButton("Chat") { _: DialogInterface?, _: Int -> startPrivateChat(name) }
-                .show()
+        AlertDialog.Builder(requireActivity()).apply {
+            setTitle(name)
+            setMessage(builder)
+            if (online) {
+                setPositiveButton("Challenge") { _, _ -> challengeSomeone(name) }
+                setNegativeButton("Chat") { _, _ -> startPrivateChat(name) }
+            } else {
+                setNegativeButton("Close") { _, _ -> }
+            }
+            show()
+        }
     }
 
     override fun onShowPopup(message: String) {
