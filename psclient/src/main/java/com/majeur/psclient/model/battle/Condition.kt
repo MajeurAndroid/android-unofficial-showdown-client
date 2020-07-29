@@ -1,34 +1,42 @@
 package com.majeur.psclient.model.battle
 
 import com.majeur.psclient.model.common.Colors.statusColor
+import kotlin.math.roundToInt
 
 class Condition(rawCondition: String) {
 
-    @JvmField val color: Int
-    @JvmField var status: String?
-    @JvmField val maxHp: Int
-    @JvmField val hp: Int
+    var status: String?
+    val maxHp: Int
+    val hp: Int
     val health: Float
         get() = hp.toFloat() / maxHp.toFloat()
+    val color: Int
+        get() = statusColor(status)
 
     init {
-        val separator = rawCondition.indexOf('/')
-        if (separator == -1) {
+        val rawHp = rawCondition.substringBefore(" ")
+        val rawStatus = rawCondition.substringAfter(" ", "")
+
+        var hp = -1; var maxHp = -1
+        if (rawHp.toIntOrNull() == 0 || rawHp.toFloatOrNull() == 0f) {
             hp = 0
             maxHp = 100
-            status = "fnt"
-            color = 0
-        } else {
-            hp = rawCondition.substring(0, separator).toInt()
-            val sep = rawCondition.indexOf(' ')
-            if (sep == -1) {
-                maxHp = rawCondition.substring(separator + 1).toInt()
-                status = null
-            } else {
-                maxHp = rawCondition.substring(separator + 1, sep).toInt()
-                status = rawCondition.substring(sep + 1)
-            }
-            color = statusColor(status)
+        } else if (rawHp.contains("/")) {
+            hp = rawHp.substringBefore("/").toFloatOrNull()?.roundToInt() ?: -1
+            maxHp = rawHp.substringAfter("/").removeSuffix("g").removeSuffix("y")
+                    .toFloatOrNull()?.roundToInt() ?: -1
+        } else if (rawHp.toFloatOrNull() != null) {
+            maxHp = 100
+            hp = (maxHp * rawHp.toFloat() / 100f).roundToInt()
         }
+
+        status = when {
+            listOf("par", "brn", "slp", "frz", "tox", "psn").contains(rawStatus) -> rawStatus
+            rawStatus == "fnt" -> { hp = 0; maxHp = 100; null }
+            else -> null
+        }
+
+        this.hp = hp
+        this.maxHp = maxHp
     }
 }

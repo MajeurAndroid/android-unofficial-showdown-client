@@ -1,10 +1,7 @@
 package com.majeur.psclient.ui
 
 import android.annotation.SuppressLint
-import android.content.ActivityNotFoundException
-import android.content.Context
-import android.content.DialogInterface
-import android.content.Intent
+import android.content.*
 import android.graphics.Color
 import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
@@ -50,6 +47,8 @@ import java.util.*
 class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnClickListener {
 
     private val observer get() = service!!.globalMessageObserver
+    private val clipboardManager
+        get() = requireActivity().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
 
     private lateinit var assetLoader: AssetLoader
 
@@ -210,7 +209,8 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
                     if (parentFragmentManager.findFragmentByTag(SignInDialog.FRAGMENT_TAG) == null)
                         SignInDialog.newInstance().show(parentFragmentManager, SignInDialog.FRAGMENT_TAG)
                 } else {
-                    if (battleFragment.battleRunning())
+
+                    if (battleFragment.battleRunning) {
                         if (battleFragment.battleType().isReplay()) {
                             AlertDialog.Builder(requireActivity())
                                     .setMessage("You are already viewing a replay. Do you want to search anyway?")
@@ -220,8 +220,9 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
                         } else {
                             makeSnackbar("A battle is already running")
                         }
-                    else
+                    } else {
                         searchForBattle()
+                    }
                 }
             }
             binding.cancelButton -> when {
@@ -245,6 +246,11 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
                 else -> service?.sendGlobalCommand("cancelsearch")
             }
             binding.userSearchButton -> {
+                if (observer.isUserGuest) {
+                    if (parentFragmentManager.findFragmentByTag(SignInDialog.FRAGMENT_TAG) == null)
+                        SignInDialog.newInstance().show(parentFragmentManager, SignInDialog.FRAGMENT_TAG)
+                    return
+                }
                 val dialogBinding = DialogBattleMessageBinding.inflate(layoutInflater)
                 dialogBinding.editTextTeamName.hint = "Type a username"
                 MaterialAlertDialogBuilder(requireActivity())
@@ -417,7 +423,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
             isChallengingSomeone -> makeSnackbar("You are already challenging someone")
             isSearchingBattle -> makeSnackbar("Cannot challenge someone while searching for battle")
             isAcceptingChallenge -> makeSnackbar("You are already accepting a challenge")
-            battleFragment.battleRunning() -> makeSnackbar("You cannot challenge someone while being in a battle")
+            battleFragment.battleRunning -> makeSnackbar("You cannot challenge someone while being in a battle")
             else -> {
                 isChallengingSomeone = true
                 waitingForChallenge = false
@@ -571,6 +577,25 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         }
     }
 
+    override fun onReplaySaved(replayId: String, url: String) {
+        clipboardManager.setPrimaryClip(ClipData.newPlainText("Battle replay url", url))
+        MaterialAlertDialogBuilder(requireActivity()).apply {
+            setTitle("Replay saved successfully")
+            setMessage("Your replay has been uploaded! Url has been copied to clipboard.")
+            setPositiveButton("Share") { _, _ ->
+                val intent: Intent = Intent().apply {
+                    action = Intent.ACTION_SEND
+                    putExtra(Intent.EXTRA_TEXT, url)
+                    type = "text/plain"
+                }
+                startActivity(Intent.createChooser(intent, "Share replay"))
+            }
+            setNegativeButton("Close", null)
+            show()
+
+        }
+    }
+
     override fun onUserDetails(id: String, name: String, online: Boolean, group: String,
                                rooms: List<String>, battles: List<String>) {
         val builder = SpannableStringBuilder()
@@ -594,12 +619,17 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
             builder.append("None".small()).append("\n")
         }
         if (!online) builder.append("(Offline)".color(Color.RED))
-        AlertDialog.Builder(requireActivity())
-                .setTitle(name)
-                .setMessage(builder)
-                .setPositiveButton("Challenge") { _: DialogInterface?, _: Int -> challengeSomeone(name) }
-                .setNegativeButton("Chat") { _: DialogInterface?, _: Int -> startPrivateChat(name) }
-                .show()
+        AlertDialog.Builder(requireActivity()).apply {
+            setTitle(name)
+            setMessage(builder)
+            if (online) {
+                setPositiveButton("Challenge") { _, _ -> challengeSomeone(name) }
+                setNegativeButton("Chat") { _, _ -> startPrivateChat(name) }
+            } else {
+                setNegativeButton("Close") { _, _ -> }
+            }
+            show()
+        }
     }
 
     override fun onShowPopup(message: String) {
@@ -683,7 +713,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
     override fun onRoomInit(roomId: String, type: String) {
         when (type) {
             "battle" -> {
-                if (battleFragment.observedRoomId == null || !battleFragment.battleRunning()) {
+                if (battleFragment.observedRoomId == null || !battleFragment.battleRunning) {
                     battleFragment.observedRoomId = roomId
                     mainActivity.showBattleFragment()
                 } else {

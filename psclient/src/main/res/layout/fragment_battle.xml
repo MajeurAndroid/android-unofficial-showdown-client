@@ -1,16 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
-
-    <com.majeur.psclient.widget.BattleDecisionWidget
-        android:id="@+id/battle_decision_widget"
+        xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/trainer_info"
-        android:elevation="4dp"
-        android:background="?attr/colorSurface"/>
+        android:layout_height="match_parent">
 
     <ImageView
         android:id="@+id/background_image"
@@ -71,11 +63,13 @@
         android:textColor="@android:color/white"
         android:alpha="0"/>
 
-    <!-- FIX Same id as parent in included layout (See https://issuetracker.google.com/issues/145687658) -->
-    <include android:id="@+id/undo_container" layout="@layout/layout_extra_undo" />
-
-    <!-- FIX Same id as parent in included layout (See https://issuetracker.google.com/issues/145687658) -->
-    <include android:id="@+id/action_container" layout="@layout/layout_extra_actions" />
+    <com.majeur.psclient.widget.BattleDecisionWidget
+        android:id="@+id/battle_decision_widget"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/trainer_info"
+        android:elevation="4dp"
+        android:background="?attr/colorSurface"/>
 
     <include android:id="@+id/replay_controls_container" layout="@layout/layout_extra_replay_controls" />
 
@@ -86,7 +80,8 @@
         android:layout_height="match_parent"
         android:layout_below="@id/trainer_info"
         android:background="?attr/colorBackground"
-        android:fillViewport="true">
+        android:fillViewport="true"
+        android:scrollbars="none">
 
         <TextView
             android:id="@+id/battle_log"
@@ -98,5 +93,43 @@
 
     </ScrollView>
 
+    <com.majeur.psclient.widget.ExtraActionLayout
+            android:id="@+id/extra_action_layout"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_below="@id/trainer_info"
+            android:layout_alignParentEnd="true">
+
+        <!-- FIX Same id as parent in included layout (See https://issuetracker.google.com/issues/145687658) -->
+        <include android:id="@+id/extra_actions" layout="@layout/layout_extra_actions" />
+
+        <TextView
+            android:id="@+id/undo_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:text="Undo"
+            android:drawableStart="@drawable/ic_undo"
+            style="@style/Widget.PSClient.ExtraActionButton"/>
+
+        <TextView
+            android:id="@+id/rematch_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:text="Rematch"
+            android:drawableStart="@drawable/ic_rematch"
+            style="@style/Widget.PSClient.ExtraActionButton"/>
+
+        <TextView
+                android:id="@+id/upload_replay_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                android:text="Upload replay"
+                android:drawableStart="@drawable/ic_upload"
+                style="@style/Widget.PSClient.ExtraActionButton"/>
+
+    </com.majeur.psclient.widget.ExtraActionLayout>
 
 </RelativeLayout>

@@ -22,8 +22,6 @@ import android.widget.CheckBox
 import android.widget.CompoundButton
 import android.widget.FrameLayout
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.BlendModeColorFilterCompat
-import androidx.core.graphics.BlendModeCompat
 import androidx.core.view.children
 import com.majeur.psclient.R
 import com.majeur.psclient.model.battle.*
@@ -363,7 +361,7 @@ class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: A
                 val move = moves[i]
                 btn.apply {
                     text = moveText(move)
-                    background.clearColorFilter()
+                    background.setTint(DEFAULT_TINT)
                     visibility = View.VISIBLE
                     setTag(R.id.battle_data_tag, move)
                 }
@@ -371,8 +369,7 @@ class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: A
                 setMoveButtonEnabled(btn, !move.disabled)
                 if (move.canZMove) canZMove = true
                 if (move.details != null)
-                    btn.background.colorFilter = BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
-                        move.details!!.color, BlendModeCompat.MODULATE)
+                    btn.background.setTint(move.details!!.color)
             } else btn.apply {
                 text = null
                 visibility = View.GONE
@@ -453,8 +450,8 @@ class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: A
             if (toggle) {
                 if (move.maxMoveId != null) {
                     button.text = move.maxDetails?.name ?: move.maxMoveId!!
-                    if (move.maxDetails != null) button.background.colorFilter = BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
-                            move.maxDetails!!.color, BlendModeCompat.MODULATE) else button.background.clearColorFilter()
+                    if (move.maxDetails != null) button.background.setTint(move.maxDetails!!.color)
+                    else button.background.setTint(DEFAULT_TINT)
                     move.maxflag = true
                     setMoveButtonEnabled(button, true)
                 } else {
@@ -463,8 +460,9 @@ class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: A
                 }
             } else {
                 button.text = moveText(move)
-                if (move.details != null) button.background.colorFilter = BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
-                        move.details!!.color, BlendModeCompat.MODULATE) else button.background.clearColorFilter()
+                if (move.details != null)
+                    button.background.setTint(move.details!!.color)
+                else button.background.setTint(DEFAULT_TINT)
                 setMoveButtonEnabled(button, !move.disabled)
                 move.maxflag = false
             }
@@ -489,8 +487,7 @@ class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: A
     fun notifyDetailsUpdated() = moveButtons.forEach { btn ->
         val move = btn.getTag(R.id.battle_data_tag) as Move?
         if (move != null && !move.maxflag && move.details != null) {
-            btn.background.colorFilter = BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
-                    move.details!!.color, BlendModeCompat.MODULATE)
+            btn.background.setTint(move.details!!.color)
         }
     }
 
@@ -498,13 +495,12 @@ class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: A
         val move = btn.getTag(R.id.battle_data_tag) as Move?
         if (move != null && move.maxflag && move.maxDetails != null) {
             btn.text = move.maxDetails!!.name
-            btn.background.colorFilter = BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
-                    move.maxDetails!!.color, BlendModeCompat.MODULATE)
+            btn.background.setTint(move.maxDetails!!.color)
         }
     }
 
     override fun onClick(view: View) {
-        if (revealingIn || revealingOut || isAnimatingContentAlpha) return
+        if (revealingIn || revealingOut || isAnimatingContentAlpha || _decision == null) return // Prevent undesired behaviours
         val data = view.getTag(R.id.battle_data_tag)
         if (data is Move) {
             val which = data.index + 1
@@ -636,8 +632,12 @@ class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: A
             }
         }
 
+        private const val DEFAULT_TINT = Color.GRAY
+
         private const val ANIM_REVEAL_DURATION = 250L
         private const val ANIM_REVEAL_FADE_DURATION = 100L
         private const val ANIM_NEXTCHOICE_FADE_DURATION = 225L
+
+        const val REVEAL_ANIMATION_DURATION = ANIM_REVEAL_DURATION + ANIM_REVEAL_FADE_DURATION
     }
 }

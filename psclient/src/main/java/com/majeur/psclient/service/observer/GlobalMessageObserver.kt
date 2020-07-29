@@ -71,13 +71,13 @@ class GlobalMessageObserver(service: ShowdownService)
     }
 
     private fun processChallengeString(msg: ServerMessage) {
-        service?.putSharedData("challenge", msg.remainingArgsRaw)
-        service?.tryCookieSignIn()
+        service.putSharedData("challenge", msg.remainingArgsRaw)
+        service.tryCookieSignIn()
     }
 
     private fun processUpdateUser(msg: ServerMessage) {
         var username = msg.nextArg
-        service?.putSharedData("myusername", username)
+        service.putSharedData("myusername", username)
         val userType = username.substring(0, 1)
         username = username.substring(1)
         val isGuest = "0" == msg.nextArg
@@ -87,7 +87,7 @@ class GlobalMessageObserver(service: ShowdownService)
         onUserChanged(username, isGuest, avatar)
 
         // Update server counts (active battle and active users)
-        service?.let {
+        service.let {
             requestServerCountsOnly = true
             it.sendGlobalCommand("cmd", "rooms")
         }
@@ -97,21 +97,20 @@ class GlobalMessageObserver(service: ShowdownService)
 
     private fun processQueryResponse(msg: ServerMessage) {
         val query = msg.nextArg
-        val queryContent = msg.nextArg
+        val queryResponse = msg.remainingArgsRaw
         when (query) {
-            "rooms" -> processRoomsQueryResponse(queryContent)
-            "roomlist" -> processRoomListQueryResponse(queryContent)
-            "savereplay" -> {
-            }
-            "userdetails" -> processUserDetailsQueryResponse(queryContent)
-            else -> Timber.w("Command queryresponse not handled, type=$query")
+            "rooms" -> processRoomsQueryResponse(queryResponse)
+            "roomlist" -> processRoomListQueryResponse(queryResponse)
+            "savereplay" -> processSaveReplayQueryResponse(queryResponse)
+            "userdetails" -> processUserDetailsQueryResponse(queryResponse)
+            else -> Timber.w("Command |queryresponse| not handled, type=$query")
         }
     }
 
-    private fun processRoomsQueryResponse(queryContent: String) {
-        if (queryContent == "null") return
+    private fun processRoomsQueryResponse(response: String) {
+        if (response == "null") return
         try {
-            val jsonObject = JSONObject(queryContent)
+            val jsonObject = JSONObject(response)
             val userCount = jsonObject.getInt("userCount")
             service.putSharedData("users", userCount)
             val battleCount = jsonObject.getInt("battleCount")
@@ -145,18 +144,24 @@ class GlobalMessageObserver(service: ShowdownService)
         }
     }
 
-    private fun processRoomListQueryResponse(queryContent: String) {
-//        if (queryContent == "null") return
-//        try {
-//            JSONObject(queryContent)
-//        } catch (e: JSONException) {
-//            e.printStackTrace()
-//        }
+    private fun processRoomListQueryResponse(response: String) {
+        // Not implemented yet
     }
 
-    private fun processUserDetailsQueryResponse(queryContent: String) {
+    private fun processSaveReplayQueryResponse(response: String) {
         try {
-            val jsonObject = JSONObject(queryContent)
+            val jsonObject = JSONObject(response)
+            val replayId = jsonObject.optString("id")
+            // val battleLog = jsonObject.optString("log")
+            onReplaySaved(replayId, "https://replay.pokemonshowdown.com/$replayId")
+        } catch (e: JSONException) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun processUserDetailsQueryResponse(response: String) {
+        try {
+            val jsonObject = JSONObject(response)
             val userId = jsonObject.optString("userid")
             if (userId.isBlank()) return
             val name = jsonObject.optString("name")
@@ -223,7 +228,7 @@ class GlobalMessageObserver(service: ShowdownService)
     private fun handlePm(msg: ServerMessage) {
         val from = msg.nextArg.substring(1)
         val to = msg.nextArg.substring(1)
-        val myUsername = service.getSharedData<String>("myusername")?.substring(1)
+        val myUsername = service.getSharedData<String>("myusername")?.drop(1)
         val with = if (myUsername == from) to else from
         var content = msg.nextArgSafe
         if (content != null && (content.startsWith("/raw") || content.startsWith("/html") || content.startsWith("/uhtml")))
@@ -262,20 +267,21 @@ class GlobalMessageObserver(service: ShowdownService)
         return privateMessages[with]
     }
 
-    protected fun onConnectedToServer() = uiCallbacks?.onConnectedToServer()
-    protected fun onUserChanged(userName: String, isGuest: Boolean, avatarId: String) = uiCallbacks?.onUserChanged(userName, isGuest, avatarId)
-    protected fun onUpdateCounts(userCount: Int, battleCount: Int) = uiCallbacks?.onUpdateCounts(userCount, battleCount)
-    protected fun onBattleFormatsChanged(battleFormats: List<BattleFormat.Category>) = uiCallbacks?.onBattleFormatsChanged(battleFormats)
-    protected fun onSearchBattlesChanged(searching: List<String>, games: Map<String, String>) = uiCallbacks?.onSearchBattlesChanged(searching, games)
-    protected fun onUserDetails(id: String, name: String, online: Boolean, group: String, rooms: List<String>, battles: List<String>) = uiCallbacks?.onUserDetails(id, name, online, group, rooms, battles)
-    protected fun onShowPopup(message: String) = uiCallbacks?.onShowPopup(message)
-    protected fun onAvailableRoomsChanged(officialRooms: List<ChatRoomInfo>, chatRooms: List<ChatRoomInfo>) = uiCallbacks?.onAvailableRoomsChanged(officialRooms, chatRooms)
-    protected fun onAvailableBattleRoomsChanged(availableRoomsInfo: AvailableBattleRoomsInfo) = uiCallbacks?.onAvailableBattleRoomsChanged(availableRoomsInfo)
-    protected fun onNewPrivateMessage(with: String, message: String) = uiCallbacks?.onNewPrivateMessage(with, message)
-    protected fun onChallengesChange(to: String?, format: String?, from: Map<String, String>) = uiCallbacks?.onChallengesChange(to, format, from)
-    protected fun onRoomInit(roomId: String, type: String) = uiCallbacks?.onRoomInit(roomId, type)
-    protected fun onRoomDeinit(roomId: String) = uiCallbacks?.onRoomDeinit(roomId)
-    protected fun onNetworkError() = uiCallbacks?.onNetworkError()
+    fun onConnectedToServer() = uiCallbacks?.onConnectedToServer()
+    fun onUserChanged(userName: String, isGuest: Boolean, avatarId: String) = uiCallbacks?.onUserChanged(userName, isGuest, avatarId)
+    fun onUpdateCounts(userCount: Int, battleCount: Int) = uiCallbacks?.onUpdateCounts(userCount, battleCount)
+    fun onBattleFormatsChanged(battleFormats: List<BattleFormat.Category>) = uiCallbacks?.onBattleFormatsChanged(battleFormats)
+    fun onSearchBattlesChanged(searching: List<String>, games: Map<String, String>) = uiCallbacks?.onSearchBattlesChanged(searching, games)
+    fun onReplaySaved(replayId: String, url: String) = uiCallbacks?.onReplaySaved(replayId, url)
+    fun onUserDetails(id: String, name: String, online: Boolean, group: String, rooms: List<String>, battles: List<String>) = uiCallbacks?.onUserDetails(id, name, online, group, rooms, battles)
+    fun onShowPopup(message: String) = uiCallbacks?.onShowPopup(message)
+    fun onAvailableRoomsChanged(officialRooms: List<ChatRoomInfo>, chatRooms: List<ChatRoomInfo>) = uiCallbacks?.onAvailableRoomsChanged(officialRooms, chatRooms)
+    fun onAvailableBattleRoomsChanged(availableRoomsInfo: AvailableBattleRoomsInfo) = uiCallbacks?.onAvailableBattleRoomsChanged(availableRoomsInfo)
+    fun onNewPrivateMessage(with: String, message: String) = uiCallbacks?.onNewPrivateMessage(with, message)
+    fun onChallengesChange(to: String?, format: String?, from: Map<String, String>) = uiCallbacks?.onChallengesChange(to, format, from)
+    fun onRoomInit(roomId: String, type: String) = uiCallbacks?.onRoomInit(roomId, type)
+    fun onRoomDeinit(roomId: String) = uiCallbacks?.onRoomDeinit(roomId)
+    fun onNetworkError() = uiCallbacks?.onNetworkError()
 
     interface UiCallbacks : AbsMessageObserver.UiCallbacks {
         fun onConnectedToServer()
@@ -283,6 +289,7 @@ class GlobalMessageObserver(service: ShowdownService)
         fun onUpdateCounts(userCount: Int, battleCount: Int)
         fun onBattleFormatsChanged(battleFormats: List<@JvmSuppressWildcards BattleFormat.Category>)
         fun onSearchBattlesChanged(searching: List<String>, games: Map<String, String>)
+        fun onReplaySaved(replayId: String, url: String)
         fun onUserDetails(id: String, name: String, online: Boolean, group: String, rooms: List<String>, battles: List<String>)
         fun onShowPopup(message: String)
         fun onAvailableRoomsChanged(officialRooms: List<ChatRoomInfo>, chatRooms: List<ChatRoomInfo>)

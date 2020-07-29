@@ -2,8 +2,10 @@ package com.majeur.psclient.util
 
 import android.content.Context
 import android.content.res.Resources
+import android.graphics.Color
 import android.graphics.Rect
 import android.graphics.Typeface
+import android.text.Editable
 import android.text.Spannable
 import android.text.TextUtils
 import android.text.style.BackgroundColorSpan
@@ -12,6 +14,7 @@ import android.text.style.RelativeSizeSpan
 import android.text.style.StyleSpan
 import android.util.TypedValue
 import android.view.View
+import android.widget.TextView
 import androidx.core.text.toSpannable
 import androidx.core.text.toSpanned
 import androidx.fragment.app.Fragment
@@ -70,8 +73,8 @@ fun Spannable.bg(color: Int): Spannable {
     return this
 }
 
-fun Spannable.tag(color: Int): Spannable {
-    setSpan(TextTagSpan(color), 0, length, Spannable.SPAN_INCLUSIVE_EXCLUSIVE)
+fun Spannable.tag(color: Int, textColor: Int = Color.WHITE): Spannable {
+    setSpan(TextTagSpan(color, textColor), 0, length, Spannable.SPAN_INCLUSIVE_EXCLUSIVE)
     return this
 }
 
@@ -87,8 +90,19 @@ fun Context.sp(sp: Float) = resources.sp(sp)
 fun Resources.sp(sp: Float) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sp,
         displayMetrics).toInt()
 
-fun Rect.xForLeft(textLeft: Int) = textLeft - left // Offset by Glyph's AdvanceX value added by Skia
-fun Rect.yForTop(textTop: Int) = textTop - top // Computes text's baseline for a given top
+fun Rect.startForLeft(textLeft: Int) = textLeft - left // Remove glyph's advanceX value added by Skia
+fun Rect.baselineForTop(textTop: Int) = textTop - top // Offset to text's baseline for a given top
 
 fun <T> Array<T>.minusLast() = copyOfRange(0, size - 1)
 fun <T> Array<T>.minusFirst() = copyOfRange(1, size)
+
+fun TextView.clearText() {
+    // We cannot use editableText.clear()/.clearSpans() because this also removes internal text spans required
+    // for TextView to work properly... So we must do it the ugly way:
+    val bufferType = when (text) {
+        is Editable -> TextView.BufferType.EDITABLE
+        is Spannable -> TextView.BufferType.SPANNABLE
+        else -> TextView.BufferType.NORMAL
+    }
+    setText("", bufferType)
+}

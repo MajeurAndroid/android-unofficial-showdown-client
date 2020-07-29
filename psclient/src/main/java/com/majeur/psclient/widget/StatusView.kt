@@ -71,7 +71,7 @@ class StatusView(context: Context?) : View(context) {
     }
 
     fun setPokemon(pokemon: BattlingPokemon) {
-        label = "${pokemon.name} ${pokemon.gender ?: ""} l.${pokemon.level}"
+        label = "${pokemon.name} ${pokemon.gender} l.${pokemon.level}"
         health = pokemon.condition?.health ?: 0f
         status = pokemon.condition?.status ?: ""
         volatileStatus.clear()
@@ -142,10 +142,10 @@ class StatusView(context: Context?) : View(context) {
         drawLabelText(canvas, paddingLeft, paddingTop, tempRect.apply { setEmpty() })
         drawingRect.set(tempRect)
 
-        drawHealthBar(canvas, paddingLeft, tempRect.bottom + verticalSpacing / 2, tempRect.apply { setEmpty() })
+        drawHealthBar(canvas, paddingLeft, tempRect.bottom + verticalSpacing / 4, tempRect.apply { setEmpty() })
         drawingRect.union(tempRect)
 
-        drawTags(canvas, paddingLeft, tempRect.bottom + verticalSpacing, tempRect.apply { setEmpty() })
+        drawTags(canvas, paddingLeft, tempRect.bottom + verticalSpacing / 2, tempRect.apply { setEmpty() })
         drawingRect.union(tempRect)
     }
 
@@ -159,8 +159,10 @@ class StatusView(context: Context?) : View(context) {
             getTextBounds(label, 0, label.length, textBounds)
             setShadowLayer(shadowRadius, 0f, shadowDy, Colors.BLACK)
         }
-        canvas?.drawText(label, textBounds.xForLeft(left).toFloat(), textBounds.yForTop(top).toFloat(), paint)
-        drawingRect.set(left, top, left + textBounds.width(), top + textBounds.height())
+        val baseLine = textBounds.baselineForTop(top)
+        canvas?.drawText(label, textBounds.startForLeft(left).toFloat(), baseLine.toFloat(), paint)
+        // Make sure we measure line height and not actual text height
+        drawingRect.set(left, top, left + textBounds.width(), baseLine + paint.fontMetricsInt.descent)
         paint.clearShadowLayer()
     }
 
@@ -254,8 +256,8 @@ class StatusView(context: Context?) : View(context) {
             color = textColor
             clearShadowLayer()
         }
-        canvas?.drawText(text, textBounds.xForLeft(x + tagCornerRadius).toFloat(),
-                textBounds.yForTop(cY - textBounds.height() / 2).toFloat(), paint)
+        canvas?.drawText(text, textBounds.startForLeft(x + tagCornerRadius).toFloat(),
+                textBounds.baselineForTop(cY - textBounds.height() / 2).toFloat(), paint)
     }
 
     companion object {
