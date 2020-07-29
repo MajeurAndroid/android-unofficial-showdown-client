@@ -854,11 +854,6 @@ class BattleRoomMessageObserver(service: ShowdownService)
         uiCallbacks?.onSetBattleType(type)
     }
 
-    fun resetRoom() {
-        onRoomDeInit()
-    }
-
-
     private fun onMarkBreak() = uiCallbacks?.onMarkBreak()
     private fun onPlayerInit(playerUsername: String, foeUsername: String) = uiCallbacks?.onPlayerInit(playerUsername, foeUsername)
     private fun onFaint(id: PokemonId) = uiCallbacks?.onFaint(id)

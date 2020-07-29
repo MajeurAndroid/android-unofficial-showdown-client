@@ -272,11 +272,6 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         }
     }
 
-    private fun clearReplayAndSearch() {
-        resetRoomToBattleState()
-        searchForBattle()
-    }
-
     private fun resetRoomToBattleState() {
         Timber.d("[resetRoomToBattleState]")
         battleFragment.battleType = BattleRoomMessageObserver.BattleType.LIVE
