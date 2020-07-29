@@ -10,6 +10,7 @@
     android:paddingStart="6dp"
     android:orientation="horizontal"
     android:elevation="4dp"
+    android:visibility="gone"
     android:background="@drawable/bg_battle_extra_actions">
 
     <ImageButton
@@ -22,6 +23,7 @@
         android:paddingEnd="4dp"
         android:background="@android:color/transparent"
         android:src="@drawable/ic_replay_back"
+        android:visibility="gone"
         android:tint="?attr/colorOnSurface"/>
 
     <ImageButton

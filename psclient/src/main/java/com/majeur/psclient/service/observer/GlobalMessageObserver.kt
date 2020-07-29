@@ -102,7 +102,6 @@ class GlobalMessageObserver(service: ShowdownService)
             "rooms" -> processRoomsQueryResponse(queryContent)
             "roomlist" -> processRoomListQueryResponse(queryContent)
             "savereplay" -> {
-                TODO("Replays aren't implemented yet")
             }
             "userdetails" -> processUserDetailsQueryResponse(queryContent)
             else -> Timber.w("Command queryresponse not handled, type=$query")

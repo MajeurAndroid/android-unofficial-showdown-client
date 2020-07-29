@@ -6,12 +6,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.HttpUrl
+import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
-import timber.log.Timber
 
 class ReplayManager(
-        val showdownService: ShowdownService,
+        val httpClient: OkHttpClient,
         val replayCallback: ReplayCallback) {
 
     private val fragmentScope = BaseFragment.FragmentScope()
@@ -25,12 +25,12 @@ class ReplayManager(
                     .url(url)
                     .build()
             val replayResponse = withContext(Dispatchers.IO) {
-                val response = showdownService.okHttpClient.newCall(request).execute()
+                val response = httpClient.newCall(request).execute()
                 response.body()?.string() ?: ""
             }
-            print("Replay Data raw $replayResponse")
 
             currentReplay = ReplayData(JSONObject(replayResponse))
+
             initReplayRoom(currentReplay)
         }
     }
@@ -38,21 +38,17 @@ class ReplayManager(
     private fun initReplayRoom(replayData: ReplayData) {
         replayCallback.init()
 
-//        var updateSearchMessage = FOUND.format(replayData.id, "REPLAY - " + replayData.format)
-        var updateSearchMessage = FOUND.format(replayData.id, "Viewing Replay")
-        Timber.tag("Replay [Update Search]").i(updateSearchMessage)
+        var updateSearchMessage = MSG_FOUND.format(replayData.id, "Viewing Replay")
         replayCallback.onMessage(updateSearchMessage)
 
-        var initBattleMessage = INIT_BATTLE.format(replayData.id)
-        Timber.tag("Replay [Init]").i(initBattleMessage)
+        var initBattleMessage = MSG_INIT_BATTLE.format(replayData.id)
         replayCallback.onMessage(initBattleMessage)
 
         sendAllLogLines()
     }
 
     private fun sendAllLogLines() {
-        var battleLine = BATTLE_LINE_UPDATE.format(currentReplay.id, currentReplay.log)
-        Timber.tag("Replay [DATA]").i(battleLine)
+        var battleLine = MSG_BATTLE_LINE_UPDATE.format(currentReplay.id, currentReplay.log)
         replayCallback.onMessage(battleLine)
     }
 
@@ -61,7 +57,7 @@ class ReplayManager(
     }
 
     fun goToPreviousTurn() {
-        TODO("Go to next turn not yet implemented")
+        TODO("Go to previous turn not yet implemented")
     }
 
     fun pause() {
@@ -70,6 +66,10 @@ class ReplayManager(
 
     fun play() {
         replayCallback.onAction(BattleRoomMessageObserver.ReplayAction.PLAY)
+    }
+
+    fun closeReplay() {
+        replayCallback.onAction(BattleRoomMessageObserver.ReplayAction.CLOSE_REPLAY)
     }
 
     class ReplayData(replayData : JSONObject) {
@@ -81,7 +81,7 @@ class ReplayManager(
         val p2: String = replayData.getString("p2")
         val format: String = replayData.getString("format")
         val log: String = replayData.getString("log")
-//        val inputLog: String = replayData.getString("inputlog")
+        //  val inputLog: String = replayData.getString("inputlog")
         val uploadTime: Long = replayData.getLong("uploadtime")
         val views: Long = replayData.getLong("views")
         val p1Id: String = replayData.getString("p1id")
@@ -101,10 +101,10 @@ class ReplayManager(
     }
 
     companion object {
-        var FOUND = """|updatesearch|{"searching":[],"games":{%s":"%s"}}" """
-        var INIT_BATTLE = ">%s \n|init|battle"
-        var TITLE = ">%s \n|title|%s \n|j|☆%s \n|j|☆%s"
-        var BATTLE_LINE_UPDATE = ">%s \n%s"
+        private var MSG_FOUND = """|updatesearch|{"searching":[],"games":{%s":"%s"}}" """
+        private var MSG_INIT_BATTLE = ">%s \n|init|battle"
+        private var TITLE = ">%s \n|title|%s \n|j|☆%s \n|j|☆%s"
+        private var MSG_BATTLE_LINE_UPDATE = ">%s \n%s"
     }
 }
 

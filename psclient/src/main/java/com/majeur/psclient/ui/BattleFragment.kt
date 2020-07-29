@@ -15,6 +15,7 @@ import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.OvershootInterpolator
 import android.widget.EditText
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
@@ -42,6 +43,7 @@ import com.majeur.psclient.util.html.Html
 import com.majeur.psclient.widget.BattleLayout
 import com.majeur.psclient.widget.BattleTipPopup
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
 
@@ -62,6 +64,8 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
     private var _binding: FragmentBattleBinding? = null
     private val binding get() = _binding!!
 
+    var battleType = BattleRoomMessageObserver.BattleType.LIVE
+
 
     private var _observedRoomId: String? = null
     var observedRoomId: String?
@@ -73,6 +77,10 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
 
     fun battleRunning(): Boolean {
         return observer.battleRunning
+    }
+
+    fun battleType(): BattleRoomMessageObserver.BattleType {
+        return battleType
     }
 
     override fun onAttach(context: Context) {
@@ -154,6 +162,13 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
             audioManager.playBattleMusic()
             wasPlayingBattleMusicWhenPaused = false
         }
+    }
+
+    override fun onHiddenChanged(hidden: Boolean) {
+        super.onHiddenChanged(hidden)
+
+        // Pause replay if user switches away to another fragment
+        if (hidden && battleType.isReplay()) pauseReplay()
     }
 
     override fun onServiceBound(service: ShowdownService) {
@@ -718,28 +733,78 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks {
     }
 
     override fun onSetBattleType(type: BattleRoomMessageObserver.BattleType) {
+        this.battleType = type
         when (type) {
-            BattleRoomMessageObserver.BattleType.REPLAY -> enableReplayControls()
-            BattleRoomMessageObserver.BattleType.LIVE -> enableBattleControls()
+            BattleRoomMessageObserver.BattleType.REPLAY -> {
+                showReplayControls()
+                enableReplayControls()
+                hidePlayButtonAndShowPause()
+                observedRoomId = "ReplayRoom"
+            }
+            BattleRoomMessageObserver.BattleType.LIVE -> showBattleControls()
         }
     }
 
     override fun goToLatest() {
+        Timber.d("[goToLatest]")
         postFullScroll()
     }
 
-    private fun enableReplayControls() {
+    override fun onEndOfReplay() {
+        Timber.d("[onEndOfReplay]")
+        disableReplayControls()
+//        displayDefaultUiControls()
+        homeFragment.onBattleRoomIsCleared()
+    }
+
+    fun displayDefaultUiControls() {
+        Timber.d("[displayDefaultUiControls]")
+        showBattleControls()
+    }
+
+    private fun showReplayControls() {
+        Timber.d("[showReplayControls]")
         binding.replayControlsContainer.replayControlsContainer.visibility = View.VISIBLE
 
         binding.actionContainer.actionContainer.visibility = View.GONE
         binding.battleDecisionWidget.visibility = View.GONE
+        enableReplayControls()
     }
 
-    private fun enableBattleControls() {
+    private fun showBattleControls() {
+        Timber.d("[showBattleControls]")
         binding.replayControlsContainer.replayControlsContainer.visibility = View.GONE
 
         binding.actionContainer.actionContainer.visibility = View.VISIBLE
-        binding.battleDecisionWidget.visibility = View.VISIBLE
+//        binding.battleDecisionWidget.visibility = View.VISIBLE
+    }
+
+    private fun disableReplayControls() {
+        Timber.d("[disableReplayControls]")
+        disableImageButton(binding.replayControlsContainer.btnReplayPlay)
+        disableImageButton(binding.replayControlsContainer.btnReplayPause)
+        disableImageButton(binding.replayControlsContainer.btnReplayBack)
+        disableImageButton(binding.replayControlsContainer.btnReplayForward)
+    }
+
+    private fun enableReplayControls() {
+        Timber.d("[enableReplayControls]")
+        enableImageButton(binding.replayControlsContainer.btnReplayPlay)
+        enableImageButton(binding.replayControlsContainer.btnReplayPause)
+        enableImageButton(binding.replayControlsContainer.btnReplayBack)
+        enableImageButton(binding.replayControlsContainer.btnReplayForward)
+    }
+
+    private fun disableImageButton(imageButton: ImageButton) {
+        imageButton.isEnabled = false
+        imageButton.isClickable = false
+        imageButton.imageAlpha = 90
+    }
+
+    private fun enableImageButton(imageButton: ImageButton) {
+        imageButton.isEnabled = true
+        imageButton.isClickable = true
+        imageButton.imageAlpha = 255
     }
 
     override fun onPrintHtml(html: String) {

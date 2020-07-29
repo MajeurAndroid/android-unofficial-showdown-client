@@ -4,7 +4,7 @@ import android.os.Handler
 import android.os.Looper
 import com.majeur.psclient.service.observer.BattleRoomMessageObserver
 
-class ActionQueue(looper: Looper) {
+class ActionQueue(looper: Looper, var listener: QueueListener) {
 
     private data class Entry (val action: Action, val delay: Long)
 
@@ -65,6 +65,8 @@ class ActionQueue(looper: Looper) {
     }
 
     fun startLoop() {
+        if (actions.isEmpty()) return
+
         isLooping = true
         handler.post(loopRunnable)
     }
@@ -76,7 +78,10 @@ class ActionQueue(looper: Looper) {
 
     fun skipToNext() {
         do {
-            if (actions.isEmpty()) return
+            if (actions.isEmpty()) {
+                listener.onQueueEmpty()
+                return
+            }
             var thisAction = actions.first().action
 
             actions.removeAt(0).action.actionUnit.invoke()
@@ -102,11 +107,15 @@ class ActionQueue(looper: Looper) {
                 turnActionInQueue = false
                 lastAction?.invoke()
                 lastAction = null
+                listener.onQueueEmpty()
             }
         }
     }
 
+}
 
+interface QueueListener {
+    fun onQueueEmpty()
 }
 
 enum class ActionType {

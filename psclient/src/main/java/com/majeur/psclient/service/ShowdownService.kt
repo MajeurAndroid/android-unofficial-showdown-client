@@ -21,13 +21,9 @@ class ShowdownService : Service() {
 
     companion object {
         private const val WS_CLOSE_NORMAL = 1000
-//        private const val WS_CLOSE_NORMAL = 1234
         private const val WS_CLOSE_GOING_AWAY = 1001
-//        private const val WS_CLOSE_GOING_AWAY = 1234
         private const val WS_CLOSE_NETWORK_ERROR = 4001
-//        private const val WS_CLOSE_NETWORK_ERROR = 1234
         private const val SHOWDOWN_SOCKET_URL = "wss://sim3.psim.us/showdown/websocket"
-//        private const val SHOWDOWN_SOCKET_URL = "wss:/10.0.2.2"
     }
 
     lateinit var okHttpClient: OkHttpClient
@@ -44,7 +40,7 @@ class ShowdownService : Service() {
     private var previousBattleRoomId: String? = null
 
     val replayManager by lazy {
-        ReplayManager(this, object : ReplayManager.ReplayCallback {
+        ReplayManager(okHttpClient, object : ReplayManager.ReplayCallback {
             override fun init() {
                 battleMessageObserver.onSetBattleType(BattleRoomMessageObserver.BattleType.REPLAY)
             }

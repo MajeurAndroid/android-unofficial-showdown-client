@@ -8,6 +8,7 @@ import com.majeur.psclient.model.common.Colors
 import com.majeur.psclient.model.pokemon.BasePokemon
 import com.majeur.psclient.model.pokemon.BattlingPokemon
 import com.majeur.psclient.service.ActionQueue
+import com.majeur.psclient.service.QueueListener
 import com.majeur.psclient.service.ServerMessage
 import com.majeur.psclient.service.ShowdownService
 import com.majeur.psclient.util.*
@@ -29,7 +30,11 @@ class BattleRoomMessageObserver(service: ShowdownService)
     var gen = 0
 
     private val battleTextBuilder = BattleTextBuilder(service)
-    private val actionQueue = ActionQueue(Looper.getMainLooper())
+    private val actionQueue = ActionQueue(Looper.getMainLooper(), object : QueueListener {
+        override fun onQueueEmpty() {
+            if (roomBattleType.isReplay()) uiCallbacks?.onEndOfReplay()
+        }
+    })
     private var p1Username: String? = null
     private var p2Username: String? = null
 
@@ -78,6 +83,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
         previewPokemonIndexes = IntArray(2)
         activeWeather = null
         activeFieldEffects.clear()
+        actionQueue.setBattleType(BattleType.LIVE) // clear to default setting
     }
 
     private fun myUsername(): String = service.getSharedData<String>("username")?.drop(1) ?: ""
@@ -176,8 +182,6 @@ class BattleRoomMessageObserver(service: ShowdownService)
         if (p1Username != null && p2Username != null)
             onPlayerInit(Player.TRAINER.username(p1Username!!, p2Username!!, myUsername()),
                 Player.FOE.username(p1Username!!, p2Username!!, myUsername()))
-
-        Timber.d("Player ID %s", playerId)
     }
 
     private fun handleFaint(msg: ServerMessage) {
@@ -830,13 +834,16 @@ class BattleRoomMessageObserver(service: ShowdownService)
             }
             ReplayAction.PAUSE -> actionQueue.stopLoop()
             ReplayAction.NEXT_TURN -> {
-                Timber.d("Replay next turn")
                 actionQueue.skipToNext()
                 uiCallbacks?.goToLatest()
             }
             ReplayAction.PREV_TURN -> {
-                Timber.d("Replay previous turn")
-                uiCallbacks?.goToLatest()
+                TODO("ReplayAction.PREV_TURN is not yet implemented")
+            }
+            ReplayAction.CLOSE_REPLAY -> {
+                this.roomBattleType = BattleType.LIVE
+                onRoomDeInit()
+                uiCallbacks?.onEndOfReplay()
             }
         }
     }
@@ -845,6 +852,10 @@ class BattleRoomMessageObserver(service: ShowdownService)
         this.roomBattleType = type
         actionQueue.setBattleType(type)
         uiCallbacks?.onSetBattleType(type)
+    }
+
+    fun resetRoom() {
+        onRoomDeInit()
     }
 
 
@@ -871,7 +882,6 @@ class BattleRoomMessageObserver(service: ShowdownService)
     private fun onVolatileStatusChanged(id: PokemonId, vStatus: String, start: Boolean) = uiCallbacks?.onVolatileStatusChanged(id, vStatus, start)
     private fun onPrintBattleMessage(message: CharSequence) = uiCallbacks?.onPrintBattleMessage(message)
 
-
     interface UiCallbacks : RoomMessageObserver.UiCallbacks {
         fun onMarkBreak()
         fun onPlayerInit(playerUsername: String, foeUsername: String)
@@ -897,11 +907,17 @@ class BattleRoomMessageObserver(service: ShowdownService)
         fun onPrintBattleMessage(message: CharSequence)
         fun onSetBattleType(type: BattleType)
         fun goToLatest()
+        fun onEndOfReplay()
     }
 
     enum class BattleType {
         LIVE,
         REPLAY
+        ;
+
+        fun isReplay() : Boolean {
+            return this == REPLAY
+        }
     }
 
     enum class ReplayAction {
@@ -909,6 +925,6 @@ class BattleRoomMessageObserver(service: ShowdownService)
         PAUSE,
         NEXT_TURN,
         PREV_TURN,
-        CLEAR_REPLAY_SETTINGS // TODO
+        CLOSE_REPLAY
     }
 }
