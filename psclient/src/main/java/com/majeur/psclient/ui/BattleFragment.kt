@@ -62,7 +62,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
     private var _binding: FragmentBattleBinding? = null
     private val binding get() = _binding!!
 
-    var battleType = BattleRoomMessageObserver.BattleType.LIVE
+    val battleType get() = observer.battleType
 
 
     private var _observedRoomId: String? = null
@@ -821,7 +821,6 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
 
     private fun disableImageButton(imageButton: ImageButton) {
         imageButton.isEnabled = false
-        imageButton.isClickable = false
         imageButton.imageAlpha = 90
     }
 

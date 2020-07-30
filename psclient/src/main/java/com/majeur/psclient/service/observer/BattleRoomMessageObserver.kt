@@ -915,9 +915,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
         REPLAY
         ;
 
-        fun isReplay() : Boolean {
-            return this == REPLAY
-        }
+        val isReplay get() = this == REPLAY
     }
 
     enum class ReplayAction {
