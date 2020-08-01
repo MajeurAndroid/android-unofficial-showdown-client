@@ -8,7 +8,6 @@ import com.majeur.psclient.model.common.Colors
 import com.majeur.psclient.model.pokemon.BasePokemon
 import com.majeur.psclient.model.pokemon.BattlingPokemon
 import com.majeur.psclient.service.ActionQueue
-import com.majeur.psclient.service.QueueListener
 import com.majeur.psclient.service.ServerMessage
 import com.majeur.psclient.service.ShowdownService
 import com.majeur.psclient.util.*
@@ -30,11 +29,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
     var gen = 0
 
     private val battleTextBuilder = BattleTextBuilder(service)
-    private val actionQueue = ActionQueue(Looper.getMainLooper(), object : QueueListener {
-        override fun onQueueEmpty() {
-            if (roomBattleType.isReplay()) uiCallbacks?.onEndOfReplay()
-        }
-    })
+    private val actionQueue = ActionQueue(Looper.getMainLooper())
     private var p1Username: String? = null
     private var p2Username: String? = null
     private val myUsername get() = service.getSharedData<String>("myusername")?.drop(1) ?: ""
@@ -848,7 +843,6 @@ class BattleRoomMessageObserver(service: ShowdownService)
             ReplayAction.CLOSE_REPLAY -> {
                 this.roomBattleType = BattleType.LIVE
                 onRoomDeInit()
-                uiCallbacks?.onEndOfReplay()
             }
         }
     }
@@ -907,7 +901,6 @@ class BattleRoomMessageObserver(service: ShowdownService)
         fun onPrintBattleMessage(message: CharSequence)
         fun onSetBattleType(type: BattleType)
         fun goToLatest()
-        fun onEndOfReplay()
     }
 
     enum class BattleType {

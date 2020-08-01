@@ -530,6 +530,8 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
             }
             binding.extraActions.timerButton.visibility = GONE
         }
+
+        if (battleType.isReplay()) clearReplayRoom()
     }
 
     override fun onPreviewStarted() {
@@ -764,43 +766,36 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
     }
 
     override fun goToLatest() {
-        Timber.d("[goToLatest]")
         postFullScroll()
     }
 
-    override fun onEndOfReplay() {
-        Timber.d("[onEndOfReplay]")
+    private fun clearReplayRoom() {
         disableReplayControls()
-//        displayDefaultUiControls()
-        homeFragment.onBattleRoomIsCleared()
+        // Normally, at the end of a match, the server will send an updated 'search battles'
+        // message. However, if we're in a replay, we need to send a manual message to indicate
+        // we are no longer in a room
+        homeFragment.onSearchBattlesChanged(emptyList(), emptyMap())
     }
 
     fun displayDefaultUiControls() {
-        Timber.d("[displayDefaultUiControls]")
         showBattleControls()
     }
 
     private fun showReplayControls() {
-        Timber.d("[showReplayControls]")
-        binding.replayControlsContainer.replayControlsContainer.visibility = View.VISIBLE
+        binding.replayControlsContainer.replayControlsContainer.visibility = VISIBLE
 
         binding.extraActionLayout.visibility = GONE
-//        binding.actionContainer.visibility = View.GONE
         binding.battleDecisionWidget.visibility = GONE
         enableReplayControls()
     }
 
     private fun showBattleControls() {
-        Timber.d("[showBattleControls]")
         binding.replayControlsContainer.replayControlsContainer.visibility = GONE
 
-//        binding.actionContainer.actionContainer.visibility = VISIBLE
         binding.extraActionLayout.visibility = VISIBLE
-//        binding.battleDecisionWidget.visibility = VISIBLE
     }
 
     private fun disableReplayControls() {
-        Timber.d("[disableReplayControls]")
         disableImageButton(binding.replayControlsContainer.btnReplayPlay)
         disableImageButton(binding.replayControlsContainer.btnReplayPause)
         disableImageButton(binding.replayControlsContainer.btnReplayBack)
@@ -808,7 +803,6 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
     }
 
     private fun enableReplayControls() {
-        Timber.d("[enableReplayControls]")
         enableImageButton(binding.replayControlsContainer.btnReplayPlay)
         enableImageButton(binding.replayControlsContainer.btnReplayPause)
         enableImageButton(binding.replayControlsContainer.btnReplayBack)
@@ -816,15 +810,19 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
     }
 
     private fun disableImageButton(imageButton: ImageButton) {
-        imageButton.isEnabled = false
-        imageButton.isClickable = false
-        imageButton.imageAlpha = 90
+        imageButton.apply{
+            isEnabled = false
+            isClickable = false
+            imageAlpha = 90
+        }
     }
 
     private fun enableImageButton(imageButton: ImageButton) {
-        imageButton.isEnabled = true
-        imageButton.isClickable = true
-        imageButton.imageAlpha = 255
+        imageButton.apply {
+            isEnabled = true
+            isClickable = true
+            imageAlpha = 255
+        }
     }
 
     override fun onPrintHtml(html: String) {

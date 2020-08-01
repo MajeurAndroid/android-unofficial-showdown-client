@@ -537,14 +537,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         teamsFragment.onBattleFormatsChanged()
     }
 
-    fun onBattleRoomIsCleared() {
-        Timber.d("[onBattleRoomIsCleared]")
-        onSearchBattlesChanged(emptyList(), emptyMap())
-    }
-
     override fun onSearchBattlesChanged(searching: List<String>, games: Map<String, String>) {
-        Timber.d("[onSearchBattleChanged] joinContainer visibility %s", binding.joinContainer.visibility)
-
         isSearchingBattle = searching.isNotEmpty()
         when {
             isSearchingBattle -> setBattleButtonUIState("Searching...", enabled = false, showCancel = true, tintCard = false)

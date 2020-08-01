@@ -4,7 +4,7 @@ import android.os.Handler
 import android.os.Looper
 import com.majeur.psclient.service.observer.BattleRoomMessageObserver
 
-class ActionQueue(looper: Looper, var listener: QueueListener) {
+class ActionQueue(looper: Looper) {
 
     private data class Entry (val action:()->Unit, val delay: Long, val isEndOfTurn: Boolean)
 
@@ -55,10 +55,6 @@ class ActionQueue(looper: Looper, var listener: QueueListener) {
         enqueue(action, 750, isEndOfTurn = false)
     }
 
-//    private fun enqueueAction(action: ()->Unit) {
-//        enqueue(action, 0, isEndOfTurn = false)
-//    }
-
     private fun enqueue(action: ()->Unit, delay: Long, isEndOfTurn: Boolean) {
         actions.add(Entry(action, delay, isEndOfTurn))
         if (!isLooping) startLoop()
@@ -79,7 +75,6 @@ class ActionQueue(looper: Looper, var listener: QueueListener) {
     fun skipToNext() {
         do {
             if (actions.isEmpty()) {
-                listener.onQueueEmpty()
                 return
             }
             var thisAction = actions.first()
@@ -107,23 +102,8 @@ class ActionQueue(looper: Looper, var listener: QueueListener) {
                 turnActionInQueue = false
                 lastAction?.invoke()
                 lastAction = null
-                listener.onQueueEmpty()
             }
         }
     }
 
 }
-
-interface QueueListener {
-    fun onQueueEmpty()
-}
-
-enum class ActionType {
-    START_OF_TURN,
-    OTHER
-}
-
-//class Action(_action: ()->Unit, _type: ActionType = ActionType.OTHER) {
-//    val actionUnit: ()->Unit = _action
-//    val actionType: ActionType = _type
-//}
