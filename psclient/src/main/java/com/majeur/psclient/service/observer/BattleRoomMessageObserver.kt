@@ -41,7 +41,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
     private var activeWeather: String? = null
     private val activeFieldEffects = mutableListOf<String>()
     private var lastMove: String? = null
-    private var roomBattleType: BattleType = BattleType.LIVE
+    var roomBattleType: BattleType = BattleType.LIVE
 
     init {
         battleTextBuilder.setPokemonIdFactory { rawString: String ->
@@ -850,7 +850,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
     fun onSetBattleType(type: BattleType) {
         this.roomBattleType = type
         actionQueue.setBattleType(type)
-        uiCallbacks?.onSetBattleType(type)
+        uiCallbacks?.onRoomBattleTypeChanged(type)
     }
 
     private fun onMarkBreak() = uiCallbacks?.onMarkBreak()
@@ -899,7 +899,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
         fun onSideChanged(player: Player, side: String, start: Boolean)
         fun onVolatileStatusChanged(id: PokemonId, vStatus: String, start: Boolean)
         fun onPrintBattleMessage(message: CharSequence)
-        fun onSetBattleType(type: BattleType)
+        fun onRoomBattleTypeChanged(type: BattleType)
         fun goToLatest()
     }
 
@@ -908,9 +908,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
         REPLAY
         ;
 
-        fun isReplay() : Boolean {
-            return this == REPLAY
-        }
+        val isReplay get() = this == REPLAY
     }
 
     enum class ReplayAction {

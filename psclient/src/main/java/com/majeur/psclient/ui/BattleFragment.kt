@@ -41,7 +41,6 @@ import com.majeur.psclient.widget.BattleDecisionWidget
 import com.majeur.psclient.widget.BattleLayout
 import com.majeur.psclient.widget.BattleTipPopup
 import kotlinx.coroutines.launch
-import timber.log.Timber
 
 class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, View.OnClickListener {
 
@@ -62,7 +61,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
     private var _binding: FragmentBattleBinding? = null
     private val binding get() = _binding!!
 
-    var battleType = BattleRoomMessageObserver.BattleType.LIVE
+    val battleType get() = observer.roomBattleType
 
 
     private var _observedRoomId: String? = null
@@ -147,7 +146,9 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
         super.onHiddenChanged(hidden)
 
         // Pause replay if user switches away to another fragment
-        if (hidden && battleType.isReplay()) pauseReplay()
+        // Do a isResumed check, because this method gets triggered on activity start, and
+        // battleType is not yet available at that point
+        if (super.isResumed() && hidden && battleType.isReplay) pauseReplay()
     }
 
     override fun onServiceBound(service: ShowdownService) {
@@ -531,7 +532,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
             binding.extraActions.timerButton.visibility = GONE
         }
 
-        if (battleType.isReplay()) clearReplayRoom()
+        if (observer.roomBattleType.isReplay) clearReplayRoom()
     }
 
     override fun onPreviewStarted() {
@@ -752,8 +753,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
                 .start()
     }
 
-    override fun onSetBattleType(type: BattleRoomMessageObserver.BattleType) {
-        this.battleType = type
+    override fun onRoomBattleTypeChanged(type: BattleRoomMessageObserver.BattleType) {
         when (type) {
             BattleRoomMessageObserver.BattleType.REPLAY -> {
                 showReplayControls()
@@ -812,7 +812,6 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
     private fun disableImageButton(imageButton: ImageButton) {
         imageButton.apply{
             isEnabled = false
-            isClickable = false
             imageAlpha = 90
         }
     }
@@ -820,7 +819,6 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
     private fun enableImageButton(imageButton: ImageButton) {
         imageButton.apply {
             isEnabled = true
-            isClickable = true
             imageAlpha = 255
         }
     }
