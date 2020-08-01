@@ -39,20 +39,7 @@ class ShowdownService : Service() {
     private var previousChatRoomId: String? = null
     private var previousBattleRoomId: String? = null
 
-    val replayManager by lazy {
-        ReplayManager(okHttpClient, object : ReplayManager.ReplayCallback {
-            override fun init() {
-                battleMessageObserver.onSetBattleType(BattleRoomMessageObserver.BattleType.REPLAY)
-            }
-            override fun onMessage(msg: String) {
-                processServerData(msg)
-            }
-
-            override fun onAction(replayAction: BattleRoomMessageObserver.ReplayAction) {
-                battleMessageObserver.handleReplayAction(replayAction)
-            }
-        })
-    }
+    val replayManager by lazy { ReplayManager(this) }
 
     private val sharedData = mutableMapOf<String, Any?>()
     private var webSocket: WebSocket? = null
@@ -151,7 +138,7 @@ class ShowdownService : Service() {
         }
     }
 
-    private fun processServerData(data: String) {
+    fun processServerData(data: String) {
         if (data[0] == '>') dispatchServerData(data.removePrefix(">").substringBefore("\n"),
                 data.substringAfter("\n"))
         else dispatchServerData(null, data)

@@ -75,10 +75,6 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
 
     val battleRunning get() = observer.battleRunning
 
-    fun battleType(): BattleRoomMessageObserver.BattleType {
-        return battleType
-    }
-
     override fun onAttach(context: Context) {
         super.onAttach(context)
         glideHelper = mainActivity.glideHelper

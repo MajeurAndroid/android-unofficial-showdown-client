@@ -211,7 +211,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
                 } else {
 
                     if (battleFragment.battleRunning) {
-                        if (battleFragment.battleType().isReplay()) {
+                        if (battleFragment.battleType.isReplay()) {
                             AlertDialog.Builder(requireActivity())
                                     .setMessage("You are already viewing a replay. Do you want to search anyway?")
                                     .setPositiveButton("Yes, search") { _: DialogInterface?, _: Int -> searchForBattle() }
@@ -552,7 +552,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         }
 
         binding.joinContainer.visibility = if (games.isEmpty()) View.GONE else View.VISIBLE
-        if (! battleFragment.battleType().isReplay()) {
+        if (! battleFragment.battleType.isReplay()) {
             // Don't hide the search container if the user is watching a replay
             binding.searchContainer.visibility = if (games.isNotEmpty()) View.GONE else View.VISIBLE
         }
@@ -570,7 +570,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
     }
 
     private fun rejoinRoom(roomId: String) {
-        if (battleFragment.battleType().isReplay()) {
+        if (battleFragment.battleType.isReplay()) {
             mainActivity.showBattleFragment()
         } else {
             requestRoomJoin(roomId)
