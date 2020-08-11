@@ -95,6 +95,7 @@ fun Rect.baselineForTop(textTop: Int) = textTop - top // Offset to text's baseli
 
 fun <T> Array<T>.minusLast() = copyOfRange(0, size - 1)
 fun <T> Array<T>.minusFirst() = copyOfRange(1, size)
+fun <T> Collection<T>.containsOne(elements: Collection<T>) = all { !elements.contains(it) }
 
 fun TextView.clearText() {
     // We cannot use editableText.clear()/.clearSpans() because this also removes internal text spans required

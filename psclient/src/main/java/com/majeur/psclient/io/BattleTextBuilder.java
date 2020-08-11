@@ -229,7 +229,7 @@ public final class BattleTextBuilder {
         return resolve(pokemonId.getFoe() ? "opposingTeam" : "team");
     }
 
-    private String effect(String effect) {
+    public String effect(String effect) {
         if (effect == null) return null;
         if (effect.startsWith("item:") || effect.startsWith("move:"))
             effect = effect.substring(5);
