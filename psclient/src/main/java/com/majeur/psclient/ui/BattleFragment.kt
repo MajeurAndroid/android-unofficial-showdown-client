@@ -14,6 +14,7 @@ import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
@@ -61,6 +62,8 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
     private var _binding: FragmentBattleBinding? = null
     private val binding get() = _binding!!
 
+    val battleType get() = observer.roomBattleType
+
 
     private var _observedRoomId: String? = null
     var observedRoomId: String?
@@ -107,12 +110,20 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
                     extraActionLayout.setTopOffset(0, BattleDecisionWidget.REVEAL_ANIMATION_DURATION)
                 }
             }
+
+
             extraActions.timerButton.setOnClickListener(this@BattleFragment)
             extraActions.forfeitButton.setOnClickListener(this@BattleFragment)
             extraActions.sendButton.setOnClickListener(this@BattleFragment)
             undoButton.setOnClickListener(this@BattleFragment)
             rematchButton.setOnClickListener(this@BattleFragment)
             uploadReplayButton.setOnClickListener(this@BattleFragment)
+
+            replayControlsContainer.btnReplayBack.setOnClickListener(replayControlsListener)
+            replayControlsContainer.btnReplayForward.setOnClickListener(replayControlsListener)
+            replayControlsContainer.btnReplayPause.setOnClickListener(replayControlsListener)
+            replayControlsContainer.btnReplayPlay.setOnClickListener(replayControlsListener)
+
         }
     }
 
@@ -130,6 +141,15 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
             audioManager.playBattleMusic()
             wasPlayingBattleMusicWhenPaused = false
         }
+    }
+
+    override fun onHiddenChanged(hidden: Boolean) {
+        super.onHiddenChanged(hidden)
+
+        // Pause replay if user switches away to another fragment
+        // Do a isResumed check, because this method gets triggered on activity start, and
+        // battleType is not yet available at that point
+        if (super.isResumed() && hidden && battleType.isReplay) pauseReplay()
     }
 
     override fun onServiceBound(service: ShowdownService) {
@@ -238,6 +258,50 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
                 sendSaveReplayCommand()
             }
         }
+    }
+
+    private val replayControlsListener = View.OnClickListener { view ->
+        if (observedRoomId == null) return@OnClickListener
+
+        when (view) {
+            binding.replayControlsContainer.btnReplayForward -> goToNextTurnInReplay()
+            binding.replayControlsContainer.btnReplayBack -> goToPreviousTurnInReplay()
+            binding.replayControlsContainer.btnReplayPause -> pauseReplay()
+            binding.replayControlsContainer.btnReplayPlay -> unpauseReplay()
+        }
+    }
+
+    private fun goToNextTurnInReplay() {
+        hidePauseButtonAndShowPlay()
+        service?.replayManager?.pause()
+        service?.replayManager?.goToNextTurn()
+    }
+
+
+    private fun goToPreviousTurnInReplay() {
+        hidePauseButtonAndShowPlay()
+        service?.replayManager?.pause()
+        service?.replayManager?.goToPreviousTurn()
+    }
+
+    private fun pauseReplay() {
+        hidePauseButtonAndShowPlay()
+        service?.replayManager?.pause()
+    }
+
+    private fun unpauseReplay() {
+        hidePlayButtonAndShowPause()
+        service?.replayManager?.play()
+    }
+
+    private fun hidePauseButtonAndShowPlay() {
+        binding.replayControlsContainer.btnReplayPause.visibility = GONE
+        binding.replayControlsContainer.btnReplayPlay.visibility = VISIBLE
+    }
+
+    private fun hidePlayButtonAndShowPause() {
+        binding.replayControlsContainer.btnReplayPause.visibility = VISIBLE
+        binding.replayControlsContainer.btnReplayPlay.visibility = GONE
     }
 
     private fun sendChatMessage(msg: CharSequence) {
@@ -468,6 +532,8 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
             }
             binding.extraActions.timerButton.visibility = GONE
         }
+
+        if (observer.roomBattleType.isReplay) clearReplayRoom()
     }
 
     override fun onPreviewStarted() {
@@ -702,6 +768,76 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
                 .setStartDelay(750)
                 .alpha(0f)
                 .start()
+    }
+
+    override fun onRoomBattleTypeChanged(type: BattleRoomMessageObserver.BattleType) {
+        when (type) {
+            BattleRoomMessageObserver.BattleType.REPLAY -> {
+                showReplayControls()
+                enableReplayControls()
+                hidePlayButtonAndShowPause()
+                observedRoomId = "ReplayRoom"
+            }
+            BattleRoomMessageObserver.BattleType.LIVE -> showBattleControls()
+        }
+    }
+
+    override fun goToLatest() {
+        postFullScroll()
+    }
+
+    private fun clearReplayRoom() {
+        disableReplayControls()
+        // Normally, at the end of a match, the server will send an updated 'search battles'
+        // message. However, if we're in a replay, we need to send a manual message to indicate
+        // we are no longer in a room
+        homeFragment.onSearchBattlesChanged(emptyList(), emptyMap())
+    }
+
+    fun displayDefaultUiControls() {
+        showBattleControls()
+    }
+
+    private fun showReplayControls() {
+        binding.replayControlsContainer.replayControlsContainer.visibility = VISIBLE
+
+        binding.extraActionLayout.visibility = GONE
+        binding.battleDecisionWidget.visibility = GONE
+        enableReplayControls()
+    }
+
+    private fun showBattleControls() {
+        binding.replayControlsContainer.replayControlsContainer.visibility = GONE
+
+        binding.extraActionLayout.visibility = VISIBLE
+    }
+
+    private fun disableReplayControls() {
+        disableImageButton(binding.replayControlsContainer.btnReplayPlay)
+        disableImageButton(binding.replayControlsContainer.btnReplayPause)
+        disableImageButton(binding.replayControlsContainer.btnReplayBack)
+        disableImageButton(binding.replayControlsContainer.btnReplayForward)
+    }
+
+    private fun enableReplayControls() {
+        enableImageButton(binding.replayControlsContainer.btnReplayPlay)
+        enableImageButton(binding.replayControlsContainer.btnReplayPause)
+        enableImageButton(binding.replayControlsContainer.btnReplayBack)
+        enableImageButton(binding.replayControlsContainer.btnReplayForward)
+    }
+
+    private fun disableImageButton(imageButton: ImageButton) {
+        imageButton.apply{
+            isEnabled = false
+            imageAlpha = 90
+        }
+    }
+
+    private fun enableImageButton(imageButton: ImageButton) {
+        imageButton.apply {
+            isEnabled = true
+            imageAlpha = 255
+        }
     }
 
     override fun onPrintHtml(html: String) {

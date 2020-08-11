@@ -33,6 +33,7 @@ import com.majeur.psclient.model.common.BattleFormat
 import com.majeur.psclient.model.common.Team
 import com.majeur.psclient.model.common.toId
 import com.majeur.psclient.service.ShowdownService
+import com.majeur.psclient.service.observer.BattleRoomMessageObserver
 import com.majeur.psclient.service.observer.GlobalMessageObserver
 import com.majeur.psclient.util.*
 import com.majeur.psclient.widget.CategoryAdapter
@@ -186,6 +187,8 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         binding.searchButton.setOnClickListener(this)
         binding.userSearchButton.setOnClickListener(this)
         binding.bugReportButton.setOnClickListener(this)
+
+        binding.TODOViewReplayButton.setOnClickListener(this)
     }
 
     override fun onClick(view: View) {
@@ -206,10 +209,20 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
                     if (parentFragmentManager.findFragmentByTag(SignInDialog.FRAGMENT_TAG) == null)
                         SignInDialog.newInstance().show(parentFragmentManager, SignInDialog.FRAGMENT_TAG)
                 } else {
-                    if (battleFragment.battleRunning)
-                        makeSnackbar("A battle is already running")
-                    else
+
+                    if (battleFragment.battleRunning) {
+                        if (battleFragment.battleType.isReplay) {
+                            AlertDialog.Builder(requireActivity())
+                                    .setMessage("You are already viewing a replay. Do you want to search anyway?")
+                                    .setPositiveButton("Yes, search") { _: DialogInterface?, _: Int -> searchForBattle() }
+                                    .setNegativeButton("No, go back", null)
+                                    .show()
+                        } else {
+                            makeSnackbar("A battle is already running")
+                        }
+                    } else {
                         searchForBattle()
+                    }
                 }
             }
             binding.cancelButton -> when {
@@ -257,7 +270,19 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
                     .setNeutralButton("Go to smogon thread") { _: DialogInterface?, _: Int -> openUrl(URL_SMOGON_THREAD, false) }
                     .setNegativeButton("Cancel", null)
                     .show()
+
+            binding.TODOViewReplayButton -> {
+//                service?.replayManager?.startReplayDownload("https://replay.pokemonshowdown.com/smogtours-ou-39893.json");
+                service?.replayManager?.downloadAndStartReplay("https://replay.pokemonshowdown.com/gen8randombattle-1154942374.json");
+            }
         }
+    }
+
+    private fun resetRoomToBattleState() {
+        Timber.d("[resetRoomToBattleState]")
+        battleFragment.observedRoomId = null
+        battleFragment.displayDefaultUiControls()
+        service?.replayManager?.closeReplay()
     }
 
     private fun openUrl(url: String, useChrome: Boolean) {
@@ -321,6 +346,8 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
     }
 
     private fun searchForBattle() {
+        resetRoomToBattleState()
+
         if (service?.isConnected != true) return
         if (currentBattleFormat!!.isTeamNeeded) {
             val team = binding.teamsSelector.selectedItem as Team?
@@ -488,6 +515,8 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         }
         val signInDialog = parentFragmentManager.findFragmentByTag(SignInDialog.FRAGMENT_TAG) as SignInDialog?
         signInDialog?.dismissAllowingStateLoss()
+
+        resetRoomToBattleState()
     }
 
     override fun onUpdateCounts(userCount: Int, battleCount: Int) {
@@ -513,8 +542,12 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
             isSearchingBattle -> setBattleButtonUIState("Searching...", enabled = false, showCancel = true, tintCard = false)
             !isChallengingSomeone -> setBattleButtonUIState("Battle !", enabled = true, showCancel = false, tintCard = false)
         }
+
         binding.joinContainer.visibility = if (games.isEmpty()) View.GONE else View.VISIBLE
-        binding.searchContainer.visibility = if (games.isNotEmpty()) View.GONE else View.VISIBLE
+        if (! battleFragment.battleType.isReplay) {
+            // Don't hide the search container if the user is watching a replay
+            binding.searchContainer.visibility = if (games.isNotEmpty()) View.GONE else View.VISIBLE
+        }
 
         binding.joinedBattlesContainer.removeAllViews()
         for ((roomId, value) in games) {
@@ -523,8 +556,16 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
                 text = value
                 tag = roomId
                 isEnabled = roomId != battleFragment.observedRoomId
-                setOnClickListener { requestRoomJoin(roomId) }
+                setOnClickListener { rejoinRoom(roomId) }
             }
+        }
+    }
+
+    private fun rejoinRoom(roomId: String) {
+        if (battleFragment.battleType.isReplay) {
+            mainActivity.showBattleFragment()
+        } else {
+            requestRoomJoin(roomId)
         }
     }
 
@@ -543,6 +584,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
             }
             setNegativeButton("Close", null)
             show()
+
         }
     }
 

@@ -2,10 +2,11 @@ package com.majeur.psclient.service
 
 import android.os.Handler
 import android.os.Looper
+import com.majeur.psclient.service.observer.BattleRoomMessageObserver
 
 class ActionQueue(looper: Looper) {
 
-    private data class Entry (val action: ()->Unit, val delay: Long)
+    private data class Entry (val action:()->Unit, val delay: Long, val isEndOfTurn: Boolean)
 
     private val handler = Handler(looper)
     private val actions = mutableListOf<Entry>()
@@ -13,6 +14,12 @@ class ActionQueue(looper: Looper) {
     private var lastAction: (()->Unit)? = null
     private var isLooping = false
     private var turnActionInQueue = false
+
+    private var battleType = BattleRoomMessageObserver.BattleType.LIVE
+
+    fun setBattleType(battleType: BattleRoomMessageObserver.BattleType) {
+        this.battleType = battleType
+    }
 
     fun clear() {
         stopLoop()
@@ -26,41 +33,60 @@ class ActionQueue(looper: Looper) {
     }
 
     fun enqueueTurnAction(action: ()->Unit) {
-        enqueueAction(action)
-        if (turnActionInQueue) loopTo(action)
-        turnActionInQueue = true
+        enqueue(action, 0, isEndOfTurn = true)
+
+        // Only skip to the latest turn if we are watching a live battle.
+        // Otherwise, do each turn in the queue one at a time
+        if (turnActionInQueue && battleType == BattleRoomMessageObserver.BattleType.LIVE) {
+            loopTo(action)
+            turnActionInQueue = true
+        }
     }
 
     fun enqueueAction(action: ()->Unit) {
-        enqueue(action, 0)
+        enqueue(action, 0, isEndOfTurn = false)
     }
 
     fun enqueueMajorAction(action: ()->Unit) {
-        enqueue(action, 1500)
+        enqueue(action, 1500, isEndOfTurn = false)
     }
 
     fun enqueueMinorAction(action: ()->Unit) {
-        enqueue(action, 750)
+        enqueue(action, 750, isEndOfTurn = false)
     }
 
-    private fun enqueue(action: ()->Unit, delay: Long) {
-        actions.add(Entry(action, delay))
+    private fun enqueue(action: ()->Unit, delay: Long, isEndOfTurn: Boolean) {
+        actions.add(Entry(action, delay, isEndOfTurn))
         if (!isLooping) startLoop()
     }
 
-    private fun startLoop() {
+    fun startLoop() {
+        if (actions.isEmpty()) return
+
         isLooping = true
         handler.post(loopRunnable)
     }
 
-    private fun stopLoop() {
+    fun stopLoop() {
         isLooping = false
         handler.removeCallbacks(loopRunnable)
     }
 
+    fun skipToNext() {
+        do {
+            if (actions.isEmpty()) {
+                return
+            }
+            var thisAction = actions.first()
+
+            actions.removeAt(0).action.invoke()
+        } while (! thisAction.isEndOfTurn)
+    }
+
     private fun loopTo(action: ()->Unit) {
         stopLoop()
-        while (actions.first().action !== action) actions.removeAt(0).action.invoke()
+        while (actions.first().action !== action)
+            actions.removeAt(0).action.invoke()
         startLoop()
     }
 
@@ -79,4 +105,5 @@ class ActionQueue(looper: Looper) {
             }
         }
     }
+
 }

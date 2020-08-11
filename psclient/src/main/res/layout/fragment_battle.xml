@@ -71,6 +71,9 @@
         android:elevation="4dp"
         android:background="?attr/colorSurface"/>
 
+    <include android:id="@+id/replay_controls_container" layout="@layout/layout_extra_replay_controls" />
+
+
     <ScrollView
         android:id="@+id/battle_log_container"
         android:layout_width="match_parent"
