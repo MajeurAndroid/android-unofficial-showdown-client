@@ -26,6 +26,7 @@ import com.majeur.psclient.io.AssetLoader
 import com.majeur.psclient.io.BattleAudioManager
 import com.majeur.psclient.io.GlideHelper
 import com.majeur.psclient.model.battle.*
+import com.majeur.psclient.model.common.Colors
 import com.majeur.psclient.model.common.Colors.healthColor
 import com.majeur.psclient.model.common.Colors.statusColor
 import com.majeur.psclient.model.common.Stats
@@ -642,8 +643,24 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
         statusView?.updateModifier(statModifiers)
     }
 
+    private fun checkWillCrash(request: BattleDecisionRequest): Boolean {
+        return try {
+            request.count
+            false
+        } catch (e: IllegalStateException) {
+            val msg = "A special bug has occurred, please use the bug report button on " +
+                    "the home panel, and mention that this was an \"Unknown battle type\" issue. " +
+                    "Don't forget to specify on which format you were playing, and if the battle " +
+                    "has just started when this message appeared. " +
+                    "Thank you!"
+            onPrintText(msg.color(Colors.RED))
+            true
+        }
+    }
+
     override fun onDecisionRequest(request: BattleDecisionRequest) {
         lastDecisionRequest = request
+        if (checkWillCrash(request)) return
         if (request.shouldWait) return
         binding.battleDecisionWidget.promptDecision(observer, battleTipPopup, request) { decision ->
             sendDecision(request.id, decision)

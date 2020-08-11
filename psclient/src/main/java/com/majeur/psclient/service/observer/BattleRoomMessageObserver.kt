@@ -108,9 +108,14 @@ class BattleRoomMessageObserver(service: ShowdownService)
 
     public override fun onMessage(message: ServerMessage) {
         super.onMessage(message)
-        message.roomId
         message.newArgsIteration()
-        if (message.command[0] == '-') handleMinorActionCommand(message) else handleRegularCommand(message)
+        val upMessage = upgradeMessage(message)
+        if (upMessage.command[0] == '-') handleMinorActionCommand(upMessage) else handleRegularCommand(upMessage)
+    }
+
+    private fun upgradeMessage(message: ServerMessage) = when (message.command) {
+        // "-activate" -> upgradeActivate(message)
+        else -> message
     }
 
     private fun handleRegularCommand(message: ServerMessage) = when (message.command) {
@@ -122,8 +127,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
         "detailschange" -> handleDetailsChanged(message)
         "turn" -> handleTurn(message)
         "player" -> handlePlayer(message)
-        "upkeep" -> {
-        }
+        "upkeep" -> { }
         "faint" -> handleFaint(message)
         "teamsize" -> handleTeamSize(message)
         "gametype" -> handleGameType(message)
@@ -181,7 +185,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
         if (playerId.contains("1")) p1Username = username else p2Username = username
         if (p1Username != null && p2Username != null)
             onPlayerInit(Player.TRAINER.username(p1Username!!, p2Username!!, myUsername),
-                Player.FOE.username(p1Username!!, p2Username!!, myUsername))
+                    Player.FOE.username(p1Username!!, p2Username!!, myUsername))
     }
 
     private fun handleFaint(msg: ServerMessage) {
@@ -438,7 +442,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
             val text: CharSequence
             text = if (damage)
                 battleTextBuilder.damage(id, percentage, msg.kwargs["from"], msg.kwargs["of"],
-                    msg.kwargs["partiallytrapped"])
+                        msg.kwargs["partiallytrapped"])
             else
                 battleTextBuilder.heal(id, msg.kwargs["from"], msg.kwargs["of"], msg.kwargs["wisher"])
 
@@ -460,7 +464,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
         val status = msg.nextArg
         val text: CharSequence
         text = if (!cure) battleTextBuilder.status(id, status, msg.kwargs["from"], msg.kwargs["of"]) else
-        battleTextBuilder.curestatus(id, status, msg.kwargs["from"], msg.kwargs["of"], msg.kwargs["thaw"])
+            battleTextBuilder.curestatus(id, status, msg.kwargs["from"], msg.kwargs["of"], msg.kwargs["thaw"])
         actionQueue.enqueueMinorAction {
             if (id.isInBattle) {
                 getBattlingPokemon(id)!!.condition?.status = if (cure) null else status
@@ -562,7 +566,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
         val fieldEffect = effect.substringAfter(":").toId()
         val text = if (start)
             battleTextBuilder.field(msg.command, effect, msg.kwargs["from"],
-                msg.kwargs["of"]) else battleTextBuilder.fieldend(effect)
+                    msg.kwargs["of"]) else battleTextBuilder.fieldend(effect)
         actionQueue.enqueueMinorAction {
             if (start) {
                 activeFieldEffects.add(fieldEffect)
@@ -917,5 +921,58 @@ class BattleRoomMessageObserver(service: ShowdownService)
         NEXT_TURN,
         PREV_TURN,
         CLOSE_REPLAY
+    }
+
+    private fun upgradeActivate(message: ServerMessage): ServerMessage {
+        val args = message.args
+        val kwArgs = message.kwargs.toMutableMap()
+
+        if (kwArgs.keys.containsOne(listOf("item", "move", "number", "ability"))) return message
+        val pokemon = args[0]; val effect = args.getOrNull(1)
+        val arg3 = args.getOrNull(2); val arg4 = args.getOrNull(3)
+        val target = kwArgs["of"]
+        val id = battleTextBuilder.effect(effect)
+
+        if (kwArgs["block"] != null)
+            return message.upgrade("-fail", listOf(pokemon))
+
+        if (id == "wonderguard")
+            return message.upgrade("-immune", listOf(pokemon), mapOf("from" to "ability:Wonder Guard"))
+
+        if (id == "beatup" && kwArgs["of"] != null)
+            return message.upgrade(kwargs = mapOf("name" to kwArgs["of"]!!))
+
+        if (listOf("ingrain", "quickguard", "wideguard", "craftyshield", "matblock", "protect", "mist", "safeguard",
+                        "electricterrain", "mistyterrain", "psychicterrain", "telepathy", "stickyhold", "suctioncups", "aromaveil",
+                        "flowerveil", "sweetveil", "disguise", "safetygoggles", "protectivepads").contains(id)) {
+            if (target != null) return message.upgrade("-block", listOfNotNull(target, effect, arg3),
+                    kwArgs.plus("of" to pokemon))
+            return message.upgrade("-block", listOfNotNull(target, effect, arg3))
+        }
+
+        if (id == "charge")
+            return message.upgrade("-singlemove", listOfNotNull(pokemon, effect),
+                    if (target != null) mapOf("of" to target) else emptyMap())
+
+        if (listOf("bind", "wrap", "clamp", "whirlpool", "firespin", "magmastorm", "sandtomb",
+                        "infestation", "trapped").contains(id))
+            return message.upgrade("-start", listOfNotNull(pokemon, effect),
+                    if (target != null) mapOf("of" to target) else emptyMap())
+
+        if (id == "fairylock")
+            return message.upgrade("-fieldactivate", listOfNotNull(effect), emptyMap())
+
+        if (id == "symbiosis" || id == "poltergeist") {
+            if (arg3 != null) kwArgs["item"] = arg3
+        } else if (id === "magnitude") {
+            if (arg3 != null) kwArgs["number"] = arg3
+        } else if (id === "skillswap" || id === "mummy" || id === "wanderingspirit") {
+            if (arg3 != null) kwArgs["ability"] = arg3
+            if (arg4 != null) kwArgs["ability2"] = arg4
+        } else if (listOf("spite", "grudge", "forewarn", "sketch", "leppaberry", "mysteryberry").contains(id)) {
+            if (arg3 != null) kwArgs["move"] = arg3
+            if (arg4 != null) kwArgs["number"] = arg4
+        }
+        return message.upgrade(args = listOfNotNull(pokemon, effect, target), kwargs = kwArgs)
     }
 }
