@@ -33,7 +33,6 @@ import com.majeur.psclient.model.common.BattleFormat
 import com.majeur.psclient.model.common.Team
 import com.majeur.psclient.model.common.toId
 import com.majeur.psclient.service.ShowdownService
-import com.majeur.psclient.service.observer.BattleRoomMessageObserver
 import com.majeur.psclient.service.observer.GlobalMessageObserver
 import com.majeur.psclient.util.*
 import com.majeur.psclient.widget.CategoryAdapter
@@ -186,9 +185,8 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         binding.cancelButton.setOnClickListener(this)
         binding.searchButton.setOnClickListener(this)
         binding.userSearchButton.setOnClickListener(this)
+        binding.replaySearchButton.setOnClickListener(this)
         binding.bugReportButton.setOnClickListener(this)
-
-        binding.TODOViewReplayButton.setOnClickListener(this)
     }
 
     override fun onClick(view: View) {
@@ -271,11 +269,15 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
                     .setNegativeButton("Cancel", null)
                     .show()
 
-            binding.TODOViewReplayButton -> {
-//                service?.replayManager?.startReplayDownload("https://replay.pokemonshowdown.com/smogtours-ou-39893.json");
-                service?.replayManager?.downloadAndStartReplay("https://replay.pokemonshowdown.com/gen8randombattle-1154942374.json");
+            binding.replaySearchButton -> {
+                if (childFragmentManager.findFragmentByTag(SearchReplayDialog.FRAGMENT_TAG) == null)
+                    SearchReplayDialog().show(childFragmentManager, SearchReplayDialog.FRAGMENT_TAG)
             }
         }
+    }
+
+    fun startReplay(replayId: String) {
+        service?.replayManager?.downloadAndStartReplay(replayId)
     }
 
     private fun resetRoomToBattleState() {

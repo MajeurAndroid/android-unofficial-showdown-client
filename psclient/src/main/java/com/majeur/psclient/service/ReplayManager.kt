@@ -14,9 +14,16 @@ class ReplayManager(private val showdownService: ShowdownService) {
     private lateinit var currentReplay : ReplayData
     private var uiHandler = Handler(Looper.getMainLooper())
 
-    fun downloadAndStartReplay(uri : String) {
+    fun downloadAndStartReplay(replayId : String) {
+        val url = HttpUrl.Builder().run {
+            scheme("https")
+            host("replay.pokemonshowdown.com")
+            addPathSegment("$replayId.json")
+            build()
+        }
+
         val request = Request.Builder()
-                .url(HttpUrl.get(uri))
+                .url(url)
                 .build()
 
         showdownService.okHttpClient.newCall(request).enqueue(object : Callback {

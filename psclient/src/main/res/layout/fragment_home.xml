@@ -120,17 +120,6 @@
                     android:minWidth="196dp"
                     android:text="Battle !"/>
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/TODO_view_replay_button"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_below="@id/search_button"
-                    android:visibility="gone"
-                    android:layout_centerHorizontal="true"
-                    android:layout_marginTop="8dp"
-                    android:minWidth="196dp"
-                    android:text="View Replay !"/>
-
                 <ImageButton
                     android:id="@+id/sound_button"
                     android:layout_width="42dp"
@@ -221,10 +210,17 @@
                     style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
 
                 <com.google.android.material.button.MaterialButton
+                    android:id="@+id/replay_search_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minWidth="196dp"
+                    android:text="Search replays"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/bug_report_button"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
                     android:minWidth="196dp"
                     android:text="[Report a bug]"
                     style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
