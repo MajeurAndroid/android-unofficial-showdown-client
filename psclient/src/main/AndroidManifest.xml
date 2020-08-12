@@ -27,9 +27,9 @@
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="http" android:host="play.pokemonshowdown.com" />
-        <!--    <data android:scheme="http" android:host="replay.pokemonshowdown.com" />    -->
+                <data android:scheme="http" android:host="replay.pokemonshowdown.com" />
                 <data android:scheme="https" android:host="play.pokemonshowdown.com" />
-        <!--    <data android:scheme="https" android:host="replay.pokemonshowdown.com" />   -->
+                <data android:scheme="https" android:host="replay.pokemonshowdown.com" />
             </intent-filter>
         </activity>
 

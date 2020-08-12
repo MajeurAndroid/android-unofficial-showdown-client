@@ -207,7 +207,8 @@ class MainActivity : AppCompatActivity() {
                 homeFragment.requestRoomJoin(roomId)
             }
             "replay.pokemonshowdown.com" -> {
-                TODO("Replays aren't implemented yet")
+                val replayId = uri.pathSegments.firstOrNull() ?: return
+                homeFragment.startReplay(replayId)
             }
         }
     }
