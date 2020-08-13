@@ -2,7 +2,6 @@ package com.majeur.psclient.service
 
 import android.os.Handler
 import android.os.Looper
-import com.majeur.psclient.service.observer.BattleRoomMessageObserver
 
 class ActionQueue(looper: Looper) {
 
@@ -15,11 +14,7 @@ class ActionQueue(looper: Looper) {
     private var isLooping = false
     private var turnActionInQueue = false
 
-    private var battleType = BattleRoomMessageObserver.BattleType.LIVE
-
-    fun setBattleType(battleType: BattleRoomMessageObserver.BattleType) {
-        this.battleType = battleType
-    }
+    var shouldLoopToLastTurn = true
 
     fun clear() {
         stopLoop()
@@ -37,7 +32,7 @@ class ActionQueue(looper: Looper) {
 
         // Only skip to the latest turn if we are watching a live battle.
         // Otherwise, do each turn in the queue one at a time
-        if (turnActionInQueue && battleType == BattleRoomMessageObserver.BattleType.LIVE) {
+        if (turnActionInQueue && shouldLoopToLastTurn) {
             loopTo(action)
             turnActionInQueue = true
         }

@@ -41,7 +41,6 @@ class BattleRoomMessageObserver(service: ShowdownService)
     private var activeWeather: String? = null
     private val activeFieldEffects = mutableListOf<String>()
     private var lastMove: String? = null
-    var roomBattleType: BattleType = BattleType.LIVE
 
     init {
         battleTextBuilder.setPokemonIdFactory { rawString: String ->
@@ -67,6 +66,8 @@ class BattleRoomMessageObserver(service: ShowdownService)
         lastDecisionRequest = null
         activeWeather = null
         activeFieldEffects.clear()
+
+        actionQueue.shouldLoopToLastTurn = !isReplay // Loops through each turn for replays
     }
 
     public override fun onRoomDeInit() {
@@ -79,12 +80,15 @@ class BattleRoomMessageObserver(service: ShowdownService)
         previewPokemonIndexes = IntArray(2)
         activeWeather = null
         activeFieldEffects.clear()
-        actionQueue.setBattleType(BattleType.LIVE) // clear to default setting
+
+        actionQueue.shouldLoopToLastTurn = true // clear to default setting
     }
 
     private fun getPlayer(rawId: String) = Player.get(rawId, p1Username, p2Username, myUsername)
 
     private fun getPokemonId(rawId: String) = PokemonId(getPlayer(rawId), rawId)
+
+    val isReplay get() = observedRoomId?.startsWith("replay-", ignoreCase = true) == true
 
     val foeUsername get() = Player.FOE.username(p1Username!!, p2Username!!, myUsername)
 
@@ -829,7 +833,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
 
 
     fun handleReplayAction(replayAction: ReplayAction) {
-        if (this.roomBattleType != BattleType.REPLAY) return
+        if (!isReplay) return
 
         when(replayAction) {
             ReplayAction.PLAY -> {
@@ -845,16 +849,10 @@ class BattleRoomMessageObserver(service: ShowdownService)
                 TODO("ReplayAction.PREV_TURN is not yet implemented")
             }
             ReplayAction.CLOSE_REPLAY -> {
-                this.roomBattleType = BattleType.LIVE
-                onRoomDeInit()
+                //this.roomBattleType = BattleType.LIVE
+                //onRoomDeInit()
             }
         }
-    }
-
-    fun onSetBattleType(type: BattleType) {
-        this.roomBattleType = type
-        actionQueue.setBattleType(type)
-        uiCallbacks?.onRoomBattleTypeChanged(type)
     }
 
     private fun onMarkBreak() = uiCallbacks?.onMarkBreak()
@@ -903,7 +901,6 @@ class BattleRoomMessageObserver(service: ShowdownService)
         fun onSideChanged(player: Player, side: String, start: Boolean)
         fun onVolatileStatusChanged(id: PokemonId, vStatus: String, start: Boolean)
         fun onPrintBattleMessage(message: CharSequence)
-        fun onRoomBattleTypeChanged(type: BattleType)
         fun goToLatest()
     }
 

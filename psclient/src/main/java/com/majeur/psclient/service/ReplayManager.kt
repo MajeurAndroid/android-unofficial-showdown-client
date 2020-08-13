@@ -65,19 +65,16 @@ class ReplayManager(private val showdownService: ShowdownService) {
 
     private fun initReplayRoom(replayData: ReplayData) {
         currentReplay = replayData
-        showdownService.battleMessageObserver.onSetBattleType(BattleRoomMessageObserver.BattleType.REPLAY)
 
         val initMessage = MSG_INIT_ROOM.format("replay-${replayData.id}")
         processData(initMessage)
 
-        val logMessage = MSG_BATTLE_LOG.format(replayData.id, replayData.log)
+        val logMessage = MSG_BATTLE_LOG.format("replay-${replayData.id}", replayData.log)
         processData(logMessage)
     }
 
     private fun deinitReplayRoom() {
         if (currentReplay == null) return
-
-        showdownService.battleMessageObserver.onSetBattleType(BattleRoomMessageObserver.BattleType.REPLAY)
 
         val deinitMessage = MSG_DEINIT_ROOM.format("replay-${currentReplay!!.id}")
         processData(deinitMessage)
@@ -132,9 +129,9 @@ class ReplayManager(private val showdownService: ShowdownService) {
     }
 
     companion object {
-        private const val MSG_INIT_ROOM = ">%s \n|init|battle"
-        private const val MSG_DEINIT_ROOM = ">%s \n|init|battle"
-        private const val MSG_BATTLE_LOG = ">%s \n%s"
+        private const val MSG_INIT_ROOM = ">%s\n|init|battle"
+        private const val MSG_DEINIT_ROOM = ">%s\n|deinit"
+        private const val MSG_BATTLE_LOG = ">%s\n%s"
         private const val MSG_POPUP_REPLAY_DL_FAIL = "|popup|An error occurred when trying to retrieve the replay"
     }
 }

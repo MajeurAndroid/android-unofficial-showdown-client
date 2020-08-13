@@ -62,9 +62,6 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
     private var _binding: FragmentBattleBinding? = null
     private val binding get() = _binding!!
 
-    val battleType get() = observer.roomBattleType
-
-
     private var _observedRoomId: String? = null
     var observedRoomId: String?
         get() = _observedRoomId
@@ -74,6 +71,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
         }
 
     val battleRunning get() = observer.battleRunning
+    val isReplay get() = observer.isReplay
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -145,11 +143,10 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
 
     override fun onHiddenChanged(hidden: Boolean) {
         super.onHiddenChanged(hidden)
-
         // Pause replay if user switches away to another fragment
         // Do a isResumed check, because this method gets triggered on activity start, and
         // battleType is not yet available at that point
-        if (super.isResumed() && hidden && battleType.isReplay) pauseReplay()
+        if (super.isResumed() && hidden && observer.isReplay) pauseReplay()
     }
 
     override fun onServiceBound(service: ShowdownService) {
@@ -262,7 +259,6 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
 
     private val replayControlsListener = View.OnClickListener { view ->
         if (observedRoomId == null) return@OnClickListener
-
         when (view) {
             binding.replayControlsContainer.btnReplayForward -> goToNextTurnInReplay()
             binding.replayControlsContainer.btnReplayBack -> goToPreviousTurnInReplay()
@@ -533,7 +529,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
             binding.extraActions.timerButton.visibility = GONE
         }
 
-        if (observer.roomBattleType.isReplay) clearReplayRoom()
+        if (observer.isReplay) clearReplayRoom()
     }
 
     override fun onPreviewStarted() {
@@ -770,18 +766,6 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
                 .start()
     }
 
-    override fun onRoomBattleTypeChanged(type: BattleRoomMessageObserver.BattleType) {
-        when (type) {
-            BattleRoomMessageObserver.BattleType.REPLAY -> {
-                showReplayControls()
-                enableReplayControls()
-                hidePlayButtonAndShowPause()
-                observedRoomId = "ReplayRoom"
-            }
-            BattleRoomMessageObserver.BattleType.LIVE -> showBattleControls()
-        }
-    }
-
     override fun goToLatest() {
         postFullScroll()
     }
@@ -902,6 +886,14 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
         }
         // In case of corrupted battle stream make sure we stop music at the next one
         audioManager.stopBattleMusic()
+
+        if (observer.isReplay) {
+            showReplayControls()
+            enableReplayControls()
+            hidePlayButtonAndShowPause()
+        } else {
+            showBattleControls()
+        }
     }
 
     override fun onRoomDeInit() {
