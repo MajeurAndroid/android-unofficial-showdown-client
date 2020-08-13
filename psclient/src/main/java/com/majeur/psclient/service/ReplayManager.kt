@@ -8,17 +8,23 @@ import org.json.JSONException
 import org.json.JSONObject
 import timber.log.Timber
 import java.io.IOException
+import java.util.concurrent.atomic.AtomicBoolean
 
 class ReplayManager(private val showdownService: ShowdownService) {
 
-    private lateinit var currentReplay : ReplayData
     private var uiHandler = Handler(Looper.getMainLooper())
+    private val isWaitingForReplayData = AtomicBoolean(false)
 
-    fun downloadAndStartReplay(replayId : String) {
+    private var currentReplay: ReplayData? = null
+
+    fun startReplay(replayId : String) {
+        if (isWaitingForReplayData.get() || currentReplay != null) return
+
+        val id = replayId.removePrefix("replay-")
         val url = HttpUrl.Builder().run {
             scheme("https")
             host("replay.pokemonshowdown.com")
-            addPathSegment("$replayId.json")
+            addPathSegment("$id.json")
             build()
         }
 
@@ -26,59 +32,66 @@ class ReplayManager(private val showdownService: ShowdownService) {
                 .url(url)
                 .build()
 
+        isWaitingForReplayData.set(true)
         showdownService.okHttpClient.newCall(request).enqueue(object : Callback {
+
             @Throws(IOException::class)
             override fun onResponse(call: Call, response: Response) {
-
                 val rawResponse = response.body()?.string()
                 if (rawResponse?.isEmpty() != false) {
                     Timber.e("Replay download request responded with an empty body.")
-                    notifyReplayDownloadFailure()
+                    uiHandler.post(this@ReplayManager::notifyReplayDownloadFailure)
+                    isWaitingForReplayData.set(false)
                     return
                 }
                 try {
-                    currentReplay = ReplayData(JSONObject(rawResponse))
-                    initReplayRoom()
+                    val replayData = ReplayData(JSONObject(rawResponse))
+                    uiHandler.post { initReplayRoom(replayData) }
+                    isWaitingForReplayData.set(false)
                 } catch (e: JSONException) {
                     Timber.e(e,"Error while parsing replay json.")
-                    notifyReplayDownloadFailure()
+                    uiHandler.post(this@ReplayManager::notifyReplayDownloadFailure)
+                    isWaitingForReplayData.set(false)
                 }
             }
 
             override fun onFailure(call: Call, e: IOException) {
                 Timber.e(e,"Replay download Call failed.")
-                notifyReplayDownloadFailure()
+                uiHandler.post(this@ReplayManager::notifyReplayDownloadFailure)
+                isWaitingForReplayData.set(false)
             }
         })
     }
 
-    private fun initReplayRoom() {
+    private fun initReplayRoom(replayData: ReplayData) {
+        currentReplay = replayData
         showdownService.battleMessageObserver.onSetBattleType(BattleRoomMessageObserver.BattleType.REPLAY)
 
-        var updateSearchMessage = MSG_FOUND.format(currentReplay.id, "Viewing Replay")
-        processData(updateSearchMessage)
+        val initMessage = MSG_INIT_ROOM.format("replay-${replayData.id}")
+        processData(initMessage)
 
-        var initBattleMessage = MSG_INIT_BATTLE.format(currentReplay.id)
-        processData(initBattleMessage)
-
-        sendAllLogLines()
+        val logMessage = MSG_BATTLE_LOG.format(replayData.id, replayData.log)
+        processData(logMessage)
     }
 
-    private fun sendAllLogLines() {
-        var battleLine = MSG_BATTLE_LINE_UPDATE.format(currentReplay.id, currentReplay.log)
-        processData(battleLine)
+    private fun deinitReplayRoom() {
+        if (currentReplay == null) return
+
+        showdownService.battleMessageObserver.onSetBattleType(BattleRoomMessageObserver.BattleType.REPLAY)
+
+        val deinitMessage = MSG_DEINIT_ROOM.format("replay-${currentReplay!!.id}")
+        processData(deinitMessage)
+
+        currentReplay = null
     }
 
     private fun notifyReplayDownloadFailure() {
-        processData(ERR_POPUP_REPLAY_DL_FAIL)
+        processData(MSG_POPUP_REPLAY_DL_FAIL)
     }
 
     private fun processData(data: String) {
-        uiHandler.post {
-            showdownService.processServerData(data)
-        }
+        showdownService.processServerData(data)
     }
-
 
     fun goToNextTurn() {
         showdownService.battleMessageObserver.handleReplayAction(BattleRoomMessageObserver.ReplayAction.NEXT_TURN)
@@ -97,9 +110,9 @@ class ReplayManager(private val showdownService: ShowdownService) {
     }
 
     fun closeReplay() {
-        showdownService.battleMessageObserver.handleReplayAction(BattleRoomMessageObserver.ReplayAction.CLOSE_REPLAY)
+        deinitReplayRoom()
+        //showdownService.battleMessageObserver.handleReplayAction(BattleRoomMessageObserver.ReplayAction.CLOSE_REPLAY)
     }
-
 
     class ReplayData(replayData : JSONObject) {
         val id: String = replayData.getString("id")
@@ -119,11 +132,10 @@ class ReplayManager(private val showdownService: ShowdownService) {
     }
 
     companion object {
-        private var MSG_FOUND = """|updatesearch|{"searching":[],"games":{%s":"%s"}}" """
-        private var MSG_INIT_BATTLE = ">%s \n|init|battle"
-        private var MSG_BATTLE_LINE_UPDATE = ">%s \n%s"
-
-        private var ERR_POPUP_REPLAY_DL_FAIL = "|popup|An error occurred when trying to retrieve the replay"
+        private const val MSG_INIT_ROOM = ">%s \n|init|battle"
+        private const val MSG_DEINIT_ROOM = ">%s \n|init|battle"
+        private const val MSG_BATTLE_LOG = ">%s \n%s"
+        private const val MSG_POPUP_REPLAY_DL_FAIL = "|popup|An error occurred when trying to retrieve the replay"
     }
 }
 

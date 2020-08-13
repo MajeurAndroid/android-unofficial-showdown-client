@@ -276,10 +276,6 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         }
     }
 
-    fun startReplay(replayId: String) {
-        service?.replayManager?.downloadAndStartReplay(replayId)
-    }
-
     private fun resetRoomToBattleState() {
         Timber.d("[resetRoomToBattleState]")
         battleFragment.observedRoomId = null
@@ -374,6 +370,10 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         }
     }
 
+    fun startReplay(replayId: String) {
+        requestRoomJoin("replay-$replayId")
+    }
+
     fun requestRoomJoin(roomId: String) {
         val isWaitingForConnection = onConnectedListener != null
         if (isWaitingForConnection) return
@@ -387,18 +387,28 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         val isWaitingForRoomToDeinit = nextDeinitListener != null
         if (isWaitingForRoomToDeinit) return
 
-        val isBattle = roomId.startsWith("battle-", ignoreCase = true)
+        val isReplay = roomId.startsWith("replay-", ignoreCase = true)
+        val isBattle = roomId.startsWith("battle-", ignoreCase = true) || isReplay
         val currentRoomId = if (isBattle) battleFragment.observedRoomId else chatFragment.observedRoomId
         if (currentRoomId != null) {
-            service?.sendRoomCommand(currentRoomId, "leave")
             nextDeinitListener = { deinitRoomId ->
                 if (deinitRoomId == currentRoomId) { // Now that previous room is safely leaved, join the new one
-                    service?.sendGlobalCommand("join", roomId)
+                    if (isReplay)
+                        service?.replayManager?.startReplay(roomId)
+                    else
+                        service?.sendGlobalCommand("join", roomId)
                     nextDeinitListener = null
                 }
             }
+            if (currentRoomId.startsWith("replay-"))
+                service?.replayManager?.closeReplay()
+            else
+                service?.sendRoomCommand(currentRoomId, "leave")
         } else {
-            service?.sendGlobalCommand("join", roomId)
+            if (isReplay)
+                service?.replayManager?.startReplay(roomId)
+            else
+                service?.sendGlobalCommand("join", roomId)
         }
     }
 
@@ -710,7 +720,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
                 if (battleFragment.observedRoomId == null || !battleFragment.battleRunning) {
                     battleFragment.observedRoomId = roomId
                     mainActivity.showBattleFragment()
-                } else {
+                } else if (!roomId.startsWith("replay")) {
                     // Most of the time this is an auto joined battle coming from a new search, let's
                     // just leave it silently. If the user wants to join it deliberately, he will
                     // be able to do that from the "you're currently in" menu.
