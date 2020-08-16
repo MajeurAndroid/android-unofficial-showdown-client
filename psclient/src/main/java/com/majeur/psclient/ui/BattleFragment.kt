@@ -300,7 +300,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
         }
 
         descView.apply {
-            text = if (pokemon.species != pokemon.name) pokemon.species else ""
+            text = if (pokemon.species != pokemon.name) "${pokemon.species}\n" else ""
 
             pokemon.condition?.let { condition ->
                 append("HP: ".small())
