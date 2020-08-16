@@ -14,7 +14,6 @@ import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
-import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
@@ -78,7 +77,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
         glideHelper = mainActivity.glideHelper
         assetLoader = mainActivity.assetLoader
         battleTipPopup = BattleTipPopup(context)
-        battleTipPopup.bindPopupListener = mOnBindPopupViewListener
+        battleTipPopup.bindPopupListener = onBindPopupListener
         audioManager = BattleAudioManager(context)
     }
 
@@ -117,11 +116,9 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
             rematchButton.setOnClickListener(this@BattleFragment)
             uploadReplayButton.setOnClickListener(this@BattleFragment)
 
-            replayControlsContainer.btnReplayBack.setOnClickListener(replayControlsListener)
-            replayControlsContainer.btnReplayForward.setOnClickListener(replayControlsListener)
-            replayControlsContainer.btnReplayPause.setOnClickListener(replayControlsListener)
-            replayControlsContainer.btnReplayPlay.setOnClickListener(replayControlsListener)
-
+            replayActions.replayBackButton.setOnClickListener(this@BattleFragment)
+            replayActions.replayPlayButton.setOnClickListener(this@BattleFragment)
+            replayActions.replayForwardButton.setOnClickListener(this@BattleFragment)
         }
     }
 
@@ -210,13 +207,15 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
         if (observedRoomId == null) return
         when (clickedView) {
             binding.extraActions.forfeitButton -> {
-                if (battleRunning && observer.isUserPlaying) {
+                if (observer.isReplay) {
+                    service?.replayManager?.closeReplay()
+                } else if (battleRunning && observer.isUserPlaying) {
                     AlertDialog.Builder(requireActivity())
                             .setMessage("Do you really want to forfeit this battle ?")
                             .setPositiveButton("Forfeit") { _, _ -> forfeit() }
                             .setNegativeButton("Cancel", null)
                             .show()
-                } else { // Act as a leave button when user is spectator
+                } else { // Acts as a leave button when user is spectator
                     service?.sendRoomCommand(observedRoomId, "leave")
                 }
             }
@@ -254,50 +253,26 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
                 binding.extraActionLayout.hideItem(R.id.upload_replay_button)
                 sendSaveReplayCommand()
             }
+            binding.replayActions.replayForwardButton -> {
+                service?.replayManager?.goToNextTurn()
+            }
+            binding.replayActions.replayBackButton -> {
+                service?.replayManager?.goToStart()
+            }
+            binding.replayActions.replayPlayButton -> {
+                if (service?.replayManager?.isPaused == true) unpauseReplay() else pauseReplay()
+            }
         }
-    }
-
-    private val replayControlsListener = View.OnClickListener { view ->
-        if (observedRoomId == null) return@OnClickListener
-        when (view) {
-            binding.replayControlsContainer.btnReplayForward -> goToNextTurnInReplay()
-            binding.replayControlsContainer.btnReplayBack -> goToPreviousTurnInReplay()
-            binding.replayControlsContainer.btnReplayPause -> pauseReplay()
-            binding.replayControlsContainer.btnReplayPlay -> unpauseReplay()
-        }
-    }
-
-    private fun goToNextTurnInReplay() {
-        hidePauseButtonAndShowPlay()
-        service?.replayManager?.pause()
-        service?.replayManager?.goToNextTurn()
-    }
-
-
-    private fun goToPreviousTurnInReplay() {
-        hidePauseButtonAndShowPlay()
-        service?.replayManager?.pause()
-        service?.replayManager?.goToPreviousTurn()
     }
 
     private fun pauseReplay() {
-        hidePauseButtonAndShowPlay()
+        binding.replayActions.replayPlayButton.setImageResource(R.drawable.ic_replay_play)
         service?.replayManager?.pause()
     }
 
     private fun unpauseReplay() {
-        hidePlayButtonAndShowPause()
+        binding.replayActions.replayPlayButton.setImageResource(R.drawable.ic_replay_pause)
         service?.replayManager?.play()
-    }
-
-    private fun hidePauseButtonAndShowPlay() {
-        binding.replayControlsContainer.btnReplayPause.visibility = GONE
-        binding.replayControlsContainer.btnReplayPlay.visibility = VISIBLE
-    }
-
-    private fun hidePlayButtonAndShowPause() {
-        binding.replayControlsContainer.btnReplayPause.visibility = VISIBLE
-        binding.replayControlsContainer.btnReplayPlay.visibility = GONE
     }
 
     private fun sendChatMessage(msg: CharSequence) {
@@ -306,7 +281,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
         if (escaped.isNotBlank()) service?.sendRoomMessage(observedRoomId, escaped)
     }
 
-    private val mOnBindPopupViewListener = { anchorView: View, titleView: TextView, descView: TextView, placeHolderTop: ImageView, placeHolderBottom: ImageView ->
+    private val onBindPopupListener = { anchorView: View, titleView: TextView, descView: TextView, placeHolderTop: ImageView, placeHolderBottom: ImageView ->
         when (val data = anchorView.getTag(R.id.battle_data_tag)) {
             is BattlingPokemon -> bindBattlingPokemonTipPopup(data, titleView, descView, placeHolderTop, placeHolderBottom)
             is Move -> bindMoveTipPopup(data, titleView, descView, placeHolderTop, placeHolderBottom)
@@ -494,9 +469,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
         binding.trainerInfo.setUsername(playerUsername)
         binding.foeInfo.setUsername(foeUsername)
         if (!observer.isUserPlaying) { // Spectator cannot forfeit nor toggle timer
-            binding.extraActions.forfeitButton.apply {
-                setImageDrawable(ContextCompat.getDrawable(requireActivity(), R.drawable.ic_exit))
-            }
+            binding.extraActions.forfeitButton.setImageResource(R.drawable.ic_exit)
             binding.extraActions.timerButton.visibility = GONE
         }
     }
@@ -528,8 +501,6 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
             }
             binding.extraActions.timerButton.visibility = GONE
         }
-
-        if (observer.isReplay) clearReplayRoom()
     }
 
     override fun onPreviewStarted() {
@@ -766,64 +737,6 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
                 .start()
     }
 
-    override fun goToLatest() {
-        postFullScroll()
-    }
-
-    private fun clearReplayRoom() {
-        disableReplayControls()
-        // Normally, at the end of a match, the server will send an updated 'search battles'
-        // message. However, if we're in a replay, we need to send a manual message to indicate
-        // we are no longer in a room
-        homeFragment.onSearchBattlesChanged(emptyList(), emptyMap())
-    }
-
-    fun displayDefaultUiControls() {
-        showBattleControls()
-    }
-
-    private fun showReplayControls() {
-        binding.replayControlsContainer.replayControlsContainer.visibility = VISIBLE
-
-        binding.extraActionLayout.visibility = GONE
-        binding.battleDecisionWidget.visibility = GONE
-        enableReplayControls()
-    }
-
-    private fun showBattleControls() {
-        binding.replayControlsContainer.replayControlsContainer.visibility = GONE
-
-        binding.extraActionLayout.visibility = VISIBLE
-    }
-
-    private fun disableReplayControls() {
-        disableImageButton(binding.replayControlsContainer.btnReplayPlay)
-        disableImageButton(binding.replayControlsContainer.btnReplayPause)
-        disableImageButton(binding.replayControlsContainer.btnReplayBack)
-        disableImageButton(binding.replayControlsContainer.btnReplayForward)
-    }
-
-    private fun enableReplayControls() {
-        enableImageButton(binding.replayControlsContainer.btnReplayPlay)
-        enableImageButton(binding.replayControlsContainer.btnReplayPause)
-        enableImageButton(binding.replayControlsContainer.btnReplayBack)
-        enableImageButton(binding.replayControlsContainer.btnReplayForward)
-    }
-
-    private fun disableImageButton(imageButton: ImageButton) {
-        imageButton.apply{
-            isEnabled = false
-            imageAlpha = 90
-        }
-    }
-
-    private fun enableImageButton(imageButton: ImageButton) {
-        imageButton.apply {
-            isEnabled = true
-            imageAlpha = 255
-        }
-    }
-
     override fun onPrintHtml(html: String) {
         val mark = Any()
         val l = binding.battleLog.length()
@@ -842,6 +755,10 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
                     notifyNewMessageReceived()
                     if (fullScrolled) postFullScroll()
                 })
+    }
+
+    override fun goToLatest() {
+        postFullScroll()
     }
 
     private fun postFullScroll() {
@@ -868,32 +785,35 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
                 hideItem(R.id.upload_replay_button)
             }
             extraActions.apply {
-                forfeitButton.setImageDrawable(ContextCompat.getDrawable(requireActivity(), R.drawable.ic_forfeit))
+                forfeitButton.setImageResource(R.drawable.ic_forfeit)
                 timerButton.visibility = VISIBLE
+                sendButton.visibility = VISIBLE
             }
-            backgroundImage.animate()
-                    .setDuration(100)
-                    .alpha(0f)
-                    .withEndAction {
-                        val resId = if (Math.random() > 0.5) R.drawable.battle_bg_1 else R.drawable.battle_bg_2
-                        backgroundImage.setImageResource(resId)
-                        backgroundImage.animate()
-                                .alpha(1f)
-                                .withEndAction(null)
-                                .start()
-                    }
-                    .start()
+            backgroundImage.animate().apply {
+                duration = 100
+                alpha(0f)
+                withEndAction {
+                    val resId = if (Math.random() > 0.5) R.drawable.battle_bg_1 else R.drawable.battle_bg_2
+                    backgroundImage.setImageResource(resId)
+                    backgroundImage.animate().alpha(1f).withEndAction(null).start()
+                }
+                start()
+            }
+
+            if (observer.isReplay) {
+                extraActionLayout.showItem(R.id.replay_actions)
+                extraActions.apply {
+                    sendButton.visibility = GONE
+                    timerButton.visibility = GONE
+                    forfeitButton.setImageResource(R.drawable.ic_exit)
+                }
+                replayActions.replayPlayButton.setImageResource(R.drawable.ic_replay_pause)
+            } else {
+                extraActionLayout.hideItem(R.id.replay_actions)
+            }
         }
         // In case of corrupted battle stream make sure we stop music at the next one
         audioManager.stopBattleMusic()
-
-        if (observer.isReplay) {
-            showReplayControls()
-            enableReplayControls()
-            hidePlayButtonAndShowPause()
-        } else {
-            showBattleControls()
-        }
     }
 
     override fun onRoomDeInit() {
@@ -909,10 +829,12 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
                 hideItem(R.id.rematch_button)
                 hideItem(R.id.upload_replay_button)
                 hideItem(R.id.undo_button)
+                hideItem(R.id.replay_actions)
             }
             extraActions.apply {
-                forfeitButton.setImageDrawable(ContextCompat.getDrawable(requireActivity(), R.drawable.ic_forfeit))
+                forfeitButton.setImageResource(R.drawable.ic_forfeit)
                 timerButton.visibility = VISIBLE
+                sendButton.visibility = VISIBLE
             }
         }
         audioManager.stopBattleMusic()
