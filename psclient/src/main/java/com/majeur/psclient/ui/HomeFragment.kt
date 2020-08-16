@@ -212,7 +212,10 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
                         if (battleFragment.isReplay) {
                             AlertDialog.Builder(requireActivity())
                                     .setMessage("You are already viewing a replay. Do you want to search anyway?")
-                                    .setPositiveButton("Yes, search") { _: DialogInterface?, _: Int -> searchForBattle() }
+                                    .setPositiveButton("Yes, search") { _, _ ->
+                                        service?.replayManager?.closeReplay()
+                                        searchForBattle()
+                                    }
                                     .setNegativeButton("No, go back", null)
                                     .show()
                         } else {
@@ -276,13 +279,6 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         }
     }
 
-    private fun resetRoomToBattleState() {
-        Timber.d("[resetRoomToBattleState]")
-        battleFragment.observedRoomId = null
-        battleFragment.displayDefaultUiControls()
-        service?.replayManager?.closeReplay()
-    }
-
     private fun openUrl(url: String, useChrome: Boolean) {
         try {
             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
@@ -344,8 +340,6 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
     }
 
     private fun searchForBattle() {
-        resetRoomToBattleState()
-
         if (service?.isConnected != true) return
         if (currentBattleFormat!!.isTeamNeeded) {
             val team = binding.teamsSelector.selectedItem as Team?
@@ -527,8 +521,6 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         }
         val signInDialog = parentFragmentManager.findFragmentByTag(SignInDialog.FRAGMENT_TAG) as SignInDialog?
         signInDialog?.dismissAllowingStateLoss()
-
-        resetRoomToBattleState()
     }
 
     override fun onUpdateCounts(userCount: Int, battleCount: Int) {
@@ -717,14 +709,19 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
     override fun onRoomInit(roomId: String, type: String) {
         when (type) {
             "battle" -> {
-                if (battleFragment.observedRoomId == null || !battleFragment.battleRunning) {
+                if (battleFragment.observedRoomId == null) {
                     battleFragment.observedRoomId = roomId
                     mainActivity.showBattleFragment()
-                } else if (!roomId.startsWith("replay")) {
+                } else if (!battleFragment.battleRunning && !battleFragment.isReplay) {
+                    service?.sendRoomCommand(battleFragment.observedRoomId, "leave")
+                    battleFragment.observedRoomId = roomId
+                    mainActivity.showBattleFragment()
+                } else {
                     // Most of the time this is an auto joined battle coming from a new search, let's
                     // just leave it silently. If the user wants to join it deliberately, he will
                     // be able to do that from the "you're currently in" menu.
-                    this@HomeFragment.service!!.sendRoomCommand(roomId, "leave")
+                    if (!roomId.startsWith("replay-")) service?.replayManager?.closeReplay()
+                    else service?.sendRoomCommand(roomId, "leave")
                 }
                 binding.joinedBattlesContainer.children.forEach { button ->
                     // Disable the corresponding button if battle is already joined
@@ -739,7 +736,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
                     chatFragment.observedRoomId = roomId
                     mainActivity.showChatFragment()
                 } else {
-                    this@HomeFragment.service!!.sendRoomCommand(roomId, "leave")
+                    service?.sendRoomCommand(roomId, "leave")
                 }
             }
         }
