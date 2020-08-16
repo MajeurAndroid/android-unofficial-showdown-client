@@ -1,5 +1,6 @@
 package com.majeur.psclient.widget
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
@@ -12,14 +13,16 @@ import android.text.style.StyleSpan
 import android.util.AttributeSet
 import android.view.Gravity
 import androidx.appcompat.widget.AppCompatTextView
-import androidx.collection.ArraySet
 import androidx.core.content.ContextCompat
 import com.majeur.psclient.R
 import com.majeur.psclient.model.pokemon.BasePokemon
+import com.majeur.psclient.util.addIfNotIn
 import com.majeur.psclient.util.sp
 import com.majeur.psclient.util.toId
+import timber.log.Timber
 import kotlin.math.roundToInt
 
+@SuppressLint("RtlHardcoded")
 class PlayerInfoView @JvmOverloads constructor(context: Context?, attrs: AttributeSet? = null, defStyleAttr: Int = 0) : AppCompatTextView(context, attrs, defStyleAttr) {
 
     private val dexIconSize = sp(16f)
@@ -27,7 +30,10 @@ class PlayerInfoView @JvmOverloads constructor(context: Context?, attrs: Attribu
     private val pokeballDrawable: Drawable
     private val emptyPokeballDrawable: Drawable
 
-    private val pokemonIds: MutableSet<String> = ArraySet()
+    private val pokemonIds = mutableListOf<String>()
+
+    private val isGravityRight
+        get() = Gravity.getAbsoluteGravity(gravity, layoutDirection) and Gravity.HORIZONTAL_GRAVITY_MASK == Gravity.RIGHT
 
     init {
         spannableBuilder = SpannableStringBuilder(SUFFIX_PATTERN)
@@ -48,7 +54,7 @@ class PlayerInfoView @JvmOverloads constructor(context: Context?, attrs: Attribu
     fun setUsername(username: String) {
         val k = spannableBuilder.length - SUFFIX_PATTERN.length
         val start: Int
-        if (gravity and Gravity.END == Gravity.END) {
+        if (isGravityRight) {
             if (k != 0) {
                 start = SUFFIX_PATTERN.length - 1
                 spannableBuilder.replace(start, spannableBuilder.length, username)
@@ -76,7 +82,7 @@ class PlayerInfoView @JvmOverloads constructor(context: Context?, attrs: Attribu
         val l = spannableBuilder.length
         for (span in spannableBuilder.getSpans(0, l, ImageSpan::class.java)) spannableBuilder.removeSpan(span)
         val k = spannableBuilder.length - MAX_TEAM_SIZE - SUFFIX_OFFSET
-        if (gravity and Gravity.END == Gravity.END) {
+        if (isGravityRight) {
             for (i in SUFFIX_OFFSET until SUFFIX_OFFSET + teamSize) spannableBuilder.setSpan(ImageSpan(pokeballDrawable), i, i + 1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
             for (i in SUFFIX_OFFSET + teamSize until SUFFIX_OFFSET + MAX_TEAM_SIZE) spannableBuilder.setSpan(ImageSpan(emptyPokeballDrawable), i, i + 1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
         } else {
@@ -87,8 +93,9 @@ class PlayerInfoView @JvmOverloads constructor(context: Context?, attrs: Attribu
     }
 
     fun appendPokemon(pokemon: BasePokemon, dexIcon: Drawable) {
-        if (!pokemonIds.add(pokemon.baseSpecies.toId())) return
-        val i = if (gravity and Gravity.END == Gravity.END) SUFFIX_OFFSET + MAX_TEAM_SIZE - pokemonIds.size else spannableBuilder.length - MAX_TEAM_SIZE - SUFFIX_OFFSET + pokemonIds.size - 1
+        Timber.d("Append poke ${pokemon.baseSpecies}")
+        if (!pokemonIds.addIfNotIn(pokemon.baseSpecies.toId())) return
+        val i = if (isGravityRight) SUFFIX_OFFSET + MAX_TEAM_SIZE - pokemonIds.size else spannableBuilder.length - MAX_TEAM_SIZE - SUFFIX_OFFSET + pokemonIds.size - 1
         val previousSpan = spannableBuilder.getSpans(i, i + 1, ImageSpan::class.java)[0]
         spannableBuilder.removeSpan(previousSpan)
         val aspectRatio = dexIcon.intrinsicWidth / dexIcon.intrinsicHeight.toFloat()
@@ -98,17 +105,13 @@ class PlayerInfoView @JvmOverloads constructor(context: Context?, attrs: Attribu
     }
 
     fun updatePokemon(pokemon: BasePokemon, dexIcon: Drawable) {
+        Timber.d("Update poke ${pokemon.baseSpecies}")
         if (!pokemonIds.contains(pokemon.baseSpecies.toId())) {
             appendPokemon(pokemon, dexIcon)
             return
         }
-        var index = 0
-        for (id in pokemonIds) {
-            if (id == pokemon.baseSpecies.toId()) break
-            index++
-        }
-        val i: Int
-        i = if (gravity and Gravity.END == Gravity.END) SUFFIX_OFFSET + MAX_TEAM_SIZE - (index + 1) else spannableBuilder.length - MAX_TEAM_SIZE - SUFFIX_OFFSET + index
+        val index = pokemonIds.indexOf(pokemon.baseSpecies.toId())
+        val i = if (isGravityRight) SUFFIX_OFFSET + MAX_TEAM_SIZE - (index + 1) else spannableBuilder.length - MAX_TEAM_SIZE - SUFFIX_OFFSET + index
         val previousSpan = spannableBuilder.getSpans(i, i + 1, ImageSpan::class.java)[0]
         spannableBuilder.removeSpan(previousSpan)
         val aspectRatio = dexIcon.intrinsicWidth / dexIcon.intrinsicHeight.toFloat()
@@ -118,19 +121,14 @@ class PlayerInfoView @JvmOverloads constructor(context: Context?, attrs: Attribu
     }
 
     fun setPokemonFainted(pokemon: BasePokemon?) {
+        Timber.d("Faint poke ${pokemon?.baseSpecies ?: "null"}")
         if (pokemon == null || !pokemonIds.contains(pokemon.baseSpecies.toId())) return
-        var index = 0
-        for (id in pokemonIds) {
-            if (id == pokemon.baseSpecies.toId()) break
-            index++
-        }
-        val i: Int
-        i = if (gravity and Gravity.END == Gravity.END) SUFFIX_OFFSET + MAX_TEAM_SIZE - (index + 1) else spannableBuilder.length - MAX_TEAM_SIZE - SUFFIX_OFFSET + index
+        val index = pokemonIds.indexOf(pokemon.baseSpecies.toId())
+        val i = if (isGravityRight) SUFFIX_OFFSET + MAX_TEAM_SIZE - (index + 1) else spannableBuilder.length - MAX_TEAM_SIZE - SUFFIX_OFFSET + index
         val previousSpan = spannableBuilder.getSpans(i, i + 1, ImageSpan::class.java)[0]
         val matrix = ColorMatrix()
         matrix.setSaturation(0f)
-        val filter = ColorMatrixColorFilter(matrix)
-        previousSpan.drawable.colorFilter = filter
+        previousSpan.drawable.colorFilter = ColorMatrixColorFilter(matrix)
         invalidateText()
     }
 
