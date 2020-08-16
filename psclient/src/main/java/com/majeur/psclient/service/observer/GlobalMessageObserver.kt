@@ -170,7 +170,7 @@ class GlobalMessageObserver(service: ShowdownService)
             val chatRooms = mutableListOf<String>()
             val battles = mutableListOf<String>()
             (jsonObject.opt("rooms") as? JSONObject)?.keys()?.forEach {
-                if (it.startsWith("battle-"))
+                if (it.startsWith("battle-") || it.drop(1).startsWith("battle-"))
                     battles.add(it)
                 else
                     chatRooms.add(it)

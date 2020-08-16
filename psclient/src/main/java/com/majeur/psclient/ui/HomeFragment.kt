@@ -598,19 +598,13 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         builder.append("Group: ".italic()).append(group.replace(" ", "␣")).append("\n")
         builder.append("Battles: ".italic())
         if (battles.isNotEmpty()) {
-            val stringBuilder = StringBuilder()
-            for (battle in battles) stringBuilder.append(battle).append(", ")
-            stringBuilder.deleteCharAt(stringBuilder.length - 2)
-            builder.append(stringBuilder.toString().small())
+            builder.append(battles.joinToString().small()).append("\n")
         } else {
             builder.append("None".small()).append("\n")
         }
         builder.append("Chatrooms: ".italic())
         if (rooms.isNotEmpty()) {
-            val stringBuilder = StringBuilder()
-            for (room in rooms) stringBuilder.append(room).append(", ")
-            stringBuilder.deleteCharAt(stringBuilder.length - 2)
-            builder.append(stringBuilder.toString().small())
+            builder.append(rooms.joinToString().small()).append("\n")
         } else {
             builder.append("None".small()).append("\n")
         }
