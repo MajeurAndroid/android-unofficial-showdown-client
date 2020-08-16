@@ -152,7 +152,7 @@ class Team private constructor(
             var j = 0
 
             // limit to 24
-            for (count in 0..23) {
+            for (count in 0 until 24) {
 
                 // name
                 j = buf.indexOf('|', i)
@@ -166,6 +166,7 @@ class Team private constructor(
                 var species = buf.substring(i, j)
                 if (species == "") species = name
                 val pokemon = TeamPokemon(species)
+                if (name != species) pokemon.name = name
                 team.add(pokemon)
                 i = j + 1
 
