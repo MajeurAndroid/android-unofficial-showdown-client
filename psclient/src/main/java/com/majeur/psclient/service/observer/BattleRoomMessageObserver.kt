@@ -20,6 +20,7 @@ import kotlin.math.roundToInt
 class BattleRoomMessageObserver(service: ShowdownService)
     : RoomMessageObserver<BattleRoomMessageObserver.UiCallbacks>(service) {
 
+    val actionQueue = ActionQueue(Looper.getMainLooper())
     var gameType: GameType? = null
         private set
 
@@ -29,7 +30,6 @@ class BattleRoomMessageObserver(service: ShowdownService)
     var gen = 0
 
     private val battleTextBuilder = BattleTextBuilder(service)
-    private val actionQueue = ActionQueue(Looper.getMainLooper())
     private var p1Username: String? = null
     private var p2Username: String? = null
     private val myUsername get() = service.getSharedData<String>("myusername")?.drop(1) ?: ""
@@ -831,30 +831,6 @@ class BattleRoomMessageObserver(service: ShowdownService)
         actionQueue.enqueueAction { super@BattleRoomMessageObserver.printHtml(html) }
     }
 
-
-    fun handleReplayAction(replayAction: ReplayAction) {
-        if (!isReplay) return
-
-        when(replayAction) {
-            ReplayAction.PLAY -> {
-                actionQueue.startLoop()
-                uiCallbacks?.goToLatest()
-            }
-            ReplayAction.PAUSE -> actionQueue.stopLoop()
-            ReplayAction.NEXT_TURN -> {
-                actionQueue.skipToNext()
-                uiCallbacks?.goToLatest()
-            }
-            ReplayAction.PREV_TURN -> {
-                TODO("ReplayAction.PREV_TURN is not yet implemented")
-            }
-            ReplayAction.CLOSE_REPLAY -> {
-                //this.roomBattleType = BattleType.LIVE
-                //onRoomDeInit()
-            }
-        }
-    }
-
     private fun onMarkBreak() = uiCallbacks?.onMarkBreak()
     private fun onPlayerInit(playerUsername: String, foeUsername: String) = uiCallbacks?.onPlayerInit(playerUsername, foeUsername)
     private fun onFaint(id: PokemonId) = uiCallbacks?.onFaint(id)
@@ -902,22 +878,6 @@ class BattleRoomMessageObserver(service: ShowdownService)
         fun onVolatileStatusChanged(id: PokemonId, vStatus: String, start: Boolean)
         fun onPrintBattleMessage(message: CharSequence)
         fun goToLatest()
-    }
-
-    enum class BattleType {
-        LIVE,
-        REPLAY
-        ;
-
-        val isReplay get() = this == REPLAY
-    }
-
-    enum class ReplayAction {
-        PLAY,
-        PAUSE,
-        NEXT_TURN,
-        PREV_TURN,
-        CLOSE_REPLAY
     }
 
     private fun upgradeActivate(message: ServerMessage): ServerMessage {

@@ -2,7 +2,6 @@ package com.majeur.psclient.service
 
 import android.os.Handler
 import android.os.Looper
-import com.majeur.psclient.service.observer.BattleRoomMessageObserver
 import okhttp3.*
 import org.json.JSONException
 import org.json.JSONObject
@@ -12,13 +11,18 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 class ReplayManager(private val showdownService: ShowdownService) {
 
+    var isPaused = false
+        private set
+
+    private val battleObserver get() = showdownService.battleMessageObserver
+
     private var uiHandler = Handler(Looper.getMainLooper())
     private val isWaitingForReplayData = AtomicBoolean(false)
 
-    private var currentReplay: ReplayData? = null
+    private var replay: ReplayData? = null
 
     fun startReplay(replayId : String) {
-        if (isWaitingForReplayData.get() || currentReplay != null) return
+        if (isWaitingForReplayData.get() || replay != null) return
 
         val id = replayId.removePrefix("replay-")
         val url = HttpUrl.Builder().run {
@@ -64,7 +68,8 @@ class ReplayManager(private val showdownService: ShowdownService) {
     }
 
     private fun initReplayRoom(replayData: ReplayData) {
-        currentReplay = replayData
+        replay = replayData
+        isPaused = false
 
         val initMessage = MSG_INIT_ROOM.format("replay-${replayData.id}")
         processData(initMessage)
@@ -74,12 +79,12 @@ class ReplayManager(private val showdownService: ShowdownService) {
     }
 
     private fun deinitReplayRoom() {
-        if (currentReplay == null) return
+        if (replay == null) return
 
-        val deinitMessage = MSG_DEINIT_ROOM.format("replay-${currentReplay!!.id}")
+        val deinitMessage = MSG_DEINIT_ROOM.format("replay-${replay!!.id}")
         processData(deinitMessage)
 
-        currentReplay = null
+        replay = null
     }
 
     private fun notifyReplayDownloadFailure() {
@@ -91,27 +96,33 @@ class ReplayManager(private val showdownService: ShowdownService) {
     }
 
     fun goToNextTurn() {
-        showdownService.battleMessageObserver.handleReplayAction(BattleRoomMessageObserver.ReplayAction.NEXT_TURN)
+        if (replay == null) return
+        battleObserver.actionQueue.skipToNext()
     }
 
-    fun goToPreviousTurn() {
-        TODO("Go to previous turn not yet implemented")
+    fun goToStart() {
+        if (replay == null) return
+        // TODO("Go to previous turn not yet implemented")
     }
 
     fun pause() {
-        showdownService.battleMessageObserver.handleReplayAction(BattleRoomMessageObserver.ReplayAction.PAUSE)
+        if (replay == null) return
+        isPaused = true
+        battleObserver.actionQueue.stopLoop()
     }
 
     fun play() {
-        showdownService.battleMessageObserver.handleReplayAction(BattleRoomMessageObserver.ReplayAction.PLAY)
+        if (replay == null) return
+        isPaused = false
+        battleObserver.actionQueue.startLoop()
     }
 
     fun closeReplay() {
+        if (replay == null) return
         deinitReplayRoom()
-        //showdownService.battleMessageObserver.handleReplayAction(BattleRoomMessageObserver.ReplayAction.CLOSE_REPLAY)
     }
 
-    class ReplayData(replayData : JSONObject) {
+    private class ReplayData(replayData : JSONObject) {
         val id: String = replayData.getString("id")
         val p1: String = replayData.getString("p1")
         val p2: String = replayData.getString("p2")
