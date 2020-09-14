@@ -5,20 +5,19 @@ import android.os.Looper
 
 class ActionQueue(looper: Looper) {
 
-    private data class Entry (val action:()->Unit, val delay: Long, val isEndOfTurn: Boolean)
+    private data class Action(val action: ()->Unit, val delay: Long, val isTurn: Boolean)
 
     private val handler = Handler(looper)
-    private val actions = mutableListOf<Entry>()
 
+    private val actions = mutableListOf<Action>()
     private var lastAction: (()->Unit)? = null
+
     private var isLooping = false
-    private var turnActionInQueue = false
 
     var shouldLoopToLastTurn = true
 
     fun clear() {
         stopLoop()
-        turnActionInQueue = false
         lastAction = null
         actions.clear()
     }
@@ -28,36 +27,35 @@ class ActionQueue(looper: Looper) {
     }
 
     fun enqueueTurnAction(action: ()->Unit) {
-        enqueue(action, 0, isEndOfTurn = true)
+        val turnActionInQueue = actions.any { it.isTurn }
+        enqueue(action, 0, isTurn = true)
 
-        // Only skip to the latest turn if we are watching a live battle.
+        // Only skip to the latest turn if we are watching a live battle ie. when shouldLoopToLastTurn is false.
         // Otherwise, do each turn in the queue one at a time
-        if (turnActionInQueue && shouldLoopToLastTurn) {
+        if (shouldLoopToLastTurn && turnActionInQueue) {
             loopTo(action)
-            turnActionInQueue = true
         }
     }
 
     fun enqueueAction(action: ()->Unit) {
-        enqueue(action, 0, isEndOfTurn = false)
+        enqueue(action, 0, isTurn = false)
     }
 
     fun enqueueMajorAction(action: ()->Unit) {
-        enqueue(action, 1500, isEndOfTurn = false)
+        enqueue(action, 1500, isTurn = false)
     }
 
     fun enqueueMinorAction(action: ()->Unit) {
-        enqueue(action, 750, isEndOfTurn = false)
+        enqueue(action, 750, isTurn = false)
     }
 
-    private fun enqueue(action: ()->Unit, delay: Long, isEndOfTurn: Boolean) {
-        actions.add(Entry(action, delay, isEndOfTurn))
+    private fun enqueue(action: ()->Unit, delay: Long, isTurn: Boolean) {
+        actions.add(Action(action, delay, isTurn))
         if (!isLooping) startLoop()
     }
 
     fun startLoop() {
         if (actions.isEmpty()) return
-
         isLooping = true
         handler.post(loopRunnable)
     }
@@ -67,22 +65,22 @@ class ActionQueue(looper: Looper) {
         handler.removeCallbacks(loopRunnable)
     }
 
-    fun skipToNext() {
-        do {
-            if (actions.isEmpty()) {
-                return
-            }
-            var thisAction = actions.first()
-
-            actions.removeAt(0).action.invoke()
-        } while (! thisAction.isEndOfTurn)
+    fun skipToNextTurn() {
+        if (actions.isEmpty()) return
+        if (actions.any { it.isTurn })
+            loopTo(actions.first { it.isTurn }.action)
+        else
+            loopTo({}) // This will loop to the end
     }
 
-    private fun loopTo(action: ()->Unit) {
+    private fun loopTo(targetAction: ()->Unit) {
+        val restartLoop = isLooping
         stopLoop()
-        while (actions.first().action !== action)
-            actions.removeAt(0).action.invoke()
-        startLoop()
+        do {
+            val action = actions.removeAt(0).action
+            action.invoke()
+        } while (actions.isNotEmpty() && action != targetAction)
+        if (restartLoop) startLoop()
     }
 
     private val loopRunnable: Runnable = object : Runnable {
@@ -94,7 +92,6 @@ class ActionQueue(looper: Looper) {
                 handler.postDelayed(this, entry.delay)
             } else {
                 stopLoop()
-                turnActionInQueue = false
                 lastAction?.invoke()
                 lastAction = null
             }

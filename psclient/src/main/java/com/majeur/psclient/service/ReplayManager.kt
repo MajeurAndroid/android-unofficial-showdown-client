@@ -97,7 +97,7 @@ class ReplayManager(private val showdownService: ShowdownService) {
 
     fun goToNextTurn() {
         if (replay == null) return
-        battleObserver.actionQueue.skipToNext()
+        battleObserver.actionQueue.skipToNextTurn()
     }
 
     fun goToStart() {
