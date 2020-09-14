@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Scanner;
 
 public class Utils {
@@ -176,7 +177,7 @@ public class Utils {
 
     public static <T> int indexOf(T value, T[] array) {
         for (int i = 0; i < array.length; i++)
-            if (array[i].equals(value)) return i;
+            if (Objects.equals(array[i], value)) return i;
         return -1;
     }
 
