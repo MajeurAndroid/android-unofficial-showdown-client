@@ -31,6 +31,7 @@ import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import timber.log.Timber
+import java.io.IOException
 
 
 class SearchReplayDialog : BottomSheetDialogFragment(), AdapterView.OnItemClickListener {
@@ -183,8 +184,13 @@ class SearchReplayDialog : BottomSheetDialogFragment(), AdapterView.OnItemClickL
                 .build()
         val showdownService = homeFragment.mainActivity.service ?: return emptyList()
         val rawJson = withContext(Dispatchers.IO) {
-            val response = showdownService.okHttpClient.newCall(request).execute()
-            response.body()?.string() ?: ""
+            val response = try {
+                showdownService.okHttpClient.newCall(request).execute()
+            } catch (e: IOException) {
+                Timber.e(e)
+                null
+            }
+            response?.body()?.string() ?: ""
         }
 
         return try {

@@ -19,6 +19,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.HttpUrl
 import okhttp3.Request
+import timber.log.Timber
+import java.io.IOException
 
 class ImportTeamDialog : BottomSheetDialogFragment() {
 
@@ -168,8 +170,13 @@ class ImportTeamDialog : BottomSheetDialogFragment() {
                     .url(url)
                     .build()
             val rawTeam = withContext(Dispatchers.IO) {
-                val response = showdownService.okHttpClient.newCall(request).execute()
-                response.body()?.string() ?: ""
+                val response = try {
+                    showdownService.okHttpClient.newCall(request).execute()
+                } catch (e: IOException) {
+                    Timber.e(e)
+                    null
+                }
+                response?.body()?.string() ?: ""
             }
             if (rawTeam.isBlank()) {
                 makeSnackbar("Response error, check your url or internet connection.")
