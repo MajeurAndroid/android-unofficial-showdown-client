@@ -102,7 +102,11 @@ class ReplayManager(private val showdownService: ShowdownService) {
 
     fun goToStart() {
         if (replay == null) return
-        // TODO("Go to previous turn not yet implemented")
+        // TODO This is a bit hacky
+        battleObserver.onRoomDeInit()
+        battleObserver.onRoomInit()
+        val logMessage = MSG_BATTLE_LOG.format("replay-${replay!!.id}", replay!!.log)
+        processData(logMessage)
     }
 
     fun pause() {

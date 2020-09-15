@@ -501,6 +501,12 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
             }
             binding.extraActions.timerButton.visibility = GONE
         }
+        if (observer.isReplay) {
+            binding.replayActions.apply {
+                replayPlayButton.isEnabled = false
+                replayForwardButton.isEnabled = false
+            }
+        }
     }
 
     override fun onPreviewStarted() {
@@ -807,7 +813,11 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
                     timerButton.visibility = GONE
                     forfeitButton.setImageResource(R.drawable.ic_exit)
                 }
-                replayActions.replayPlayButton.setImageResource(R.drawable.ic_replay_pause)
+                replayActions.apply {
+                    replayPlayButton.setImageResource(R.drawable.ic_replay_pause)
+                    replayPlayButton.isEnabled = true
+                    replayForwardButton.isEnabled = true
+                }
             } else {
                 extraActionLayout.hideItem(R.id.replay_actions)
             }
@@ -820,7 +830,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
         mainActivity.setKeepScreenOn(false)
         lastDecisionRequest = null
         inactiveBattleOverlayDrawable.setWinner(null)
-        clearBattleFieldUi(animate = battleRunning)
+        clearBattleFieldUi(animate = false)
         onTimerEnabled(false)
         binding.apply {
             battleLog.clearText()
