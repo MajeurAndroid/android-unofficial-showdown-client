@@ -510,20 +510,22 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
     }
 
     override fun onPreviewStarted() {
+        if (isReplay) return // We skip team previewing for replays
         prepareBattleFieldUi()
         binding.battleLayout.setMode(BattleLayout.MODE_PREVIEW)
     }
 
     override fun onAddPreviewPokemon(id: PokemonId, pokemon: BasePokemon, hasItem: Boolean) {
-        binding.battleLayout.getPokemonView(id)?.let {
-            // Can be null when joining a battle where the preview has already been done
-            glideHelper.loadPreviewSprite(id.player, pokemon, it)
-        }
         fragmentScope.launch {
             assetLoader.dexIcon(pokemon.species.toId())?.let {
                 val infoView = if (!id.foe) binding.trainerInfo else binding.foeInfo
                 infoView.appendPokemon(pokemon, BitmapDrawable(resources, it))
             }
+        }
+        if (isReplay) return // We skip team previewing for replays
+        binding.battleLayout.getPokemonView(id)?.let {
+            // Can be null when joining a battle where the preview has already been done
+            glideHelper.loadPreviewSprite(id.player, pokemon, it)
         }
     }
 
