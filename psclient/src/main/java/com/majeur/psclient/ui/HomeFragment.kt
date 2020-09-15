@@ -365,7 +365,11 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
     }
 
     fun startReplay(replayId: String) {
-        requestRoomJoin("replay-$replayId")
+        if (battleFragment.observedRoomId != null) {
+            makeSnackbar("You are already in a battle or viewing a replay")
+        } else {
+            requestRoomJoin("replay-$replayId")
+        }
     }
 
     fun requestRoomJoin(roomId: String) {
@@ -553,6 +557,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
             binding.searchContainer.visibility = if (games.isNotEmpty()) View.GONE else View.VISIBLE
         }
 
+        val previousCount = binding.joinContainer.childCount
         binding.joinedBattlesContainer.removeAllViews()
         for ((roomId, value) in games) {
             layoutInflater.inflate(R.layout.button_joined_battle, binding.joinedBattlesContainer)
@@ -560,17 +565,17 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
                 text = value
                 tag = roomId
                 isEnabled = roomId != battleFragment.observedRoomId
-                setOnClickListener { rejoinRoom(roomId) }
+                setOnClickListener {
+                    if (battleFragment.isReplay) {
+                        makeSnackbar("You are currently watching a replay, please leave it to join a battle")
+                    } else {
+                        requestRoomJoin(roomId)
+                    }
+                }
             }
         }
-    }
-
-    private fun rejoinRoom(roomId: String) {
-        if (battleFragment.isReplay) {
-            mainActivity.showBattleFragment()
-        } else {
-            requestRoomJoin(roomId)
-        }
+        val newCount = binding.joinedBattlesContainer.childCount
+        if (newCount > 0 && newCount != previousCount) notifyNewMessageReceived()
     }
 
     override fun onReplaySaved(replayId: String, url: String) {
