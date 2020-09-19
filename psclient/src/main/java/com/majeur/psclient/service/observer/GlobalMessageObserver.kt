@@ -1,6 +1,6 @@
 package com.majeur.psclient.service.observer
 
-import com.majeur.psclient.model.AvailableBattleRoomsInfo
+import com.majeur.psclient.model.BattleRoomInfo
 import com.majeur.psclient.model.ChatRoomInfo
 import com.majeur.psclient.model.common.BattleFormat
 import com.majeur.psclient.service.ServerMessage
@@ -145,7 +145,22 @@ class GlobalMessageObserver(service: ShowdownService)
     }
 
     private fun processRoomListQueryResponse(response: String) {
-        // Not implemented yet
+        try {
+            val battleRooms = mutableListOf<BattleRoomInfo>()
+            val jsonObject = JSONObject(response).getJSONObject("rooms")
+            val iterator = jsonObject.keys()
+            while (iterator.hasNext()) {
+                val roomId = iterator.next()
+                val roomJson = jsonObject.getJSONObject(roomId)
+                val roomInfo = BattleRoomInfo(roomId, roomJson.getString("p1"),
+                        roomJson.getString("p2"), roomJson.optInt("minElo", 0))
+                battleRooms.add(roomInfo)
+            }
+            onAvailableBattleRoomsChanged(battleRooms)
+        } catch (e: JSONException) {
+            e.printStackTrace()
+            onAvailableBattleRoomsChanged(emptyList())
+        }
     }
 
     private fun processSaveReplayQueryResponse(response: String) {
@@ -276,7 +291,7 @@ class GlobalMessageObserver(service: ShowdownService)
     fun onUserDetails(id: String, name: String, online: Boolean, group: String, rooms: List<String>, battles: List<String>) = uiCallbacks?.onUserDetails(id, name, online, group, rooms, battles)
     fun onShowPopup(message: String) = uiCallbacks?.onShowPopup(message)
     fun onAvailableRoomsChanged(officialRooms: List<ChatRoomInfo>, chatRooms: List<ChatRoomInfo>) = uiCallbacks?.onAvailableRoomsChanged(officialRooms, chatRooms)
-    fun onAvailableBattleRoomsChanged(availableRoomsInfo: AvailableBattleRoomsInfo) = uiCallbacks?.onAvailableBattleRoomsChanged(availableRoomsInfo)
+    fun onAvailableBattleRoomsChanged(battleRooms: List<BattleRoomInfo>) = uiCallbacks?.onAvailableBattleRoomsChanged(battleRooms)
     fun onNewPrivateMessage(with: String, message: String) = uiCallbacks?.onNewPrivateMessage(with, message)
     fun onChallengesChange(to: String?, format: String?, from: Map<String, String>) = uiCallbacks?.onChallengesChange(to, format, from)
     fun onRoomInit(roomId: String, type: String) = uiCallbacks?.onRoomInit(roomId, type)
@@ -293,7 +308,7 @@ class GlobalMessageObserver(service: ShowdownService)
         fun onUserDetails(id: String, name: String, online: Boolean, group: String, rooms: List<String>, battles: List<String>)
         fun onShowPopup(message: String)
         fun onAvailableRoomsChanged(officialRooms: List<ChatRoomInfo>, chatRooms: List<ChatRoomInfo>)
-        fun onAvailableBattleRoomsChanged(availableRoomsInfo: AvailableBattleRoomsInfo)
+        fun onAvailableBattleRoomsChanged(battleRooms: List<BattleRoomInfo>)
         fun onNewPrivateMessage(with: String, message: String)
         fun onChallengesChange(to: String?, format: String?, from: Map<String, String>)
         fun onRoomInit(roomId: String, type: String)

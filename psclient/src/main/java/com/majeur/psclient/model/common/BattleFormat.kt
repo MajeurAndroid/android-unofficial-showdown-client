@@ -35,6 +35,7 @@ class BattleFormat(val label: String, private val formatInt: Int) : Serializable
         private const val MASK_TOURNAMENT_SHOW = 0x8
 
         @JvmStatic val FORMAT_OTHER = BattleFormat("[Other]", -1)
+        val FORMAT_ALL = BattleFormat("(All formats)", -1)
 
         fun compare(formats: List<Category>?, f1: String, f2: String): Int {
             if (f1 == f2) return 0

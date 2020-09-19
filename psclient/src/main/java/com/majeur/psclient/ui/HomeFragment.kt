@@ -27,7 +27,7 @@ import com.majeur.psclient.R
 import com.majeur.psclient.databinding.DialogBattleMessageBinding
 import com.majeur.psclient.databinding.FragmentHomeBinding
 import com.majeur.psclient.io.AssetLoader
-import com.majeur.psclient.model.AvailableBattleRoomsInfo
+import com.majeur.psclient.model.BattleRoomInfo
 import com.majeur.psclient.model.ChatRoomInfo
 import com.majeur.psclient.model.common.BattleFormat
 import com.majeur.psclient.model.common.Team
@@ -120,17 +120,9 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         }
         binding.formatsSelector.apply {
             adapter = object : CategoryAdapter(context) {
-                override fun isCategoryItem(position: Int): Boolean {
-                    return getItem(position) is BattleFormat.Category
-                }
-
-                override fun getCategoryLabel(position: Int): String {
-                    return (getItem(position) as BattleFormat.Category).label
-                }
-
-                override fun getItemLabel(position: Int): String {
-                    return (getItem(position) as BattleFormat).label
-                }
+                override fun isCategoryItem(position: Int) = getItem(position) is BattleFormat.Category
+                override fun getCategoryLabel(position: Int) = (getItem(position) as BattleFormat.Category).label
+                override fun getItemLabel(position: Int) = (getItem(position) as BattleFormat).label
             }
             onItemSelectedListener = object : OnItemSelectedListener {
                 override fun onItemSelected(adapterView: AdapterView<*>, view: View, position: Int, id: Long) {
@@ -185,6 +177,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         binding.cancelButton.setOnClickListener(this)
         binding.searchButton.setOnClickListener(this)
         binding.userSearchButton.setOnClickListener(this)
+        binding.battleSearchButton.setOnClickListener(this)
         binding.replaySearchButton.setOnClickListener(this)
         binding.bugReportButton.setOnClickListener(this)
     }
@@ -264,6 +257,14 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
                         .show()
                 dialogBinding.editTextTeamName.requestFocus()
             }
+            binding.battleSearchButton -> {
+                if (childFragmentManager.findFragmentByTag(SearchBattleDialog.FRAGMENT_TAG) == null)
+                    SearchBattleDialog().show(childFragmentManager, SearchBattleDialog.FRAGMENT_TAG)
+            }
+            binding.replaySearchButton -> {
+                if (childFragmentManager.findFragmentByTag(SearchReplayDialog.FRAGMENT_TAG) == null)
+                    SearchReplayDialog().show(childFragmentManager, SearchReplayDialog.FRAGMENT_TAG)
+            }
             binding.bugReportButton -> AlertDialog.Builder(requireActivity())
                     .setTitle("Wait a minute !")
                     .setMessage("If the bug you want to report needs a detailed description to be clearly understood, please consider posting on the Smogon forum thread.\nIf not, you can continue to the form.\nThanks !")
@@ -271,11 +272,6 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
                     .setNeutralButton("Go to smogon thread") { _: DialogInterface?, _: Int -> openUrl(URL_SMOGON_THREAD, false) }
                     .setNegativeButton("Cancel", null)
                     .show()
-
-            binding.replaySearchButton -> {
-                if (childFragmentManager.findFragmentByTag(SearchReplayDialog.FRAGMENT_TAG) == null)
-                    SearchReplayDialog().show(childFragmentManager, SearchReplayDialog.FRAGMENT_TAG)
-            }
         }
     }
 
@@ -364,11 +360,54 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         }
     }
 
+    fun joinBattle(roomId: String) {
+        if (battleFragment.observedRoomId != null && battleFragment.battleRunning) {
+            makeSnackbar("You are already in a battle or viewing a replay")
+        } else {
+            requestRoomJoin(roomId)
+        }
+    }
+
     fun startReplay(replayId: String) {
-        if (battleFragment.observedRoomId != null) {
+        if (battleFragment.observedRoomId != null && battleFragment.battleRunning) {
             makeSnackbar("You are already in a battle or viewing a replay")
         } else {
             requestRoomJoin("replay-$replayId")
+        }
+    }
+
+    fun startPrivateChat(user: String) {
+        val myUsername = service?.getSharedData<String?>("myusername")?.substring(1)
+        if (user == myUsername) {
+            makeSnackbar("Cannot talk to yourself")
+            return
+        }
+        if (parentFragmentManager.findFragmentByTag(PrivateChatDialog.FRAGMENT_TAG) != null) return
+        val dialog = PrivateChatDialog.newInstance(user)
+        dialog.show(parentFragmentManager, PrivateChatDialog.FRAGMENT_TAG)
+    }
+
+    fun getPrivateMessages(with: String?): List<String>? {
+        return observer.getPrivateMessages(with!!)
+    }
+
+    fun challengeSomeone(user: String) {
+        val myUsername = service?.getSharedData<String?>("myusername")?.substring(1)
+        when {
+            user == myUsername -> makeSnackbar("You should try challenging yourself in an other way")
+            isChallengingSomeone -> makeSnackbar("You are already challenging someone")
+            isSearchingBattle -> makeSnackbar("Cannot challenge someone while searching for battle")
+            isAcceptingChallenge -> makeSnackbar("You are already accepting a challenge")
+            battleFragment.battleRunning -> makeSnackbar("You cannot challenge someone while being in a battle")
+            else -> {
+                isChallengingSomeone = true
+                waitingForChallenge = false
+                challengeTo = user
+                setBattleButtonUIState("Challenge\n$user!", showCancel = true, tintCard = true)
+                showSearchableFormatsOnly(false)
+                mainActivity.showHomeFragment()
+                requireView().post { (requireView() as ScrollView).fullScroll(View.FOCUS_UP) }
+            }
         }
     }
 
@@ -407,41 +446,6 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
                 service?.replayManager?.startReplay(roomId)
             else
                 service?.sendGlobalCommand("join", roomId)
-        }
-    }
-
-    fun startPrivateChat(user: String) {
-        val myUsername = service?.getSharedData<String?>("myusername")?.substring(1)
-        if (user == myUsername) {
-            makeSnackbar("Cannot talk to yourself")
-            return
-        }
-        if (parentFragmentManager.findFragmentByTag(PrivateChatDialog.FRAGMENT_TAG) != null) return
-        val dialog = PrivateChatDialog.newInstance(user)
-        dialog.show(parentFragmentManager, PrivateChatDialog.FRAGMENT_TAG)
-    }
-
-    fun getPrivateMessages(with: String?): List<String>? {
-        return observer.getPrivateMessages(with!!)
-    }
-
-    fun challengeSomeone(user: String) {
-        val myUsername = service?.getSharedData<String?>("myusername")?.substring(1)
-        when {
-            user == myUsername -> makeSnackbar("You should try challenging yourself in an other way")
-            isChallengingSomeone -> makeSnackbar("You are already challenging someone")
-            isSearchingBattle -> makeSnackbar("Cannot challenge someone while searching for battle")
-            isAcceptingChallenge -> makeSnackbar("You are already accepting a challenge")
-            battleFragment.battleRunning -> makeSnackbar("You cannot challenge someone while being in a battle")
-            else -> {
-                isChallengingSomeone = true
-                waitingForChallenge = false
-                challengeTo = user
-                setBattleButtonUIState("Challenge\n$user!", showCancel = true, tintCard = true)
-                showSearchableFormatsOnly(false)
-                mainActivity.showHomeFragment()
-                requireView().post { (requireView() as ScrollView).fullScroll(View.FOCUS_UP) }
-            }
         }
     }
 
@@ -542,6 +546,8 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         this@HomeFragment.battleFormats = battleFormats
         showSearchableFormatsOnly(true)
         teamsFragment.onBattleFormatsChanged()
+        val dialog = childFragmentManager.findFragmentByTag(SearchBattleDialog.FRAGMENT_TAG) as SearchBattleDialog?
+        dialog?.onBattleFormatsChanged()
     }
 
     override fun onSearchBattlesChanged(searching: List<String>, games: Map<String, String>) {
@@ -657,7 +663,10 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         chatFragment.onAvailableRoomsChanged(officialRooms, chatRooms)
     }
 
-    override fun onAvailableBattleRoomsChanged(availableRoomsInfo: AvailableBattleRoomsInfo) {}
+    override fun onAvailableBattleRoomsChanged(battleRooms: List<BattleRoomInfo>) {
+        val dialog = childFragmentManager.findFragmentByTag(SearchBattleDialog.FRAGMENT_TAG) as SearchBattleDialog?
+        dialog?.onSearchBattleResponse(battleRooms)
+    }
 
     override fun onNewPrivateMessage(with: String, message: String) {
         binding.pmsOverview.incrementPmCount(with)
