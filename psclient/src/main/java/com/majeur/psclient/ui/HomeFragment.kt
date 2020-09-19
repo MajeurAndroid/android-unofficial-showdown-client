@@ -7,6 +7,7 @@ import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.text.SpannableStringBuilder
+import android.text.method.LinkMovementMethod
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -607,20 +608,28 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
                                rooms: List<String>, battles: List<String>) {
         val builder = SpannableStringBuilder()
         builder.append("Group: ".italic()).append(group.replace(" ", "␣")).append("\n")
-        builder.append("Battles: ".italic())
+        builder.append("Battles:\n".italic())
         if (battles.isNotEmpty()) {
-            builder.append(battles.joinToString().small()).append("\n")
+            battles.forEach { battleId ->
+                builder.append(" - ".small())
+                builder.append(battleId.removePrefix("battle-").url("https://play.pokemonshowdown.com/$battleId").small())
+                builder.append("\n")
+            }
         } else {
             builder.append("None".small()).append("\n")
         }
-        builder.append("Chatrooms: ".italic())
+        builder.append("Chatrooms:\n".italic())
         if (rooms.isNotEmpty()) {
-            builder.append(rooms.joinToString().small()).append("\n")
+            rooms.forEach { roomId ->
+                builder.append(" - ".small())
+                builder.append(roomId.url("https://play.pokemonshowdown.com/$roomId").small())
+                builder.append("\n")
+            }
         } else {
             builder.append("None".small()).append("\n")
         }
         if (!online) builder.append("(Offline)".color(Color.RED))
-        AlertDialog.Builder(requireActivity()).apply {
+        val dialog = AlertDialog.Builder(requireActivity()).run {
             setTitle(name)
             setMessage(builder)
             if (online) {
@@ -631,6 +640,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
             }
             show()
         }
+        dialog.findViewById<TextView>(android.R.id.message)?.movementMethod = LinkMovementMethod.getInstance()
     }
 
     override fun onShowPopup(message: String) {

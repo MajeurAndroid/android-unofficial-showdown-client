@@ -8,10 +8,7 @@ import android.graphics.Typeface
 import android.text.Editable
 import android.text.Spannable
 import android.text.TextUtils
-import android.text.style.BackgroundColorSpan
-import android.text.style.ForegroundColorSpan
-import android.text.style.RelativeSizeSpan
-import android.text.style.StyleSpan
+import android.text.style.*
 import android.util.TypedValue
 import android.view.View
 import android.widget.TextView
@@ -43,6 +40,7 @@ fun CharSequence.relSize(relSize: Float) = toSpannable().relSize(relSize)
 fun CharSequence.color(color: Int) = toSpannable().color(color)
 fun CharSequence.bg(color: Int) = toSpannable().bg(color)
 fun CharSequence.tag(color: Int) = toSpannable().tag(color)
+fun CharSequence.url(url: String) = toSpannable().url(url)
 
 fun Spannable.bold(): Spannable {
     setSpan(StyleSpan(Typeface.BOLD), 0, length, Spannable.SPAN_INCLUSIVE_EXCLUSIVE)
@@ -75,6 +73,11 @@ fun Spannable.bg(color: Int): Spannable {
 
 fun Spannable.tag(color: Int, textColor: Int = Color.WHITE): Spannable {
     setSpan(TextTagSpan(color, textColor), 0, length, Spannable.SPAN_INCLUSIVE_EXCLUSIVE)
+    return this
+}
+
+fun Spannable.url(url: String): Spannable {
+    setSpan(URLSpan(url), 0, length, Spannable.SPAN_INCLUSIVE_EXCLUSIVE)
     return this
 }
 
