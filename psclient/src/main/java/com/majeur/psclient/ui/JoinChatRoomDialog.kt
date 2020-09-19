@@ -30,7 +30,7 @@ class JoinChatRoomDialog : BottomSheetDialogFragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         officialRooms = requireArguments().getParcelableArrayList<ChatRoomInfo>(ARG_OFFICIAL_ROOMS)!!
-        chatRooms = requireArguments().getParcelableArrayList<ChatRoomInfo>(ARG_CHAT_ROOMS)!!
+        chatRooms = requireArguments().getParcelableArrayList<ChatRoomInfo>(ARG_CHAT_ROOMS)!!.sortedBy { -it.userCount }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
