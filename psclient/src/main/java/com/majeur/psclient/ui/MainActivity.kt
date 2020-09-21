@@ -204,7 +204,7 @@ class MainActivity : AppCompatActivity() {
         when (uri.host) {
             "play.pokemonshowdown.com" -> {
                 val roomId = uri.pathSegments.firstOrNull() ?: return
-                homeFragment.requestRoomJoin(roomId)
+                homeFragment.joinRoom(roomId)
             }
             "replay.pokemonshowdown.com" -> {
                 val replayId = uri.pathSegments.firstOrNull() ?: return

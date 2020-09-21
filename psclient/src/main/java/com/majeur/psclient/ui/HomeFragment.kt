@@ -61,15 +61,15 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
     private var challengeTo: String? = null
     private var isAcceptingChallenge = false
     private var isAcceptingFrom: String? = null
-    private var onConnectedListener: (() -> Unit)? = null
-    private var nextDeinitListener: ((String) -> Unit)? = null
+    private var onConnectedListeners = mutableMapOf<String, () -> Unit>()
+    private var roomDeinitListeners = mutableMapOf<String, (String) -> Unit>()
 
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
     private var activeSnackbar: Snackbar? = null
     private val snackbarCallbacks = object : BaseTransientBottomBar.BaseCallback<Snackbar>() {
         override fun onDismissed(snackbar: Snackbar?, event: Int) {
-            activeSnackbar?.removeCallback(this)
+            snackbar?.removeCallback(this)
             if (activeSnackbar == snackbar) activeSnackbar = null
         }
     }
@@ -95,9 +95,10 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         _binding = null
     }
 
-    private fun makeSnackbar(message: String, indefinite: Boolean = false) {
+    private fun makeSnackbar(message: String, indefinite: Boolean = false, action: Pair<String, () -> Unit>? = null) {
         activeSnackbar = Snackbar.make(binding.root, message, if (indefinite) Snackbar.LENGTH_INDEFINITE else Snackbar.LENGTH_LONG)
                 .addCallback(snackbarCallbacks)
+        if (action != null) activeSnackbar!!.setAction(action.first) { action.second.invoke() }
         activeSnackbar!!.show()
     }
 
@@ -361,21 +362,75 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         }
     }
 
-    fun joinBattle(roomId: String) {
-        if (battleFragment.observedRoomId != null && battleFragment.battleRunning) {
-            makeSnackbar("You are already in a battle or viewing a replay")
+    fun startReplay(replayId: String) {
+        joinRoom("replay-$replayId")
+    }
+
+    fun joinRoom(roomId: String) {
+        val isReplay = roomId.startsWith("replay-", ignoreCase = true)
+        val isBattle = roomId.startsWith("battle-", ignoreCase = true) || isReplay
+        val currentRoomId = if (isBattle) battleFragment.observedRoomId else chatFragment.observedRoomId
+        if (currentRoomId != null) {
+            if (isBattle) mainActivity.showBattleFragment() else mainActivity.showChatFragment()
+            if (currentRoomId == roomId) return
+            AlertDialog.Builder(mainActivity).apply {
+                setTitle("Warning")
+                setMessage("You are already in " concat readableRoomName(currentRoomId) concat ".\nJoining "
+                        concat readableRoomName(roomId) concat " will make you leave "
+                        concat readableRoomName(currentRoomId) concat ".")
+                setPositiveButton("Continue") { _, _ -> requestRoomJoin(roomId) }
+                setNegativeButton("Cancel") { _,_ -> }
+                show()
+            }
         } else {
             requestRoomJoin(roomId)
         }
     }
 
-    fun startReplay(replayId: String) {
-        if (battleFragment.observedRoomId != null && battleFragment.battleRunning) {
-            makeSnackbar("You are already in a battle or viewing a replay")
+    private fun readableRoomName(roomId: String) = when {
+        roomId.startsWith("replay-", ignoreCase = true) -> "replay " concat "'${roomId.removePrefix("replay-").replace("-", " ")}'".italic()
+        roomId.startsWith("battle-", ignoreCase = true) -> "battle " concat "'${roomId.removePrefix("battle-").replace("-", " ")}'".italic()
+        else -> "room " concat "'$roomId'".italic()
+    }
+
+    private fun requestRoomJoin(roomId: String) {
+        val isWaitingForConnection = onConnectedListeners.containsKey(roomId)
+        if (isWaitingForConnection) return
+        if (service?.isConnected != true) {
+            onConnectedListeners[roomId] = {
+                onConnectedListeners.remove(roomId)
+                requestRoomJoin(roomId)
+            }
+            return
+        }
+        val isWaitingForRoomToDeinit = roomDeinitListeners.containsKey(roomId)
+        if (isWaitingForRoomToDeinit) return
+
+        val isReplay = roomId.startsWith("replay-", ignoreCase = true)
+        val isBattle = roomId.startsWith("battle-", ignoreCase = true) || isReplay
+        val currentRoomId = if (isBattle) battleFragment.observedRoomId else chatFragment.observedRoomId
+        if (currentRoomId != null) {
+            roomDeinitListeners[roomId] = { deinitRoomId ->
+                if (deinitRoomId == currentRoomId) { // Now that previous room is safely leaved, join the new one
+                    roomDeinitListeners.remove(roomId)
+                    if (isReplay)
+                        service?.replayManager?.startReplay(roomId)
+                    else
+                        service?.sendGlobalCommand("join", roomId)
+                }
+            }
+            if (currentRoomId.startsWith("replay-"))
+                service?.replayManager?.closeReplay()
+            else
+                service?.sendRoomCommand(currentRoomId, "leave")
         } else {
-            requestRoomJoin("replay-$replayId")
+            if (isReplay)
+                service?.replayManager?.startReplay(roomId)
+            else
+                service?.sendGlobalCommand("join", roomId)
         }
     }
+
 
     fun startPrivateChat(user: String) {
         val myUsername = service?.getSharedData<String?>("myusername")?.substring(1)
@@ -409,44 +464,6 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
                 mainActivity.showHomeFragment()
                 requireView().post { (requireView() as ScrollView).fullScroll(View.FOCUS_UP) }
             }
-        }
-    }
-
-    fun requestRoomJoin(roomId: String) {
-        val isWaitingForConnection = onConnectedListener != null
-        if (isWaitingForConnection) return
-        if (service?.isConnected != true) {
-            onConnectedListener = {
-                onConnectedListener = null
-                requestRoomJoin(roomId)
-            }
-            return
-        }
-        val isWaitingForRoomToDeinit = nextDeinitListener != null
-        if (isWaitingForRoomToDeinit) return
-
-        val isReplay = roomId.startsWith("replay-", ignoreCase = true)
-        val isBattle = roomId.startsWith("battle-", ignoreCase = true) || isReplay
-        val currentRoomId = if (isBattle) battleFragment.observedRoomId else chatFragment.observedRoomId
-        if (currentRoomId != null) {
-            nextDeinitListener = { deinitRoomId ->
-                if (deinitRoomId == currentRoomId) { // Now that previous room is safely leaved, join the new one
-                    if (isReplay)
-                        service?.replayManager?.startReplay(roomId)
-                    else
-                        service?.sendGlobalCommand("join", roomId)
-                    nextDeinitListener = null
-                }
-            }
-            if (currentRoomId.startsWith("replay-"))
-                service?.replayManager?.closeReplay()
-            else
-                service?.sendRoomCommand(currentRoomId, "leave")
-        } else {
-            if (isReplay)
-                service?.replayManager?.startReplay(roomId)
-            else
-                service?.sendGlobalCommand("join", roomId)
         }
     }
 
@@ -513,7 +530,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         activeSnackbar?.dismiss()
         if (battleFragment.observedRoomId != null) battleFragment.observedRoomId = null
         if (chatFragment.observedRoomId != null) chatFragment.observedRoomId = null
-        onConnectedListener?.invoke()
+        onConnectedListeners.values.forEach { it.invoke() }
     }
 
     override fun onUserChanged(userName: String, isGuest: Boolean, avatarId: String) {
@@ -572,13 +589,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
                 text = value
                 tag = roomId
                 isEnabled = roomId != battleFragment.observedRoomId
-                setOnClickListener {
-                    if (battleFragment.isReplay) {
-                        makeSnackbar("You are currently watching a replay, please leave it to join a battle")
-                    } else {
-                        requestRoomJoin(roomId)
-                    }
-                }
+                setOnClickListener { joinRoom(roomId) }
             }
         }
         val newCount = binding.joinedBattlesContainer.childCount
@@ -765,7 +776,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
             battleFragment.observedRoomId -> battleFragment.observedRoomId = null
             chatFragment.observedRoomId -> chatFragment.observedRoomId = null
         }
-        nextDeinitListener?.invoke(roomId)
+        roomDeinitListeners.values.forEach { it.invoke(roomId) }
     }
 
     override fun onNetworkError() {

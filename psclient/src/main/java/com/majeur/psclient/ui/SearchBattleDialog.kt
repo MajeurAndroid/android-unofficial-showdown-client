@@ -167,7 +167,7 @@ class SearchBattleDialog : BottomSheetDialogFragment(), AdapterView.OnItemClickL
 
     override fun onItemClick(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
         val battle = getListAdapter().getItem(position)
-        homeFragment.joinBattle(battle.roomId)
+        homeFragment.joinRoom(battle.roomId)
         dismiss()
     }
 
