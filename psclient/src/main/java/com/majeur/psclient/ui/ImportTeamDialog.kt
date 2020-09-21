@@ -86,7 +86,7 @@ class ImportTeamDialog : BottomSheetDialogFragment() {
         }
 
         if (arguments?.containsKey(ARG_PP_ID) == true) {
-            val teamId = arguments!![ARG_PP_ID]
+            val teamId = requireArguments()[ARG_PP_ID]
             binding.radioGroup.check(R.id.pokepaste_radio)
             binding.pokepasteUrlInput.setText("https://pokepast.es/$teamId")
         }
