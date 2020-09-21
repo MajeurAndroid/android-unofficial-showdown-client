@@ -84,6 +84,12 @@ class ImportTeamDialog : BottomSheetDialogFragment() {
                 teamFragment.makeSnackbar("${teams.size} team(s) copied to clipboard")
             }
         }
+
+        if (arguments?.containsKey(ARG_PP_ID) == true) {
+            val teamId = arguments!![ARG_PP_ID]
+            binding.radioGroup.check(R.id.pokepaste_radio)
+            binding.pokepasteUrlInput.setText("https://pokepast.es/$teamId")
+        }
     }
 
     private fun hideAllUrlInputTextViews() {
@@ -201,6 +207,7 @@ class ImportTeamDialog : BottomSheetDialogFragment() {
 
     companion object {
         const val FRAGMENT_TAG = "import-team-dialog"
+        const val ARG_PP_ID = "arg-pokepaste-team-id"
 
         private const val PASTEBIN_URL_HOST = "pastebin.com"
         private const val POKEPASTE_URL_HOST = "pokepast.es"

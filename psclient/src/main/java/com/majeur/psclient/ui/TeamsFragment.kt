@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.os.bundleOf
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
@@ -122,6 +123,14 @@ class TeamsFragment : BaseFragment(), OnItemClickListener {
         binding.importFab.setOnClickListener {
             if (childFragmentManager.findFragmentByTag(ImportTeamDialog.FRAGMENT_TAG) == null)
                 ImportTeamDialog().show(childFragmentManager, ImportTeamDialog.FRAGMENT_TAG)
+        }
+    }
+
+    fun promptImportFromPokepaste(teamId: String) {
+        if (childFragmentManager.findFragmentByTag(ImportTeamDialog.FRAGMENT_TAG) == null) {
+            ImportTeamDialog().apply {
+                arguments = bundleOf(ImportTeamDialog.ARG_PP_ID to teamId)
+            }.show(childFragmentManager, ImportTeamDialog.FRAGMENT_TAG)
         }
     }
 

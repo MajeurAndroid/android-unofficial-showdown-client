@@ -210,12 +210,18 @@ class MainActivity : AppCompatActivity() {
                 val replayId = uri.pathSegments.firstOrNull() ?: return
                 homeFragment.startReplay(replayId)
             }
+            "pokepast.es" -> {
+                val teamId =  uri.pathSegments.firstOrNull() ?: return
+                showTeamsFragment()
+                teamsFragment.promptImportFromPokepaste(teamId)
+            }
         }
     }
 
     fun showHomeFragment() = setSelectedNavigationItem(R.id.fragment_home)
     fun showBattleFragment() = setSelectedNavigationItem(R.id.fragment_battle)
     fun showChatFragment() = setSelectedNavigationItem(R.id.fragment_chat)
+    fun showTeamsFragment() = setSelectedNavigationItem(R.id.fragment_teams)
 
     fun setKeepScreenOn(keep: Boolean) {
         if (keep) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
