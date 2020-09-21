@@ -288,8 +288,8 @@ public class Utils {
         return spannable;
     }
 
-    private static final String[] MD_TOKENS_OP = {"**", "__", "~~", "``", "[[", "http", "https"};
-    private static final String[] MD_TOKENS_CL = {"**", "__", "~~", "``", "]]", " ", " "};
+    private static final String[] MD_TOKENS_OP = {"**", "__", "~~", "```", "[[", "http", "https"};
+    private static final String[] MD_TOKENS_CL = {"**", "__", "~~", "```", "]]", " ", " "};
     private static final Factory[] MD_SPANS = {(p) -> new StyleSpan(Typeface.BOLD), (p) -> new StyleSpan(Typeface.ITALIC),
             (p) -> new StyleSpan(Typeface.BOLD_ITALIC), (p) -> isApi28() ? new TypefaceSpan(Typeface.MONOSPACE) : new Object(), (p) -> new URLSpan((String) p),
             (p) -> new URLSpan((String) p), (p) -> new URLSpan((String) p)};
@@ -314,9 +314,11 @@ public class Utils {
                     builder.delete(openIndex, openIndex + tokenOpen.length());
                     closeIndex -= tokenOpen.length();
                     builder.delete(closeIndex, closeIndex + tokenClose.length());
+                    span = MD_SPANS[i].get("");
+                } else {
+                    if (closeIndex == -1) closeIndex = builder.length(); // Url end token not found, so we are at the end of our string
+                    span = MD_SPANS[i].get(builder.substring(openIndex, closeIndex));
                 }
-                if (closeIndex == -1) closeIndex = builder.length(); // Url end token not found, so we are at the end of our string
-                span = MD_SPANS[i].get(builder.substring(openIndex, closeIndex));
                 builder.setSpan(span, openIndex, closeIndex, Spannable.SPAN_INCLUSIVE_EXCLUSIVE);
             }
         }
