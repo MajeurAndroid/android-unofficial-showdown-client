@@ -95,11 +95,16 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         _binding = null
     }
 
-    private fun makeSnackbar(message: String, indefinite: Boolean = false, action: Pair<String, () -> Unit>? = null) {
-        activeSnackbar = Snackbar.make(binding.root, message, if (indefinite) Snackbar.LENGTH_INDEFINITE else Snackbar.LENGTH_LONG)
+    private fun makeSnackbar(message: String, indefinite: Boolean = false, action: Pair<String, () -> Unit>? = null, maxLines: Int = 0) {
+        val snackbar = Snackbar.make(binding.root, message, if (indefinite) Snackbar.LENGTH_INDEFINITE else Snackbar.LENGTH_LONG)
                 .addCallback(snackbarCallbacks)
-        if (action != null) activeSnackbar!!.setAction(action.first) { action.second.invoke() }
-        activeSnackbar!!.show()
+        if (action != null) snackbar.setAction(action.first) { action.second.invoke() }
+        if (maxLines > 0) {
+            val textView = snackbar.view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
+            textView.maxLines = 5
+        }
+        activeSnackbar = snackbar
+        snackbar.show()
     }
 
     @SuppressLint("SetTextI18n")
@@ -655,12 +660,17 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
     }
 
     override fun onShowPopup(message: String) {
-        val snackbar = Snackbar.make(binding.root, message, Snackbar.LENGTH_INDEFINITE)
-        val view = snackbar.view
-        val textView = view.findViewById<TextView?>(com.google.android.material.R.id.snackbar_text)
-        textView!!.maxLines = 5
-        snackbar.setAction("Ok") { }
-        snackbar.show()
+        if (message.length > 120 || message.count { it == '\n' } > 4) { // If there is a lot of text, rather show a dialog
+            AlertDialog.Builder(requireContext()).apply {
+                setMessage(message)
+                setPositiveButton("Ok") { _, _ -> }
+                show()
+            }
+            activeSnackbar?.dismiss()
+        } else {
+            makeSnackbar(message, indefinite = true, maxLines = 5, action = "Ok" to {})
+        }
+
         if (isChallengingSomeone) { // Resetting pending challenges
             isChallengingSomeone = false
             waitingForChallenge = isChallengingSomeone

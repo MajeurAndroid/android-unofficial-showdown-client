@@ -218,7 +218,7 @@ class GlobalMessageObserver(service: ShowdownService)
         onBattleFormatsChanged(categories)
     }
 
-    private fun handlePopup(msg: ServerMessage) = onShowPopup(msg.args.filter { it.isNotBlank() }.joinToString("\n"))
+    private fun handlePopup(msg: ServerMessage) = onShowPopup(msg.args.joinToString("\n"))
 
     private fun handleUpdateSearch(msg: ServerMessage) {
         val jsonObject = Utils.jsonObject(msg.remainingArgsRaw) ?: return
