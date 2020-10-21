@@ -384,6 +384,7 @@ class AssetLoader(val context: Context) {
         @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
         override fun compute(species: String): List<String>? {
             val family = mutableListOf(species)
+            getBaseSpeciesIfAny(species)?.let { family.add(it) }
             do {
                 val preEvos = getPreEvos(family.last())
                 family.addAll(preEvos)
@@ -403,6 +404,9 @@ class AssetLoader(val context: Context) {
             }
             return learnset.sorted()
         }
+
+        // If forme is not null then our species is not the base one
+        private fun getBaseSpeciesIfAny(species: String) = DexPokemon().also { it.species = species }.takeIf { it.forme != null }?.baseSpecies
 
         private fun getPreEvos(species: String) = jsonReader(R.raw.dex).use { reader ->
             return@use parseFamily(reader, species)
