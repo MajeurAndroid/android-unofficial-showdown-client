@@ -87,7 +87,7 @@ class PokemonFragment : Fragment() {
         setFragmentResultListener(ItemsFragment.RESULT_KEY) { _, bundle ->
             val item = bundle.getString(ItemsFragment.RESULT_ITEM)
             if (item != null) {
-                pokemon.item = item
+                pokemon.item = if (item == "None") "" else item
                 binding.itemInput.text = item
             }
         }
@@ -97,7 +97,7 @@ class PokemonFragment : Fragment() {
             val moveSlot = bundle.getInt(MovesFragment.RESULT_SLOT)
             if (moveName != null) {
                 // We know it's a 4 elements mutable list (See TeamBuilderActivity)
-                (pokemon.moves as MutableList<String>)[moveSlot] = moveName
+                (pokemon.moves as MutableList<String>)[moveSlot] = if (moveName == "None") "" else moveName
                 moveInputs[moveSlot].text = moveName
             }
         }
@@ -352,8 +352,13 @@ class PokemonFragment : Fragment() {
                     if (dexPokemon.secondType != null) setImageResource(getResId(dexPokemon.secondType))
                     else setImageDrawable(null)
                 }
-                if (pokemon.item.isNotBlank())
-                    binding.itemInput.text = assetLoader.item(pokemon.item.toId())?.name ?: "None"
+
+                if (dexPokemon.requiredItem != null) {
+                    pokemon.item = dexPokemon.requiredItem!!
+                    binding.itemInput.text = assetLoader.item(dexPokemon.requiredItem!!.toId())?.name ?: dexPokemon.requiredItem!!
+                } else if (pokemon.item.isNotBlank()) {
+                    binding.itemInput.text = assetLoader.item(pokemon.item.toId())?.name ?: pokemon.item
+                }
 
                 val abilities = dexPokemon.abilities.toMutableList()
                 dexPokemon.hiddenAbility?.let { abilities.add("$it (Hidden)") }

@@ -17,6 +17,7 @@ class DexPokemon : BasePokemon() {
     var color: String? = null
     var gender: String? = null
     var tier: String? = null
+    var requiredItem: String? = null
 
     fun matchingAbility(abilityId: String, or: String = abilityId): String {
         abilities.forEach { a -> if (a.toId() == abilityId) return a }

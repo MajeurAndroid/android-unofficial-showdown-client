@@ -95,7 +95,7 @@ class TeamFragment : Fragment() {
         team.apply {
             label = name
             pokemons = team.pokemons.filter { it.species.isNotBlank() }
-            pokemons.forEach { p -> p.moves = p.moves.filter { it != "None" } }
+            pokemons.forEach { p -> p.moves = p.moves.filter { it.isNotBlank() } }
             format = battleFormat.toId()
         }
 
@@ -145,7 +145,7 @@ class TeamFragment : Fragment() {
         binding.fab.apply {
             binding.fab.setOnClickListener {
                 adapter.addItem(TeamPokemon().apply {
-                    moves = mutableListOf("None", "None", "None", "None") // Ensure we have a 4 items mutable list
+                    moves = mutableListOf("", "", "", "") // Ensure we have a 4 items mutable list
                 })
                 val lastItemPosition = adapter.itemCount - 1
                 binding.list.scrollToPosition(lastItemPosition)
@@ -266,9 +266,9 @@ class TeamFragment : Fragment() {
                     ability.text = "Ability: ".small() concat dexPokemon.matchingAbility(p.ability.or("None"))
                     val itemObject = if (p.item.isNotBlank()) assetLoader.item(p.item) else null
                     item.text = "Item: ".small() concat (itemObject?.name ?: p.item.or("None"))
-                    val moveStrings = (0 until 4).map {
-                        val moveId = p.moves.getOrNull(it)
-                        if (moveId == null) "None" else assetLoader.moveDetails(moveId)?.name ?: "None"
+                    val moveStrings = (0 until 4).map { i ->
+                        val moveId = p.moves[i] // We know we have a 4 items list see TeamBuilderActivity
+                        if (moveId.isBlank()) "None" else assetLoader.moveDetails(moveId)?.name ?: moveId
                     }
                     moves.text = "Moves: ".small() concat moveStrings.joinToString(", ")
                     evs.text = "Evs: ".small() concat p.evs.summaryText(Nature.get(p.nature))

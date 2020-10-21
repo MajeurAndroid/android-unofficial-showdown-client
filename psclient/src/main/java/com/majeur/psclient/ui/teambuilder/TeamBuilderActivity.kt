@@ -71,7 +71,7 @@ class TeamBuilderActivity : AppCompatActivity() {
         team.pokemons = team.pokemons.toMutableList() // Ensure we have a mutable list under the hood
         team.pokemons.forEach { poke ->
             poke.moves = poke.moves.toMutableList() // Ensure we have a mutable list under the hood
-            for (i in poke.moves.size until 4) (poke.moves as MutableList<String>).add("None") // Ensure we have a 4 element list
+            for (i in poke.moves.size until 4) (poke.moves as MutableList<String>).add("") // Ensure we have a 4 element list
         }
     }
 

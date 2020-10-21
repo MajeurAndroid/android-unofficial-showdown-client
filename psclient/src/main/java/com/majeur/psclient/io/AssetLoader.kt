@@ -292,6 +292,7 @@ class AssetLoader(val context: Context) {
                         "gender" -> gender = reader.nextString()
                         "evos" -> reader.skipValue() // TODO
                         "LC" -> tier = reader.nextString()
+                        "requiredItem" -> requiredItem = reader.nextString()
                         else -> reader.skipValue()
                     }
                 }
