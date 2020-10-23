@@ -84,6 +84,11 @@ class BattleLayout @JvmOverloads constructor(
         return imageViews[id.position]
     }
 
+    fun getPokemonViews(player: Player): List<ImageView> {
+        val imageViews = if (player === Player.TRAINER) p1ImageViews else p2ImageViews
+        return (0 until imageViews.size()).map { i -> imageViews.valueAt(i) }
+    }
+
     fun getSideView(player: Player): SideView {
         val sideView = if (player === Player.TRAINER) p1SideView else p2SideView
         sideView.bringToFront() // TODO Fix this not working

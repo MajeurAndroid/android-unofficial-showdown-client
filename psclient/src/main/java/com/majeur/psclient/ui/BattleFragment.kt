@@ -181,7 +181,9 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
             battleLayout.getSideView(Player.TRAINER).clearAllSides()
             battleLayout.getSideView(Player.FOE).clearAllSides()
             battleLayout.getStatusViews(Player.TRAINER).forEach { it.clear() }
+            battleLayout.getPokemonViews(Player.TRAINER).forEach { it.setImageDrawable(null) }
             battleLayout.getStatusViews(Player.FOE).forEach { it.clear() }
+            battleLayout.getPokemonViews(Player.FOE).forEach { it.setImageDrawable(null) }
             trainerInfo.clear()
             foeInfo.clear()
             battleMessage.apply {
