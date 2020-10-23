@@ -227,18 +227,8 @@ class AssetLoader(val context: Context) {
         @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
         @Throws(IOException::class)
         override fun compute(species: String): Bitmap? {
-            val index = jsonReader(R.raw.dex_icon_indexes).use { reader ->
-                reader.beginObject()
-                while (reader.hasNext()) {
-                    if (species.contains(reader.nextName())) {
-                        return@use reader.nextInt()
-                    } else {
-                        reader.skipValue()
-                    }
-                }
-                reader.endObject()
-                return@use 0
-            }
+            // If no match is found, we try to find a match that at least contains our species
+            val index = findIconIndex(species, true).takeIf { it > 0 } ?: findIconIndex(species, false)
             val xDim = SHEET_WIDTH / ELEMENT_WIDTH
             val x = index % xDim
             val y = index / xDim
@@ -253,6 +243,20 @@ class AssetLoader(val context: Context) {
                 recycle()
                 bitmap
             }
+        }
+
+        private fun findIconIndex(species: String, exactMatch: Boolean) = jsonReader(R.raw.dex_icon_indexes).use { reader ->
+            reader.beginObject()
+            while (reader.hasNext()) {
+                val match = if (exactMatch) species == reader.nextName() else species.contains(reader.nextName())
+                if (match) {
+                    return@use reader.nextInt()
+                } else {
+                    reader.skipValue()
+                }
+            }
+            reader.endObject()
+            return@use 0
         }
     }
 
