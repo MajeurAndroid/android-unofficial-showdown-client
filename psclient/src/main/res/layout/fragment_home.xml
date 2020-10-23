@@ -33,16 +33,16 @@
                 android:orientation="horizontal"
                 android:divider="@color/divider"
                 android:showDividers="middle"
-                    android:gravity="center_vertical">
+                android:gravity="center_vertical">
 
                 <ImageButton
-                        android:id="@+id/login_button"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="4dp"
-                        android:padding="4dp"
-                        android:background="?selectableItemBackground"
-                        android:tint="?attr/colorOnSurface"/>
+                    android:id="@+id/login_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="4dp"
+                    android:padding="4dp"
+                    android:background="?selectableItemBackground"
+                    android:tint="?attr/colorOnSurface"/>
 
                 <TextView
                     android:id="@+id/username"
@@ -128,18 +128,18 @@
                     android:layout_alignTop="@id/search_button"
                     android:layout_alignBottom="@id/search_button"
                     android:src="@drawable/ic_sound_off"
-                    android:background="?attr/selectableItemBackground"
+                    android:background="?attr/selectableItemBackgroundBorderless"
                     android:tint="?attr/colorOnSurface"/>
 
                 <com.google.android.material.button.MaterialButton
-                        android:id="@+id/cancel_button"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_below="@id/search_button"
-                        android:layout_centerHorizontal="true"
-                        android:visibility="gone"
-                        android:text="Cancel"
-                        style="@style/Widget.MaterialComponents.Button.TextButton"/>
+                    android:id="@+id/cancel_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/search_button"
+                    android:layout_centerHorizontal="true"
+                    android:visibility="gone"
+                    android:text="Cancel"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"/>
 
             </RelativeLayout>
 
@@ -175,18 +175,18 @@
         </com.google.android.material.card.MaterialCardView>
 
         <com.google.android.material.card.MaterialCardView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="12dp"
-                android:layout_gravity="center"
-                app:contentPadding="16dp"
-                android:id="@+id/pms_container"
-                android:visibility="gone">
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="12dp"
+            android:layout_gravity="center"
+            app:contentPadding="16dp"
+            android:id="@+id/pms_container"
+            android:visibility="gone">
 
             <com.majeur.psclient.widget.PrivateMessagesOverviewWidget
-                    android:id="@+id/pms_overview"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
+                android:id="@+id/pms_overview"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
 
         </com.google.android.material.card.MaterialCardView>
 
