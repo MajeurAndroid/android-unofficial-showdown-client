@@ -270,12 +270,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
         val text = battleTextBuilder.pokemonChange(msg.command, pokemon.id, arg2, arg3,
                 msg.kwargs["of"], msg.kwargs["from"])
         actionQueue.enqueueAction {
-            getBattlingPokemon(pokemon.id)?.apply {
-                species = pokemon.species
-                baseSpecies = pokemon.baseSpecies
-                forme = pokemon.forme
-                spriteId = pokemon.spriteId
-            }
+            getBattlingPokemon(pokemon.id)?.species = pokemon.species
             onDetailsChanged(pokemon)
             displayMajorActionMessage(text)
         }
@@ -702,9 +697,10 @@ class BattleRoomMessageObserver(service: ShowdownService)
                 pokemon.statModifiers.set(tpokemon.statModifiers)
                 onStatChanged(pokemonId)
             } else if (msg.command.contains("formechange") && arg2 != null) {
-                val pokemon = getBattlingPokemon(pokemonId)
-                pokemon!!.spriteId = BasePokemon().also { it.species = arg2 }.spriteId
-                onDetailsChanged(pokemon)
+                getBattlingPokemon(pokemonId)?.let { poke ->
+                    poke.species = arg2
+                    onDetailsChanged(poke)
+                }
             }
         }
     }

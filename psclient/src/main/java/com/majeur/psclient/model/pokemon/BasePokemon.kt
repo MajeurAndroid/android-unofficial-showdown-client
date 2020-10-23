@@ -16,8 +16,11 @@ open class BasePokemon : Serializable {
         }
 
     var baseSpecies: String = ""
+        private set
     var forme: String? = null
+        private set
     var spriteId: String = ""
+        private set
 
     private fun computeForme(species: String){
         val id = species.toId()
