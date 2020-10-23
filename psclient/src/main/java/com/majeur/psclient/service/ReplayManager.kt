@@ -25,6 +25,7 @@ class ReplayManager(private val showdownService: ShowdownService) {
         if (isWaitingForReplayData.get() || replay != null) return
 
         val id = replayId.removePrefix("replay-")
+        Timber.tag("ReplayManager[LOAD]").i("Loading replay content for $id")
         val url = HttpUrl.Builder().run {
             scheme("https")
             host("replay.pokemonshowdown.com")
@@ -92,6 +93,7 @@ class ReplayManager(private val showdownService: ShowdownService) {
     }
 
     private fun processData(data: String) {
+        Timber.tag("ReplayManager[DATA]").i(data)
         showdownService.processServerData(data)
     }
 
