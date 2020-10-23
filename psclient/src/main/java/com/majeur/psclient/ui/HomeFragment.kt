@@ -759,7 +759,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
                     // Most of the time this is an auto joined battle coming from a new search, let's
                     // just leave it silently. If the user wants to join it deliberately, he will
                     // be able to do that from the "you're currently in" menu.
-                    if (!roomId.startsWith("replay-")) service?.replayManager?.closeReplay()
+                    if (roomId.startsWith("replay-")) service?.replayManager?.closeReplay()
                     else service?.sendRoomCommand(roomId, "leave")
                 }
                 binding.joinedBattlesContainer.children.forEach { button ->
