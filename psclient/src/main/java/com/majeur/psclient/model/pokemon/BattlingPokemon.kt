@@ -18,6 +18,8 @@ class BattlingPokemon(val player: Player, switchMessage: String) : BasePokemon()
     var condition: Condition? = null
     var transformSpecies: String? = null
 
+    val fainted get() = condition?.hp == 0 || condition?.status == "fnt"
+
     val position get() = id.position
     val foe get() = id.foe
     val trainer get() = id.trainer

@@ -235,7 +235,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
         val pokemon = BattlingPokemon(player, raw)
         val prevPoke = getBattlingPokemon(pokemon.id)
         val username = player.username(p1Username!!, p2Username!!, myUsername)
-        val text1 = battleTextBuilder.switchOut(prevPoke, username, msg.kwargs["from"])
+        val text1 = if (prevPoke?.fainted == false) battleTextBuilder.switchOut(prevPoke, username, msg.kwargs["from"]) else null
         val text2 = battleTextBuilder.switchIn(pokemon, username)
         actionQueue.enqueueMajorAction {
             if (pokemon.id.isInBattle) {
