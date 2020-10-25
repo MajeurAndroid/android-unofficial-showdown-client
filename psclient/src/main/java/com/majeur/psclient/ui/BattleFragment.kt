@@ -328,7 +328,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
                 append("Ability: ".small() concat sidePokemon.ability concat "\n")
                 ability = sidePokemon.ability
 
-                append("Item: ".small() concat sidePokemon.item)
+                append("Item: ".small() concat sidePokemon.item.or("None"))
                 fragmentScope.launch {
                     assetLoader.item(sidePokemon.item.toId())?.let { item ->
                         Utils.replace(descView.editableText, sidePokemon.item, item.name)
@@ -431,7 +431,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
                     " Spe:".small() concat pokemon.stats.spe.toString() concat
                     "\n" concat
                     "Ability: ".small() concat pokemon.ability concat "\n" concat
-                    "Item: ".small() concat pokemon.item concat "\n" concat
+                    "Item: ".small() concat pokemon.item.or("None") concat "\n" concat
                     "Moves: ".small())
         }
         fragmentScope.launch {
