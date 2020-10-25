@@ -34,21 +34,17 @@ class GlideHelper(context: Context) {
         DEX("dex", "png"),
         TRAINER("trainers", "png"); // Dex
 
-        fun uri(spriteId: String, shiny: Boolean = false, back: Boolean = false) = baseUri().run {
-            appendPath(segment(shiny, back))
+        fun uri(spriteId: String, shiny: Boolean, back: Boolean): Uri = Uri.Builder().run {
+            scheme("https")
+            authority("play.pokemonshowdown.com")
+            appendPath("sprites")
+            var dir = path
+            if (back) dir += "-back"
+            if (shiny) dir += "-shiny"
+            appendPath(dir)
             appendPath("$spriteId.$ext")
             build()
         }
-
-        private fun baseUri(): Uri.Builder {
-            return Uri.Builder()
-                    .scheme("https")
-                    .authority("play.pokemonshowdown.com")
-                    .appendPath("sprites")
-        }
-
-        private fun segment(shiny: Boolean, back: Boolean) = path + if (back) "-back" else "" +
-                if (shiny) "-shiny" else ""
     }
 
     companion object {
