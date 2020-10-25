@@ -330,7 +330,20 @@ class BattleRoomMessageObserver(service: ShowdownService)
         val reason = msg.nextArg
         val move = msg.nextArgSafe
         val text = battleTextBuilder.cant(pokemonId, reason, move, msg.kwargs["of"])
-        actionQueue.enqueueMajorAction { displayMajorActionMessage(text) }
+        actionQueue.enqueueMajorAction {
+            when (reason) {
+                "par" -> onDisplayBattleToast(pokemonId,"Paralyzed", Colors.TYPE_ELECTRIC)
+                "frz" -> onDisplayBattleToast(pokemonId,"Frozen", Colors.TYPE_ICE)
+                "slp" -> onDisplayBattleToast(pokemonId,"Asleep", Colors.TYPE_NORMAL)
+                "truant" -> onDisplayBattleToast(pokemonId,"Loafing around", Colors.GRAY)
+                "recharge" -> onDisplayBattleToast(pokemonId,"Must recharge", Colors.GRAY)
+                "focuspunch" -> onDisplayBattleToast(pokemonId,"Lost focus", Colors.GRAY)
+                "shelltrap" -> onDisplayBattleToast(pokemonId,"Trap failed", Colors.GRAY)
+                "flinch" -> onDisplayBattleToast(pokemonId,"Flinched", Colors.GRAY)
+                "attract" -> onDisplayBattleToast(pokemonId,"Immobilized", Colors.GRAY)
+            }
+            displayMajorActionMessage(text)
+        }
     }
 
     // |swap|p2a: Dugtrio|1|[from] move: Ally Switch
