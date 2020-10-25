@@ -19,7 +19,6 @@ import com.majeur.psclient.model.pokemon.BasePokemon
 import com.majeur.psclient.util.addIfNotIn
 import com.majeur.psclient.util.sp
 import com.majeur.psclient.util.toId
-import timber.log.Timber
 import kotlin.math.roundToInt
 
 @SuppressLint("RtlHardcoded")
@@ -93,7 +92,6 @@ class PlayerInfoView @JvmOverloads constructor(context: Context?, attrs: Attribu
     }
 
     fun appendPokemon(pokemon: BasePokemon, dexIcon: Drawable) {
-        Timber.d("Append poke ${pokemon.baseSpecies}")
         if (!pokemonIds.addIfNotIn(pokemon.baseSpecies.toId())) return
         val i = if (isGravityRight) SUFFIX_OFFSET + MAX_TEAM_SIZE - pokemonIds.size else spannableBuilder.length - MAX_TEAM_SIZE - SUFFIX_OFFSET + pokemonIds.size - 1
         val previousSpan = spannableBuilder.getSpans(i, i + 1, ImageSpan::class.java)[0]
@@ -105,7 +103,6 @@ class PlayerInfoView @JvmOverloads constructor(context: Context?, attrs: Attribu
     }
 
     fun updatePokemon(pokemon: BasePokemon, dexIcon: Drawable) {
-        Timber.d("Update poke ${pokemon.baseSpecies}")
         if (!pokemonIds.contains(pokemon.baseSpecies.toId())) {
             appendPokemon(pokemon, dexIcon)
             return
@@ -121,7 +118,6 @@ class PlayerInfoView @JvmOverloads constructor(context: Context?, attrs: Attribu
     }
 
     fun setPokemonFainted(pokemon: BasePokemon?) {
-        Timber.d("Faint poke ${pokemon?.baseSpecies ?: "null"}")
         if (pokemon == null || !pokemonIds.contains(pokemon.baseSpecies.toId())) return
         val index = pokemonIds.indexOf(pokemon.baseSpecies.toId())
         val i = if (isGravityRight) SUFFIX_OFFSET + MAX_TEAM_SIZE - (index + 1) else spannableBuilder.length - MAX_TEAM_SIZE - SUFFIX_OFFSET + index
