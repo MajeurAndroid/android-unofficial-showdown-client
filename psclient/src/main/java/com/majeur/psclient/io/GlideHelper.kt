@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.net.Uri
-import android.view.ViewGroup
 import android.view.ViewPropertyAnimator
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.DecelerateInterpolator
@@ -21,6 +20,7 @@ import com.majeur.psclient.util.Utils
 import com.majeur.psclient.util.glide.AnimatedImageViewTarget
 import com.majeur.psclient.util.html.Html
 import com.majeur.psclient.util.minusFirst
+import com.majeur.psclient.widget.BattleLayout
 import java.util.concurrent.ExecutionException
 import kotlin.math.roundToInt
 
@@ -57,8 +57,8 @@ class GlideHelper(context: Context) {
 
     private val glide = Glide.with(context)
 
-    fun loadBattleSprite(pokemon: BattlingPokemon, imageView: ImageView, fieldWidth: Int) {
-        val spriteId = if (pokemon.transformSpecies != null) pokemon.transformSpecies!! else pokemon.spriteId
+    fun loadBattleSprite(pokemon: BattlingPokemon, imageView: ImageView) {
+        val spriteId = pokemon.transformSpecies ?: pokemon.spriteId
         loadSprite(spriteId, pokemon.trainer, pokemon.shiny, true,
                 SpriteType.D3ANIMATED, SpriteType.D2ANIMATED, SpriteType.D2)
             .into(object : AnimatedImageViewTarget(imageView) {
@@ -81,11 +81,12 @@ class GlideHelper(context: Context) {
             }
 
             override fun setResource(resource: Drawable) {
-                var scale = (fieldWidth * MAGIC_SCALE).roundToInt()
-                if (!pokemon.foe) scale = (scale * 1.5f).roundToInt()
+                val fieldWidth = (imageView.parent as BattleLayout).width
+                var scale = fieldWidth * MAGIC_SCALE
+                if (!pokemon.foe) scale *= 1.5f
                 imageView.layoutParams.apply {
-                    width = resource.intrinsicWidth * scale
-                    height = resource.intrinsicHeight * scale
+                    width = (resource.intrinsicWidth * scale).roundToInt()
+                    height = (resource.intrinsicHeight * scale).roundToInt()
                 }
                 imageView.setImageDrawable(resource) // Will request a layout
             }
@@ -93,16 +94,27 @@ class GlideHelper(context: Context) {
     }
 
     fun loadPreviewSprite(player: Player, pokemon: BasePokemon, imageView: ImageView) {
-        val layoutParams = imageView.layoutParams
-        layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
-        layoutParams.width = layoutParams.height
-        loadSprite(pokemon.spriteId, player == Player.TRAINER, false, false,
-                SpriteType.D3ANIMATED, SpriteType.D2ANIMATED, SpriteType.D2).into(imageView)
+        loadSprite(pokemon.spriteId, player == Player.TRAINER, false, true,
+                SpriteType.D3ANIMATED, SpriteType.D2ANIMATED, SpriteType.D2)
+                .into(object : AnimatedImageViewTarget(imageView) {
+                    override fun onInitInAnimation(viewPropertyAnimator: ViewPropertyAnimator) = Unit
+                    override fun onInitOutAnimation(viewPropertyAnimator: ViewPropertyAnimator) = Unit
+
+                    override fun setResource(resource: Drawable) {
+                        val fieldWidth = (imageView.parent as BattleLayout?)?.width ?: 0
+                        val scale = fieldWidth * MAGIC_SCALE
+                        imageView.layoutParams.apply {
+                            width = (resource.intrinsicWidth * scale).roundToInt()
+                            height = (resource.intrinsicHeight * scale).roundToInt()
+                        }
+                        imageView.setImageDrawable(resource) // Will request a layout
+                    }
+                })
     }
 
-    fun loadDexSprite(pokemon: BasePokemon, shiny: Boolean, imageView: ImageView?) {
+    fun loadDexSprite(pokemon: BasePokemon, shiny: Boolean, imageView: ImageView) {
         loadSprite(pokemon.spriteId, false, shiny, true, SpriteType.DEX, SpriteType.D2)
-                .into(imageView!!)
+                .into(imageView)
     }
 
     fun loadAvatar(avatar: String, imageView: ImageView) {

@@ -575,7 +575,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
         binding.battleLayout.getPokemonView(pokemon.id)?.apply {
             setTag(R.id.battle_data_tag, pokemon)
             battleTipPopup.addTippedView(this)
-            glideHelper.loadBattleSprite(pokemon, this, binding.battleLayout.width)
+            glideHelper.loadBattleSprite(pokemon, this)
         }
         fragmentScope.launch {
             assetLoader.dexIcon(pokemon.species.toId())?.let {
@@ -589,7 +589,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
     @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
     override fun onDetailsChanged(pokemon: BattlingPokemon) {
         binding.battleLayout.getPokemonView(pokemon.id)?.let {
-            glideHelper.loadBattleSprite(pokemon, it, binding.battleLayout.width)
+            glideHelper.loadBattleSprite(pokemon, it)
         }
         fragmentScope.launch {
             assetLoader.dexIcon(pokemon.species.toId())?.let {
