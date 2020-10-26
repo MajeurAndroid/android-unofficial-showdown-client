@@ -5,7 +5,6 @@ import android.text.Spannable
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.ForegroundColorSpan
-import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -48,8 +47,8 @@ class PrivateChatDialog : DialogFragment() {
         binding.apply {
             title.text = "Private chat: $chatWith"
             chatLog.setText("", TextView.BufferType.SPANNABLE)
-            messageInput.setOnEditorActionListener { v: TextView?, actionId: Int, _: KeyEvent? ->
-                if (actionId == EditorInfo.IME_ACTION_GO) {
+            messageInput.setOnEditorActionListener { _, actionId, _ ->
+                if (actionId == EditorInfo.IME_ACTION_SEND) {
                     sendMessageIfAny()
                     return@setOnEditorActionListener true
                 }
