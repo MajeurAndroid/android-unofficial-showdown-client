@@ -5,15 +5,20 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.text.Editable;
+import android.text.Layout;
 import android.text.Spannable;
 import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.ClickableSpan;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
 import android.text.style.TypefaceSpan;
 import android.text.style.URLSpan;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ScrollView;
+import android.widget.TextView;
 import com.majeur.psclient.model.common.Colors;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -45,6 +50,40 @@ public class Utils {
         int slop = dpToPx(14);
         int diff = (child.getBottom() - slop - (scrollView.getHeight() + scrollView.getScrollY()));
         return diff <= 0;
+    }
+
+    // LinkMovementMethod is not compatible with nested scroll, this fix allow us to effectively consume
+    // textview's touch events only if a link is clicked.
+    // See https://stackoverflow.com/questions/8558732/listview-textview-with-linkmovementmethod-makes-list-item-unclickable
+    public static boolean delegateTouchEventForLinkClick(TextView widget, MotionEvent event) {
+        Spanned buffer = (Spanned) widget.getText();
+        int action = event.getAction();
+
+        if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_DOWN) {
+            int x = (int) event.getX();
+            int y = (int) event.getY();
+
+            x -= widget.getTotalPaddingLeft();
+            y -= widget.getTotalPaddingTop();
+
+            x += widget.getScrollX();
+            y += widget.getScrollY();
+
+            Layout layout = widget.getLayout();
+            int line = layout.getLineForVertical(y);
+            int off = layout.getOffsetForHorizontal(line, x);
+
+            ClickableSpan[] links = buffer.getSpans(off, off, ClickableSpan.class);
+
+            if (links.length != 0) {
+                ClickableSpan link = links[0];
+                if (action == MotionEvent.ACTION_UP) {
+                    link.onClick(widget);
+                }
+                return true;
+            }
+        }
+        return false;
     }
 
     public static int hashColor(String string) {

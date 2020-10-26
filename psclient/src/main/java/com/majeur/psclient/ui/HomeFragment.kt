@@ -13,6 +13,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.AdapterView.OnItemSelectedListener
+import android.widget.AdapterView.VISIBLE
 import android.widget.ImageView
 import android.widget.ScrollView
 import android.widget.TextView
@@ -180,6 +181,13 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
                 }
             }
         }
+
+        binding.news.apply {
+            alpha = 0f
+            translationY = Float.MIN_VALUE
+            visibility = View.GONE
+        }
+
         binding.cancelButton.setOnClickListener(this)
         binding.searchButton.setOnClickListener(this)
         binding.userSearchButton.setOnClickListener(this)
@@ -516,6 +524,19 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         if (!service.isConnected) {
             makeSnackbar("Connecting to Showdown server...", indefinite = true)
             service.connectToServer()
+        }
+        fragmentScope.launch {
+            val latestNews = service.retrieveLatestNews()?.getJSONObject(0)?.let { NewsDialog.News(it) } ?: return@launch
+            binding.news.apply {
+                text = latestNews.title.bold() concat " - " concat latestNews.content
+                isSelected = true
+                visibility = VISIBLE
+                animate().alpha(1f).translationY(0f)
+                setOnClickListener {
+                    if (childFragmentManager.findFragmentByTag(NewsDialog.FRAGMENT_TAG) == null)
+                        NewsDialog().show(childFragmentManager, NewsDialog.FRAGMENT_TAG)
+                }
+            }
         }
     }
 

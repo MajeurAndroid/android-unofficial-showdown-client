@@ -21,6 +21,18 @@
         android:orientation="vertical"
         android:gravity="center_horizontal">
 
+        <TextView
+            android:id="@+id/news"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/secondary"
+            android:paddingVertical="4dp"
+            android:paddingHorizontal="2dp"
+            android:textColor="@color/onSecondary"
+            android:singleLine="true"
+            android:ellipsize="marquee"
+            android:fadingEdge="horizontal"/>
+
         <com.google.android.material.card.MaterialCardView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

@@ -377,19 +377,7 @@ class ShowdownService : Service() {
             if (page > 0) addQueryParameter("page", page.toString())
             build()
         }
-        val request = Request.Builder()
-                .url(url)
-                .build()
-        val rawJson = withContext(Dispatchers.IO) {
-            val response = try {
-                okHttpClient.newCall(request).execute()
-            } catch (e: IOException) {
-                Timber.e(e)
-                null
-            }
-            response?.body()?.string() ?: ""
-        }
-
+        val rawJson = rawCall(url) ?: ""
         return try {
             JSONArray(rawJson)
         } catch (e: JSONException) {
@@ -398,28 +386,33 @@ class ShowdownService : Service() {
         }
     }
 
-    suspend fun retrieveNews(): JSONArray? {
+    suspend fun retrieveLatestNews(): JSONArray? {
         val url = HttpUrl.Builder().run {
             scheme("https")
             host("pokemonshowdown.com")
             addPathSegment("news.json")
             build()
         }
-        val request = Request.Builder()
-                .url(url)
-                .build()
-        val rawJson = withContext(Dispatchers.IO) {
-            val response = try {
-                okHttpClient.newCall(request).execute()
-            } catch (e: IOException) {
-                Timber.e(e)
-                null
-            }
-            response?.body()?.string() ?: ""
-        }
-
+        val rawJson = rawCall(url) ?: ""
         return try {
             JSONArray(rawJson)
+        } catch (e: JSONException) {
+            Timber.e(e)
+            null
+        }
+    }
+
+    suspend fun retrieveNews(newsId: Int): JSONObject? {
+        val url = HttpUrl.Builder().run {
+            scheme("https")
+            host("pokemonshowdown.com")
+            addPathSegment("news")
+            addPathSegment("$newsId.json")
+            build()
+        }
+        val rawJson = rawCall(url) ?: ""
+        return try {
+            JSONObject(rawJson)
         } catch (e: JSONException) {
             Timber.e(e)
             null
