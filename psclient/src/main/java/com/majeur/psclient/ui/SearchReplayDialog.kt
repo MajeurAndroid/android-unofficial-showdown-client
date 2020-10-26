@@ -1,27 +1,21 @@
 package com.majeur.psclient.ui
 
-import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import androidx.core.view.ViewCompat
-import androidx.core.view.children
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.majeur.psclient.R
 import com.majeur.psclient.databinding.DialogSearchReplayBinding
-import com.majeur.psclient.util.bold
-import com.majeur.psclient.util.concat
-import com.majeur.psclient.util.italic
-import com.majeur.psclient.util.toId
+import com.majeur.psclient.util.*
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
@@ -199,22 +193,6 @@ class SearchReplayDialog : BottomSheetDialogFragment(), AdapterView.OnItemClickL
             view.findViewById<TextView>(android.R.id.text2).text = "[${replay.format}] " concat replay.timeFromNow().italic()
             return view
         }
-    }
-
-    class NestedScrollLikeTouchListener : View.OnTouchListener {
-
-        @SuppressLint("ClickableViewAccessibility")
-        override fun onTouch(view: View, event: MotionEvent): Boolean {
-            var preventParentScroll = false
-            if ((view as ListView).childCount > 0) {
-                val isOnTop = view.firstVisiblePosition == 0 && view.children.first().top == view.paddingTop
-                val allItemsVisible = isOnTop && view.lastVisiblePosition == view.childCount
-                preventParentScroll = !isOnTop && !allItemsVisible
-            }
-            view.parent.requestDisallowInterceptTouchEvent(preventParentScroll)
-            return view.onTouchEvent(event)
-        }
-
     }
 
     private class Replay(json: JSONObject) {

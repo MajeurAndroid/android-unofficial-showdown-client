@@ -1,14 +1,14 @@
 package com.majeur.psclient.ui
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import android.text.Editable
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.widget.*
-import androidx.core.view.children
+import android.widget.AdapterView
+import android.widget.BaseAdapter
+import android.widget.ListAdapter
+import android.widget.Toast
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.majeur.psclient.databinding.DialogJoinRoomBinding
 import com.majeur.psclient.databinding.ListFooterOtherRoomBinding
@@ -40,11 +40,13 @@ class JoinChatRoomDialog : BottomSheetDialogFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        binding.list.adapter = listAdapter
-        binding.list.setOnTouchListener(NestedScrollLikeTouchListener())
-        binding.list.onItemClickListener = AdapterView.OnItemClickListener { _, _, index, _ ->
-            val roomInfo = listAdapter.getItem(index) as ChatRoomInfo
-            joinRoom(roomInfo.name)
+        binding.list.apply {
+            adapter = listAdapter
+            setOnTouchListener(NestedScrollLikeTouchListener())
+            onItemClickListener = AdapterView.OnItemClickListener { _, _, index, _ ->
+                val roomInfo = listAdapter.getItem(index) as ChatRoomInfo
+                joinRoom(roomInfo.name)
+            }
         }
         val footerBinding = ListFooterOtherRoomBinding.inflate(layoutInflater, binding.list, false)
         footerBinding.button.setOnClickListener(View.OnClickListener {
@@ -125,22 +127,6 @@ class JoinChatRoomDialog : BottomSheetDialogFragment() {
         }
 
         override fun getItemId(i: Int) = 0L
-    }
-
-    class NestedScrollLikeTouchListener : View.OnTouchListener {
-
-        @SuppressLint("ClickableViewAccessibility")
-        override fun onTouch(view: View, event: MotionEvent): Boolean {
-            var preventParentScroll = false
-            if ((view as ListView).childCount > 0) {
-                val isOnTop = view.firstVisiblePosition == 0 && view.children.first().top == view.paddingTop
-                val allItemsVisible = isOnTop && view.lastVisiblePosition == view.childCount
-                preventParentScroll = !isOnTop && !allItemsVisible
-            }
-            view.parent.requestDisallowInterceptTouchEvent(preventParentScroll)
-            return view.onTouchEvent(event)
-        }
-
     }
 
     companion object {
