@@ -132,8 +132,5 @@ class SignInDialog : DialogFragment(), View.OnClickListener, AttemptSignInCallba
     companion object {
         val NAME_REGEX = "[|,;]".toRegex()
         const val FRAGMENT_TAG = "sign-in-dialog"
-        fun newInstance(): SignInDialog {
-            return SignInDialog()
-        }
     }
 }

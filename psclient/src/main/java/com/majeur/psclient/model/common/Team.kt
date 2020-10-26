@@ -137,8 +137,8 @@ class Team private constructor(
 //        return newLabel;
         }
 
-        fun dummyTeam(label: String): Team {
-            val pokemons = (1..6).map { TeamPokemon.dummyPokemon() }
+        fun dummyTeam(label: String, dummyPokes: Boolean = true): Team {
+            val pokemons = if (dummyPokes) (1..6).map { TeamPokemon.dummyPokemon() } else emptyList()
             return Team(label, pokemons, null)
         }
 

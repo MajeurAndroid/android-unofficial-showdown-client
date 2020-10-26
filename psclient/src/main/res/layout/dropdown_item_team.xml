@@ -5,7 +5,8 @@
     android:layout_height="wrap_content"
     android:minHeight="?attr/listPreferredItemHeight"
     android:paddingVertical="8dp"
-    android:paddingHorizontal="8dp">
+    android:paddingStart="16dp"
+    android:paddingEnd="8dp">
 
     <TextView
         android:id="@+id/text_view_title"

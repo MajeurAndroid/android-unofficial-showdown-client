@@ -36,7 +36,7 @@ import java.util.*
 
 class TeamsFragment : BaseFragment(), OnItemClickListener {
 
-    val teams: List<Team.Group> get() = groups
+    val teams: List<Team.Group> get() = groups.toList()
 
     private lateinit var teamsStore: TeamsStore
     private lateinit var assetLoader: AssetLoader
@@ -222,7 +222,7 @@ class TeamsFragment : BaseFragment(), OnItemClickListener {
             adapterPosition = listAdapter.getItemPosition(newTeam)
             listAdapter.notifyItemInserted(adapterPosition)
         }
-        homeFragment.updateTeamSpinner()
+        homeFragment.onTeamsChanged()
         if (persistTeams) persistUserTeams()
     }
 
@@ -239,7 +239,7 @@ class TeamsFragment : BaseFragment(), OnItemClickListener {
             }
             break
         }
-        homeFragment.updateTeamSpinner()
+        homeFragment.onTeamsChanged()
         persistUserTeams()
     }
 

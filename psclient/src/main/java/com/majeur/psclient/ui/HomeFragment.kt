@@ -42,7 +42,6 @@ import com.majeur.psclient.widget.PrivateMessagesOverviewWidget.OnItemClickListe
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.util.*
 
 class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnClickListener {
 
@@ -195,8 +194,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
             binding.loginButton -> {
                 val myUsername = service?.getSharedData<String?>("myusername")?.substring(1)
                 if (myUsername?.toLowerCase()?.startsWith("guest") == true) {
-                    if (parentFragmentManager.findFragmentByTag(SignInDialog.FRAGMENT_TAG) == null)
-                        SignInDialog.newInstance().show(parentFragmentManager, SignInDialog.FRAGMENT_TAG)
+                    promptUserSignIn()
                 } else {
                     service?.sendGlobalCommand("logout")
                     service?.forgetUserLoginInfos()
@@ -204,8 +202,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
             }
             binding.searchButton -> {
                 if (observer.isUserGuest) {
-                    if (parentFragmentManager.findFragmentByTag(SignInDialog.FRAGMENT_TAG) == null)
-                        SignInDialog.newInstance().show(parentFragmentManager, SignInDialog.FRAGMENT_TAG)
+                    promptUserSignIn()
                 } else {
 
                     if (battleFragment.battleRunning) {
@@ -247,11 +244,6 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
                 else -> service?.sendGlobalCommand("cancelsearch")
             }
             binding.userSearchButton -> {
-                if (observer.isUserGuest) {
-                    if (parentFragmentManager.findFragmentByTag(SignInDialog.FRAGMENT_TAG) == null)
-                        SignInDialog.newInstance().show(parentFragmentManager, SignInDialog.FRAGMENT_TAG)
-                    return
-                }
                 val dialogBinding = DialogBattleMessageBinding.inflate(layoutInflater)
                 dialogBinding.editTextTeamName.hint = "Type a username"
                 MaterialAlertDialogBuilder(requireActivity())
@@ -282,6 +274,11 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         }
     }
 
+    private fun promptUserSignIn() {
+        if (childFragmentManager.findFragmentByTag(SignInDialog.FRAGMENT_TAG) == null)
+            SignInDialog().show(childFragmentManager, SignInDialog.FRAGMENT_TAG)
+    }
+
     private fun openUrl(url: String, useChrome: Boolean) {
         try {
             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
@@ -300,40 +297,40 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         currentBattleFormat = battleFormat
         if (!fromUser) {
             val adapter = binding.formatsSelector.adapter as CategoryAdapter
-            val count = adapter.count
-            for (position in 0 until count) {
+            for (position in 0 until adapter.count) {
                 if (adapter.getItem(position) == battleFormat) binding.formatsSelector.setSelection(position)
             }
         }
         updateTeamSpinner()
     }
 
-    fun updateTeamSpinner() {
-        if (currentBattleFormat == null) return
+    fun onTeamsChanged() {
+        updateTeamSpinner(maintainSelection = true)
+    }
+
+    private fun updateTeamSpinner(maintainSelection: Boolean = false) {
+        val battleFormat = currentBattleFormat ?: return
         val adapter = binding.teamsSelector.adapter as CategoryAdapter
-        adapter.clearItems()
         if (currentBattleFormat?.isTeamNeeded == true) {
-            val teamGroups = teamsFragment.teams
-            var matchingFormatGroupIndex = -1
-            var otherFormatGroupIndex = -1
-            for (i in teamGroups.indices) {
-                val id = teamGroups[i].format.toId()
-                if (BattleFormat.FORMAT_OTHER.toId() == id) otherFormatGroupIndex = i
-                if (currentBattleFormat!!.toId() == id) matchingFormatGroupIndex = i
-            }
-            if (matchingFormatGroupIndex != -1) Collections.swap(teamGroups,
-                    matchingFormatGroupIndex, 0)
-            if (otherFormatGroupIndex != -1) Collections.swap(teamGroups, otherFormatGroupIndex,
-                    if (matchingFormatGroupIndex == -1) 0 else 1)
-            for (group in teamGroups) {
+            val previousSelection = if (maintainSelection) binding.teamsSelector.selectedItem as? Team else null
+            adapter.clearItems()
+            val matches = arrayOf(battleFormat.toId().removeSuffix("blitz"), BattleFormat.FORMAT_OTHER.toId())
+            teamsFragment.teams.filter { matches.contains(it.format.toId()) }.forEach { group ->
                 adapter.addItem(group)
                 adapter.addItems(group.teams)
             }
+            if (adapter.count == 0) adapter.addItem(Team.dummyTeam("You have no teams", false))
             binding.teamsSelector.apply {
-                isEnabled = true
-                setSelection(1)
+                isEnabled = adapter.count > 1
+                if (maintainSelection && previousSelection != null) {
+                    setSelection(adapter.findItemIndex { (it as? Team)?.uniqueId == previousSelection.uniqueId }
+                            .takeIf { it > 0 } ?: if (adapter.count > 1) 1 else 0)
+                } else {
+                    setSelection(if (adapter.count > 1) 1 else 0) // Skip first group label
+                }
             }
         } else {
+            adapter.clearItems()
             adapter.addItem(Team.dummyTeam("Random"))
             binding.teamsSelector.apply {
                 isEnabled = false
@@ -436,7 +433,6 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         }
     }
 
-
     fun startPrivateChat(user: String) {
         val myUsername = service?.getSharedData<String?>("myusername")?.substring(1)
         if (user == myUsername) {
@@ -477,8 +473,8 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
             text = label
             isEnabled = enabled
         }
-        binding.teamsSelector.isEnabled = enabled
         binding.formatsSelector.isEnabled = enabled
+        binding.teamsSelector.apply { if (isEnabled && !enabled) isEnabled = false }
         val isCancelShown = binding.cancelButton.isShown
         if (isCancelShown != showCancel) {
             if (showCancel) binding.cancelButton.apply {
@@ -550,7 +546,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
             binding.loginButton.setImageResource(R.drawable.ic_logout)
             makeSnackbar("Connected as $userName")
         }
-        val signInDialog = parentFragmentManager.findFragmentByTag(SignInDialog.FRAGMENT_TAG) as SignInDialog?
+        val signInDialog = childFragmentManager.findFragmentByTag(SignInDialog.FRAGMENT_TAG) as SignInDialog?
         signInDialog?.dismissAllowingStateLoss()
     }
 
@@ -718,11 +714,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
             notifyNewMessageReceived()
         }
         if (isAcceptingChallenge) {
-            var done = true
-            for (user in from.keys) if (isAcceptingFrom == user) {
-                done = false
-                break
-            }
+            val done = !from.keys.contains(isAcceptingFrom)
             if (done) {
                 isAcceptingChallenge = false
                 isAcceptingFrom = null

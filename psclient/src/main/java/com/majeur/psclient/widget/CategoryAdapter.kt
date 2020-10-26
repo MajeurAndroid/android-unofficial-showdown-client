@@ -28,6 +28,9 @@ abstract class CategoryAdapter(context: Context?) : BaseAdapter() {
         notifyDataSetChanged()
     }
 
+    fun findItemIndex(item: Any) = mSpinnerItems.indexOf(item)
+    fun findItemIndex(predicate: (Any) -> Boolean) = mSpinnerItems.indexOfFirst(predicate)
+
     override fun getCount() = mSpinnerItems.size
 
     protected abstract fun isCategoryItem(position: Int): Boolean
