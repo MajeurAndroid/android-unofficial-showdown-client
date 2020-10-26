@@ -19,7 +19,7 @@
             android:id="@+id/button_challenge"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="end"
+            android:layout_gravity="end|center_vertical"
             android:text="Challenge"
             style="@style/Widget.MaterialComponents.Button.TextButton"/>
 

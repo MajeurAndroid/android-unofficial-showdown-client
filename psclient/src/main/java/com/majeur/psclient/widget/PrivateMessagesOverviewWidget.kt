@@ -38,7 +38,7 @@ class PrivateMessagesOverviewWidget @JvmOverloads constructor(context: Context?,
     }
 
     fun updateChallengeTo(to: String?, format: String?) = entries.forEach { entry ->
-        if (entry.with == to) { // We are currently challenging this user
+        if (entry.matchWith(to)) { // We are currently challenging this user
             entry.challengeFormat = format
             entry.challengeFromMe = true
             updateViewForEntry(entry)
@@ -64,8 +64,8 @@ class PrivateMessagesOverviewWidget @JvmOverloads constructor(context: Context?,
                 updateViewForEntry(this)
             }
         }
-        entries.forEach { entry -> // Resetting (or removing) entries that are not challenging us anymore
-            if (!entry.challengeFromMe && !users.contains(entry.with)) {
+        entries.forEach { entry -> // Resetting (or removing) entries that are no longer challenging us
+            if (!entry.challengeFromMe && !users.contains(entry.with.toId())) {
                 entry.challengeFormat = null
                 entry.challengeFromMe = false
                 if (entry.pmCount > 0) updateViewForEntry(entry) else removeViewForEntry(entry)
@@ -73,11 +73,11 @@ class PrivateMessagesOverviewWidget @JvmOverloads constructor(context: Context?,
         }
     }
 
-    private fun getEntryOrCreate(with: String) = entries.firstOrNull { it.with == with } ?: Entry(with).also {
+    private fun getEntryOrCreate(with: String) = entries.find { it.matchWith(with) } ?: Entry(with).also { entry ->
         val view = layoutInflater.inflate(R.layout.list_item_pmentry, this, false) as ViewGroup
         view.setOnClickListener(this)
         view.findViewById<View>(R.id.button_challenge).setOnClickListener(this)
-        view.tag = it
+        view.tag = entry
         addView(view)
     }
 
@@ -97,7 +97,7 @@ class PrivateMessagesOverviewWidget @JvmOverloads constructor(context: Context?,
             } else { // This user is challenging us
                 button.text = "Accept"
                 button.isEnabled = true
-                label.append(" is challenging you !".color(colorSecondary).small() concat
+                label.append(" wants to battle!".color(colorSecondary).small() concat
                         "\n" concat resolveFormat(entry.challengeFormat!!).small())
             }
         }
@@ -108,7 +108,7 @@ class PrivateMessagesOverviewWidget @JvmOverloads constructor(context: Context?,
 
     private fun resolveFormat(format: String): String { // This can be done in a nicer way
         val activity = context as MainActivity
-        val formats = activity.service!!.getSharedData<List<BattleFormat.Category>>("formats")
+        val formats = activity.service?.getSharedData<List<BattleFormat.Category>>("formats")
         return if (formats != null) resolveName(formats, format) else format
     }
 
@@ -141,5 +141,14 @@ class PrivateMessagesOverviewWidget @JvmOverloads constructor(context: Context?,
         // If challengeFormat is not null, challengeFromMe means that I am challenging 'with', else 'with' is challenging me
         var challengeFromMe = false
 
+        fun matchWith(with: String?): Boolean {
+            if (with == null) return false
+            if (this.with.toId() == with.toId()) {
+                // Try to get the fullname of with instead of the toId() version
+                if (with.length > this.with.length || with.toLowerCase() == this.with) this.with = with
+                return true
+            }
+            return false
+        }
     }
 }

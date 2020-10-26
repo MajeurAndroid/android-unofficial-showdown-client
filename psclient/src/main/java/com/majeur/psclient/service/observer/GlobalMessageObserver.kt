@@ -18,6 +18,7 @@ class GlobalMessageObserver(service: ShowdownService)
     override val interceptCommandBefore = setOf("init", "noinit")
     override val interceptCommandAfter = setOf("deinit")
 
+    val myUsername get() = service.getSharedData<String>("myusername")?.drop(1)
     var isUserGuest: Boolean = true
         private set
 
@@ -87,10 +88,8 @@ class GlobalMessageObserver(service: ShowdownService)
         onUserChanged(username, isGuest, avatar)
 
         // Update server counts (active battle and active users)
-        service.let {
-            requestServerCountsOnly = true
-            it.sendGlobalCommand("cmd", "rooms")
-        }
+        requestServerCountsOnly = true
+        service.sendGlobalCommand("cmd", "rooms")
 
         // onSearchBattlesChanged(new String[0], new String[0], new String[0]); TODO Wtf was this call ?
     }

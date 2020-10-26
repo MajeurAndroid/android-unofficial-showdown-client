@@ -192,8 +192,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         if (service?.isConnected != true) return
         when (view) {
             binding.loginButton -> {
-                val myUsername = service?.getSharedData<String?>("myusername")?.substring(1)
-                if (myUsername?.toLowerCase()?.startsWith("guest") == true) {
+                if (observer.isUserGuest) {
                     promptUserSignIn()
                 } else {
                     service?.sendGlobalCommand("logout")
@@ -434,8 +433,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
     }
 
     fun startPrivateChat(user: String) {
-        val myUsername = service?.getSharedData<String?>("myusername")?.substring(1)
-        if (user == myUsername) {
+        if (user.toId() == observer.myUsername?.toId()) {
             makeSnackbar("Cannot talk to yourself")
             return
         }
@@ -444,14 +442,13 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         dialog.show(parentFragmentManager, PrivateChatDialog.FRAGMENT_TAG)
     }
 
-    fun getPrivateMessages(with: String?): List<String>? {
-        return observer.getPrivateMessages(with!!)
+    fun getPrivateMessages(with: String): List<String>? {
+        return observer.getPrivateMessages(with)
     }
 
     fun challengeSomeone(user: String) {
-        val myUsername = service?.getSharedData<String?>("myusername")?.substring(1)
         when {
-            user == myUsername -> makeSnackbar("You should try challenging yourself in an other way")
+            user.toId() == observer.myUsername?.toId() -> makeSnackbar("You should try challenging yourself in an other way")
             isChallengingSomeone -> makeSnackbar("You are already challenging someone")
             isSearchingBattle -> makeSnackbar("Cannot challenge someone while searching for battle")
             isAcceptingChallenge -> makeSnackbar("You are already accepting a challenge")
@@ -699,7 +696,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         binding.pmsOverview.incrementPmCount(with)
         if (!binding.pmsOverview.isEmpty) binding.pmsContainer.visibility = View.VISIBLE
         val dialog = parentFragmentManager.findFragmentByTag(PrivateChatDialog.FRAGMENT_TAG) as PrivateChatDialog?
-        if (dialog?.chatWith == with) dialog.onNewMessage(message) else notifyNewMessageReceived()
+        if (dialog?.chatWith?.toId() == with.toId()) dialog.onNewMessage(message) else notifyNewMessageReceived()
     }
 
     override fun onChallengesChange(to: String?, format: String?, from: Map<String, String>) {
