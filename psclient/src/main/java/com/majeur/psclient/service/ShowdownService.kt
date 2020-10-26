@@ -10,7 +10,10 @@ import com.majeur.psclient.service.observer.BattleRoomMessageObserver
 import com.majeur.psclient.service.observer.ChatRoomMessageObserver
 import com.majeur.psclient.service.observer.GlobalMessageObserver
 import com.majeur.psclient.util.S
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okhttp3.*
+import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import timber.log.Timber
@@ -26,7 +29,7 @@ class ShowdownService : Service() {
         private const val SHOWDOWN_SOCKET_URL = "wss://sim3.psim.us/showdown/websocket"
     }
 
-    lateinit var okHttpClient: OkHttpClient
+    internal lateinit var okHttpClient: OkHttpClient
         private set
 
     private lateinit var binder: Binder
@@ -231,12 +234,12 @@ class ShowdownService : Service() {
                             sendTrnMessage(resultJson.getString("username"),
                                     resultJson.getString("assertion"))
                     } catch (e: JSONException) {
-                        Timber.e(e,"Error while parsing assertion json.")
+                        Timber.e(e, "Error while parsing assertion json.")
                     }
                 }
 
                 override fun onFailure(call: Call, e: IOException) {
-                    Timber.e(e,"Call failed.")
+                    Timber.e(e, "Call failed.")
                 }
             })
         }
@@ -291,7 +294,7 @@ class ShowdownService : Service() {
 
             override fun onFailure(call: Call, e: IOException) {
                 uiHandler.post { callback.onError("An error occurred with your internet connection.") }
-                Timber.e(e,"Call failed.")
+                Timber.e(e, "Call failed.")
             }
         })
     }
@@ -326,14 +329,14 @@ class ShowdownService : Service() {
                         return
                     }
                 } catch (e: JSONException) {
-                    Timber.e(e,"Error while parsing connection result json.")
+                    Timber.e(e, "Error while parsing connection result json.")
                 }
                 uiHandler.post { callback.onError("Wrong password, please try again.") }
             }
 
             override fun onFailure(call: Call, e: IOException) {
                 uiHandler.post { callback.onError("An error occurred with your internet connection.") }
-                Timber.e(e,"Call failed.")
+                Timber.e(e, "Call failed.")
             }
         })
     }
@@ -358,11 +361,82 @@ class ShowdownService : Service() {
     }
 
     private fun retrieveAuthCookieIfAny() = getSharedPreferences("user", Context.MODE_PRIVATE)
-                .getString("token", null)?.let {
-                    String(Base64.decode(it, Base64.DEFAULT))
-                }
+            .getString("token", null)?.let {
+                String(Base64.decode(it, Base64.DEFAULT))
+            }
 
     fun forgetUserLoginInfos() = getSharedPreferences("user", Context.MODE_PRIVATE).edit().clear().apply()
+
+    suspend fun retrieveReplayList(username: String, format: String, page: Int = 0): JSONArray? {
+        val url = HttpUrl.Builder().run {
+            scheme("https")
+            host("replay.pokemonshowdown.com")
+            addPathSegment("search.json")
+            if (username.isNotBlank()) addQueryParameter("user", username)
+            if (format.isNotBlank()) addQueryParameter("format", format)
+            if (page > 0) addQueryParameter("page", page.toString())
+            build()
+        }
+        val request = Request.Builder()
+                .url(url)
+                .build()
+        val rawJson = withContext(Dispatchers.IO) {
+            val response = try {
+                okHttpClient.newCall(request).execute()
+            } catch (e: IOException) {
+                Timber.e(e)
+                null
+            }
+            response?.body()?.string() ?: ""
+        }
+
+        return try {
+            JSONArray(rawJson)
+        } catch (e: JSONException) {
+            Timber.e(e)
+            null
+        }
+    }
+
+    suspend fun retrieveNews(): JSONArray? {
+        val url = HttpUrl.Builder().run {
+            scheme("https")
+            host("pokemonshowdown.com")
+            addPathSegment("news.json")
+            build()
+        }
+        val request = Request.Builder()
+                .url(url)
+                .build()
+        val rawJson = withContext(Dispatchers.IO) {
+            val response = try {
+                okHttpClient.newCall(request).execute()
+            } catch (e: IOException) {
+                Timber.e(e)
+                null
+            }
+            response?.body()?.string() ?: ""
+        }
+
+        return try {
+            JSONArray(rawJson)
+        } catch (e: JSONException) {
+            Timber.e(e)
+            null
+        }
+    }
+
+    suspend fun rawCall(url: HttpUrl): String? = withContext(Dispatchers.IO) {
+        val request = Request.Builder()
+                .url(url)
+                .build()
+        return@withContext try {
+            okHttpClient.newCall(request).execute()
+        } catch (e: IOException) {
+            Timber.e(e)
+            null
+        }?.body()?.string()
+    }
 
     fun putSharedData(key: String, data: Any?) {
         sharedData[key] = data

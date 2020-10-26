@@ -14,13 +14,8 @@ import com.majeur.psclient.databinding.DialogImportTeamBinding
 import com.majeur.psclient.io.AssetLoader
 import com.majeur.psclient.util.smogon.SmogonTeamBuilder
 import com.majeur.psclient.util.smogon.SmogonTeamParser
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import okhttp3.HttpUrl
-import okhttp3.Request
-import timber.log.Timber
-import java.io.IOException
 
 class ImportTeamDialog : BottomSheetDialogFragment() {
 
@@ -172,18 +167,7 @@ class ImportTeamDialog : BottomSheetDialogFragment() {
 
         fragmentScope.launch {
             binding.importButton.isEnabled = false
-            val request = Request.Builder()
-                    .url(url)
-                    .build()
-            val rawTeam = withContext(Dispatchers.IO) {
-                val response = try {
-                    showdownService.okHttpClient.newCall(request).execute()
-                } catch (e: IOException) {
-                    Timber.e(e)
-                    null
-                }
-                response?.body()?.string() ?: ""
-            }
+            val rawTeam = showdownService.rawCall(url) ?: ""
             if (rawTeam.isBlank()) {
                 makeSnackbar("Response error, check your url or internet connection.")
                 binding.importButton.isEnabled = true

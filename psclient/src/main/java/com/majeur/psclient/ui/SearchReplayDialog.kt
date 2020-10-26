@@ -22,16 +22,8 @@ import com.majeur.psclient.util.bold
 import com.majeur.psclient.util.concat
 import com.majeur.psclient.util.italic
 import com.majeur.psclient.util.toId
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import okhttp3.HttpUrl
-import okhttp3.Request
-import org.json.JSONArray
-import org.json.JSONException
 import org.json.JSONObject
-import timber.log.Timber
-import java.io.IOException
 
 
 class SearchReplayDialog : BottomSheetDialogFragment(), AdapterView.OnItemClickListener {
@@ -170,36 +162,8 @@ class SearchReplayDialog : BottomSheetDialogFragment(), AdapterView.OnItemClickL
     }
 
     private suspend fun retrieveReplayList(username: String, format: String, page: Int = 0): List<Replay> {
-        val url = HttpUrl.Builder().run {
-            scheme("https")
-            host("replay.pokemonshowdown.com")
-            addPathSegment("search.json")
-            if (username.isNotBlank()) addQueryParameter("user", username)
-            if (format.isNotBlank()) addQueryParameter("format", format)
-            if (page > 0) addQueryParameter("page", page.toString())
-            build()
-        }
-        val request = Request.Builder()
-                .url(url)
-                .build()
-        val showdownService = homeFragment.mainActivity.service ?: return emptyList()
-        val rawJson = withContext(Dispatchers.IO) {
-            val response = try {
-                showdownService.okHttpClient.newCall(request).execute()
-            } catch (e: IOException) {
-                Timber.e(e)
-                null
-            }
-            response?.body()?.string() ?: ""
-        }
-
-        return try {
-            val array = JSONArray(rawJson)
-            (0 until array.length()).map { i -> Replay(array.getJSONObject(i)) }
-        } catch (e: JSONException) {
-            Timber.e(e)
-            emptyList()
-        }
+        val array = homeFragment.mainActivity.service?.retrieveReplayList(username, format, page) ?: return emptyList()
+        return (0 until array.length()).map { i -> Replay(array.getJSONObject(i)) }
     }
 
     private fun getListAdapter() = when (val adapter = binding.list.adapter) {
