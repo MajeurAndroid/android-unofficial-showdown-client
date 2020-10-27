@@ -17,10 +17,7 @@ import android.view.View
 import android.view.ViewAnimationUtils
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.DecelerateInterpolator
-import android.widget.Button
-import android.widget.CheckBox
-import android.widget.CompoundButton
-import android.widget.FrameLayout
+import android.widget.*
 import androidx.core.content.ContextCompat
 import androidx.core.view.children
 import com.majeur.psclient.R
@@ -42,6 +39,7 @@ class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: A
     private val moveButtons: MutableList<Button> = LinkedList()
     private val switchButtons: MutableList<SwitchButton> = LinkedList()
     private val movesCheckBox: CheckBox
+    private val backButton: Button
 
     private val paint: Paint
     private var contentAlpha: Float = 1f
@@ -97,11 +95,13 @@ class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: A
         repeat(6) {
             (inflater.inflate(R.layout.button_switch, this, false) as SwitchButton).apply {
                 setOnClickListener(this@BattleDecisionWidget)
-            }.also {
-                addView(it)
-                switchButtons.add(it)
+            }.also { btn ->
+                addView(btn)
+                switchButtons.add(btn)
             }
         }
+        backButton = inflater.inflate(R.layout.button_decision_back, this, false) as Button
+        addView(backButton, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT))
     }
 
     /* Layout methods */
@@ -117,10 +117,10 @@ class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: A
             var maxChildHeight = 0
             var noVisibleChild = true
             for (i in 0 until count) {
-                val child: View = moveButtons[i]
+                val child = moveButtons[i]
                 child.measure(childWidthSpec, heightMeasureSpec)
                 if (child.measuredHeight > maxChildHeight) maxChildHeight = child.measuredHeight
-                if (child.visibility == View.VISIBLE) noVisibleChild = false
+                if (child.visibility != View.GONE) noVisibleChild = false
             }
             val childHeightSpec = MeasureSpec.makeMeasureSpec(maxChildHeight, MeasureSpec.EXACTLY)
             for (i in 0 until count) {
@@ -133,9 +133,9 @@ class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: A
             val childWidthSpec = MeasureSpec.makeMeasureSpec(availableWidth / 3, MeasureSpec.EXACTLY)
             var noVisibleChild = true
             for (i in 0 until count) {
-                val child: View = switchButtons[i]
+                val child = switchButtons[i]
                 child.measure(childWidthSpec, heightMeasureSpec)
-                if (child.visibility == View.VISIBLE) noVisibleChild = false
+                if (child.visibility != View.GONE) noVisibleChild = false
             }
             if (!noVisibleChild) {
                 measuredHeight += switchButtons[0].measuredHeight
@@ -144,7 +144,11 @@ class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: A
         }
         val childWidthSpec = MeasureSpec.makeMeasureSpec(availableWidth, MeasureSpec.AT_MOST)
         movesCheckBox.measure(childWidthSpec, heightMeasureSpec)
-        if (movesCheckBox.visibility == View.VISIBLE) measuredHeight += movesCheckBox.measuredHeight
+        if (movesCheckBox.visibility != View.GONE) measuredHeight += movesCheckBox.measuredHeight
+
+        backButton.measure(childWidthSpec, childWidthSpec)
+        if (backButton.visibility != View.GONE) measuredHeight += backButton.measuredHeight
+
         setMeasuredDimension(measuredWidth, measuredHeight)
     }
 
@@ -157,7 +161,7 @@ class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: A
         var childWidth = width / N
         var childHeight = 0
         for (i in 0 until N) {
-            val child: View = moveButtons[i]
+            val child = moveButtons[i]
             if (child.visibility == View.GONE) continue
             childHeight = child.measuredHeight
             child.layout(paddingStart + i * childWidth, yOffset,
@@ -173,22 +177,25 @@ class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: A
         }
         N = switchButtons.size
         childWidth = width / (N / 2)
-        for (i in 0..2) {
-            val child: View = switchButtons[i]
+        for (i in 0 until 3) {
+            val child = switchButtons[i]
             if (child.visibility == View.GONE) continue
             childHeight = child.measuredHeight
             child.layout(paddingStart + i * childWidth, yOffset,
                     paddingStart + (i + 1) * childWidth, yOffset + childHeight)
         }
         yOffset += childHeight
-        var j: Int
         for (i in 3 until N) {
-            val child: View = switchButtons[i]
+            val child = switchButtons[i]
             childHeight = child.measuredHeight
-            j = i - 3
+            val j = i - 3
             child.layout(paddingStart + j * childWidth, yOffset,
                     paddingStart + (j + 1) * childWidth, yOffset + childHeight)
         }
+        yOffset += childHeight
+        if (backButton.visibility != GONE)
+            backButton.layout(paddingStart, yOffset, paddingStart + backButton.measuredWidth,
+                    yOffset + backButton.measuredHeight)
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -199,6 +206,10 @@ class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: A
             if (child.visibility != View.GONE) canvas.drawLine(0f, offset + child.height.toFloat(),
                     width.toFloat(), offset + child.height.toFloat(), paint)
         }
+        if (backButton.visibility != GONE)
+            canvas.drawLine(0f, backButton.top.toFloat(), width.toFloat(),
+                    backButton.top.toFloat(), paint)
+
     }
 
     /* Decision making methods */
@@ -228,8 +239,9 @@ class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: A
                 val arr = computeTargetAvailabilities(targetToChoose!!, promptStage, request.count)
                 showTargetChoice(battleTipPopup, targets, foeTargets, arr)
             }
-            if (request.teamPreview) promptStage == 0 else promptStage + 1 >= request.count -> { // Request completed
+            promptStage + 1 >= request.count || (request.teamPreview && promptStage == 0) -> { // Request completed
                 onDecisionListener.invoke(decision)
+                Toast.makeText(context, decision.build(), 0).show()
                 revealOut()
                 promptStage = 0
                 targetToChoose = null
@@ -265,6 +277,27 @@ class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: A
                         request.teamPreview)
             }
         }
+    }
+
+    private fun promptPrevious() {
+        promptStage -= 1
+
+        if (targetToChoose != null) { // We are choosing a target, get back to move/switch choices and remove out move choice
+            targetToChoose = null
+            decision.removeLastChoice()
+        } else {
+            if (decision.lastChoiceWasMoveTarget()) { // We were choosing a target, we dont remove our choice, we'll override our target choice
+                val lastMove = decision.lastChoiceMove()
+                val wasDynamax = decision.lastChoiceWasDynamax()
+                val move = request.getMoves(promptStage)?.get(lastMove - 1)
+                val target = if (wasDynamax || request.isDynamaxed(promptStage)) move?.maxMoveTarget else move?.target
+                targetToChoose = target ?: Move.Target.NORMAL
+            } else { // No taget selection involved, just get back to previous stage and remove our choice
+                promptStage -= 1 // Decrement one more time to take account of the increment in promptNext third when case
+                decision.removeLastChoice()
+            }
+        }
+        promptNext()
     }
 
     private fun showTargetChoice(battleTipPopup: BattleTipPopup, trainerTargets: List<BattlingPokemon?>,
@@ -321,6 +354,10 @@ class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: A
                 button.visibility = View.GONE
             }
         }
+        backButton.apply {
+            visibility = VISIBLE
+            setOnClickListener { promptPrevious() }
+        }
     }
 
     private fun showChoice(battleTipPopup: BattleTipPopup, moves: Array<Move>?, canMega: Boolean,
@@ -375,7 +412,7 @@ class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: A
                 visibility = View.GONE
             }
         }
-        if (isDynamaxed) toggleMaxMoves(true)
+        toggleMaxMoves(isDynamaxed)
         when {
             canMega && !decision.hasMegaChoices()-> movesCheckBox.apply {
                 visibility = View.VISIBLE
@@ -419,6 +456,13 @@ class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: A
                 setPokemonName(null)
                 setDexIcon(null)
             }
+        }
+        if (promptStage > 0 && !decision.hasOnlyPassChoice()) backButton.apply {
+            visibility = VISIBLE
+            setOnClickListener { promptPrevious() }
+        } else backButton.apply {
+            visibility = GONE
+            setOnClickListener(null)
         }
     }
 
