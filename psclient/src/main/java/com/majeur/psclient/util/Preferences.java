@@ -15,7 +15,11 @@ public class Preferences {
     }
 
     public static boolean getBoolPreference(Context context, String key) {
-        return preferences(context).getBoolean(key, false);
+        return getBoolPreference(context, key, false);
+    }
+
+    public static boolean getBoolPreference(Context context, String key, boolean def) {
+        return preferences(context).getBoolean(key, def);
     }
 
     public static void setPreference(Context context, String key, String value) {

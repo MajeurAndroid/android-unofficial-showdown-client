@@ -1,6 +1,7 @@
 package com.majeur.psclient.ui
 
 import android.annotation.SuppressLint
+import android.content.DialogInterface
 import android.os.Bundle
 import android.text.Html
 import android.text.Spanned
@@ -11,11 +12,10 @@ import android.widget.BaseAdapter
 import android.widget.TextView
 import android.widget.WrapperListAdapter
 import androidx.core.view.updatePadding
-import androidx.core.widget.TextViewCompat
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import com.majeur.psclient.R
 import com.majeur.psclient.databinding.DialogNewsBinding
 import com.majeur.psclient.databinding.ListFooterReplaysBinding
+import com.majeur.psclient.databinding.ListHeaderNewsBinding
 import com.majeur.psclient.util.*
 import kotlinx.coroutines.launch
 import org.json.JSONObject
@@ -27,9 +27,11 @@ class NewsDialog : BottomSheetDialogFragment() {
 
     private var _binding: DialogNewsBinding? = null
     private val binding get() = _binding!!
+    private lateinit var headerViewBinding: ListHeaderNewsBinding
     private lateinit var footerViewBinding: ListFooterReplaysBinding
 
     private var oldestNewsId = 0
+    private var newsBannerWasShown = false
 
     private val homeFragment
         get() = parentFragment as HomeFragment
@@ -37,6 +39,7 @@ class NewsDialog : BottomSheetDialogFragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         lifecycle.addObserver(fragmentScope)
+        newsBannerWasShown = Preferences.getBoolPreference(requireContext(), "newsbanner", true)
     }
 
     override fun onDestroy() {
@@ -58,17 +61,28 @@ class NewsDialog : BottomSheetDialogFragment() {
         super.onViewCreated(view, savedInstanceState)
         binding.list.apply {
             setOnTouchListener(NestedScrollLikeTouchListener())
-            val headerView = TextView(context)
-            TextViewCompat.setTextAppearance(headerView, R.style.TextAppearance_AppCompat_Medium)
-            headerView.text = "Latest news"
-            headerView.updatePadding(left = dp(16f), top = view.dp(16f))
-            addHeaderView(headerView, null, false)
+
+            headerViewBinding = ListHeaderNewsBinding.inflate(layoutInflater, this, false)
+            headerViewBinding.bannerSwitch.apply {
+                isChecked = newsBannerWasShown
+                setOnCheckedChangeListener { view, isChecked ->
+                    Preferences.setPreference(view.context, "newsbanner", isChecked) }
+            }
+            addHeaderView(headerViewBinding.root, null, false)
+
+            footerViewBinding = ListFooterReplaysBinding.inflate(layoutInflater, this, false)
+            footerViewBinding.moreButton.setOnClickListener { loadMoreReplays() }
         }
 
-        footerViewBinding = ListFooterReplaysBinding.inflate(layoutInflater, binding.list, false)
-        footerViewBinding.moreButton.setOnClickListener { loadMoreReplays() }
-
         loadNews()
+    }
+
+    override fun onDismiss(dialog: DialogInterface) {
+        super.onDismiss(dialog)
+        if (newsBannerWasShown != headerViewBinding.bannerSwitch.isChecked) {
+            if (newsBannerWasShown) homeFragment.hideNewsBanner()
+            else homeFragment.showNewsBanner()
+        }
     }
 
     private fun loadNews() {

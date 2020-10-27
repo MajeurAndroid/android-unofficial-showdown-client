@@ -184,8 +184,12 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
 
         binding.news.apply {
             alpha = 0f
-            translationY = Float.MIN_VALUE
+            translationY = -dp(42f).toFloat()
             visibility = View.GONE
+            setOnClickListener {
+                if (!text.isNullOrEmpty() && childFragmentManager.findFragmentByTag(NewsDialog.FRAGMENT_TAG) == null)
+                    NewsDialog().show(childFragmentManager, NewsDialog.FRAGMENT_TAG)
+            }
         }
 
         binding.cancelButton.setOnClickListener(this)
@@ -193,6 +197,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         binding.userSearchButton.setOnClickListener(this)
         binding.battleSearchButton.setOnClickListener(this)
         binding.replaySearchButton.setOnClickListener(this)
+        binding.newsButton.setOnClickListener(this)
         binding.bugReportButton.setOnClickListener(this)
     }
 
@@ -270,6 +275,10 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
             binding.replaySearchButton -> {
                 if (childFragmentManager.findFragmentByTag(SearchReplayDialog.FRAGMENT_TAG) == null)
                     SearchReplayDialog().show(childFragmentManager, SearchReplayDialog.FRAGMENT_TAG)
+            }
+            binding.newsButton -> {
+                if (childFragmentManager.findFragmentByTag(NewsDialog.FRAGMENT_TAG) == null)
+                    NewsDialog().show(childFragmentManager, NewsDialog.FRAGMENT_TAG)
             }
             binding.bugReportButton -> AlertDialog.Builder(requireActivity())
                     .setTitle("Wait a minute !")
@@ -518,6 +527,28 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
         mainActivity.showBadge(id)
     }
 
+    fun showNewsBanner() {
+        fragmentScope.launch {
+            val latestNews = service?.retrieveLatestNews()?.getJSONObject(0)?.let { NewsDialog.News(it) } ?: return@launch
+            binding.news.apply {
+                text = latestNews.title.bold() concat " - " concat latestNews.content
+                isSelected = true
+                visibility = VISIBLE
+                animate().alpha(1f).translationY(0f)
+            }
+        }
+    }
+
+    fun hideNewsBanner() {
+        binding.news.apply {
+            animate().alpha(0f).translationY(-height.toFloat()).withEndAction {
+                text = null
+                isSelected = false
+                visibility = View.GONE
+            }.start()
+        }
+    }
+
     override fun onServiceBound(service: ShowdownService) {
         super.onServiceBound(service)
         service.globalMessageObserver.uiCallbacks = this
@@ -525,19 +556,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
             makeSnackbar("Connecting to Showdown server...", indefinite = true)
             service.connectToServer()
         }
-        fragmentScope.launch {
-            val latestNews = service.retrieveLatestNews()?.getJSONObject(0)?.let { NewsDialog.News(it) } ?: return@launch
-            binding.news.apply {
-                text = latestNews.title.bold() concat " - " concat latestNews.content
-                isSelected = true
-                visibility = VISIBLE
-                animate().alpha(1f).translationY(0f)
-                setOnClickListener {
-                    if (childFragmentManager.findFragmentByTag(NewsDialog.FRAGMENT_TAG) == null)
-                        NewsDialog().show(childFragmentManager, NewsDialog.FRAGMENT_TAG)
-                }
-            }
-        }
+        if (Preferences.getBoolPreference(requireContext(), "newsbanner", true)) showNewsBanner()
     }
 
     override fun onServiceWillUnbound(service: ShowdownService) {

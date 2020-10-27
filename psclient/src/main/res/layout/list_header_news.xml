@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:layout_gravity="start|center_vertical"
+        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+        android:text="Latest news"/>
+
+    <Switch
+        android:id="@+id/bannerSwitch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:layout_gravity="end|center_vertical"
+        android:text="News banner"/>
+
+
+</FrameLayout>
