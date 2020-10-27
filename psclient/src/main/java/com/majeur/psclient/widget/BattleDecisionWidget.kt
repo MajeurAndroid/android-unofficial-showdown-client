@@ -17,7 +17,10 @@ import android.view.View
 import android.view.ViewAnimationUtils
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.DecelerateInterpolator
-import android.widget.*
+import android.widget.Button
+import android.widget.CheckBox
+import android.widget.CompoundButton
+import android.widget.FrameLayout
 import androidx.core.content.ContextCompat
 import androidx.core.view.children
 import com.majeur.psclient.R
@@ -241,7 +244,6 @@ class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: A
             }
             promptStage + 1 >= request.count || (request.teamPreview && promptStage == 0) -> { // Request completed
                 onDecisionListener.invoke(decision)
-                Toast.makeText(context, decision.build(), 0).show()
                 revealOut()
                 promptStage = 0
                 targetToChoose = null
