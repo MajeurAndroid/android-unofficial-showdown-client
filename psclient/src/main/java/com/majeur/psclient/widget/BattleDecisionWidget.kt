@@ -377,19 +377,19 @@ class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: A
         }
         if (isDynamaxed) toggleMaxMoves(true)
         when {
-            canMega -> movesCheckBox.apply {
+            canMega && !decision.hasMegaChoices()-> movesCheckBox.apply {
                 visibility = View.VISIBLE
                 text = "Mega Evolution"
                 isChecked = false
                 setOnCheckedChangeListener(null)
             }
-            canZMove -> movesCheckBox.apply {
+            canZMove && !decision.hasZMoveChoices() -> movesCheckBox.apply {
                 visibility = View.VISIBLE
                 text = "Z-Move"
                 isChecked = false
                 setOnCheckedChangeListener { _: CompoundButton?, checked: Boolean -> toggleZMoves(checked) }
             }
-            canDynamax -> movesCheckBox.apply {
+            canDynamax && !decision.hasDynamaxChoices() -> movesCheckBox.apply {
                 visibility = View.VISIBLE
                 text = "Dynamax"
                 isChecked = false
@@ -512,7 +512,8 @@ class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: A
                 mega = zmove
             } else if (zmove) mega = false
             decision.addMoveChoice(which, mega, zmove, dynamax)
-            if (request.count > 1 && data.target.isChoosable) targetToChoose = data.target
+            val target = if (data.zflag) data.maxMoveTarget!! else data.target
+            if (request.count > 1 && target.isChoosable) targetToChoose = data.target
         } else if (data is BattlingPokemon) {
             val id = data.id
             var index = id.position + 1

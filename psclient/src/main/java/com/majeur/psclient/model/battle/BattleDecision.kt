@@ -59,6 +59,23 @@ class BattleDecision {
 
     fun hasOnlyPassChoice() = choices.all { it.action == ACTION_PASS }
 
+    fun hasMegaChoices() = choices.any { it.extra == EXTRA_MEGA }
+
+    fun hasZMoveChoices() = choices.any { it.extra == EXTRA_ZMOVE }
+
+    fun hasDynamaxChoices() = choices.any { it.extra == EXTRA_DYNAMAX }
+
+    fun lastChoiceWasMoveTarget() = choices.lastOrNull()?.let { it.action == ACTION_MOVE && it.target != 0 } ?: false
+
+    /* 1 based index */
+    fun lastChoiceMove() = choices.lastOrNull()?.takeIf { it.action == ACTION_MOVE }?.index ?: 0
+
+    fun lastChoiceWasDynamax() = choices.lastOrNull()?.extra == EXTRA_DYNAMAX
+
+    fun removeLastChoice() {
+        choices.lastOrNull()?.let { choices.remove(it) }
+    }
+
     fun build(): String {
         return StringBuilder().run {
             if (_command == CMD_TEAM) {
