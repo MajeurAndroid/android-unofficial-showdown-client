@@ -65,6 +65,7 @@ class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: A
     private val decision get() = _decision!!
     private var _onDecisionListener: ((BattleDecision) -> Unit)? = null
     private val onDecisionListener get() = _onDecisionListener!!
+    private var comingToPreviousStage = false
 
     init {
         visibility = View.GONE
@@ -279,9 +280,11 @@ class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: A
                         request.teamPreview)
             }
         }
+        if (comingToPreviousStage) comingToPreviousStage = false
     }
 
     private fun promptPrevious() {
+        comingToPreviousStage = true
         promptStage -= 1
 
         if (targetToChoose != null) { // We are choosing a target, get back to move/switch choices and remove out move choice
@@ -365,7 +368,8 @@ class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: A
     private fun showChoice(battleTipPopup: BattleTipPopup, moves: Array<Move>?, canMega: Boolean,
                            canDynamax: Boolean, isDynamaxed: Boolean, team: List<SidePokemon>?,
                            chooseLead: Boolean) {
-        if (promptStage == 0 || decision.hasOnlyPassChoice()) { // First time a choice is shown, no need of transition
+        if ((promptStage == 0 || decision.hasOnlyPassChoice()) && !comingToPreviousStage) {
+            // First time a choice is shown, no need of animation
             setChoiceLayout(battleTipPopup, moves, canMega, canDynamax, isDynamaxed, team, chooseLead)
             return
         }
@@ -683,7 +687,7 @@ class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: A
 
         private const val ANIM_REVEAL_DURATION = 250L
         private const val ANIM_REVEAL_FADE_DURATION = 100L
-        private const val ANIM_NEXTCHOICE_FADE_DURATION = 225L
+        private const val ANIM_NEXTCHOICE_FADE_DURATION = 200L
 
         const val REVEAL_ANIMATION_DURATION = ANIM_REVEAL_DURATION + ANIM_REVEAL_FADE_DURATION
     }
