@@ -293,10 +293,11 @@ class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: A
         } else {
             if (decision.lastChoiceWasMoveTarget()) { // We were choosing a target, we dont remove our choice, we'll override our target choice
                 val lastMove = decision.lastChoiceMove()
-                val wasDynamax = decision.lastChoiceWasDynamax()
+                val wasZ = decision.lastChoiceWasZ()
+                val wasMax = decision.lastChoiceWasDynamax()
                 val move = request.getMoves(promptStage)?.get(lastMove - 1)
-                val target = if (wasDynamax || request.isDynamaxed(promptStage)) move?.maxMoveTarget else move?.target
-                targetToChoose = target ?: Move.Target.NORMAL
+                val target = if (wasMax || request.isDynamaxed(promptStage)) move?.maxMoveTarget else if (wasZ) move?.zDetails?.target else move?.target
+                targetToChoose = target ?: Move.Target.ALL
             } else { // No taget selection involved, just get back to previous stage and remove our choice
                 promptStage -= 1 // Decrement one more time to take account of the increment in promptNext third when case
                 decision.removeLastChoice()
@@ -562,8 +563,9 @@ class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: A
                 mega = zmove
             } else if (zmove) mega = false
             decision.addMoveChoice(which, mega, zmove, dynamax)
-            val target = if (data.maxflag) data.maxMoveTarget!! else data.target
-            if (request.count > 1 && target.isChoosable) targetToChoose = data.target
+            val target = (if (data.maxflag) data.maxMoveTarget else if (data.zflag) data.zDetails?.target else data.target)
+                    ?: Move.Target.ALL
+            if (request.count > 1 && target.isChoosable) targetToChoose = target
         } else if (data is BattlingPokemon) {
             val id = data.id
             var index = id.position + 1

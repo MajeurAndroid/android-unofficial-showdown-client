@@ -70,6 +70,8 @@ class BattleDecision {
     /* 1 based index */
     fun lastChoiceMove() = choices.lastOrNull()?.takeIf { it.action == ACTION_MOVE }?.index ?: 0
 
+    fun lastChoiceWasZ() = choices.lastOrNull()?.extra == EXTRA_ZMOVE
+
     fun lastChoiceWasDynamax() = choices.lastOrNull()?.extra == EXTRA_DYNAMAX
 
     fun removeLastChoice() {
