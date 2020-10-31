@@ -9,7 +9,6 @@ import android.util.Base64
 import com.majeur.psclient.service.observer.BattleRoomMessageObserver
 import com.majeur.psclient.service.observer.ChatRoomMessageObserver
 import com.majeur.psclient.service.observer.GlobalMessageObserver
-import com.majeur.psclient.util.S
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.*
@@ -168,11 +167,6 @@ class ShowdownService : Service() {
         observersInterceptingAfter
                 .minus(observersInterceptingBefore)
                 .forEach { it.postMessage(msg, forcePost = true) }
-    }
-
-    fun fakeBattle() {
-        S.run = true
-        processServerData(S.s)
     }
 
     private val webSocketListener = object : WebSocketListener() {
