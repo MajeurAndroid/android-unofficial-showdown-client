@@ -5,9 +5,11 @@ import android.content.ClipDescription
 import android.content.ClipboardManager
 import android.content.Context
 import android.os.Bundle
+import android.text.Html
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.majeur.psclient.R
 import com.majeur.psclient.databinding.DialogImportTeamBinding
@@ -108,12 +110,15 @@ class ImportTeamDialog : BottomSheetDialogFragment() {
 
     private fun importFromClipboard() {
         val clip = clipboardManager.primaryClip
-        if (clip == null || !clip.description.hasMimeType(ClipDescription.MIMETYPE_TEXT_PLAIN) || clip.itemCount == 0) {
+        Toast.makeText(context, clip.toString(), 0).show()
+        if (clip == null || clip.itemCount == 0 || (!clip.description.hasMimeType(ClipDescription.MIMETYPE_TEXT_PLAIN) &&
+                        !clip.description.hasMimeType(ClipDescription.MIMETYPE_TEXT_HTML))) {
             makeSnackbar("There is nothing that looks like a Pokemon in clipboard")
             return
         }
-        val rawTeam = clip.getItemAt(0).text.toString()
-        handleRawTeamData(rawTeam)
+        val rawTeam = if (clip.description.hasMimeType(ClipDescription.MIMETYPE_TEXT_HTML))
+            Html.fromHtml(clip.getItemAt(0).htmlText, 0) else clip.getItemAt(0).text
+        handleRawTeamData(rawTeam.toString())
     }
 
     private fun importFromPastebin() {
