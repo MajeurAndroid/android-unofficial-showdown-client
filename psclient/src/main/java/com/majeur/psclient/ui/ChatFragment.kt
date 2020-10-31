@@ -58,6 +58,7 @@ class ChatFragment : BaseFragment(), ChatRoomMessageObserver.UiCallbacks {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+        observer.uiCallbacks = null
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

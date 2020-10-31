@@ -93,6 +93,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+        observer.uiCallbacks = null
     }
 
     private fun makeSnackbar(message: String, indefinite: Boolean = false, action: Pair<String, () -> Unit>? = null, maxLines: Int = 0) {
