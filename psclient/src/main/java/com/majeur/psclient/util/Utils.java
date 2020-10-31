@@ -355,7 +355,7 @@ public class Utils {
                     builder.delete(closeIndex, closeIndex + tokenClose.length());
                     span = MD_SPANS[i].get("");
                 } else {
-                    if (closeIndex == -1) closeIndex = builder.length(); // Url end token not found, so we are at the end of our string
+                    if (closeIndex == -1 || closeIndex >= builder.length()) closeIndex = builder.length(); // Url end token not found, so we are at the end of our string
                     span = MD_SPANS[i].get(builder.substring(openIndex, closeIndex));
                 }
                 builder.setSpan(span, openIndex, closeIndex, Spannable.SPAN_INCLUSIVE_EXCLUSIVE);
