@@ -382,9 +382,9 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
         if (move.zflag) priority = move.zDetails?.priority ?: 0
         if (priority == -20) priority = move.details?.priority ?: 0
         when {
-            priority > 1 -> descView.append("Nearly always moves first " concat priority.toSignedString().italic())
-            priority <= -1 -> descView.append("Nearly always moves last " concat priority.toSignedString().italic())
-            priority == 1 -> descView.append("Usually moves first " concat priority.toSignedString().italic())
+            priority > 1 -> descView.append("Nearly always moves first (" concat priority.toSignedString().italic() concat ")\n")
+            priority <= -1 -> descView.append("Nearly always moves last (" concat priority.toSignedString().italic() concat ")\n")
+            priority == 1 -> descView.append("Usually moves first (" concat priority.toSignedString().italic() concat ")\n")
         }
 
         var basePower = -1
