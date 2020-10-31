@@ -558,7 +558,7 @@ class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: A
                 mega = zmove
             } else if (zmove) mega = false
             decision.addMoveChoice(which, mega, zmove, dynamax)
-            val target = if (data.zflag) data.maxMoveTarget!! else data.target
+            val target = if (data.maxflag) data.maxMoveTarget!! else data.target
             if (request.count > 1 && target.isChoosable) targetToChoose = data.target
         } else if (data is BattlingPokemon) {
             val id = data.id
