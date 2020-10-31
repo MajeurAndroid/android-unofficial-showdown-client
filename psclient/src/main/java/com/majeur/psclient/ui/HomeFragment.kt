@@ -771,7 +771,15 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
                 setBattleButtonUIState("Battle !")
                 showSearchableFormatsOnly(true)
             }
+        } else {
+            if (to != null) { // We are challenging someone but we discover that by the server
+                challengeTo = to
+                isChallengingSomeone = true
+                waitingForChallenge = true
+                setBattleButtonUIState("Waiting for\n$to...", enabled = false, showCancel = true, tintCard = true)
+            }
         }
+
     }
 
     override fun onRoomInit(roomId: String, type: String) {
