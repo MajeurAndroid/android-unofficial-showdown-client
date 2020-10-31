@@ -23,7 +23,8 @@ class ActionQueue(looper: Looper) {
     }
 
     fun setLastAction(action: (()->Unit)?) {
-        lastAction = action
+        if (!isLooping) action?.invoke()
+        else lastAction = action
     }
 
     fun enqueueTurnAction(action: ()->Unit) {
