@@ -368,9 +368,8 @@ class PokemonFragment : Fragment() {
                     setSelection(if (pos < 0) 0 else pos)
                 }
 
-                moveDetails?.forEachIndexed { slot, details ->
-                    if (details == null) return@forEachIndexed
-                    moveInputs[slot].text = details.name
+                moveInputs.forEachIndexed { slot, moveInput ->
+                    moveDetails?.getOrNull(slot)?.name?.let { moveInput.text = it }
                 }
 
                 val stats = dexPokemon.baseStats
