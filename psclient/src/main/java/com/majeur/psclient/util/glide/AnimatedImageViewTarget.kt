@@ -6,45 +6,32 @@ import android.view.ViewPropertyAnimator
 import android.widget.ImageView
 import com.bumptech.glide.request.target.CustomViewTarget
 import com.bumptech.glide.request.transition.Transition
-import com.bumptech.glide.request.transition.Transition.ViewAdapter
 
 abstract class AnimatedImageViewTarget(im: ImageView)
-    : CustomViewTarget<ImageView, Drawable>(im), ViewAdapter {
+    : CustomViewTarget<ImageView, Drawable>(im) {
 
     private var animatable: Animatable? = null
 
-    override fun getCurrentDrawable(): Drawable? {
-        return getView().drawable
-    }
-
-    override fun setDrawable(drawable: Drawable?) {
-        if (drawable == null) return
-        getView().setImageDrawable(drawable)
-    }
-
-    override fun onResourceLoading(placeholder: Drawable?) {
-        super.onResourceLoading(placeholder)
-        setResourceInternal(null)
-        setDrawable(placeholder)
+    protected fun setResource(resource: Drawable?) {
+        getView().setImageDrawable(resource)
+        if (resource is Animatable) {
+            animatable = resource
+            resource.start()
+        } else {
+            animatable = null
+        }
     }
 
     override fun onLoadFailed(errorDrawable: Drawable?) {
-        setResourceInternal(null)
-        setDrawable(errorDrawable)
+        setResource(errorDrawable)
     }
 
     override fun onResourceCleared(placeholder: Drawable?) {
-        animatable?.stop()
-        setResourceInternal(null)
-        setDrawable(placeholder)
+        setResource(placeholder)
     }
 
-    override fun onResourceReady(resource: Drawable, transition: Transition<in Drawable>?) {
-        if (transition?.transition(resource, this) == false) {
-            setResourceInternal(resource)
-        } else {
-            maybeUpdateAnimatable(resource)
-        }
+    override fun onResourceReady(resource: Drawable, unused: Transition<in Drawable>?) {
+        setResourceInternal(resource)
     }
 
     override fun onStart() {
@@ -57,6 +44,11 @@ abstract class AnimatedImageViewTarget(im: ImageView)
         animatable?.stop()
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        animatable?.stop()
+        animatable = null
+    }
 
     private fun setResourceInternal(resource: Drawable?) {
         if (resource == null) return
@@ -66,7 +58,7 @@ abstract class AnimatedImageViewTarget(im: ImageView)
         onInitInAnimation(viewPropertyAnimator)
         viewPropertyAnimator.withEndAction {
             setResource(resource)
-            maybeUpdateAnimatable(resource)
+            onApplyResourceSize(resource.intrinsicWidth, resource.intrinsicHeight)
             onInitOutAnimation(viewPropertyAnimator)
             viewPropertyAnimator.withEndAction(null)
             viewPropertyAnimator.start()
@@ -74,17 +66,7 @@ abstract class AnimatedImageViewTarget(im: ImageView)
         viewPropertyAnimator.start()
     }
 
-    private fun maybeUpdateAnimatable(resource: Drawable) {
-        if (resource is Animatable) {
-            animatable = resource
-            resource.start()
-        } else {
-            animatable = null;
-        }
-    }
-
-
     protected abstract fun onInitInAnimation(viewPropertyAnimator: ViewPropertyAnimator)
     protected abstract fun onInitOutAnimation(viewPropertyAnimator: ViewPropertyAnimator)
-    protected abstract fun setResource(resource: Drawable)
+    protected abstract fun onApplyResourceSize(w: Int, h: Int)
 }

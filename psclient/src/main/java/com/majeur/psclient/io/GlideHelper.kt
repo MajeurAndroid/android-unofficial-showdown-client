@@ -58,6 +58,7 @@ class GlideHelper(context: Context) {
         loadSprite(spriteId, pokemon.trainer, pokemon.shiny, true,
                 SpriteType.D3ANIMATED, SpriteType.D2ANIMATED, SpriteType.D2)
             .into(object : AnimatedImageViewTarget(imageView) {
+
             override fun onInitInAnimation(viewPropertyAnimator: ViewPropertyAnimator) {
                 viewPropertyAnimator
                         .setDuration(250)
@@ -76,15 +77,14 @@ class GlideHelper(context: Context) {
                         .alpha(1f)
             }
 
-            override fun setResource(resource: Drawable) {
+                override fun onApplyResourceSize(w: Int, h: Int) {
                 val fieldWidth = (imageView.parent as BattleLayout).width
                 var scale = fieldWidth * MAGIC_SCALE
                 if (!pokemon.foe) scale *= 1.5f
-                imageView.layoutParams.apply {
-                    width = (resource.intrinsicWidth * scale).roundToInt()
-                    height = (resource.intrinsicHeight * scale).roundToInt()
+                getView().layoutParams.apply {
+                    width = (w * scale).roundToInt()
+                    height = (h * scale).roundToInt()
                 }
-                imageView.setImageDrawable(resource) // Will request a layout
             }
         })
     }
@@ -96,14 +96,13 @@ class GlideHelper(context: Context) {
                     override fun onInitInAnimation(viewPropertyAnimator: ViewPropertyAnimator) = Unit
                     override fun onInitOutAnimation(viewPropertyAnimator: ViewPropertyAnimator) = Unit
 
-                    override fun setResource(resource: Drawable) {
+                    override fun onApplyResourceSize(w: Int, h: Int) {
                         val fieldWidth = (imageView.parent as BattleLayout?)?.width ?: 0
                         val scale = fieldWidth * MAGIC_SCALE
                         imageView.layoutParams.apply {
-                            width = (resource.intrinsicWidth * scale).roundToInt()
-                            height = (resource.intrinsicHeight * scale).roundToInt()
+                            width = (w * scale).roundToInt()
+                            height = (h * scale).roundToInt()
                         }
-                        imageView.setImageDrawable(resource) // Will request a layout
                     }
                 })
     }
