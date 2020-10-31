@@ -116,7 +116,7 @@ class Move(val index: Int, json: JSONObject, zJson: JSONObject?, maxJson: JSONOb
                     }
                     if (target == ADJACENT_ALLY) availabilities[1][position] = false
                 }
-                if (target == NORMAL) {
+                if (target == NORMAL || target == ANY) {
                     availabilities[1][position] = false
                 }
                 return availabilities
