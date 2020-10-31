@@ -784,7 +784,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
     }
 
     override fun onRoomInit() {
-        soundEnabled = Preferences.getBoolPreference(context, "sound")
+        soundEnabled = Preferences.isBattleSoundEnabled(requireContext())
         lastDecisionRequest = null
         onTimerEnabled(false)
         binding.apply {

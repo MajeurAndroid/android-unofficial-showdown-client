@@ -77,7 +77,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
     override fun onAttach(context: Context) {
         super.onAttach(context)
         assetLoader = mainActivity.assetLoader
-        soundEnabled = Preferences.getBoolPreference(context, "sound")
+        soundEnabled = Preferences.isBattleSoundEnabled(context)
     }
 
     override fun onCreateView(
@@ -151,7 +151,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
             setOnClickListener {
                 soundEnabled = !soundEnabled
                 setImageResource(if (soundEnabled) R.drawable.ic_sound_on else R.drawable.ic_sound_off)
-                Preferences.setPreference(context, "sound", soundEnabled)
+                Preferences.setBattleSoundEnabled(context, soundEnabled)
             }
         }
         binding.pmsOverview.apply {
@@ -556,7 +556,7 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
             makeSnackbar("Connecting to Showdown server...", indefinite = true)
             service.connectToServer()
         }
-        if (Preferences.getBoolPreference(requireContext(), "newsbanner", true)) showNewsBanner()
+        if (Preferences.isNewsBannerEnabled(requireContext())) showNewsBanner()
     }
 
     override fun onServiceWillUnbound(service: ShowdownService) {

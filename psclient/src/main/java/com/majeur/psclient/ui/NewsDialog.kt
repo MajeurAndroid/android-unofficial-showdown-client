@@ -31,7 +31,7 @@ class NewsDialog : BottomSheetDialogFragment() {
     private lateinit var footerViewBinding: ListFooterReplaysBinding
 
     private var oldestNewsId = 0
-    private var newsBannerWasShown = false
+    private var newsBannerWasEnabled = false
 
     private val homeFragment
         get() = parentFragment as HomeFragment
@@ -39,7 +39,7 @@ class NewsDialog : BottomSheetDialogFragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         lifecycle.addObserver(fragmentScope)
-        newsBannerWasShown = Preferences.getBoolPreference(requireContext(), "newsbanner", true)
+        newsBannerWasEnabled = Preferences.isNewsBannerEnabled(requireContext())
     }
 
     override fun onDestroy() {
@@ -64,9 +64,8 @@ class NewsDialog : BottomSheetDialogFragment() {
 
             headerViewBinding = ListHeaderNewsBinding.inflate(layoutInflater, this, false)
             headerViewBinding.bannerSwitch.apply {
-                isChecked = newsBannerWasShown
-                setOnCheckedChangeListener { view, isChecked ->
-                    Preferences.setPreference(view.context, "newsbanner", isChecked) }
+                isChecked = newsBannerWasEnabled
+                setOnCheckedChangeListener { view, isChecked -> Preferences.setNewsBannerEnabled(view.context, isChecked) }
             }
             addHeaderView(headerViewBinding.root, null, false)
 
@@ -79,17 +78,17 @@ class NewsDialog : BottomSheetDialogFragment() {
 
     override fun onDismiss(dialog: DialogInterface) {
         super.onDismiss(dialog)
-        if (newsBannerWasShown != headerViewBinding.bannerSwitch.isChecked) {
-            if (newsBannerWasShown) homeFragment.hideNewsBanner()
+        if (newsBannerWasEnabled != headerViewBinding.bannerSwitch.isChecked) {
+            if (newsBannerWasEnabled) homeFragment.hideNewsBanner()
             else homeFragment.showNewsBanner()
         }
     }
 
     private fun loadNews() {
         fragmentScope.launch {
-            val replayEntries = retrieveNews()
-            oldestNewsId = replayEntries.last().id
-            binding.list.adapter = ListAdapter(replayEntries, layoutInflater)
+            val news = retrieveNews()
+            oldestNewsId = news.last().id
+            binding.list.adapter = ListAdapter(news, layoutInflater)
             binding.list.addFooterView(footerViewBinding.root)
         }
     }
