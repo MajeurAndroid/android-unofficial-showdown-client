@@ -131,7 +131,7 @@ class PokemonFragment : Fragment() {
                     name = poke.name
                     item = poke.item
                     ability = poke.ability
-                    moves = poke.moves
+                    moves = poke.moves.toMutableList().apply { for (i in size until 4) add("") } // Ensure we have a 4 element list
                     nature = poke.nature
                     evs = poke.evs
                     gender = poke.gender
@@ -315,8 +315,8 @@ class PokemonFragment : Fragment() {
             text = pokemon.item.or("None")
         }
         moveInputs.forEachIndexed { moveSlot, textView ->
-            val moveName = pokemon.moves[moveSlot]
-            textView.text =  moveName.or("None")
+            val moveName = pokemon.moves.getOrElse(moveSlot) { "" }
+            textView.text = moveName.or("None")
         }
         binding.statsTable.apply {
             setEVs(pokemon.evs)
