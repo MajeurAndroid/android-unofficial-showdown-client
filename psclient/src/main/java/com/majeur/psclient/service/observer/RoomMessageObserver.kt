@@ -144,11 +144,11 @@ abstract class RoomMessageObserver<C : RoomMessageObserver.UiCallbacks>(service:
     private fun getHashColor(username: String) = _usernameColorCache.getOrPut(username) { Utils.hashColor(username.toId()) }
 
     private fun printUserRelatedMessage(message: String) {
-        message.italic().color(-0xbdbdbe).small().also { printMessage(it) }
+        printMessage(message.italic().color(-0xbdbdbe).small())
     }
 
     protected fun printErrorMessage(message: String) {
-        message.bold().color(Color.RED).also { printMessage(it) }
+        printMessage(message.bold().color(-0x750000))
     }
 
     protected open fun printMessage(text: CharSequence) = onPrintText(text)
