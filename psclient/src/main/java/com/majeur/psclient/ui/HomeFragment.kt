@@ -12,6 +12,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.view.inputmethod.EditorInfo
 import android.widget.AdapterView
 import android.widget.AdapterView.OnItemSelectedListener
 import android.widget.AdapterView.VISIBLE
@@ -259,18 +260,30 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
             }
             binding.userSearchButton -> {
                 val dialogBinding = DialogSimpleInputBinding.inflate(layoutInflater)
-                dialogBinding.input.hint = "Type a username"
-                MaterialAlertDialogBuilder(requireActivity()).run {
-                    setPositiveButton("Find") { _, _ ->
-                        val input = dialogBinding.input.text.toString().replace(USERNAME_REGEX, "")
-                        if (input.isNotEmpty()) service?.sendGlobalCommand("cmd userdetails", input)
-                    }
+                fun searchForUser() {
+                    val input = dialogBinding.input.text.toString().replace(USERNAME_REGEX, "")
+                    if (input.isNotEmpty()) service?.sendGlobalCommand("cmd userdetails", input)
+                }
+                val dialog = MaterialAlertDialogBuilder(requireActivity()).run {
+                    setPositiveButton("Find") { _, _ -> searchForUser() }
                     setNegativeButton("Cancel", null)
                     setView(dialogBinding.root)
                     create()
                 }.apply {
                     window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
                     show()
+                }
+                dialogBinding.input.apply {
+                    hint = "Type a username"
+                    imeOptions = EditorInfo.IME_ACTION_SEARCH
+                    setOnEditorActionListener { _, actionId, _ ->
+                        if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                            searchForUser()
+                            dialog.dismiss()
+                            return@setOnEditorActionListener true
+                        }
+                        false
+                    }
                 }
             }
             binding.battleSearchButton -> {
