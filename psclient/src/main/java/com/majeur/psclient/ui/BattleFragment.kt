@@ -37,6 +37,7 @@ import com.majeur.psclient.model.pokemon.SidePokemon
 import com.majeur.psclient.service.ShowdownService
 import com.majeur.psclient.service.observer.BattleRoomMessageObserver
 import com.majeur.psclient.util.*
+import com.majeur.psclient.util.glide.AnimatedImageViewTarget
 import com.majeur.psclient.util.html.Html
 import com.majeur.psclient.widget.BattleDecisionWidget
 import com.majeur.psclient.widget.BattleLayout
@@ -486,6 +487,12 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
     override fun onBattleStarted() {
         prepareBattleFieldUi()
         mainActivity.setKeepScreenOn(true)
+        binding.battleLayout.apply {
+            getSpriteViews(Player.TRAINER).plus(getSpriteViews(Player.FOE)).forEach { view ->
+                (view.getTag(R.id.glide_tag) as? AnimatedImageViewTarget)?.request?.clear()
+                view.setTag(R.id.glide_tag, null)
+            }
+        }
         when (observer.gameType) {
             GameType.SINGLE -> binding.battleLayout.setMode(BattleLayout.MODE_BATTLE_SINGLE)
             GameType.DOUBLE -> binding.battleLayout.setMode(BattleLayout.MODE_BATTLE_DOUBLE)
@@ -778,7 +785,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
     }
 
     private fun postFullScroll() {
-        binding.battleLogContainer.post { binding.battleLogContainer.fullScroll(View.FOCUS_DOWN) }
+        binding.battleLogContainer.post { _binding?.battleLogContainer?.fullScroll(View.FOCUS_DOWN) }
     }
 
     override fun onRoomTitleChanged(title: String) {

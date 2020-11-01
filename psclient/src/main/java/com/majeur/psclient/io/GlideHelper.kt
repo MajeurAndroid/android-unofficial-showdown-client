@@ -21,6 +21,7 @@ import com.majeur.psclient.util.glide.AnimatedImageViewTarget
 import com.majeur.psclient.util.html.Html
 import com.majeur.psclient.util.minusFirst
 import com.majeur.psclient.widget.BattleLayout
+import timber.log.Timber
 import java.util.concurrent.ExecutionException
 import kotlin.math.roundToInt
 
@@ -92,19 +93,22 @@ class GlideHelper(context: Context) {
     fun loadPreviewSprite(player: Player, pokemon: BasePokemon, imageView: ImageView) {
         loadSprite(pokemon.spriteId, player == Player.TRAINER, false, true,
                 SpriteType.D3ANIMATED, SpriteType.D2ANIMATED, SpriteType.D2)
-                .into(object : AnimatedImageViewTarget(imageView) {
-                    override fun onInitInAnimation(viewPropertyAnimator: ViewPropertyAnimator) = Unit
-                    override fun onInitOutAnimation(viewPropertyAnimator: ViewPropertyAnimator) = Unit
+            .into(object : AnimatedImageViewTarget(imageView) {
+                override fun onInitInAnimation(viewPropertyAnimator: ViewPropertyAnimator) = Unit
+                override fun onInitOutAnimation(viewPropertyAnimator: ViewPropertyAnimator) = Unit
 
-                    override fun onApplyResourceSize(w: Int, h: Int) {
-                        val fieldWidth = (imageView.parent as BattleLayout?)?.width ?: 0
-                        val scale = fieldWidth * MAGIC_SCALE
-                        imageView.layoutParams.apply {
-                            width = (w * scale).roundToInt()
-                            height = (h * scale).roundToInt()
-                        }
+                override fun onApplyResourceSize(w: Int, h: Int) {
+                    val fieldWidth = (imageView.parent as BattleLayout?)?.width ?: 0
+                    val scale = fieldWidth * MAGIC_SCALE
+                    imageView.layoutParams.apply {
+                        width = (w * scale).roundToInt()
+                        height = (h * scale).roundToInt()
+                        Timber.d("resouce set")
                     }
-                })
+                }
+            }).also {
+                imageView.setTag(R.id.glide_tag, it)
+            }
     }
 
     fun loadDexSprite(pokemon: BasePokemon, shiny: Boolean, imageView: ImageView) {
