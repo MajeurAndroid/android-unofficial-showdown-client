@@ -157,6 +157,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
         "inactiveoff" -> handleInactive(message, false)
         "win" -> handleWin(message, false)
         "tie" -> handleWin(message, true)
+        "prematureend" -> actionQueue.enqueueAction { printErrorMessage("This replay ends here.") }
         "cant" -> handleCant(message)
         "swap" -> handleSwap(message)
         else -> Unit
@@ -210,26 +211,26 @@ class BattleRoomMessageObserver(service: ShowdownService)
     }
 
     private fun handleGameType(msg: ServerMessage) {
-        when (msg.nextArg.trim()) {
+        gameType = when (msg.nextArg.trim()) {
             "doubles" -> {
-                gameType = GameType.DOUBLE
                 trainerPokemons = arrayOfNulls(2)
                 foePokemons = arrayOfNulls(2)
+                GameType.DOUBLE
             }
             "rotation", "triples" -> {
-                gameType = GameType.TRIPLE
                 printErrorMessage("Triple battles aren't fully implemented yet. " +
                         "App crash is a matter of seconds from now!")
                 trainerPokemons = arrayOfNulls(3)
                 foePokemons = arrayOfNulls(3)
+                GameType.TRIPLE
             }
             else -> {
-                gameType = GameType.SINGLE
                 trainerPokemons = arrayOfNulls(1)
                 foePokemons = arrayOfNulls(1)
+                GameType.SINGLE
             }
         }
-        lastDecisionRequest?.gameType = gameType!!
+        lastDecisionRequest?.gameType = gameType
     }
 
     private fun handleSwitch(msg: ServerMessage) {
