@@ -38,6 +38,15 @@ class ActionQueue(looper: Looper) {
         }
     }
 
+    fun insertAction(action: ()->Unit) {
+        insert(action, 0, isTurn = false)
+    }
+
+    private fun insert(action: ()->Unit, delay: Long, isTurn: Boolean) {
+        actions.add(0, Action(action, delay, isTurn))
+        if (!isLooping) startLoop()
+    }
+
     fun enqueueAction(action: ()->Unit) {
         enqueue(action, 0, isTurn = false)
     }
@@ -84,7 +93,7 @@ class ActionQueue(looper: Looper) {
         if (restartLoop) startLoop()
     }
 
-    private val loopRunnable: Runnable = object : Runnable {
+    private val loopRunnable = object : Runnable {
 
         override fun run() {
             val entry = actions.removeAt(0)

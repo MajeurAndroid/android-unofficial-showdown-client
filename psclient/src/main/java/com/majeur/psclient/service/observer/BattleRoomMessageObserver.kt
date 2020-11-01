@@ -2,6 +2,8 @@ package com.majeur.psclient.service.observer
 
 import android.graphics.Color
 import android.os.Looper
+import android.text.Spanned
+import androidx.core.text.getSpans
 import com.majeur.psclient.io.BattleTextBuilder
 import com.majeur.psclient.model.battle.*
 import com.majeur.psclient.model.common.Colors
@@ -11,6 +13,7 @@ import com.majeur.psclient.service.ActionQueue
 import com.majeur.psclient.service.ServerMessage
 import com.majeur.psclient.service.ShowdownService
 import com.majeur.psclient.util.*
+import com.majeur.psclient.util.html.UsernameSpan
 import org.json.JSONException
 import org.json.JSONObject
 import timber.log.Timber
@@ -832,7 +835,12 @@ class BattleRoomMessageObserver(service: ShowdownService)
 
     override fun printMessage(text: CharSequence) {
         // Include eventual message prints from super class in the action queue.
-        actionQueue.enqueueAction { super@BattleRoomMessageObserver.printMessage(text) }
+        if (text is Spanned && text.getSpans<UsernameSpan>(0, text.length).isNotEmpty()) {
+            // Instantly add chat messages
+            actionQueue.insertAction { super@BattleRoomMessageObserver.printMessage(text) }
+        } else {
+            actionQueue.enqueueAction { super@BattleRoomMessageObserver.printMessage(text) }
+        }
     }
 
     override fun printHtml(html: String) {
