@@ -89,7 +89,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-        observer.uiCallbacks = null
+        service?.battleMessageObserver?.uiCallbacks = null
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

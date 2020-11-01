@@ -35,9 +35,9 @@ class MainActivity : AppCompatActivity() {
         get() = if (useLandscapeLayout) binding.navigationView!!.checkedItem?.itemId ?: 0
                 else binding.bottomNavigation!!.selectedItemId
 
+    var service: ShowdownService? = null
+        private set
     private var canUnbindService = false
-    private var _service: ShowdownService? = null
-    val service get() = if (canUnbindService) _service else null
 
     private lateinit var binding: ActivityMainBinding
 
@@ -60,7 +60,7 @@ class MainActivity : AppCompatActivity() {
     private val serviceConnection: ServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(componentName: ComponentName, iBinder: IBinder) {
             Timber.d("ShowdownService bounded. (MainActivity ${this@MainActivity.hashCode()})")
-            _service = (iBinder as ShowdownService.Binder).service
+            service = (iBinder as ShowdownService.Binder).service
             notifyServiceBound()
         }
 
@@ -173,20 +173,20 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun notifyServiceBound() = supportFragmentManager.fragments.forEach {
-        (it as? Callbacks)?.onServiceBound(_service!!)
+        (it as? Callbacks)?.onServiceBound(service!!)
     }
 
     private fun notifyServiceWillUnbound() = supportFragmentManager.fragments.forEach {
-        (it as? Callbacks)?.onServiceWillUnbound(_service!!)
+        (it as? Callbacks)?.onServiceWillUnbound(service!!)
     }
 
     override fun onDestroy() {
         Timber.d("(${hashCode()}) Lifecycle: onDestroy")
         // Let fragments remove their message observers from service before they are destroyed
         if (canUnbindService) {
-            if (_service != null) { // We might not have had access to binder yet somehow
+            if (service != null) { // We might not have had access to binder yet somehow
                 notifyServiceWillUnbound()
-                _service = null
+                service = null
             }
             unbindService(serviceConnection)
             canUnbindService = false
