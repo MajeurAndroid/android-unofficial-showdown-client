@@ -11,15 +11,16 @@ import android.view.View
 import android.view.View.GONE
 import android.view.View.VISIBLE
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.inputmethod.EditorInfo
-import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.majeur.psclient.R
+import com.majeur.psclient.databinding.DialogSimpleInputBinding
 import com.majeur.psclient.databinding.FragmentBattleBinding
 import com.majeur.psclient.io.AssetLoader
 import com.majeur.psclient.io.BattleAudioManager
@@ -225,18 +226,21 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
                 }
             }
             binding.extraActions.sendButton -> {
-                val dialogView: View = layoutInflater.inflate(R.layout.dialog_battle_message, null)
-                val editText = dialogView.findViewById<EditText>(R.id.edit_text_team_name)
-                val dialog = MaterialAlertDialogBuilder(requireActivity())
-                        .setPositiveButton("Send") { d, _ -> sendChatMessage(editText.text); d.dismiss() }
-                        .setNegativeButton("Cancel", null)
-                        .setNeutralButton("\"gg\"") { d, _ -> sendChatMessage("gg"); d.dismiss() }
-                        .setView(dialogView)
-                        .show()
-                editText.requestFocus()
-                editText.setOnEditorActionListener { _, actionId, _ ->
+                val dialogBinding = DialogSimpleInputBinding.inflate(layoutInflater)
+                dialogBinding.input.hint = "Type your message"
+                val dialog = MaterialAlertDialogBuilder(requireActivity()).run {
+                    setPositiveButton("Send") { _, _ -> sendChatMessage(dialogBinding.input.text) }
+                    setNegativeButton("Cancel", null)
+                    setNeutralButton("\"gg\"") { _, _ -> sendChatMessage("gg") }
+                    setView(dialogBinding.root)
+                    create()
+                }.apply {
+                    window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+                    show()
+                }
+                dialogBinding.input.setOnEditorActionListener { _, actionId, _ ->
                     if (actionId == EditorInfo.IME_ACTION_SEND) {
-                        sendChatMessage(editText.text)
+                        sendChatMessage(dialogBinding.input.text)
                         dialog.dismiss()
                         return@setOnEditorActionListener true
                     }

@@ -5,14 +5,17 @@
     android:layout_height="wrap_content">
 
     <EditText
-        android:id="@+id/edit_text_team_name"
+        android:id="@+id/input"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
         android:maxLines="2"
         android:maxLength="64"
         android:inputType="textShortMessage"
-        android:imeOptions="actionSend"
-        android:hint="Type your message"/>
+        android:imeOptions="actionSend">
+
+        <requestFocus/>
+
+    </EditText>
 
 </FrameLayout>

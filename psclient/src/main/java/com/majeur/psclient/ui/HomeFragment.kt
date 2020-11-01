@@ -11,6 +11,7 @@ import android.text.method.LinkMovementMethod
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.widget.AdapterView
 import android.widget.AdapterView.OnItemSelectedListener
 import android.widget.AdapterView.VISIBLE
@@ -26,7 +27,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.BaseTransientBottomBar
 import com.google.android.material.snackbar.Snackbar
 import com.majeur.psclient.R
-import com.majeur.psclient.databinding.DialogBattleMessageBinding
+import com.majeur.psclient.databinding.DialogSimpleInputBinding
 import com.majeur.psclient.databinding.FragmentHomeBinding
 import com.majeur.psclient.io.AssetLoader
 import com.majeur.psclient.model.BattleRoomInfo
@@ -257,17 +258,20 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
                 else -> service?.sendGlobalCommand("cancelsearch")
             }
             binding.userSearchButton -> {
-                val dialogBinding = DialogBattleMessageBinding.inflate(layoutInflater)
-                dialogBinding.editTextTeamName.hint = "Type a username"
-                MaterialAlertDialogBuilder(requireActivity())
-                        .setPositiveButton("Find") { _: DialogInterface?, _: Int ->
-                            val input = dialogBinding.editTextTeamName.text.toString().replace(USERNAME_REGEX, "")
-                            if (input.isNotEmpty()) service?.sendGlobalCommand("cmd userdetails", input)
-                        }
-                        .setNegativeButton("Cancel", null)
-                        .setView(dialogBinding.root)
-                        .show()
-                dialogBinding.editTextTeamName.requestFocus()
+                val dialogBinding = DialogSimpleInputBinding.inflate(layoutInflater)
+                dialogBinding.input.hint = "Type a username"
+                MaterialAlertDialogBuilder(requireActivity()).run {
+                    setPositiveButton("Find") { _, _ ->
+                        val input = dialogBinding.input.text.toString().replace(USERNAME_REGEX, "")
+                        if (input.isNotEmpty()) service?.sendGlobalCommand("cmd userdetails", input)
+                    }
+                    setNegativeButton("Cancel", null)
+                    setView(dialogBinding.root)
+                    create()
+                }.apply {
+                    window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+                    show()
+                }
             }
             binding.battleSearchButton -> {
                 if (childFragmentManager.findFragmentByTag(SearchBattleDialog.FRAGMENT_TAG) == null)
