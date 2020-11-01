@@ -12,7 +12,8 @@ class ActionQueue(looper: Looper) {
     private val actions = mutableListOf<Action>()
     private var lastAction: (()->Unit)? = null
 
-    private var isLooping = false
+    var isLooping = false
+        private set
 
     var shouldLoopToLastTurn = true
     var enableLastActionInvoke = false

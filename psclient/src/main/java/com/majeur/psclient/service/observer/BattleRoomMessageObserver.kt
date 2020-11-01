@@ -841,7 +841,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
 
     override fun printMessage(text: CharSequence) {
         // Include eventual message prints from super class in the action queue.
-        if (text is Spanned && text.getSpans<UsernameSpan>(0, text.length).isNotEmpty()) {
+        if (!isReplay && actionQueue.isLooping && text is Spanned && text.getSpans<UsernameSpan>(0, text.length).isNotEmpty()) {
             // Instantly add chat messages
             actionQueue.insertAction { super@BattleRoomMessageObserver.printMessage(text) }
         } else {
