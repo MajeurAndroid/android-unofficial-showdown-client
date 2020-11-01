@@ -12,6 +12,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.util.forEach
+import androidx.core.util.plus
 import com.majeur.psclient.R
 import com.majeur.psclient.model.battle.Player
 import com.majeur.psclient.model.battle.PokemonId
@@ -49,10 +51,9 @@ class BattleLayout @JvmOverloads constructor(
     fun setMode(mode: Int) {
         if (mode < MODE_PREVIEW || mode > MODE_BATTLE_TRIPLE) return
         battleLayoutMode = mode
-        for (i in 0 until p1ImageViews.size()) p1ImageViews[i].setImageDrawable(null)
-        for (i in 0 until p2ImageViews.size()) p2ImageViews[i].setImageDrawable(null)
         // This will ensure that next calls to getXXXView() returns proper view without waiting for a layout pass
         prepareViews(false, 0, 0)
+        p1ImageViews.plus(p2ImageViews).forEach { _, imageView -> imageView.setImageDrawable(null) }
         requestLayout()
     }
 
@@ -226,21 +227,20 @@ class BattleLayout @JvmOverloads constructor(
 
     private fun layoutBattleMode(count: Int, width: Int, height: Int) {
         val point = Point()
-        var j: Int
         for (i in 0 until count) {
-            point[(REL_BATTLE_P1_POS[count - 1][i].x * width).toInt()] = (REL_BATTLE_P1_POS[count - 1][i].y * height).toInt()
+            point.set((REL_BATTLE_P1_POS[count - 1][i].x * width).toInt(), (REL_BATTLE_P1_POS[count - 1][i].y * height).toInt())
             var cX = point.x
             var cY = point.y
             layoutChild(p1ImageViews[i], cX, cY, Gravity.CENTER, false, point)
             layoutChild(p1StatusViews[i], cX, point.y - statusBarOffset, Gravity.CENTER_HORIZONTAL, true)
             layoutChild(p1ToasterViews[i], cX, cY, Gravity.CENTER, false)
-            j = count - i - 1
+            val j = count - i - 1
             point[(REL_BATTLE_P2_POS[count - 1][j].x * width).toInt()] = (REL_BATTLE_P2_POS[count - 1][j].y * height).toInt()
             cX = point.x
             cY = point.y
-            layoutChild(p2ImageViews[i], cX, cY, Gravity.CENTER, false, point)
-            layoutChild(p2StatusViews[i], cX, point.y - statusBarOffset, Gravity.CENTER_HORIZONTAL, true)
-            layoutChild(p2ToasterViews[i], cX, cY, Gravity.CENTER, false)
+            layoutChild(p2ImageViews[j], cX, cY, Gravity.CENTER, false, point)
+            layoutChild(p2StatusViews[j], cX, point.y - statusBarOffset, Gravity.CENTER_HORIZONTAL, true)
+            layoutChild(p2ToasterViews[j], cX, cY, Gravity.CENTER, false)
         }
         layoutChild(p1SideView, 0, 4 * height / 5, Gravity.CENTER_VERTICAL, true)
         layoutChild(p2SideView, width, 3 * height / 5, Gravity.CENTER_VERTICAL, true)
