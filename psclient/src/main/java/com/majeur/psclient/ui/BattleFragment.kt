@@ -175,6 +175,8 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
         battleLayout.alpha = 1f
         overlayImage.alpha = 1f
         overlayImage.setImageDrawable(null)
+        battleLayout.getSpriteViews(Player.TRAINER).forEach { it.alpha = 1f }
+        battleLayout.getSpriteViews(Player.FOE).forEach { it.alpha = 1f }
     }
 
     private fun clearBattleFieldUi(animate: Boolean = true) = binding.apply {
