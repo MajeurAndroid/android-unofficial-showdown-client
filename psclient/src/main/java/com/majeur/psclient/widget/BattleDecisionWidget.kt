@@ -32,6 +32,7 @@ import com.majeur.psclient.service.observer.BattleRoomMessageObserver
 import com.majeur.psclient.util.*
 import java.util.*
 import kotlin.math.hypot
+import kotlin.math.min
 import kotlin.math.roundToInt
 
 class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: AttributeSet? = null, defStyleAttr: Int = 0)
@@ -577,15 +578,15 @@ class BattleDecisionWidget @JvmOverloads constructor(context: Context?, attrs: A
             if (request.teamPreview) {
                 decision.addLeadChoice(who, request.side.size)
                 view.isEnabled = false
-                // Request full team order if one of our Pokémon has Illusion
-                var fullTeamOrder = false
-                for (pokemon in request.side) {
-                    if (pokemon.baseAbility.toId() == "illusion") {
-                        fullTeamOrder = true
-                        break
-                    }
+                // Request full team order if only a part of the team is need or if one of our Pokémon has Illusion
+                val fullTeamOrder = request.maxTeamSize < request.side.size || request.side.any { it.baseAbility.toId() == "illusion"}
+                val choicesCount = decision.leadChoicesCount()
+
+                if (fullTeamOrder) {
+                    if (choicesCount < min(request.maxTeamSize, request.side.size)) return // Prevents from moving to next prompt stage
+                } else {
+                    if (choicesCount < request.count) return // Prevents from moving to next prompt stage
                 }
-                if (decision.leadChoicesCount() < (if (fullTeamOrder) request.side.size else request.count)) return  // Avoid going to next prompt;
             } else {
                 decision.addSwitchChoice(who)
             }

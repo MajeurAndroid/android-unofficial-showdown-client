@@ -15,6 +15,8 @@ import android.widget.TextView
 import androidx.core.text.toSpannable
 import androidx.core.text.toSpanned
 import androidx.fragment.app.Fragment
+import org.json.JSONArray
+import org.json.JSONObject
 import java.util.*
 import kotlin.text.Typography.ellipsis
 
@@ -110,4 +112,12 @@ fun TextView.clearText() {
         else -> TextView.BufferType.NORMAL
     }
     setText("", bufferType)
+}
+
+inline fun JSONArray.forEach(action: (JSONObject) -> Unit) {
+    for (i in 0 until length()) action(getJSONObject(i))
+}
+
+inline fun JSONArray.forEachIndexed(action: (Int, JSONObject) -> Unit) {
+    for (i in 0 until length()) action(i, getJSONObject(i))
 }

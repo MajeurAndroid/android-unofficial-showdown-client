@@ -1,6 +1,7 @@
 package com.majeur.psclient.model.battle
 
 import com.majeur.psclient.model.pokemon.SidePokemon
+import com.majeur.psclient.util.forEachIndexed
 import org.json.JSONObject
 
 
@@ -16,63 +17,52 @@ class BattleDecisionRequest(json: JSONObject, var gameType: GameType?) {
 
     val id = json.getInt("rqid")
     val teamPreview = json.optBoolean("teamPreview", false)
+    val maxTeamSize = json.optInt("maxTeamSize", Int.MAX_VALUE)
     val shouldWait = json.optBoolean("wait", false)
     val side = json.getJSONObject("side").getJSONArray("pokemon").run {
-        (0 until length()).map { SidePokemon(it, getJSONObject(it)) }
+        (0 until length()).map { i -> SidePokemon(i, getJSONObject(i)) }
     }
 
     private var forceSwitch = json.optJSONArray("forceSwitch")?.run {
-        (0 until length()).map { getBoolean(it) }.toBooleanArray()
+        (0 until length()).map { i -> getBoolean(i) }.toBooleanArray()
     }
-    private var trapped: BooleanArray? = null
-    private var canMegaEvo: BooleanArray? = null
-    private var canDynamax: BooleanArray? = null
-    private var moves: Array<Array<Move>>? = null
+    private val trapped: BooleanArray?
+    private val canMegaEvo: BooleanArray?
+    private val canDynamax: BooleanArray?
+    private val moves: Array<Array<Move>>?
 
     init {
-        json.optJSONArray("active")?.run {
-            for (i in 0 until length()) {
-                getJSONObject(i).let { active ->
-                    var value = active.optBoolean("trapped", false)
-                    if (value) {
-                        if (trapped == null) trapped = BooleanArray(length())
-                        trapped!![i] = true
-                    }
-                    value = active.optBoolean("canMegaEvo", false)
-                    if (value) {
-                        if (canMegaEvo == null) canMegaEvo = BooleanArray(length())
-                        canMegaEvo!![i] = true
-                    }
-                    value = active.optBoolean("canDynamax", false)
-                    if (value) {
-                        if (canDynamax == null) canDynamax = BooleanArray(length())
-                        canDynamax!![i] = true
-                    }
-                    if (moves == null) moves = Array(length()) { emptyArray<Move>() }
-                    val movesJson = active.getJSONArray("moves")
-                    val canZMove = active.optJSONArray("canZMove")
-                    val maxMoves = active.optJSONObject("maxMoves")?.optJSONArray("maxMoves")
-                    moves!![i] = (0 until movesJson.length()).map { j ->
-                        Move(j, movesJson.getJSONObject(j),
-                                canZMove?.optJSONObject(j),
-                                maxMoves?.optJSONObject(j))
-                    }.toTypedArray()
-                }
-            }
+        val actives = json.optJSONArray("active")
+        trapped = if (actives != null) BooleanArray(actives.length()) else null
+        canMegaEvo = if (actives != null) BooleanArray(actives.length()) else null
+        canDynamax = if (actives != null) BooleanArray(actives.length()) else null
+        moves = if (actives != null) Array(actives.length()) { emptyArray<Move>() } else null
+        actives?.forEachIndexed { i, active ->
+            trapped!![i] = active.optBoolean("trapped", false)
+            canMegaEvo!![i] = active.optBoolean("canMegaEvo", false)
+            canDynamax!![i] = active.optBoolean("canDynamax", false)
+            val movesJson = active.getJSONArray("moves")
+            val canZMove = active.optJSONArray("canZMove")
+            val maxMoves = active.optJSONObject("maxMoves")?.optJSONArray("maxMoves")
+            moves!![i] = (0 until movesJson.length()).map { j ->
+                Move(j, movesJson.getJSONObject(j),
+                        canZMove?.optJSONObject(j),
+                        maxMoves?.optJSONObject(j))
+            }.toTypedArray()
         }
     }
 
-    fun getMoves(which: Int): Array<Move>? = if (moves != null) moves!![which] else null
+    fun getMoves(which: Int) = moves?.getOrNull(which)
 
     fun shouldPass(which: Int) = !forceSwitch(which) && getMoves(which) == null
 
-    fun forceSwitch(which: Int) = if (forceSwitch != null) forceSwitch!![which] else false
+    fun forceSwitch(which: Int) = forceSwitch?.getOrNull(which) ?: false
 
-    fun trapped(which: Int) = if (trapped != null) trapped!![which] else false
+    fun trapped(which: Int) = trapped?.getOrNull(which) ?: false
 
-    fun canMegaEvo(which: Int) = if (canMegaEvo != null) canMegaEvo!![which] else false
+    fun canMegaEvo(which: Int) = canMegaEvo?.getOrNull(which) ?: false
 
-    fun canDynamax(which: Int) = if (canDynamax != null) canDynamax!![which] else false
+    fun canDynamax(which: Int) = canDynamax?.getOrNull(which) ?: false
 
     fun isDynamaxed(which: Int): Boolean {
         if (canDynamax(which) || getMoves(which) == null) return false
