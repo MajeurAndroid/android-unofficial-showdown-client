@@ -78,13 +78,13 @@ class BattleLayout @JvmOverloads constructor(
         return (0 until statusViews.size()).map { i -> statusViews.valueAt(i) }
     }
 
-    fun getPokemonView(id: PokemonId): ImageView? {
+    fun getSpriteView(id: PokemonId): ImageView? {
         if (id.position < 0) return null
         val imageViews = if (id.trainer) p1ImageViews else p2ImageViews
         return imageViews[id.position]
     }
 
-    fun getPokemonViews(player: Player): List<ImageView> {
+    fun getSpriteViews(player: Player): List<ImageView> {
         val imageViews = if (player === Player.TRAINER) p1ImageViews else p2ImageViews
         return (0 until imageViews.size()).map { i -> imageViews.valueAt(i) }
     }
@@ -115,7 +115,7 @@ class BattleLayout @JvmOverloads constructor(
     }
 
     fun displayHitIndicator(id: PokemonId) {
-        val view = getPokemonView(id) ?: return
+        val view = getSpriteView(id) ?: return
         val cX = (view.right + view.left) / 2
         val cY = (view.bottom + view.top) / 2
         val w = dp(40f)

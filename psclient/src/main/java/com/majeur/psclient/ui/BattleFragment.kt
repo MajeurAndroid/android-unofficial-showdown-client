@@ -182,9 +182,9 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
             battleLayout.getSideView(Player.TRAINER).clearAllSides()
             battleLayout.getSideView(Player.FOE).clearAllSides()
             battleLayout.getStatusViews(Player.TRAINER).forEach { it.clear() }
-            battleLayout.getPokemonViews(Player.TRAINER).forEach { it.setImageDrawable(null) }
+            battleLayout.getSpriteViews(Player.TRAINER).forEach { it.setImageDrawable(null); battleTipPopup.removeTippedView(it) }
             battleLayout.getStatusViews(Player.FOE).forEach { it.clear() }
-            battleLayout.getPokemonViews(Player.FOE).forEach { it.setImageDrawable(null) }
+            battleLayout.getSpriteViews(Player.FOE).forEach { it.setImageDrawable(null); battleTipPopup.removeTippedView(it) }
             trainerInfo.clear()
             foeInfo.clear()
             battleMessage.apply {
@@ -526,9 +526,9 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
             }
         }
         if (isReplay) return // We skip team previewing for replays
-        binding.battleLayout.getPokemonView(id)?.let {
+        binding.battleLayout.getSpriteView(id)?.apply {
             // Can be null when joining a battle where the preview has already been done
-            glideHelper.loadPreviewSprite(id.player, pokemon, it)
+            glideHelper.loadPreviewSprite(id.player, pokemon, this)
         }
     }
 
@@ -539,14 +539,17 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
     }
 
     override fun onFaint(id: PokemonId) {
-        binding.battleLayout.getPokemonView(id)?.let {
-            it.animate()
-                    .setDuration(250)
-                    .setInterpolator(AccelerateDecelerateInterpolator())
-                    .translationY(it.height / 2f)
-                    .alpha(0f)
-                    .withEndAction { it.translationY = 0f }
-                    .start()
+        binding.battleLayout.getSpriteView(id)?.apply {
+            animate()
+                .setDuration(250)
+                .setInterpolator(AccelerateDecelerateInterpolator())
+                .translationY(height / 2f)
+                .alpha(0f)
+                .withEndAction {
+                    translationY = 0f
+                    setImageDrawable(null)
+                    battleTipPopup.removeTippedView(this)
+                }.start()
         }
         binding.battleLayout.getStatusView(id)?.animate()?.alpha(0f)?.start()
         val playerView = if (id.foe) binding.foeInfo else binding.trainerInfo
@@ -573,7 +576,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
             setPokemon(pokemon)
             animate().alpha(1f).start()
         }
-        binding.battleLayout.getPokemonView(pokemon.id)?.apply {
+        binding.battleLayout.getSpriteView(pokemon.id)?.apply {
             setTag(R.id.battle_data_tag, pokemon)
             battleTipPopup.addTippedView(this)
             glideHelper.loadBattleSprite(pokemon, this)
@@ -589,8 +592,8 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
 
     @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
     override fun onDetailsChanged(pokemon: BattlingPokemon) {
-        binding.battleLayout.getPokemonView(pokemon.id)?.let {
-            glideHelper.loadBattleSprite(pokemon, it)
+        binding.battleLayout.getSpriteView(pokemon.id)?.apply {
+            glideHelper.loadBattleSprite(pokemon, this)
         }
         fragmentScope.launch {
             assetLoader.dexIcon(pokemon.species.toId())?.let {
