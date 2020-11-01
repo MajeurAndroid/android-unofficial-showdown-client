@@ -626,11 +626,7 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
             request.count
             false
         } catch (e: IllegalStateException) {
-            val msg = "A special bug has occurred, please use the bug report button on " +
-                    "the home panel, and mention that this was an \"Unknown battle type\" issue. " +
-                    "Don't forget to specify on which format you were playing, and if the battle " +
-                    "has just started when this message appeared. " +
-                    "Thank you!"
+            val msg = "A bug has occurred, please report this bug :)."
             onPrintText(msg.color(Colors.RED))
             true
         }

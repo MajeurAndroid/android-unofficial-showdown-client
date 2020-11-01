@@ -85,6 +85,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
         activeFieldEffects.clear()
 
         actionQueue.shouldLoopToLastTurn = true // clear to default setting
+        actionQueue.enableLastActionInvoke = false // Prevent last action from being invoked before |start| or |teampreview|
     }
 
     private fun getPlayer(rawId: String) = Player.get(rawId, p1Username, p2Username, myUsername)
@@ -147,8 +148,12 @@ class BattleRoomMessageObserver(service: ShowdownService)
             onPreviewStarted()
         }
         "poke" -> handlePreviewPokemon(message)
-        "teampreview" -> actionQueue.enqueueAction {} // Used to trigger action looping in case nothing has been posted before
+        "teampreview" -> {
+            actionQueue.enableLastActionInvoke = true
+            actionQueue.startLoop() // Used to trigger action looping in case nothing has been posted before
+        }
         "start" -> {
+            actionQueue.enableLastActionInvoke = true
             printMessage(battleTextBuilder.start(p1Username, p2Username))
             onBattleStarted()
         }

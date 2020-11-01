@@ -15,6 +15,7 @@ class ActionQueue(looper: Looper) {
     private var isLooping = false
 
     var shouldLoopToLastTurn = true
+    var enableLastActionInvoke = false
 
     fun clear() {
         stopLoop()
@@ -23,8 +24,7 @@ class ActionQueue(looper: Looper) {
     }
 
     fun setLastAction(action: (()->Unit)?) {
-        if (!isLooping) action?.invoke()
-        else lastAction = action
+        lastAction = action
     }
 
     fun enqueueTurnAction(action: ()->Unit) {
@@ -65,12 +65,18 @@ class ActionQueue(looper: Looper) {
     }
 
     fun startLoop() {
-        if (actions.isEmpty()) return
-        isLooping = true
-        handler.post(loopRunnable)
+        if (isLooping) return
+        if (actions.isNotEmpty()) {
+            isLooping = true
+            handler.post(loopRunnable)
+        } else if (enableLastActionInvoke && lastAction != null) {
+            lastAction!!.invoke()
+            lastAction = null
+        }
     }
 
     fun stopLoop() {
+        if (!isLooping) return
         isLooping = false
         handler.removeCallbacks(loopRunnable)
     }
@@ -102,8 +108,10 @@ class ActionQueue(looper: Looper) {
                 handler.postDelayed(this, entry.delay)
             } else {
                 stopLoop()
-                lastAction?.invoke()
-                lastAction = null
+                if (enableLastActionInvoke) {
+                    lastAction?.invoke()
+                    lastAction = null
+                }
             }
         }
     }
