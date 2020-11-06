@@ -2,6 +2,7 @@ package com.majeur.psclient.io
 
 import android.content.Context
 import com.majeur.psclient.model.common.Team
+import com.majeur.psclient.util.toId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -46,7 +47,8 @@ class TeamsStore(context: Context) {
 
     suspend fun store(groups: List<Team.Group>): Boolean = withContext(Dispatchers.IO) {
         try {
-            makeJson(groups).run { writeJsonToFile(this) }.run { true }
+            makeJson(groups).run { writeJsonToFile(this) }
+            true
         } catch (e: Exception) {
             if (e is JSONException || e is IOException) Timber.e(e)
             false
@@ -56,11 +58,14 @@ class TeamsStore(context: Context) {
     @Throws(JSONException::class)
     private fun makeJson(groups: List<Team.Group>): JSONArray {
         val jsonArray = JSONArray()
-        groups.forEach { group ->
+        val formats = groups.map { it.format.toId() }.toSet()
+        formats.forEach { formatId ->
+            val teams = groups.filter { it.format.toId() == formatId }.flatMap { it.teams }
+            if (teams.isEmpty()) return@forEach
             JSONObject().apply {
-                put(JSON_KEY_FORMAT, group.format)
+                put(JSON_KEY_FORMAT, formatId)
                 put(JSON_KEY_TEAMS, JSONArray().apply {
-                    group.teams.forEach { team ->
+                    teams.forEach { team ->
                         put(JSONObject().apply {
                             put(JSON_KEY_TEAM_LABEL, team.label)
                             put(JSON_KEY_TEAM_DATA, team.pack())

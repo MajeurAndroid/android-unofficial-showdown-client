@@ -179,7 +179,7 @@ class TeamsFragment : BaseFragment(), OnItemClickListener {
         for (group in groups) {
             val oldTeam = group.teams.firstOrNull { it.uniqueId == newTeam.uniqueId }
             if (oldTeam != null) { // Its an update
-                if (oldTeam.format == newTeam.format) { // Format has not changed so we just replace item
+                if (oldTeam.format?.toId() == newTeam.format?.toId()) { // Format has not changed so we just replace item
                     val adapterPosition = listAdapter.getItemPosition(oldTeam)
                     val indexInGroup = group.teams.indexOf(oldTeam)
                     group.teams[indexInGroup] = newTeam
@@ -202,7 +202,7 @@ class TeamsFragment : BaseFragment(), OnItemClickListener {
                 }
                 break
             }
-            if (group.format == newTeam.format) {
+            if (group.format.toId() == newTeam.format?.toId()) {
                 val index = group.teams.plus(newTeam).sorted().indexOf(newTeam)
                 group.teams.add(index, newTeam)
                 val adapterPosition = listAdapter.getItemPosition(newTeam)
@@ -211,7 +211,7 @@ class TeamsFragment : BaseFragment(), OnItemClickListener {
             }
         }
         if (!teamAdded) { // No group matched our team format
-            val newGroup = Team.Group(newTeam.format!!)
+            val newGroup = Team.Group(newTeam.format!!.toId())
             val index = groups.plus(newGroup).sortedWith(Comparator<Team.Group> { g1, g2 ->
                 BattleFormat.compare(battleFormats, g1.format, g2.format)
             }).indexOf(newGroup)
@@ -253,7 +253,7 @@ class TeamsFragment : BaseFragment(), OnItemClickListener {
     private fun persistUserTeams() {
         fragmentScope.launch {
             val success = teamsStore.store(groups)
-            if (!success) Snackbar.make(binding.root, "Error when saving teams", Snackbar.LENGTH_LONG).show()
+            if (!success) Snackbar.make(binding.root, "Error while saving teams", Snackbar.LENGTH_LONG).show()
         }
     }
 
