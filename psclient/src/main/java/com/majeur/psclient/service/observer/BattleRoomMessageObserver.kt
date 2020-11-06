@@ -71,6 +71,7 @@ class BattleRoomMessageObserver(service: ShowdownService)
         activeFieldEffects.clear()
 
         actionQueue.shouldLoopToLastTurn = !isReplay // Loops through each turn for replays
+        actionQueue.enableLastActionInvoke = false // Prevent last action from being invoked before |start| or |teampreview|
     }
 
     public override fun onRoomDeInit() {
@@ -85,7 +86,6 @@ class BattleRoomMessageObserver(service: ShowdownService)
         activeFieldEffects.clear()
 
         actionQueue.shouldLoopToLastTurn = true // clear to default setting
-        actionQueue.enableLastActionInvoke = false // Prevent last action from being invoked before |start| or |teampreview|
     }
 
     private fun getPlayer(rawId: String) = Player.get(rawId, p1Username, p2Username, myUsername)
