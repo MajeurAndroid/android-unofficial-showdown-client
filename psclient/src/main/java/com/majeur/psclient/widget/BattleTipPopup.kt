@@ -43,7 +43,10 @@ class BattleTipPopup(context: Context) : PopupWindow(context), OnTouchListener {
 
     fun addTippedView(view: View) = view.setOnTouchListener(this)
 
-    fun removeTippedView(view: View) = view.setOnTouchListener(null)
+    fun removeTippedView(view: View) {
+        view.setOnTouchListener(null)
+        if (currentAnchorView == view) dismiss()
+    }
 
     private val longPressCheckRunnable = Runnable {
         if (!isUserTouching) return@Runnable
