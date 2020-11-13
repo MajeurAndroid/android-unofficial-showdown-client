@@ -353,6 +353,10 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
                 adapter.addItem(group)
                 adapter.addItems(group.teams)
             }
+            teamsFragment.teams.filter { !matches.contains(it.format.toId()) }.forEach { group ->
+                adapter.addItem(group)
+                adapter.addItems(group.teams)
+            }
             if (adapter.count == 0) adapter.addItem(Team.dummyTeam("You have no teams", false))
             binding.teamsSelector.apply {
                 isEnabled = adapter.count > 1
