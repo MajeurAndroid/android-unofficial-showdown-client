@@ -15,6 +15,7 @@ import android.widget.TextView
 import androidx.core.text.toSpannable
 import androidx.core.text.toSpanned
 import androidx.fragment.app.Fragment
+import com.majeur.psclient.util.html.ClickableSpan
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.*
@@ -43,6 +44,7 @@ fun CharSequence.color(color: Int) = toSpannable().color(color)
 fun CharSequence.bg(color: Int) = toSpannable().bg(color)
 fun CharSequence.tag(color: Int) = toSpannable().tag(color)
 fun CharSequence.url(url: String) = toSpannable().url(url)
+fun CharSequence.clickable(onClick: (View) -> Unit) = toSpannable().clickable(onClick)
 
 fun Spannable.bold(): Spannable {
     setSpan(StyleSpan(Typeface.BOLD), 0, length, Spannable.SPAN_INCLUSIVE_EXCLUSIVE)
@@ -80,6 +82,11 @@ fun Spannable.tag(color: Int, textColor: Int = Color.WHITE): Spannable {
 
 fun Spannable.url(url: String): Spannable {
     setSpan(URLSpan(url), 0, length, Spannable.SPAN_INCLUSIVE_EXCLUSIVE)
+    return this
+}
+
+fun Spannable.clickable(onClick: (View) -> Unit): Spannable {
+    setSpan(ClickableSpan(onClick), 0, length, Spannable.SPAN_INCLUSIVE_EXCLUSIVE)
     return this
 }
 

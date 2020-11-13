@@ -642,8 +642,8 @@ class BattleFragment : BaseFragment(), BattleRoomMessageObserver.UiCallbacks, Vi
             request.count
             false
         } catch (e: IllegalStateException) {
-            val msg = "A bug has occurred, please report this bug :)."
-            onPrintText(msg.color(Colors.RED))
+            val msg = "A bug has occurred, please try to rejoin the battle. Click this message to leave it without forfeiting."
+            onPrintText(msg.color(Colors.RED).clickable { service?.sendRoomCommand(observedRoomId, "leave") })
             true
         }
     }
