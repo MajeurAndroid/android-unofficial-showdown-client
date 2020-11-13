@@ -845,6 +845,10 @@ class HomeFragment : BaseFragment(), GlobalMessageObserver.UiCallbacks, View.OnC
             battleFragment.observedRoomId -> battleFragment.observedRoomId = null
             chatFragment.observedRoomId -> chatFragment.observedRoomId = null
         }
+        binding.joinedBattlesContainer.children.forEach { button ->
+            // Enable the corresponding button if battle is already joined
+            button.isEnabled = button.tag as String != battleFragment.observedRoomId
+        }
         roomDeinitListeners.values.forEach { it.invoke(roomId) }
     }
 
